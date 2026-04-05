@@ -13,3 +13,12 @@ Run the tests with:
 ```powershell
 python -m unittest discover -s tests
 ```
+
+## Backtester Core v1
+
+The default backtester flow is intentionally simple and uses daily OHLCV input for a single instrument.
+
+- A strategy sees one daily bar at a time and can return `buy` or `sell` market orders.
+- Orders generated from bar `t` are queued and filled on bar `t+1` at the next bar open.
+- End-of-day portfolio history is recorded at each bar close after any queued fill for that day.
+- Signals generated on the final bar are not filled because there is no next bar open available.
