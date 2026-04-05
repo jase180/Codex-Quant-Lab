@@ -1,0 +1,58 @@
+{
+  "schema_version": "v1",
+  "strategy_id": "sma_crossover",
+  "name": "Simple SMA Crossover",
+  "description": "Enter on a fast SMA crossing above a slow SMA and exit on the opposite crossover.",
+  "strategy_type": "rule_based",
+  "position_mode": "long_only",
+  "market": {
+    "symbol": "QQQ",
+    "timeframe": "1d"
+  },
+  "indicators": [
+    {
+      "id": "sma_20",
+      "kind": "sma",
+      "inputs": {
+        "source": "close",
+        "length": 20
+      }
+    },
+    {
+      "id": "sma_50",
+      "kind": "sma",
+      "inputs": {
+        "source": "close",
+        "length": 50
+      }
+    }
+  ],
+  "entry": {
+    "when": "all",
+    "conditions": [
+      {
+        "left": {
+          "indicator": "sma_20"
+        },
+        "operator": "crosses_above",
+        "right": {
+          "indicator": "sma_50"
+        }
+      }
+    ]
+  },
+  "exit": {
+    "when": "all",
+    "conditions": [
+      {
+        "left": {
+          "indicator": "sma_20"
+        },
+        "operator": "crosses_below",
+        "right": {
+          "indicator": "sma_50"
+        }
+      }
+    ]
+  }
+}

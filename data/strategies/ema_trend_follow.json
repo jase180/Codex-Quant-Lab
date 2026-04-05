@@ -1,0 +1,76 @@
+{
+  "schema_version": "v1",
+  "strategy_id": "ema_trend_follow",
+  "name": "EMA Trend Follow",
+  "description": "Enter when price is above the trend EMA and RSI confirms strength; exit on either momentum weakness or price trend failure.",
+  "strategy_type": "rule_based",
+  "position_mode": "long_only",
+  "market": {
+    "symbol": "AAPL",
+    "timeframe": "1d"
+  },
+  "indicators": [
+    {
+      "id": "ema_50",
+      "kind": "ema",
+      "inputs": {
+        "source": "close",
+        "length": 50
+      }
+    },
+    {
+      "id": "rsi_14",
+      "kind": "rsi",
+      "inputs": {
+        "source": "close",
+        "length": 14
+      }
+    }
+  ],
+  "entry": {
+    "when": "all",
+    "conditions": [
+      {
+        "left": {
+          "price": "close"
+        },
+        "operator": "gt",
+        "right": {
+          "indicator": "ema_50"
+        }
+      },
+      {
+        "left": {
+          "indicator": "rsi_14"
+        },
+        "operator": "gt",
+        "right": {
+          "value": 55
+        }
+      }
+    ]
+  },
+  "exit": {
+    "when": "any",
+    "conditions": [
+      {
+        "left": {
+          "price": "close"
+        },
+        "operator": "lt",
+        "right": {
+          "indicator": "ema_50"
+        }
+      },
+      {
+        "left": {
+          "indicator": "rsi_14"
+        },
+        "operator": "lt",
+        "right": {
+          "value": 45
+        }
+      }
+    ]
+  }
+}

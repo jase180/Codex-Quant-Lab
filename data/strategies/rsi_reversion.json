@@ -1,0 +1,50 @@
+{
+  "schema_version": "v1",
+  "strategy_id": "rsi_reversion",
+  "name": "RSI Mean Reversion",
+  "description": "Enter when RSI is oversold and exit when momentum normalizes.",
+  "strategy_type": "rule_based",
+  "position_mode": "long_only",
+  "market": {
+    "symbol": "SPY",
+    "timeframe": "1d"
+  },
+  "indicators": [
+    {
+      "id": "rsi_14",
+      "kind": "rsi",
+      "inputs": {
+        "source": "close",
+        "length": 14
+      }
+    }
+  ],
+  "entry": {
+    "when": "all",
+    "conditions": [
+      {
+        "left": {
+          "indicator": "rsi_14"
+        },
+        "operator": "lt",
+        "right": {
+          "value": 30
+        }
+      }
+    ]
+  },
+  "exit": {
+    "when": "all",
+    "conditions": [
+      {
+        "left": {
+          "indicator": "rsi_14"
+        },
+        "operator": "gte",
+        "right": {
+          "value": 55
+        }
+      }
+    ]
+  }
+}
