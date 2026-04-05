@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/strategy-schema-v1.schema.json",
+  "title": "Strategy Schema v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "strategy_id",
+    "name",
+    "description",
+    "strategy_type",
+    "position_mode",
+    "market",
+    "indicators",
+    "entry",
+    "exit"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "v1"
+    },
+    "strategy_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strategy_type": {
+      "const": "rule_based"
+    },
+    "position_mode": {
+      "const": "long_only"
+    },
+    "market": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "timeframe"],
+      "properties": {
+        "symbol": {"type": "string", "minLength": 1},
+        "timeframe": {"const": "1d"}
+      }
+    },
+    "indicators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "inputs"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "kind": {
+            "enum": ["sma", "ema", "rsi"]
+          },
+          "inputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "length"],
+            "properties": {
+              "source": {
+                "const": "close"
+              },
+              "length": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "entry": {
+      "$ref": "#/$defs/conditionSet"
+    },
+    "exit": {
+      "$ref": "#/$defs/conditionSet"
+    }
+  },
+  "$defs": {
+    "conditionSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when", "conditions"],
+      "properties": {
+        "when": {
+          "enum": ["all", "any"]
+        },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "operator", "right"],
+      "properties": {
+        "left": {
+          "$ref": "#/$defs/valueRef"
+        },
+        "operator": {
+          "enum": ["gt", "gte", "lt", "lte", "eq", "crosses_above", "crosses_below"]
+        },
+        "right": {
+          "$ref": "#/$defs/valueRef"
+        }
+      }
+    },
+    "valueRef": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["price"],
+          "properties": {
+            "price": {
+              "const": "close"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["indicator"],
+          "properties": {
+            "indicator": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value"],
+          "properties": {
+            "value": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    }
+  }
