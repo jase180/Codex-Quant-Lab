@@ -14,6 +14,12 @@ This is a small Python quant research lab centered on:
 - The package dependency is `pandas>=2.0`.
 - Tests are written with `unittest`.
 
+## Tooling Preference
+
+- Prefer WSL for Python, test, package, and development commands in this repo.
+- Use PowerShell only when the task specifically needs Windows shell behavior or simple Windows filesystem inspection.
+- The Windows checkout path maps to WSL as `/mnt/c/Users/jase1/Documents/Codex/2026-07-04/let-s-get-familiar-with-one`.
+
 Run tests with:
 
 ```powershell
