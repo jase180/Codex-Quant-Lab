@@ -40,6 +40,13 @@ PYTHONPATH=src python3 -m unittest discover -s tests
 - Keep schema validation strict and errors explicit.
 - Add focused tests for behavior changes, especially around fills, portfolio accounting, schema validation, and metrics formulas.
 
+## Collaboration Preference
+
+- The repo owner is a junior Go engineer who can read basic Python but is still learning Python practices, idioms, and frameworks.
+- Add explanatory comments when code uses Python-specific idioms, non-obvious standard library behavior, pandas conventions, packaging patterns, or backtesting assumptions.
+- Prefer comments that explain why a block exists or how data flows through it. Avoid comments that merely restate obvious assignments.
+- In final summaries, call out important Python or project-structure choices in plain language when they affect future maintenance.
+
 ## Known Environment Note
 
 The Windows shell in this workspace may not expose `python` or `py` on `PATH`. WSL currently has Python 3.12, but the full backtester test suite requires `pandas` to be installed there.
