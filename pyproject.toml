@@ -12,6 +12,9 @@ dependencies = [
     "pandas>=2.0",
 ]
 
+[project.scripts]
+quant-lab = "quant_lab.cli:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 

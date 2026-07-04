@@ -1,18 +1,56 @@
 # Codex-Quant-Lab
 
+Codex-Quant-Lab is a small Python quant research lab for validating simple trading ideas against daily OHLCV data. It currently includes:
+
+- a deterministic daily backtester,
+- strict JSON strategy definitions,
+- executable rule-based strategies,
+- metrics/report artifact generation,
+- and a `quant-lab` command-line runner.
+
+## Setup
+
+Python 3.10+ is required. In this checkout, prefer WSL for Python commands.
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e .
+```
+
+Run the test suite with:
+
+```bash
+. .venv/bin/activate
+python -m unittest discover -s tests
+```
+
+## CLI runner
+
+Run one strategy against one daily OHLCV CSV:
+
+```bash
+quant-lab run \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/sample_ohlcv.csv \
+  --out artifacts/sma_crossover
+```
+
+The runner writes:
+
+- `metrics.json`
+- `equity_curve.csv`
+- `report.md`
+- `trades.csv`
+
 ## Strategy schema
 
 This repo now includes a strict v1 strategy representation for simple rule-based trading ideas:
 
-- Parser and validation: [src/quant_lab/strategy_schema.py](/C:/Users/jase1/repos/Codex-Quant-Lab/src/quant_lab/strategy_schema.py)
-- Example strategies: [data/strategies/rsi_reversion.json](/C:/Users/jase1/repos/Codex-Quant-Lab/data/strategies/rsi_reversion.json)
-- Schema notes: [docs/strategy-schema.md](/C:/Users/jase1/repos/Codex-Quant-Lab/docs/strategy-schema.md)
-
-Run the tests with:
-
-```powershell
-python -m unittest discover -s tests
-```
+- Parser and validation: [src/quant_lab/strategy_schema.py](src/quant_lab/strategy_schema.py)
+- Executable adapter: [src/quant_lab/rule_based_strategy.py](src/quant_lab/rule_based_strategy.py)
+- Example strategies: [data/strategies/rsi_reversion.json](data/strategies/rsi_reversion.json)
+- Schema notes: [docs/strategy-schema.md](docs/strategy-schema.md)
 
 ## Backtester Core v1
 
