@@ -4,7 +4,7 @@ import pandas as pd
 
 from backtester_core.engine import BacktestEngine
 from backtester_core.data import iter_market_bars, validate_ohlcv_data
-from backtester_core.execution import ExecutionModel, Fill, Order
+from backtester_core.execution import ExecutionModel, Fill, Order, TransactionCostModel
 from backtester_core.portfolio import Portfolio
 from backtester_core.strategy import Strategy
 
@@ -73,6 +73,34 @@ class BacktesterCoreTests(unittest.TestCase):
         self.assertEqual(portfolio.cash, 720.0)
         self.assertEqual(portfolio.position, 3)
 
+    def test_portfolio_applies_commissions_to_cash(self):
+        portfolio = Portfolio(initial_cash=1_000)
+        portfolio.apply_fill(
+            Fill(
+                side="buy",
+                quantity=5,
+                price=100.0,
+                commission=2.0,
+                timestamp=pd.Timestamp("2026-03-30"),
+            )
+        )
+        self.assertEqual(portfolio.cash, 498.0)
+        self.assertEqual(portfolio.position, 5)
+
+        trade = portfolio.apply_fill(
+            Fill(
+                side="sell",
+                quantity=2,
+                price=110.0,
+                commission=1.0,
+                timestamp=pd.Timestamp("2026-03-31"),
+            )
+        )
+
+        self.assertEqual(portfolio.cash, 717.0)
+        self.assertEqual(portfolio.position, 3)
+        self.assertEqual(trade.commission, 1.0)
+
     def test_engine_does_not_fill_on_signal_bar(self):
         engine = BacktestEngine(initial_cash=5_000)
         result = engine.run(self.data, BuyAndHoldStrategy())
@@ -115,6 +143,40 @@ class BacktesterCoreTests(unittest.TestCase):
         self.assertEqual(fill.side, "buy")
         self.assertEqual(fill.price, 100.0)
         self.assertAlmostEqual(fill.quantity, 5.0)
+
+    def test_execution_model_applies_slippage_and_commission(self):
+        order = Order(side="buy", quantity=10)
+        bar = iter_market_bars(validate_ohlcv_data(self.data))[0]
+        model = ExecutionModel(
+            TransactionCostModel(
+                commission_fixed=1.0,
+                commission_rate=0.01,
+                slippage_bps=50,
+            )
+        )
+
+        fill = model.execute(order, bar)
+
+        self.assertEqual(fill.side, "buy")
+        self.assertAlmostEqual(fill.price, 100.5)
+        self.assertAlmostEqual(fill.commission, 11.05)
+
+    def test_cash_allocation_accounts_for_costs(self):
+        order = Order(side="buy", cash_allocation=1.0)
+        bar = iter_market_bars(validate_ohlcv_data(self.data))[0]
+        model = ExecutionModel(
+            TransactionCostModel(
+                commission_fixed=2.0,
+                commission_rate=0.01,
+                slippage_bps=100,
+            )
+        )
+
+        fill = model.execute(order, bar, available_cash=1_000)
+        total_cash_required = (fill.quantity * fill.price) + fill.commission
+
+        self.assertAlmostEqual(fill.price, 101.0)
+        self.assertAlmostEqual(total_cash_required, 1_000.0)
 
     def test_equity_history_reconciles_cash_position_and_close(self):
         engine = BacktestEngine(initial_cash=5_000)

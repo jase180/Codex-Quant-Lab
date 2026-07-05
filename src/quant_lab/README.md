@@ -91,6 +91,19 @@ The CLI supports:
 Percent-equity orders resolve at the next open, which keeps the same timing
 model as the rest of the backtester.
 
+## Transaction Costs
+
+`run` and `sweep` support simple cost assumptions:
+
+- `--commission-fixed`: flat cash commission per fill.
+- `--commission-rate`: commission as a decimal fraction of trade value.
+- `--slippage-bps`: one-way slippage in basis points.
+
+The cost model is applied at the fill. Buys pay above the next open when
+slippage is nonzero, sells receive below the next open, and commissions reduce
+cash. Sweep summaries include the cost settings so result tables remain
+auditable.
+
 ## Benchmarks
 
 The CLI adds a buy-and-hold benchmark using the same CSV and initial cash. The
@@ -104,5 +117,4 @@ Run and sweep artifacts also include two PNG charts:
 
 ## Notes For Future Work
 
-- Add transaction costs and slippage.
 - Consider splitting CLI helpers into smaller modules if `cli.py` keeps growing.

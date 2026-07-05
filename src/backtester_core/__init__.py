@@ -1,15 +1,18 @@
 """Backtester core package."""
 
 from .engine import BacktestEngine, BacktestResult
+from .execution import ExecutionModel, TransactionCostModel
 from .portfolio import Portfolio, PortfolioSnapshot, Trade
 from .strategy import Strategy
 
 __all__ = [
     "BacktestEngine",
     "BacktestResult",
+    "ExecutionModel",
     "Portfolio",
     "PortfolioSnapshot",
     "Strategy",
+    "TransactionCostModel",
     "Trade",
 ]
 

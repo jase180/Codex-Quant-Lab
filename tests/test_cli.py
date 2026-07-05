@@ -168,6 +168,46 @@ class CliTests(unittest.TestCase):
             self.assertTrue((output_dir / "trades.csv").exists())
             self.assertIn("buy", trades)
 
+    def test_run_command_applies_transaction_cost_options(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "artifacts"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "run",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "3",
+                        "--commission-fixed",
+                        "1",
+                        "--commission-rate",
+                        "0.01",
+                        "--slippage-bps",
+                        "100",
+                    ]
+                )
+
+            trades = pd.read_csv(output_dir / "trades.csv")
+            self.assertEqual(exit_code, 0)
+            self.assertIn("commission_fixed: 1.0", stdout.getvalue())
+            self.assertIn("commission", trades.columns)
+            self.assertGreater(trades.loc[0, "commission"], 0)
+            self.assertAlmostEqual(trades.loc[0, "price"], 12.12)
+
     def test_fetch_command_writes_normalized_csv(self) -> None:
         fetched_data = pd.DataFrame(
             [
@@ -241,6 +281,8 @@ class CliTests(unittest.TestCase):
 
             summary = (output_dir / "summary.csv").read_text(encoding="utf-8")
             self.assertIn("run_id,strategy_id,params", summary)
+            self.assertIn("commission_fixed", summary)
+            self.assertIn("slippage_bps", summary)
             self.assertIn("benchmark_total_return", summary)
             self.assertIn("excess_total_return", summary)
             self.assertIn("run_001", summary)

@@ -135,6 +135,8 @@ quant-lab run \
   --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
   --sizing percent-equity \
   --allocation 1.0 \
+  --commission-rate 0.0005 \
+  --slippage-bps 5 \
   --out artifacts/qqq_sma_crossover
 ```
 
@@ -154,6 +156,11 @@ artifacts/qqq_sma_crossover/
 date range and initial cash. The PNG charts plot the strategy beside that same
 benchmark so the path of returns and drawdowns is easier to inspect than raw
 CSV rows.
+
+The cost flags are optional. `--commission-fixed` charges a flat amount per
+fill, `--commission-rate` charges a fraction of trade value, and
+`--slippage-bps` moves buy fills above the next open and sell fills below the
+next open. For example, `--slippage-bps 5` means 0.05% one-way slippage.
 
 ### Run A Parameter Sweep
 
@@ -192,6 +199,9 @@ Sweep summaries include buy-and-hold benchmark columns:
 benchmark_total_return
 benchmark_max_drawdown
 excess_total_return
+commission_fixed
+commission_rate
+slippage_bps
 ```
 
 ### Sizing Modes
@@ -212,6 +222,10 @@ Percent-equity sizing invests a fraction of available cash at the next open.
 `--allocation 1.0` means 100% of available cash, while `--allocation 0.5`
 means 50%. This mode allows fractional shares internally because it is meant for
 research, not broker-order simulation.
+
+For percent-equity buys, the engine sizes the order so the requested allocation
+can cover fill price plus commission. This avoids accidentally spending more
+cash than the allocation allows.
 
 ## First Research Lesson
 
@@ -248,7 +262,6 @@ what to test next.
 
 ## Current Limitations
 
-- No transaction costs or slippage.
 - No short selling.
 - No multi-symbol portfolio support.
 - Charts are intentionally simple PNG artifacts, not an interactive dashboard.
@@ -257,6 +270,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Add transaction costs and slippage.
-2. Add richer research summaries.
-3. Add more benchmark options.
+1. Add richer research summaries.
+2. Add more benchmark options.
+3. Add optional cost presets for common broker assumptions.

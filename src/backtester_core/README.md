@@ -22,6 +22,16 @@ signal at bar t close -> fill at bar t+1 open
 That means a strategy cannot see a close price and magically trade at that same
 close. The order waits until the next bar open.
 
+`ExecutionModel` can also apply a `TransactionCostModel`:
+
+- fixed commission per fill,
+- percent commission based on trade value,
+- one-way slippage in basis points.
+
+Slippage changes the fill price before portfolio accounting sees the fill. Buy
+orders pay above the next open, and sell orders receive below the next open.
+Commission is stored on the fill and deducted from cash by the portfolio.
+
 ## Data Shape
 
 The engine expects daily OHLCV data:
@@ -38,7 +48,7 @@ the data by date and rejects duplicate dates.
 `BacktestEngine.run(...)` returns a `BacktestResult` with:
 
 - `portfolio_history`: end-of-day cash, position, holdings value, and total value
-- `trades`: fill ledger
+- `trades`: fill ledger, including fill price and commission
 - `final_cash`
 - `final_position`
 - `final_equity`
@@ -48,5 +58,5 @@ the data by date and rejects duplicate dates.
 
 - Position sizing mostly lives above the engine, but allocation-style orders are resolved by the execution model at the next open.
 - The engine is single-symbol and long-only in current workflows.
-- Transaction costs and slippage are not modeled yet.
+- Transaction costs are intentionally simple and deterministic; there is no market-impact model.
 - Keep timing tests strict when changing execution behavior.

@@ -15,6 +15,8 @@ import pandas as pd
 
 from backtester_core import (
     BacktestEngine,
+    ExecutionModel,
+    TransactionCostModel,
     build_run_report,
     equity_curve_from_result,
     save_run_report_artifacts,
@@ -74,6 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Report title. Defaults to the strategy name.",
     )
+    add_cost_arguments(run_parser)
     run_parser.set_defaults(func=run_command)
 
     fetch_parser = subparsers.add_parser(
@@ -137,8 +140,30 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Report title prefix. Defaults to the strategy name.",
     )
+    add_cost_arguments(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
     return parser
+
+
+def add_cost_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--commission-fixed",
+        type=float,
+        default=0.0,
+        help="Flat commission charged per fill. Defaults to 0.",
+    )
+    parser.add_argument(
+        "--commission-rate",
+        type=float,
+        default=0.0,
+        help="Commission as a decimal fraction of trade notional. Defaults to 0.",
+    )
+    parser.add_argument(
+        "--slippage-bps",
+        type=float,
+        default=0.0,
+        help="One-way slippage in basis points. Defaults to 0.",
+    )
 
 
 def run_command(args: argparse.Namespace) -> int:
@@ -151,7 +176,7 @@ def run_command(args: argparse.Namespace) -> int:
     )
     data = pd.read_csv(args.data)
 
-    result = BacktestEngine(initial_cash=args.initial_cash).run(data, strategy)
+    result = build_engine(args).run(data, strategy)
     run_name = args.run_name or strategy_spec.name
     benchmark_curve = buy_and_hold_equity_curve(data, args.initial_cash)
     benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
@@ -173,6 +198,9 @@ def run_command(args: argparse.Namespace) -> int:
     print(f"total_return: {result.total_return:.2%}")
     print(f"benchmark_total_return: {benchmark_metrics.total_return:.2%}")
     print(f"excess_total_return: {excess_total_return(result.total_return, benchmark_metrics.total_return):.2%}")
+    print(f"commission_fixed: {args.commission_fixed}")
+    print(f"commission_rate: {args.commission_rate}")
+    print(f"slippage_bps: {args.slippage_bps}")
     return 0
 
 
@@ -219,7 +247,7 @@ def sweep_command(args: argparse.Namespace) -> int:
             allocation=args.allocation,
         )
 
-        result = BacktestEngine(initial_cash=args.initial_cash).run(data, strategy)
+        result = build_engine(args).run(data, strategy)
         metrics = summarize_run_metrics(result)
         run_name_prefix = args.run_name or strategy_spec.name
         report = append_benchmark_section(
@@ -247,6 +275,9 @@ def sweep_command(args: argparse.Namespace) -> int:
                 "sizing": args.sizing,
                 "quantity": args.quantity,
                 "allocation": args.allocation,
+                "commission_fixed": args.commission_fixed,
+                "commission_rate": args.commission_rate,
+                "slippage_bps": args.slippage_bps,
                 **benchmark_summary_fields(benchmark_metrics),
                 "excess_total_return": excess_total_return(
                     result.total_return,
@@ -271,6 +302,18 @@ def sweep_command(args: argparse.Namespace) -> int:
         print(f"best_total_return: {float(best['total_return']):.2%}")
         print(f"best_excess_total_return: {float(best['excess_total_return']):.2%}")
     return 0
+
+
+def build_engine(args: argparse.Namespace) -> BacktestEngine:
+    cost_model = TransactionCostModel(
+        commission_fixed=args.commission_fixed,
+        commission_rate=args.commission_rate,
+        slippage_bps=args.slippage_bps,
+    )
+    return BacktestEngine(
+        initial_cash=args.initial_cash,
+        execution_model=ExecutionModel(cost_model=cost_model),
+    )
 
 
 def save_trades(trades: pd.DataFrame, output_dir: str | Path) -> str:
@@ -387,6 +430,9 @@ def save_sweep_summary(rows: Sequence[dict[str, str | int | float | None]], outp
         "sizing",
         "quantity",
         "allocation",
+        "commission_fixed",
+        "commission_rate",
+        "slippage_bps",
         "benchmark_final_equity",
         "benchmark_total_return",
         "benchmark_cagr",
@@ -434,6 +480,9 @@ def save_research_summary(
             *[f"  --param {raw_param} \\" for raw_param in args.param],
             f"  --sizing {args.sizing} \\",
             f"  --allocation {args.allocation} \\",
+            f"  --commission-fixed {args.commission_fixed} \\",
+            f"  --commission-rate {args.commission_rate} \\",
+            f"  --slippage-bps {args.slippage_bps} \\",
             f"  --out {args.out}",
         ]
     )
@@ -454,6 +503,9 @@ def save_research_summary(
 - Quantity: `{args.quantity}`
 - Sizing: `{args.sizing}`
 - Allocation: `{args.allocation}`
+- Commission fixed: `{args.commission_fixed}`
+- Commission rate: `{args.commission_rate}`
+- Slippage bps: `{args.slippage_bps}`
 - Git commit: `{git_commit}`
 
 ## Parameters

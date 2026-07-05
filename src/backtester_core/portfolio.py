@@ -19,6 +19,7 @@ class Trade:
     side: str
     quantity: float
     price: float
+    commission: float
     cash_after: float
     position_after: float
 
@@ -49,20 +50,28 @@ class Portfolio:
         self.history: list[PortfolioSnapshot] = []
 
     def apply_fill(self, fill: Fill) -> Trade:
+        commission = float(fill.commission)
+        if commission < 0:
+            raise ValueError("fill commission must not be negative")
+
         if fill.side == "buy":
             cost = fill.quantity * fill.price
-            if cost > self.cash + FLOAT_TOLERANCE:
+            total_cash_required = cost + commission
+            if total_cash_required > self.cash + FLOAT_TOLERANCE:
                 raise ValueError("insufficient cash for buy order")
-            if cost > self.cash:
-                cost = self.cash
-            self.cash -= cost
+            if total_cash_required > self.cash:
+                total_cash_required = self.cash
+            self.cash -= total_cash_required
             self.position += fill.quantity
         elif fill.side == "sell":
             if fill.quantity > self.position + FLOAT_TOLERANCE:
                 raise ValueError("insufficient position for sell order")
             quantity = min(fill.quantity, self.position)
             proceeds = quantity * fill.price
-            self.cash += proceeds
+            net_proceeds = proceeds - commission
+            if net_proceeds < -FLOAT_TOLERANCE:
+                raise ValueError("sell commission exceeds proceeds")
+            self.cash += net_proceeds
             self.position -= quantity
         else:
             raise ValueError(f"unsupported fill side: {fill.side}")
@@ -72,6 +81,7 @@ class Portfolio:
             side=fill.side,
             quantity=fill.quantity,
             price=float(fill.price),
+            commission=commission,
             cash_after=self.cash,
             position_after=self.position,
         )
@@ -120,7 +130,7 @@ class Portfolio:
     def trades_frame(self) -> pd.DataFrame:
         if not self.trades:
             return pd.DataFrame(
-                columns=["timestamp", "side", "quantity", "price", "cash_after", "position_after"]
+                columns=["timestamp", "side", "quantity", "price", "commission", "cash_after", "position_after"]
             ).set_index("timestamp")
 
         return pd.DataFrame(
@@ -130,6 +140,7 @@ class Portfolio:
                     "side": trade.side,
                     "quantity": trade.quantity,
                     "price": trade.price,
+                    "commission": trade.commission,
                     "cash_after": trade.cash_after,
                     "position_after": trade.position_after,
                 }

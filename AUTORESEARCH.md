@@ -54,6 +54,7 @@ Each research run should record:
 - initial cash
 - sizing mode
 - order quantity or allocation
+- commission and slippage assumptions
 - parameter overrides
 - output directory
 - Git commit hash
@@ -118,6 +119,7 @@ when exact numbers matter.
 - Preserve the current fill rule: signals from bar `t` fill at bar `t+1` open.
 - Final-bar signals do not fill because there is no next bar open.
 - Compare strategies on the same data range.
+- Record whether costs and slippage were enabled before interpreting returns.
 - Be skeptical of short samples and tiny trade counts.
 - Do not silently change strategy rules while analyzing results.
 - Treat missing data, split adjustments, and survivorship bias as research risks.
