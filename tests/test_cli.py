@@ -7,6 +7,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -127,6 +130,42 @@ class CliTests(unittest.TestCase):
             self.assertTrue((output_dir / "trades.csv").exists())
             self.assertIn("CLI Smoke", (output_dir / "report.md").read_text(encoding="utf-8"))
             self.assertIn("buy", (output_dir / "trades.csv").read_text(encoding="utf-8"))
+
+    def test_fetch_command_writes_normalized_csv(self) -> None:
+        fetched_data = pd.DataFrame(
+            [
+                {
+                    "date": "2026-01-02",
+                    "open": 100,
+                    "high": 102,
+                    "low": 99,
+                    "close": 101,
+                    "volume": 1000,
+                }
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch("quant_lab.cli.fetch_market_data", return_value=fetched_data):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    exit_code = main(
+                        [
+                            "fetch",
+                            "--symbol",
+                            "SPY",
+                            "--start",
+                            "2026-01-01",
+                            "--end",
+                            "2026-01-31",
+                            "--out",
+                            temp_dir,
+                        ]
+                    )
+
+            csv_path = Path(temp_dir) / "SPY_2026-01-01_2026-01-31.csv"
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(csv_path.exists())
+            self.assertIn("2026-01-02,100,102,99,101,1000", csv_path.read_text(encoding="utf-8"))
 
     def test_sweep_command_writes_summary_and_per_run_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

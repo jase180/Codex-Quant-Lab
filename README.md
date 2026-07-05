@@ -27,6 +27,16 @@ python -m unittest discover -s tests
 
 ## CLI runner
 
+Fetch daily market data into the local CSV cache:
+
+```bash
+quant-lab fetch \
+  --symbol SPY \
+  --start 2015-01-01 \
+  --end 2025-12-31 \
+  --out data/cache
+```
+
 Run one strategy against one daily OHLCV CSV:
 
 ```bash
@@ -55,6 +65,14 @@ quant-lab sweep \
 ```
 
 Sweep output includes a `summary.csv`, a `research.md` note, and one `run_###/` directory per parameter combination.
+
+The fetch command writes normalized daily OHLCV CSV files with columns:
+
+```text
+date,open,high,low,close,volume
+```
+
+`data/cache/` is ignored by Git so downloaded market data stays local.
 
 ## Research protocol
 

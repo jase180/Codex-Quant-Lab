@@ -19,6 +19,7 @@ from backtester_core import (
     summarize_run_metrics,
 )
 
+from .data_fetch import fetch_market_data, write_market_data_csv
 from .rule_based_strategy import build_rule_based_strategy
 from .strategy_schema import load_strategy, parse_strategy
 
@@ -52,6 +53,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report title. Defaults to the strategy name.",
     )
     run_parser.set_defaults(func=run_command)
+
+    fetch_parser = subparsers.add_parser(
+        "fetch",
+        help="Fetch daily market data into the local CSV cache.",
+    )
+    fetch_parser.add_argument("--symbol", required=True, help="Ticker symbol, such as SPY or QQQ.")
+    fetch_parser.add_argument("--start", required=True, help="Start date in YYYY-MM-DD format.")
+    fetch_parser.add_argument("--end", required=True, help="End date in YYYY-MM-DD format.")
+    fetch_parser.add_argument(
+        "--out",
+        default="data/cache",
+        help="Directory where the normalized OHLCV CSV is written. Defaults to data/cache.",
+    )
+    fetch_parser.add_argument(
+        "--interval",
+        default="1d",
+        help="Market data interval. Only 1d is supported for now.",
+    )
+    fetch_parser.set_defaults(func=fetch_command)
 
     sweep_parser = subparsers.add_parser(
         "sweep",
@@ -102,6 +122,25 @@ def run_command(args: argparse.Namespace) -> int:
         print(f"{artifact_name}: {artifact_paths[artifact_name]}")
     print(f"final_equity: {result.final_equity:.2f}")
     print(f"total_return: {result.total_return:.2%}")
+    return 0
+
+
+def fetch_command(args: argparse.Namespace) -> int:
+    data = fetch_market_data(
+        symbol=args.symbol,
+        start=args.start,
+        end=args.end,
+        interval=args.interval,
+    )
+    csv_path = write_market_data_csv(
+        data=data,
+        symbol=args.symbol,
+        start=args.start,
+        end=args.end,
+        output_dir=args.out,
+    )
+    print(f"Fetched {len(data)} rows for {args.symbol.upper()}")
+    print(f"data: {csv_path}")
     return 0
 
 

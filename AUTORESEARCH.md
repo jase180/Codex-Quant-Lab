@@ -80,6 +80,10 @@ Every run should write:
 - `report.md`
 - `trades.csv`
 
+Fetched market data should be cached under `data/cache/` using normalized daily
+OHLCV CSV files. Keep raw provider assumptions in mind: adjusted prices, missing
+sessions, provider outages, and corporate action handling can all affect results.
+
 Sweep-style research should also write:
 
 - `summary.csv`
