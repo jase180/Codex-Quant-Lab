@@ -128,9 +128,12 @@ class CliTests(unittest.TestCase):
             self.assertTrue((output_dir / "equity_curve.csv").exists())
             self.assertTrue((output_dir / "report.md").exists())
             self.assertTrue((output_dir / "trades.csv").exists())
+            self.assertTrue((output_dir / "equity_curve.png").exists())
+            self.assertTrue((output_dir / "drawdown.png").exists())
             report = (output_dir / "report.md").read_text(encoding="utf-8")
             self.assertIn("CLI Smoke", report)
             self.assertIn("## Benchmark: Buy And Hold", report)
+            self.assertIn("equity_curve.png", report)
             self.assertIn("buy", (output_dir / "trades.csv").read_text(encoding="utf-8"))
 
     def test_run_command_supports_percent_equity_sizing(self) -> None:
@@ -249,6 +252,8 @@ class CliTests(unittest.TestCase):
             self.assertTrue((first_run / "report.md").exists())
             self.assertTrue((first_run / "trades.csv").exists())
             self.assertTrue((first_run / "strategy.json").exists())
+            self.assertTrue((first_run / "equity_curve.png").exists())
+            self.assertTrue((first_run / "drawdown.png").exists())
 
 
 if __name__ == "__main__":

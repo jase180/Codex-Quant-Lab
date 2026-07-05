@@ -15,7 +15,7 @@ tool that makes backtest assumptions visible.
 - Execute SMA, EMA, and RSI-based long-only strategies.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
-- Save reports, metrics, equity curves, trades, and sweep summaries.
+- Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
 - Compare strategy results with an automatic buy-and-hold benchmark.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
@@ -144,12 +144,16 @@ Outputs:
 artifacts/qqq_sma_crossover/
   metrics.json
   equity_curve.csv
+  equity_curve.png
+  drawdown.png
   report.md
   trades.csv
 ```
 
 `report.md` includes a buy-and-hold benchmark section built from the same CSV
-date range and initial cash.
+date range and initial cash. The PNG charts plot the strategy beside that same
+benchmark so the path of returns and drawdowns is easier to inspect than raw
+CSV rows.
 
 ### Run A Parameter Sweep
 
@@ -173,6 +177,8 @@ artifacts/research/qqq_sma_crossover_2015_2025/
   run_001/
     metrics.json
     equity_curve.csv
+    equity_curve.png
+    drawdown.png
     report.md
     trades.csv
     strategy.json
@@ -245,13 +251,12 @@ what to test next.
 - No transaction costs or slippage.
 - No short selling.
 - No multi-symbol portfolio support.
-- No charts yet.
+- Charts are intentionally simple PNG artifacts, not an interactive dashboard.
 - `yfinance` data is convenient but should not be treated as institutional-grade
   data without verification.
 
 ## Near-Term Roadmap
 
-1. Add charts for equity curve and drawdown.
-2. Add transaction costs and slippage.
-3. Add richer research summaries.
-4. Add more benchmark options.
+1. Add transaction costs and slippage.
+2. Add richer research summaries.
+3. Add more benchmark options.

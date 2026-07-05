@@ -97,6 +97,11 @@ The CLI adds a buy-and-hold benchmark using the same CSV and initial cash. The
 benchmark buys at the first close and marks equity at each later close. Sweep
 summaries include benchmark and excess-return columns.
 
+Run and sweep artifacts also include two PNG charts:
+
+- `equity_curve.png`: strategy equity compared with buy-and-hold.
+- `drawdown.png`: strategy drawdown compared with buy-and-hold.
+
 ## Notes For Future Work
 
 - Add transaction costs and slippage.

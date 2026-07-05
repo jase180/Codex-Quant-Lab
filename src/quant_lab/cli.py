@@ -16,13 +16,16 @@ import pandas as pd
 from backtester_core import (
     BacktestEngine,
     build_run_report,
+    equity_curve_from_result,
     save_run_report_artifacts,
     summarize_run_metrics,
 )
+from metrics_reporting import save_drawdown_chart, save_equity_curve_chart
 
 from .benchmarks import (
     append_benchmark_section,
     benchmark_summary_fields,
+    buy_and_hold_equity_curve,
     buy_and_hold_metrics,
     excess_total_return,
 )
@@ -150,6 +153,7 @@ def run_command(args: argparse.Namespace) -> int:
 
     result = BacktestEngine(initial_cash=args.initial_cash).run(data, strategy)
     run_name = args.run_name or strategy_spec.name
+    benchmark_curve = buy_and_hold_equity_curve(data, args.initial_cash)
     benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
     report = append_benchmark_section(
         build_run_report(result, run_name=run_name),
@@ -160,6 +164,7 @@ def run_command(args: argparse.Namespace) -> int:
     report_path = Path(artifact_paths["report"])
     report_path.write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, args.out)
+    artifact_paths.update(save_charts(result, benchmark_curve, args.out))
 
     print(f"Run complete: {run_name}")
     for artifact_name in sorted(artifact_paths):
@@ -195,6 +200,7 @@ def sweep_command(args: argparse.Namespace) -> int:
     param_sweeps = parse_param_sweeps(args.param)
     variants = build_sweep_variants(base_payload, param_sweeps)
     data = pd.read_csv(args.data)
+    benchmark_curve = buy_and_hold_equity_curve(data, args.initial_cash)
     benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
     output_dir = Path(args.out)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -224,6 +230,7 @@ def sweep_command(args: argparse.Namespace) -> int:
         artifact_paths = save_run_report_artifacts(result, run_dir, run_name=f"{run_name_prefix} {run_id}")
         Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
         save_trades(result.trades, run_dir)
+        save_charts(result, benchmark_curve, run_dir)
         save_strategy_payload(strategy_payload, run_dir)
 
         summary_rows.append(
@@ -272,6 +279,23 @@ def save_trades(trades: pd.DataFrame, output_dir: str | Path) -> str:
     trades_path = destination / "trades.csv"
     trades.to_csv(trades_path)
     return str(trades_path)
+
+
+def save_charts(result, benchmark_curve, output_dir: str | Path) -> dict[str, str]:
+    destination = Path(output_dir)
+    strategy_curve = equity_curve_from_result(result)
+    return {
+        "equity_chart": save_equity_curve_chart(
+            strategy_curve,
+            benchmark_curve,
+            destination / "equity_curve.png",
+        ),
+        "drawdown_chart": save_drawdown_chart(
+            strategy_curve,
+            benchmark_curve,
+            destination / "drawdown.png",
+        ),
+    }
 
 
 def load_strategy_payload(strategy_path: str | Path) -> dict:

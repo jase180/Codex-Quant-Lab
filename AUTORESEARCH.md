@@ -78,6 +78,8 @@ Every run should write:
 
 - `metrics.json`
 - `equity_curve.csv`
+- `equity_curve.png`
+- `drawdown.png`
 - `report.md`
 - `trades.csv`
 
@@ -107,6 +109,8 @@ Use these first:
 
 For strategy debugging, inspect trades directly. A high return with one lucky
 trade is not the same kind of evidence as a result supported by many trades.
+Use the PNG charts for quick visual inspection, then use the CSV and JSON files
+when exact numbers matter.
 
 ## Backtesting Guardrails
 
@@ -129,6 +133,7 @@ After any promising result, ask:
 - Did the parameter sweep overfit to this one dataset?
 - Did the benchmark use the same dates and assumptions?
 - Are the best parameters near other good parameters, or isolated outliers?
+- Do the equity and drawdown charts show one isolated event driving the result?
 
 Promising results should be described as candidates for more research, not as
 proven edges.

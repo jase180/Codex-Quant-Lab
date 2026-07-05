@@ -1,4 +1,5 @@
 from .artifacts import save_run_artifacts
+from .charts import drawdown_curve, save_drawdown_chart, save_equity_curve_chart
 from .metrics import (
     RunMetrics,
     build_equity_curve,
@@ -22,6 +23,9 @@ __all__ = [
     "calculate_sharpe_ratio",
     "calculate_total_return",
     "daily_returns_from_equity",
+    "drawdown_curve",
     "save_run_artifacts",
+    "save_drawdown_chart",
+    "save_equity_curve_chart",
     "validate_equity_curve",
 ]

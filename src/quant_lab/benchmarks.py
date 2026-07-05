@@ -77,7 +77,21 @@ def benchmark_report_section(metrics: RunMetrics, strategy_total_return: float) 
 
 
 def append_benchmark_section(report: str, metrics: RunMetrics, strategy_total_return: float) -> str:
-    return report.rstrip() + "\n\n" + benchmark_report_section(metrics, strategy_total_return)
+    return (
+        report.rstrip()
+        + "\n\n"
+        + benchmark_report_section(metrics, strategy_total_return)
+        + "\n\n"
+        + chart_artifacts_section()
+    )
+
+
+def chart_artifacts_section() -> str:
+    return """## Chart Artifacts
+
+- `equity_curve.png`
+- `drawdown.png`
+"""
 
 
 def _format_optional_pct(value: float | None) -> str:
