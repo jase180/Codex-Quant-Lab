@@ -81,6 +81,9 @@ Every run should write:
 - `report.md`
 - `trades.csv`
 
+Reports and sweep summaries should include buy-and-hold benchmark metrics from
+the same data range whenever possible.
+
 Fetched market data should be cached under `data/cache/` using normalized daily
 OHLCV CSV files. Keep raw provider assumptions in mind: adjusted prices, missing
 sessions, provider outages, and corporate action handling can all affect results.

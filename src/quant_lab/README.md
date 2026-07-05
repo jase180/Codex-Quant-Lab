@@ -7,12 +7,14 @@ It owns:
 - strategy JSON parsing,
 - executable rule-based strategies,
 - market data fetching,
+- buy-and-hold benchmark comparison helpers,
 - and the `quant-lab` CLI.
 
 ## Main Pieces
 
 - `strategy_schema.py`: strict v1 schema validation for strategy JSON.
 - `rule_based_strategy.py`: turns a validated strategy spec into an executable strategy.
+- `benchmarks.py`: builds buy-and-hold benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, and `quant-lab sweep`.
 
@@ -89,8 +91,13 @@ The CLI supports:
 Percent-equity orders resolve at the next open, which keeps the same timing
 model as the rest of the backtester.
 
+## Benchmarks
+
+The CLI adds a buy-and-hold benchmark using the same CSV and initial cash. The
+benchmark buys at the first close and marks equity at each later close. Sweep
+summaries include benchmark and excess-return columns.
+
 ## Notes For Future Work
 
-- Add automatic buy-and-hold benchmarks.
 - Add transaction costs and slippage.
 - Consider splitting CLI helpers into smaller modules if `cli.py` keeps growing.

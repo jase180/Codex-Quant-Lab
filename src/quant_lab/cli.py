@@ -15,10 +15,17 @@ import pandas as pd
 
 from backtester_core import (
     BacktestEngine,
+    build_run_report,
     save_run_report_artifacts,
     summarize_run_metrics,
 )
 
+from .benchmarks import (
+    append_benchmark_section,
+    benchmark_summary_fields,
+    buy_and_hold_metrics,
+    excess_total_return,
+)
 from .data_fetch import fetch_market_data, write_market_data_csv
 from .rule_based_strategy import build_rule_based_strategy
 from .strategy_schema import load_strategy, parse_strategy
@@ -143,7 +150,15 @@ def run_command(args: argparse.Namespace) -> int:
 
     result = BacktestEngine(initial_cash=args.initial_cash).run(data, strategy)
     run_name = args.run_name or strategy_spec.name
+    benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
+    report = append_benchmark_section(
+        build_run_report(result, run_name=run_name),
+        benchmark_metrics,
+        result.total_return,
+    )
     artifact_paths = save_run_report_artifacts(result, args.out, run_name=run_name)
+    report_path = Path(artifact_paths["report"])
+    report_path.write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, args.out)
 
     print(f"Run complete: {run_name}")
@@ -151,6 +166,8 @@ def run_command(args: argparse.Namespace) -> int:
         print(f"{artifact_name}: {artifact_paths[artifact_name]}")
     print(f"final_equity: {result.final_equity:.2f}")
     print(f"total_return: {result.total_return:.2%}")
+    print(f"benchmark_total_return: {benchmark_metrics.total_return:.2%}")
+    print(f"excess_total_return: {excess_total_return(result.total_return, benchmark_metrics.total_return):.2%}")
     return 0
 
 
@@ -178,6 +195,7 @@ def sweep_command(args: argparse.Namespace) -> int:
     param_sweeps = parse_param_sweeps(args.param)
     variants = build_sweep_variants(base_payload, param_sweeps)
     data = pd.read_csv(args.data)
+    benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
     output_dir = Path(args.out)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -198,7 +216,13 @@ def sweep_command(args: argparse.Namespace) -> int:
         result = BacktestEngine(initial_cash=args.initial_cash).run(data, strategy)
         metrics = summarize_run_metrics(result)
         run_name_prefix = args.run_name or strategy_spec.name
-        save_run_report_artifacts(result, run_dir, run_name=f"{run_name_prefix} {run_id}")
+        report = append_benchmark_section(
+            build_run_report(result, run_name=f"{run_name_prefix} {run_id}"),
+            benchmark_metrics,
+            result.total_return,
+        )
+        artifact_paths = save_run_report_artifacts(result, run_dir, run_name=f"{run_name_prefix} {run_id}")
+        Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
         save_trades(result.trades, run_dir)
         save_strategy_payload(strategy_payload, run_dir)
 
@@ -216,6 +240,11 @@ def sweep_command(args: argparse.Namespace) -> int:
                 "sizing": args.sizing,
                 "quantity": args.quantity,
                 "allocation": args.allocation,
+                **benchmark_summary_fields(benchmark_metrics),
+                "excess_total_return": excess_total_return(
+                    result.total_return,
+                    benchmark_metrics.total_return,
+                ),
                 "output_dir": str(run_dir),
             }
         )
@@ -233,6 +262,7 @@ def sweep_command(args: argparse.Namespace) -> int:
         best = summary_rows[0]
         print(f"best_run: {best['run_id']}")
         print(f"best_total_return: {float(best['total_return']):.2%}")
+        print(f"best_excess_total_return: {float(best['excess_total_return']):.2%}")
     return 0
 
 
@@ -333,6 +363,12 @@ def save_sweep_summary(rows: Sequence[dict[str, str | int | float | None]], outp
         "sizing",
         "quantity",
         "allocation",
+        "benchmark_final_equity",
+        "benchmark_total_return",
+        "benchmark_cagr",
+        "benchmark_sharpe_ratio",
+        "benchmark_max_drawdown",
+        "excess_total_return",
         "output_dir",
     ]
     with summary_path.open("w", newline="", encoding="utf-8") as handle:
@@ -350,6 +386,7 @@ def save_research_summary(
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     research_path = destination / "research.md"
+    benchmark_total_return = rows[0].get("benchmark_total_return") if rows else None
     best = rows[0] if rows else None
     git_commit = current_git_commit()
     best_lines = ""
@@ -357,8 +394,12 @@ def save_research_summary(
         best_lines = (
             f"- Best run by total return: `{best['run_id']}`\n"
             f"- Best total return: {float(best['total_return']):.2%}\n"
+            f"- Best excess total return: {float(best['excess_total_return']):.2%}\n"
             f"- Best run params: `{best['params']}`\n"
         )
+    benchmark_lines = ""
+    if benchmark_total_return is not None:
+        benchmark_lines = f"- Buy-and-hold total return: {float(benchmark_total_return):.2%}\n"
 
     param_lines = "\n".join(f"- `{raw_param}`" for raw_param in args.param)
     command_lines = "\n".join(
@@ -398,11 +439,13 @@ def save_research_summary(
 ## Results
 
 - Runs: {len(rows)}
+{benchmark_lines}
 {best_lines}
 ## Skeptic Pass
 
 - Check whether the best result is supported by enough trades.
 - Check whether nearby parameter values are also strong.
+- Compare excess return against buy-and-hold before treating a result as useful.
 - Re-run promising variants on a longer or different sample before trusting them.
 """,
         encoding="utf-8",

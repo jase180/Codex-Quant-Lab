@@ -16,6 +16,7 @@ tool that makes backtest assumptions visible.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
 - Save reports, metrics, equity curves, trades, and sweep summaries.
+- Compare strategy results with an automatic buy-and-hold benchmark.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map
@@ -147,6 +148,9 @@ artifacts/qqq_sma_crossover/
   trades.csv
 ```
 
+`report.md` includes a buy-and-hold benchmark section built from the same CSV
+date range and initial cash.
+
 ### Run A Parameter Sweep
 
 ```bash
@@ -175,6 +179,14 @@ artifacts/research/qqq_sma_crossover_2015_2025/
 ```
 
 `summary.csv` is sorted by total return, best first.
+
+Sweep summaries include buy-and-hold benchmark columns:
+
+```text
+benchmark_total_return
+benchmark_max_drawdown
+excess_total_return
+```
 
 ### Sizing Modes
 
@@ -208,10 +220,8 @@ Best SMA variant: about 48% total return with lower drawdown.
 QQQ buy-and-hold: about 553% total return with larger drawdown.
 ```
 
-That does not make the SMA idea useless. It means the current lab needs a
-benchmark feature before results are easy to interpret:
-
-- automatic buy-and-hold benchmark comparisons
+That does not make the SMA idea useless. It shows why every strategy result
+needs benchmark context before interpretation.
 
 ## Research Workflow
 
@@ -232,7 +242,6 @@ what to test next.
 
 ## Current Limitations
 
-- No automatic buy-and-hold benchmark in reports yet.
 - No transaction costs or slippage.
 - No short selling.
 - No multi-symbol portfolio support.
@@ -242,7 +251,7 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Add buy-and-hold benchmark metrics to `run` and `sweep`.
-2. Add charts for equity curve and drawdown.
-3. Add transaction costs and slippage.
-4. Add richer research summaries.
+1. Add charts for equity curve and drawdown.
+2. Add transaction costs and slippage.
+3. Add richer research summaries.
+4. Add more benchmark options.

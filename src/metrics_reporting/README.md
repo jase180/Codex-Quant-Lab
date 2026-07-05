@@ -41,3 +41,7 @@ reporting code for:
 - parameter sweeps,
 - future benchmarks,
 - and future imported equity curves.
+
+The current CLI adds buy-and-hold benchmark sections outside this module. The
+metrics here stay generic so they can apply to either a strategy curve or a
+benchmark curve.
