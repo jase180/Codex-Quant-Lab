@@ -43,9 +43,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_parser.add_argument(
         "--quantity",
-        type=int,
+        type=float,
         default=1,
-        help="Order quantity used by v1 long-only rule-based strategies. Defaults to 1.",
+        help="Order quantity for fixed-shares sizing. Defaults to 1.",
+    )
+    run_parser.add_argument(
+        "--sizing",
+        choices=["fixed-shares", "percent-equity"],
+        default="fixed-shares",
+        help="Position sizing mode. Defaults to fixed-shares.",
+    )
+    run_parser.add_argument(
+        "--allocation",
+        type=float,
+        default=1.0,
+        help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
     )
     run_parser.add_argument(
         "--run-name",
@@ -94,9 +106,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sweep_parser.add_argument(
         "--quantity",
-        type=int,
+        type=float,
         default=1,
-        help="Order quantity used by v1 long-only rule-based strategies. Defaults to 1.",
+        help="Order quantity for fixed-shares sizing. Defaults to 1.",
+    )
+    sweep_parser.add_argument(
+        "--sizing",
+        choices=["fixed-shares", "percent-equity"],
+        default="fixed-shares",
+        help="Position sizing mode. Defaults to fixed-shares.",
+    )
+    sweep_parser.add_argument(
+        "--allocation",
+        type=float,
+        default=1.0,
+        help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
     )
     sweep_parser.add_argument(
         "--run-name",
@@ -109,7 +133,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_command(args: argparse.Namespace) -> int:
     strategy_spec = load_strategy(args.strategy)
-    strategy = build_rule_based_strategy(strategy_spec, order_quantity=args.quantity)
+    strategy = build_rule_based_strategy(
+        strategy_spec,
+        order_quantity=args.quantity,
+        sizing=args.sizing,
+        allocation=args.allocation,
+    )
     data = pd.read_csv(args.data)
 
     result = BacktestEngine(initial_cash=args.initial_cash).run(data, strategy)
@@ -159,7 +188,12 @@ def sweep_command(args: argparse.Namespace) -> int:
         strategy_payload = variant["payload"]
         params = variant["params"]
         strategy_spec = parse_strategy(strategy_payload)
-        strategy = build_rule_based_strategy(strategy_spec, order_quantity=args.quantity)
+        strategy = build_rule_based_strategy(
+            strategy_spec,
+            order_quantity=args.quantity,
+            sizing=args.sizing,
+            allocation=args.allocation,
+        )
 
         result = BacktestEngine(initial_cash=args.initial_cash).run(data, strategy)
         metrics = summarize_run_metrics(result)
@@ -179,6 +213,9 @@ def sweep_command(args: argparse.Namespace) -> int:
                 "sharpe_ratio": metrics.sharpe_ratio,
                 "max_drawdown": metrics.max_drawdown,
                 "trade_count": len(result.trades),
+                "sizing": args.sizing,
+                "quantity": args.quantity,
+                "allocation": args.allocation,
                 "output_dir": str(run_dir),
             }
         )
@@ -293,6 +330,9 @@ def save_sweep_summary(rows: Sequence[dict[str, str | int | float | None]], outp
         "sharpe_ratio",
         "max_drawdown",
         "trade_count",
+        "sizing",
+        "quantity",
+        "allocation",
         "output_dir",
     ]
     with summary_path.open("w", newline="", encoding="utf-8") as handle:
@@ -327,6 +367,8 @@ def save_research_summary(
             f"  --strategy {args.strategy} \\",
             f"  --data {args.data} \\",
             *[f"  --param {raw_param} \\" for raw_param in args.param],
+            f"  --sizing {args.sizing} \\",
+            f"  --allocation {args.allocation} \\",
             f"  --out {args.out}",
         ]
     )
@@ -345,6 +387,8 @@ def save_research_summary(
 - Data: `{args.data}`
 - Initial cash: `{args.initial_cash}`
 - Quantity: `{args.quantity}`
+- Sizing: `{args.sizing}`
+- Allocation: `{args.allocation}`
 - Git commit: `{git_commit}`
 
 ## Parameters

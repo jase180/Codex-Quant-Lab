@@ -121,6 +121,49 @@ class RuleBasedStrategyTests(unittest.TestCase):
         self.assertEqual(result.final_position, 0)
         self.assertEqual(result.final_cash, 1_000.0)
 
+    def test_percent_equity_sizing_invests_allocation_at_next_open(self) -> None:
+        spec = parse_strategy(
+            _strategy_payload(
+                indicators=[
+                    {"id": "sma_2", "kind": "sma", "inputs": {"source": "close", "length": 2}},
+                ],
+                entry_conditions=[
+                    {
+                        "left": {"price": "close"},
+                        "operator": "gt",
+                        "right": {"indicator": "sma_2"},
+                    }
+                ],
+                exit_conditions=[
+                    {
+                        "left": {"price": "close"},
+                        "operator": "lt",
+                        "right": {"indicator": "sma_2"},
+                    }
+                ],
+            )
+        )
+        data = pd.DataFrame(
+            [
+                {"date": "2026-01-01", "open": 10, "high": 10, "low": 10, "close": 10, "volume": 100},
+                {"date": "2026-01-02", "open": 20, "high": 20, "low": 20, "close": 20, "volume": 100},
+                {"date": "2026-01-03", "open": 25, "high": 25, "low": 10, "close": 10, "volume": 100},
+                {"date": "2026-01-04", "open": 8, "high": 8, "low": 8, "close": 8, "volume": 100},
+            ]
+        )
+
+        result = BacktestEngine(initial_cash=1_000).run(
+            data,
+            build_rule_based_strategy(spec, sizing="percent-equity", allocation=0.5),
+        )
+
+        self.assertEqual(result.trades.index[0], pd.Timestamp("2026-01-03"))
+        self.assertEqual(result.trades.iloc[0]["side"], "buy")
+        self.assertAlmostEqual(result.trades.iloc[0]["quantity"], 20.0)
+        self.assertAlmostEqual(result.trades.iloc[0]["cash_after"], 500.0)
+        self.assertEqual(result.trades.index[1], pd.Timestamp("2026-01-04"))
+        self.assertEqual(result.final_position, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

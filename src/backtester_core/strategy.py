@@ -26,8 +26,11 @@ class Strategy:
     def on_finish(self) -> None:
         """Hook called after the last bar is processed."""
 
-    def buy(self, quantity: int) -> Order:
+    def buy(self, quantity: float) -> Order:
         return Order(side="buy", quantity=quantity)
 
-    def sell(self, quantity: int) -> Order:
+    def buy_with_cash_allocation(self, allocation: float) -> Order:
+        return Order(side="buy", cash_allocation=allocation)
+
+    def sell(self, quantity: float) -> Order:
         return Order(side="sell", quantity=quantity)

@@ -46,7 +46,7 @@ the data by date and rejects duplicate dates.
 
 ## Notes For Future Work
 
-- Position sizing currently lives above the engine, mostly in strategy behavior.
+- Position sizing mostly lives above the engine, but allocation-style orders are resolved by the execution model at the next open.
 - The engine is single-symbol and long-only in current workflows.
 - Transaction costs and slippage are not modeled yet.
 - Keep timing tests strict when changing execution behavior.

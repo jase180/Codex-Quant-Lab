@@ -19,7 +19,7 @@ class BacktestResult:
     portfolio_history: pd.DataFrame
     trades: pd.DataFrame
     final_cash: float
-    final_position: int
+    final_position: float
     final_equity: float
     total_return: float
 
@@ -49,7 +49,7 @@ class BacktestEngine:
 
         for bar in iter_market_bars(normalized_data):
             for order in pending_orders:
-                fill = self.execution_model.execute(order, bar)
+                fill = self.execution_model.execute(order, bar, available_cash=portfolio.cash)
                 portfolio.apply_fill(fill)
 
             portfolio.mark_to_market(timestamp=bar.timestamp, market_price=bar.close)

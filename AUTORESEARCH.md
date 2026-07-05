@@ -52,7 +52,8 @@ Each research run should record:
 - timeframe
 - date range
 - initial cash
-- order quantity or sizing rule
+- sizing mode
+- order quantity or allocation
 - parameter overrides
 - output directory
 - Git commit hash

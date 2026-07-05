@@ -58,7 +58,12 @@ quant-lab fetch --symbol QQQ --start 2015-01-01 --end 2025-12-31 --out data/cach
 Run one strategy:
 
 ```bash
-quant-lab run --strategy data/strategies/sma_crossover.json --data data/sample_ohlcv.csv --out artifacts/run
+quant-lab run \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/sample_ohlcv.csv \
+  --sizing percent-equity \
+  --allocation 1.0 \
+  --out artifacts/run
 ```
 
 Run a sweep:
@@ -69,12 +74,23 @@ quant-lab sweep \
   --data data/sample_ohlcv.csv \
   --param sma_20.inputs.length=5,10,20 \
   --param sma_50.inputs.length=50,100,200 \
+  --sizing percent-equity \
+  --allocation 1.0 \
   --out artifacts/research/sma_sweep
 ```
 
+## Sizing
+
+The CLI supports:
+
+- `fixed-shares`: buy a fixed `--quantity` on each entry signal.
+- `percent-equity`: invest `--allocation` of available cash on each entry signal.
+
+Percent-equity orders resolve at the next open, which keeps the same timing
+model as the rest of the backtester.
+
 ## Notes For Future Work
 
-- Add percent-of-equity sizing.
 - Add automatic buy-and-hold benchmarks.
 - Add transaction costs and slippage.
 - Consider splitting CLI helpers into smaller modules if `cli.py` keeps growing.

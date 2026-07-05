@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Literal
 
 from backtester_core.data import MarketBar
 from backtester_core.strategy import Strategy
@@ -12,6 +12,7 @@ from .strategy_schema import Condition, ConditionSet, StrategySpec, ValueRef
 
 
 Number = float | int
+SizingMode = Literal["fixed-shares", "percent-equity"]
 
 
 @dataclass(frozen=True)
@@ -101,7 +102,13 @@ class IndicatorState:
 class RuleBasedStrategy(Strategy):
     """Runs a validated v1 rule-based strategy spec against daily bars."""
 
-    def __init__(self, spec: StrategySpec, order_quantity: int = 1) -> None:
+    def __init__(
+        self,
+        spec: StrategySpec,
+        order_quantity: float = 1,
+        sizing: SizingMode = "fixed-shares",
+        allocation: float = 1.0,
+    ) -> None:
         super().__init__()
         if spec.strategy_type != "rule_based":
             raise ValueError("RuleBasedStrategy only supports rule_based specs.")
@@ -109,9 +116,15 @@ class RuleBasedStrategy(Strategy):
             raise ValueError("RuleBasedStrategy only supports long_only specs.")
         if order_quantity <= 0:
             raise ValueError("order_quantity must be positive.")
+        if sizing not in {"fixed-shares", "percent-equity"}:
+            raise ValueError("sizing must be 'fixed-shares' or 'percent-equity'.")
+        if not 0 < allocation <= 1:
+            raise ValueError("allocation must be greater than 0 and at most 1.")
 
         self.spec = spec
-        self.order_quantity = int(order_quantity)
+        self.order_quantity = float(order_quantity)
+        self.sizing = sizing
+        self.allocation = float(allocation)
         self._indicator_states = {
             indicator.id: IndicatorState(
                 kind=indicator.kind,
@@ -145,6 +158,8 @@ class RuleBasedStrategy(Strategy):
             return [self.sell(quantity=self.portfolio.position)]
 
         if self.portfolio.position == 0 and evaluate_condition_set(self.spec.entry, context):
+            if self.sizing == "percent-equity":
+                return [self.buy_with_cash_allocation(self.allocation)]
             return [self.buy(quantity=self.order_quantity)]
 
         return []
@@ -233,8 +248,18 @@ def _resolve(
     raise ValueError(f"unsupported value reference kind: {ref.kind}")
 
 
-def build_rule_based_strategy(spec: StrategySpec, order_quantity: int = 1) -> RuleBasedStrategy:
-    return RuleBasedStrategy(spec=spec, order_quantity=order_quantity)
+def build_rule_based_strategy(
+    spec: StrategySpec,
+    order_quantity: float = 1,
+    sizing: SizingMode = "fixed-shares",
+    allocation: float = 1.0,
+) -> RuleBasedStrategy:
+    return RuleBasedStrategy(
+        spec=spec,
+        order_quantity=order_quantity,
+        sizing=sizing,
+        allocation=allocation,
+    )
 
 
 def indicator_values(kind: str, length: int, closes: Iterable[Number]) -> list[float | None]:

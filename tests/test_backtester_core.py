@@ -3,8 +3,8 @@ import unittest
 import pandas as pd
 
 from backtester_core.engine import BacktestEngine
-from backtester_core.data import validate_ohlcv_data
-from backtester_core.execution import Fill
+from backtester_core.data import iter_market_bars, validate_ohlcv_data
+from backtester_core.execution import ExecutionModel, Fill, Order
 from backtester_core.portfolio import Portfolio
 from backtester_core.strategy import Strategy
 
@@ -105,6 +105,16 @@ class BacktesterCoreTests(unittest.TestCase):
         self.assertEqual(result.final_equity, 4_900.0)
         self.assertAlmostEqual(result.total_return, -0.02)
         self.assertEqual(list(result.trades["side"]), ["buy", "sell"])
+
+    def test_execution_model_resolves_cash_allocation_at_next_open(self):
+        order = Order(side="buy", cash_allocation=0.5)
+        bar = iter_market_bars(validate_ohlcv_data(self.data))[0]
+
+        fill = ExecutionModel().execute(order, bar, available_cash=1_000)
+
+        self.assertEqual(fill.side, "buy")
+        self.assertEqual(fill.price, 100.0)
+        self.assertAlmostEqual(fill.quantity, 5.0)
 
     def test_equity_history_reconciles_cash_position_and_close(self):
         engine = BacktestEngine(initial_cash=5_000)

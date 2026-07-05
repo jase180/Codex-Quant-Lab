@@ -131,6 +131,38 @@ class CliTests(unittest.TestCase):
             self.assertIn("CLI Smoke", (output_dir / "report.md").read_text(encoding="utf-8"))
             self.assertIn("buy", (output_dir / "trades.csv").read_text(encoding="utf-8"))
 
+    def test_run_command_supports_percent_equity_sizing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "artifacts"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                exit_code = main(
+                    [
+                        "run",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--sizing",
+                        "percent-equity",
+                        "--allocation",
+                        "0.5",
+                    ]
+                )
+
+            trades = (output_dir / "trades.csv").read_text(encoding="utf-8")
+            self.assertEqual(exit_code, 0)
+            self.assertTrue((output_dir / "trades.csv").exists())
+            self.assertIn("buy", trades)
+
     def test_fetch_command_writes_normalized_csv(self) -> None:
         fetched_data = pd.DataFrame(
             [

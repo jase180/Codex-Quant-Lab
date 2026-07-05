@@ -132,6 +132,8 @@ treat cached data as research input that may need verification.
 quant-lab run \
   --strategy data/strategies/sma_crossover.json \
   --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --sizing percent-equity \
+  --allocation 1.0 \
   --out artifacts/qqq_sma_crossover
 ```
 
@@ -153,7 +155,8 @@ quant-lab sweep \
   --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
   --param sma_20.inputs.length=5,10,20 \
   --param sma_50.inputs.length=50,100,200 \
-  --quantity 100 \
+  --sizing percent-equity \
+  --allocation 1.0 \
   --out artifacts/research/qqq_sma_crossover_2015_2025
 ```
 
@@ -173,6 +176,25 @@ artifacts/research/qqq_sma_crossover_2015_2025/
 
 `summary.csv` is sorted by total return, best first.
 
+### Sizing Modes
+
+The CLI supports two sizing modes:
+
+```bash
+--sizing fixed-shares --quantity 100
+```
+
+Fixed-share sizing buys the same number of shares on every entry signal.
+
+```bash
+--sizing percent-equity --allocation 1.0
+```
+
+Percent-equity sizing invests a fraction of available cash at the next open.
+`--allocation 1.0` means 100% of available cash, while `--allocation 0.5`
+means 50%. This mode allows fractional shares internally because it is meant for
+research, not broker-order simulation.
+
 ## First Research Lesson
 
 The first real QQQ SMA sweep showed why benchmarks and sizing matter.
@@ -186,10 +208,9 @@ Best SMA variant: about 48% total return with lower drawdown.
 QQQ buy-and-hold: about 553% total return with larger drawdown.
 ```
 
-That does not make the SMA idea useless. It means the current lab needs two next
-features before results are easy to interpret:
+That does not make the SMA idea useless. It means the current lab needs a
+benchmark feature before results are easy to interpret:
 
-- percent-of-equity sizing
 - automatic buy-and-hold benchmark comparisons
 
 ## Research Workflow
@@ -211,7 +232,6 @@ what to test next.
 
 ## Current Limitations
 
-- Sizing is fixed-share only.
 - No automatic buy-and-hold benchmark in reports yet.
 - No transaction costs or slippage.
 - No short selling.
@@ -222,8 +242,7 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Add percent-of-equity sizing.
-2. Add buy-and-hold benchmark metrics to `run` and `sweep`.
-3. Add charts for equity curve and drawdown.
-4. Add transaction costs and slippage.
-5. Add richer research summaries.
+1. Add buy-and-hold benchmark metrics to `run` and `sweep`.
+2. Add charts for equity curve and drawdown.
+3. Add transaction costs and slippage.
+4. Add richer research summaries.

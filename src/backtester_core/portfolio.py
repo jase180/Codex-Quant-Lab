@@ -8,6 +8,8 @@ import pandas as pd
 
 from .execution import Fill
 
+FLOAT_TOLERANCE = 1e-9
+
 
 @dataclass(frozen=True)
 class Trade:
@@ -15,10 +17,10 @@ class Trade:
 
     timestamp: pd.Timestamp
     side: str
-    quantity: int
+    quantity: float
     price: float
     cash_after: float
-    position_after: int
+    position_after: float
 
 
 @dataclass(frozen=True)
@@ -27,7 +29,7 @@ class PortfolioSnapshot:
 
     timestamp: pd.Timestamp
     cash: float
-    position: int
+    position: float
     market_price: float
     holdings_value: float
     total_value: float
@@ -42,23 +44,26 @@ class Portfolio:
 
         self.initial_cash = float(initial_cash)
         self.cash = float(initial_cash)
-        self.position = 0
+        self.position = 0.0
         self.trades: list[Trade] = []
         self.history: list[PortfolioSnapshot] = []
 
     def apply_fill(self, fill: Fill) -> Trade:
         if fill.side == "buy":
             cost = fill.quantity * fill.price
-            if cost > self.cash:
+            if cost > self.cash + FLOAT_TOLERANCE:
                 raise ValueError("insufficient cash for buy order")
+            if cost > self.cash:
+                cost = self.cash
             self.cash -= cost
             self.position += fill.quantity
         elif fill.side == "sell":
-            if fill.quantity > self.position:
+            if fill.quantity > self.position + FLOAT_TOLERANCE:
                 raise ValueError("insufficient position for sell order")
-            proceeds = fill.quantity * fill.price
+            quantity = min(fill.quantity, self.position)
+            proceeds = quantity * fill.price
             self.cash += proceeds
-            self.position -= fill.quantity
+            self.position -= quantity
         else:
             raise ValueError(f"unsupported fill side: {fill.side}")
 
