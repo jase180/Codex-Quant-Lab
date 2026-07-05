@@ -39,6 +39,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests
 - Do not introduce lookahead into strategy evaluation.
 - Keep schema validation strict and errors explicit.
 - Add focused tests for behavior changes, especially around fills, portfolio accounting, schema validation, and metrics formulas.
+- Keep root and module README files current when behavior, commands, or module responsibilities change.
 
 ## Collaboration Preference
 

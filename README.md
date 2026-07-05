@@ -1,12 +1,45 @@
 # Codex-Quant-Lab
 
-Codex-Quant-Lab is a small Python quant research lab for validating simple trading ideas against daily OHLCV data. It currently includes:
+Codex-Quant-Lab is a small Python quant research lab for testing simple trading
+ideas against daily OHLCV market data.
 
-- a deterministic daily backtester,
-- strict JSON strategy definitions,
-- executable rule-based strategies,
-- metrics/report artifact generation,
-- and a `quant-lab` command-line runner.
+The current project is intentionally modest: it is not a production trading
+system, and it is not trying to predict markets. It is a learning and research
+tool that makes backtest assumptions visible.
+
+## What Works Today
+
+- Fetch daily market data with `yfinance`.
+- Cache normalized OHLCV CSV files locally.
+- Define rule-based strategies in strict JSON.
+- Execute SMA, EMA, and RSI-based long-only strategies.
+- Run one backtest from the CLI.
+- Run parameter sweeps from the CLI.
+- Save reports, metrics, equity curves, trades, and sweep summaries.
+- Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
+
+## Project Map
+
+```text
+data/
+  sample_ohlcv.csv              Small sample dataset.
+  strategies/                   Example strategy JSON files.
+docs/
+  strategy-schema.md            Strategy schema notes.
+src/
+  backtester_core/              Backtest engine, portfolio, execution, data validation.
+  quant_lab/                    Strategy schema, executable rules, CLI, data fetch.
+  metrics_reporting/            Metrics, markdown reports, artifact persistence.
+tests/                          Unit and CLI tests.
+artifacts/                      Ignored local run outputs.
+data/cache/                     Ignored local market-data cache.
+```
+
+More detailed module notes:
+
+- [src/backtester_core/README.md](src/backtester_core/README.md)
+- [src/quant_lab/README.md](src/quant_lab/README.md)
+- [src/metrics_reporting/README.md](src/metrics_reporting/README.md)
 
 ## Setup
 
@@ -18,138 +51,179 @@ python3 -m venv .venv
 python -m pip install -e .
 ```
 
-Run the test suite with:
+Run the test suite:
 
 ```bash
 . .venv/bin/activate
 python -m unittest discover -s tests
 ```
 
-## CLI runner
+The tests avoid live market-data calls. Live fetching is done manually through
+the CLI.
 
-Fetch daily market data into the local CSV cache:
+## Core Concepts
 
-```bash
-quant-lab fetch \
-  --symbol SPY \
-  --start 2015-01-01 \
-  --end 2025-12-31 \
-  --out data/cache
-```
+### Daily OHLCV Data
 
-Run one strategy against one daily OHLCV CSV:
-
-```bash
-quant-lab run \
-  --strategy data/strategies/sma_crossover.json \
-  --data data/sample_ohlcv.csv \
-  --out artifacts/sma_crossover
-```
-
-The runner writes:
-
-- `metrics.json`
-- `equity_curve.csv`
-- `report.md`
-- `trades.csv`
-
-Run a parameter sweep across every combination of strategy overrides:
-
-```bash
-quant-lab sweep \
-  --strategy data/strategies/sma_crossover.json \
-  --data data/sample_ohlcv.csv \
-  --param sma_20.inputs.length=5,10,20 \
-  --param sma_50.inputs.length=30,50,100 \
-  --out artifacts/research/sma_crossover_sweep_001
-```
-
-Sweep output includes a `summary.csv`, a `research.md` note, and one `run_###/` directory per parameter combination.
-
-The fetch command writes normalized daily OHLCV CSV files with columns:
+The backtester expects one row per daily bar:
 
 ```text
 date,open,high,low,close,volume
 ```
 
-`data/cache/` is ignored by Git so downloaded market data stays local.
+Fetched data is written under `data/cache/`, which is ignored by Git.
 
-## Research protocol
+### Signal Timing
 
-Use [AUTORESEARCH.md](AUTORESEARCH.md) for the repo's research workflow. It defines how to state hypotheses, run baselines, save artifacts, compare variants, and perform a skeptic pass before trusting backtest results.
+The engine uses a conservative daily flow:
 
-## Strategy schema
+- A strategy reads bar `t` at that day's close.
+- Orders generated from bar `t` are queued.
+- Queued orders fill at bar `t+1` open.
+- Portfolio value is recorded at each bar close.
+- Final-bar signals do not fill because there is no next open.
 
-This repo now includes a strict v1 strategy representation for simple rule-based trading ideas:
+This rule is important because it avoids pretending a strategy can trade at a
+price that was not known when the signal was generated.
 
-- Parser and validation: [src/quant_lab/strategy_schema.py](src/quant_lab/strategy_schema.py)
-- Executable adapter: [src/quant_lab/rule_based_strategy.py](src/quant_lab/rule_based_strategy.py)
-- Example strategies: [data/strategies/rsi_reversion.json](data/strategies/rsi_reversion.json)
-- Schema notes: [docs/strategy-schema.md](docs/strategy-schema.md)
+### Strategy JSON
 
-## Backtester Core v1
+Strategies live in `data/strategies/`. Example:
 
-The default backtester flow is intentionally simple and uses daily OHLCV input for a single instrument.
+- [data/strategies/sma_crossover.json](data/strategies/sma_crossover.json)
+- [data/strategies/rsi_reversion.json](data/strategies/rsi_reversion.json)
+- [data/strategies/ema_trend_follow.json](data/strategies/ema_trend_follow.json)
 
-- A strategy sees one daily bar at a time and can return `buy` or `sell` market orders.
-- Orders generated from bar `t` are queued and filled on bar `t+1` at the next bar open.
-- End-of-day portfolio history is recorded at each bar close after any queued fill for that day.
-- Signals generated on the final bar are not filled because there is no next bar open available.
+The v1 schema supports:
 
-## Metrics Reporting v1
+- `sma`
+- `ema`
+- `rsi`
+- comparison operators like `gt`, `gte`, `lt`, `lte`, `eq`
+- crossover operators like `crosses_above` and `crosses_below`
 
-This repo now includes a small Python module for transparent daily backtest metrics and run reporting under `src/metrics_reporting`, plus thin adapters in `src/backtester_core/reporting.py` for existing `BacktestResult` objects.
+Schema details are in [docs/strategy-schema.md](docs/strategy-schema.md).
 
-### Included metrics
+## CLI Usage
 
-- Sharpe ratio using daily returns and annualization by `sqrt(252)`
-- Max drawdown from the running peak of the equity curve
-- Total return from first equity value to last equity value
-- CAGR using `252` trading days per year
-- Markdown report generation
-- Artifact persistence to disk as `metrics.json`, `equity_curve.csv`, and `report.md`
+### Fetch Data
 
-### Formula summary
-
-- Daily return: `(equity_t / equity_t-1) - 1`
-- Sharpe ratio: `mean(excess daily returns) / stdev(excess daily returns) * sqrt(252)`
-- Max drawdown: minimum of `(equity / running_peak) - 1`
-- Total return: `(ending_equity / starting_equity) - 1`
-- CAGR: `(ending_equity / starting_equity) ** (252 / trading_days) - 1`
-
-### Assumptions
-
-- Inputs are daily observations ordered oldest to newest.
-- Equity values are positive.
-- Default risk-free rate is `0.0`.
-- CAGR uses `252` trading days per year.
-
-### Example usage
-
-```python
-from metrics_reporting import (
-    build_equity_curve,
-    build_markdown_report,
-    build_metrics_summary,
-    save_run_artifacts,
-)
-
-equity_curve = build_equity_curve(
-    dates=["2026-03-30", "2026-03-31", "2026-04-01"],
-    equity_values=[100000.0, 101250.0, 102800.0],
-)
-
-metrics = build_metrics_summary(equity_curve)
-report = build_markdown_report("Example Run", metrics, equity_curve)
-save_run_artifacts("artifacts/example_run", metrics, equity_curve, report)
+```bash
+quant-lab fetch \
+  --symbol QQQ \
+  --start 2015-01-01 \
+  --end 2025-12-31 \
+  --out data/cache
 ```
 
-### Backtester integration
+Output:
 
-```python
-from backtester_core import BacktestEngine, build_run_report, save_run_report_artifacts
-
-result = BacktestEngine(initial_cash=100_000).run(data, strategy)
-report = build_run_report(result, run_name="My Backtest")
-paths = save_run_report_artifacts(result, "artifacts/my_backtest", run_name="My Backtest")
+```text
+data/cache/QQQ_2015-01-01_2025-12-31.csv
 ```
+
+The fetch command currently uses adjusted daily prices from `yfinance`. Provider
+data can have outages, missing sessions, and corporate-action assumptions, so
+treat cached data as research input that may need verification.
+
+### Run One Backtest
+
+```bash
+quant-lab run \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --out artifacts/qqq_sma_crossover
+```
+
+Outputs:
+
+```text
+artifacts/qqq_sma_crossover/
+  metrics.json
+  equity_curve.csv
+  report.md
+  trades.csv
+```
+
+### Run A Parameter Sweep
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --quantity 100 \
+  --out artifacts/research/qqq_sma_crossover_2015_2025
+```
+
+Outputs:
+
+```text
+artifacts/research/qqq_sma_crossover_2015_2025/
+  summary.csv
+  research.md
+  run_001/
+    metrics.json
+    equity_curve.csv
+    report.md
+    trades.csv
+    strategy.json
+```
+
+`summary.csv` is sorted by total return, best first.
+
+## First Research Lesson
+
+The first real QQQ SMA sweep showed why benchmarks and sizing matter.
+
+With fixed 100-share sizing, the best tested SMA crossover was smoother than
+buy-and-hold but underperformed it substantially during the 2015-2025 QQQ
+sample:
+
+```text
+Best SMA variant: about 48% total return with lower drawdown.
+QQQ buy-and-hold: about 553% total return with larger drawdown.
+```
+
+That does not make the SMA idea useless. It means the current lab needs two next
+features before results are easy to interpret:
+
+- percent-of-equity sizing
+- automatic buy-and-hold benchmark comparisons
+
+## Research Workflow
+
+Use [AUTORESEARCH.md](AUTORESEARCH.md) before interpreting results.
+
+Short version:
+
+1. State the research question.
+2. Fetch or choose the data.
+3. Run a baseline.
+4. Run one controlled variation or sweep.
+5. Compare against a benchmark.
+6. Inspect trades and drawdowns.
+7. Decide the next experiment.
+
+Avoid treating a good-looking backtest as proof. Use it as evidence to decide
+what to test next.
+
+## Current Limitations
+
+- Sizing is fixed-share only.
+- No automatic buy-and-hold benchmark in reports yet.
+- No transaction costs or slippage.
+- No short selling.
+- No multi-symbol portfolio support.
+- No charts yet.
+- `yfinance` data is convenient but should not be treated as institutional-grade
+  data without verification.
+
+## Near-Term Roadmap
+
+1. Add percent-of-equity sizing.
+2. Add buy-and-hold benchmark metrics to `run` and `sweep`.
+3. Add charts for equity curve and drawdown.
+4. Add transaction costs and slippage.
+5. Add richer research summaries.
