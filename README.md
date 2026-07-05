@@ -43,6 +43,10 @@ The runner writes:
 - `report.md`
 - `trades.csv`
 
+## Research protocol
+
+Use [AUTORESEARCH.md](AUTORESEARCH.md) for the repo's research workflow. It defines how to state hypotheses, run baselines, save artifacts, compare variants, and perform a skeptic pass before trusting backtest results.
+
 ## Strategy schema
 
 This repo now includes a strict v1 strategy representation for simple rule-based trading ideas:
