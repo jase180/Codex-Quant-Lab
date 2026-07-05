@@ -43,6 +43,19 @@ The runner writes:
 - `report.md`
 - `trades.csv`
 
+Run a parameter sweep across every combination of strategy overrides:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/sample_ohlcv.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=30,50,100 \
+  --out artifacts/research/sma_crossover_sweep_001
+```
+
+Sweep output includes a `summary.csv`, a `research.md` note, and one `run_###/` directory per parameter combination.
+
 ## Research protocol
 
 Use [AUTORESEARCH.md](AUTORESEARCH.md) for the repo's research workflow. It defines how to state hypotheses, run baselines, save artifacts, compare variants, and perform a skeptic pass before trusting backtest results.

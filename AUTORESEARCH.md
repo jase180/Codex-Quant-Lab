@@ -158,9 +158,9 @@ The `research_id` should be short and descriptive, for example:
 sma_crossover_qqq_daily_2015_2025
 ```
 
-## Next Feature Target
+## Sweep Command
 
-The next research feature should be:
+Parameter sweeps are available through:
 
 ```bash
 quant-lab sweep \
@@ -173,3 +173,11 @@ quant-lab sweep \
 
 That command should produce per-run artifacts plus a `summary.csv` suitable for
 ranking and skeptic-pass inspection.
+
+For now, sweep overrides support indicator input paths such as:
+
+```text
+sma_20.inputs.length=5,10,20
+```
+
+Keep sweep sizes small until the strategy, data, and baseline are understood.
