@@ -130,6 +130,15 @@ class CliTests(unittest.TestCase):
             self.assertTrue((output_dir / "trades.csv").exists())
             self.assertTrue((output_dir / "equity_curve.png").exists())
             self.assertTrue((output_dir / "drawdown.png").exists())
+            self.assertTrue((output_dir / "run_metadata.json").exists())
+            metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["metadata_schema_version"], "run_metadata.v1")
+            self.assertEqual(metadata["run_type"], "run")
+            self.assertEqual(metadata["strategy"]["strategy_id"], "cli_smoke")
+            self.assertEqual(metadata["data"]["row_count"], 4)
+            self.assertEqual(metadata["sizing"]["initial_cash"], 1000.0)
+            self.assertEqual(metadata["costs"]["slippage_bps"], 0.0)
+            self.assertIn("metrics", metadata["artifacts"])
             report = (output_dir / "report.md").read_text(encoding="utf-8")
             self.assertIn("CLI Smoke", report)
             self.assertIn("## Benchmark: Buy And Hold", report)
@@ -207,6 +216,11 @@ class CliTests(unittest.TestCase):
             self.assertIn("commission", trades.columns)
             self.assertGreater(trades.loc[0, "commission"], 0)
             self.assertAlmostEqual(trades.loc[0, "price"], 12.12)
+            metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["costs"]["commission_fixed"], 1.0)
+            self.assertEqual(metadata["costs"]["commission_rate"], 0.01)
+            self.assertEqual(metadata["costs"]["slippage_bps"], 100.0)
+            self.assertEqual(metadata["command"][0], "quant-lab")
 
     def test_fetch_command_writes_normalized_csv(self) -> None:
         fetched_data = pd.DataFrame(
@@ -296,6 +310,12 @@ class CliTests(unittest.TestCase):
             self.assertTrue((first_run / "strategy.json").exists())
             self.assertTrue((first_run / "equity_curve.png").exists())
             self.assertTrue((first_run / "drawdown.png").exists())
+            self.assertTrue((first_run / "run_metadata.json").exists())
+            metadata = json.loads((first_run / "run_metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["run_type"], "sweep_run")
+            self.assertEqual(metadata["run_id"], "run_001")
+            self.assertEqual(metadata["parameters"]["sma_2.inputs.length"], 2)
+            self.assertIn("strategy", metadata["artifacts"])
 
 
 if __name__ == "__main__":

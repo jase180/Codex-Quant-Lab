@@ -16,6 +16,7 @@ It owns:
 - `rule_based_strategy.py`: turns a validated strategy spec into an executable strategy.
 - `benchmarks.py`: builds buy-and-hold benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
+- `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, and `quant-lab sweep`.
 
 ## Strategy Flow
@@ -114,6 +115,11 @@ Run and sweep artifacts also include two PNG charts:
 
 - `equity_curve.png`: strategy equity compared with buy-and-hold.
 - `drawdown.png`: strategy drawdown compared with buy-and-hold.
+
+Each run directory also includes `run_metadata.json`. The metadata file uses a
+versioned nested schema so future fields can be added without changing the
+basic structure. It records command tokens, strategy metadata, data range,
+sizing, cost assumptions, Git commit, sweep parameters, and artifact paths.
 
 ## Notes For Future Work
 

@@ -150,6 +150,7 @@ artifacts/qqq_sma_crossover/
   drawdown.png
   report.md
   trades.csv
+  run_metadata.json
 ```
 
 `report.md` includes a buy-and-hold benchmark section built from the same CSV
@@ -161,6 +162,10 @@ The cost flags are optional. `--commission-fixed` charges a flat amount per
 fill, `--commission-rate` charges a fraction of trade value, and
 `--slippage-bps` moves buy fills above the next open and sell fills below the
 next open. For example, `--slippage-bps 5` means 0.05% one-way slippage.
+
+`run_metadata.json` records the command, strategy identity, data range, sizing,
+cost assumptions, Git commit, and artifact paths. Treat it as the source of
+truth for how a run folder was produced.
 
 ### Run A Parameter Sweep
 
@@ -188,6 +193,7 @@ artifacts/research/qqq_sma_crossover_2015_2025/
     drawdown.png
     report.md
     trades.csv
+    run_metadata.json
     strategy.json
 ```
 

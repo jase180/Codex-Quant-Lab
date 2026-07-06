@@ -83,9 +83,14 @@ Every run should write:
 - `drawdown.png`
 - `report.md`
 - `trades.csv`
+- `run_metadata.json`
 
 Reports and sweep summaries should include buy-and-hold benchmark metrics from
 the same data range whenever possible.
+
+`run_metadata.json` is the reproducibility anchor for a run. Prefer reading it
+over relying on chat history when reconstructing command inputs, sizing,
+commission, slippage, Git commit, or artifact paths.
 
 Fetched market data should be cached under `data/cache/` using normalized daily
 OHLCV CSV files. Keep raw provider assumptions in mind: adjusted prices, missing

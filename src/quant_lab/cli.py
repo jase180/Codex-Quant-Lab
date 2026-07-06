@@ -8,6 +8,8 @@ import csv
 import itertools
 import json
 import subprocess
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Sequence
 
@@ -33,6 +35,16 @@ from .benchmarks import (
 )
 from .data_fetch import fetch_market_data, write_market_data_csv
 from .rule_based_strategy import build_rule_based_strategy
+from .run_metadata import (
+    CostMetadata,
+    DataMetadata,
+    EnvironmentMetadata,
+    RunMetadata,
+    SizingMetadata,
+    StrategyMetadata,
+    command_tokens,
+    save_run_metadata,
+)
 from .strategy_schema import load_strategy, parse_strategy
 
 
@@ -190,6 +202,19 @@ def run_command(args: argparse.Namespace) -> int:
     report_path.write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, args.out)
     artifact_paths.update(save_charts(result, benchmark_curve, args.out))
+    artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
+    artifact_paths["metadata"] = save_run_metadata(
+        build_run_metadata(
+            args=args,
+            strategy_spec=strategy_spec,
+            data=data,
+            run_type="run",
+            run_id=None,
+            parameters={},
+            artifacts=artifact_paths,
+        ),
+        args.out,
+    )
 
     print(f"Run complete: {run_name}")
     for artifact_name in sorted(artifact_paths):
@@ -257,9 +282,22 @@ def sweep_command(args: argparse.Namespace) -> int:
         )
         artifact_paths = save_run_report_artifacts(result, run_dir, run_name=f"{run_name_prefix} {run_id}")
         Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
-        save_trades(result.trades, run_dir)
-        save_charts(result, benchmark_curve, run_dir)
-        save_strategy_payload(strategy_payload, run_dir)
+        artifact_paths["trades"] = save_trades(result.trades, run_dir)
+        artifact_paths.update(save_charts(result, benchmark_curve, run_dir))
+        artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
+        artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
+        artifact_paths["metadata"] = save_run_metadata(
+            build_run_metadata(
+                args=args,
+                strategy_spec=strategy_spec,
+                data=data,
+                run_type="sweep_run",
+                run_id=run_id,
+                parameters=params,
+                artifacts=artifact_paths,
+            ),
+            run_dir,
+        )
 
         summary_rows.append(
             {
@@ -314,6 +352,61 @@ def build_engine(args: argparse.Namespace) -> BacktestEngine:
         initial_cash=args.initial_cash,
         execution_model=ExecutionModel(cost_model=cost_model),
     )
+
+
+def build_run_metadata(
+    *,
+    args: argparse.Namespace,
+    strategy_spec,
+    data: pd.DataFrame,
+    run_type: str,
+    run_id: str | None,
+    parameters: dict[str, str | int | float],
+    artifacts: dict[str, str],
+) -> RunMetadata:
+    if "date" in data.columns and not data.empty:
+        data_dates = pd.to_datetime(data["date"])
+    else:
+        data_dates = pd.Series(dtype="datetime64[ns]")
+    metadata = RunMetadata(
+        metadata_schema_version="run_metadata.v1",
+        run_type=run_type,
+        run_id=run_id,
+        created_at_utc=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        command=list(args.command_tokens),
+        strategy=StrategyMetadata(
+            strategy_id=strategy_spec.strategy_id,
+            name=strategy_spec.name,
+            schema_version=strategy_spec.schema_version,
+            strategy_type=strategy_spec.strategy_type,
+        ),
+        data=DataMetadata(
+            path=str(args.data),
+            row_count=int(len(data)),
+            start=_metadata_date(data_dates.min()) if not data_dates.empty else None,
+            end=_metadata_date(data_dates.max()) if not data_dates.empty else None,
+            symbol=strategy_spec.market.symbol,
+            timeframe=strategy_spec.market.timeframe,
+        ),
+        sizing=SizingMetadata(
+            mode=args.sizing,
+            initial_cash=float(args.initial_cash),
+            quantity=float(args.quantity),
+            allocation=float(args.allocation),
+        ),
+        costs=CostMetadata(
+            commission_fixed=float(args.commission_fixed),
+            commission_rate=float(args.commission_rate),
+            slippage_bps=float(args.slippage_bps),
+        ),
+        environment=EnvironmentMetadata(git_commit=current_git_commit()),
+        parameters=dict(parameters),
+    )
+    return metadata.with_artifacts(artifacts)
+
+
+def _metadata_date(value: pd.Timestamp) -> str:
+    return value.date().isoformat()
 
 
 def save_trades(trades: pd.DataFrame, output_dir: str | Path) -> str:
@@ -555,7 +648,9 @@ def _coerce_param_value(raw_value: str) -> str | int | float:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    args = parser.parse_args(raw_argv)
+    args.command_tokens = command_tokens("quant-lab", raw_argv)
     return args.func(args)
 
 
