@@ -68,6 +68,10 @@ def _write_ohlcv_fixture(path: Path) -> None:
     )
 
 
+def _read_jsonl(path: Path) -> list[dict]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
 class CliTests(unittest.TestCase):
     def test_parse_param_sweeps_coerces_numbers(self) -> None:
         params = parse_param_sweeps(
@@ -102,6 +106,7 @@ class CliTests(unittest.TestCase):
             strategy_path = temp_path / "strategy.json"
             data_path = temp_path / "ohlcv.csv"
             output_dir = temp_path / "artifacts"
+            index_path = temp_path / "research_index.jsonl"
 
             strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
             _write_ohlcv_fixture(data_path)
@@ -120,6 +125,8 @@ class CliTests(unittest.TestCase):
                         "1000",
                         "--quantity",
                         "3",
+                        "--index-path",
+                        str(index_path),
                     ]
                 )
 
@@ -139,6 +146,13 @@ class CliTests(unittest.TestCase):
             self.assertEqual(metadata["sizing"]["initial_cash"], 1000.0)
             self.assertEqual(metadata["costs"]["slippage_bps"], 0.0)
             self.assertIn("metrics", metadata["artifacts"])
+            self.assertEqual(metadata["artifacts"]["research_index"], str(index_path))
+            index_rows = _read_jsonl(index_path)
+            self.assertEqual(len(index_rows), 1)
+            self.assertEqual(index_rows[0]["index_schema_version"], "research_index.v1")
+            self.assertEqual(index_rows[0]["run_type"], "run")
+            self.assertEqual(index_rows[0]["strategy_id"], "cli_smoke")
+            self.assertEqual(index_rows[0]["metadata_path"], str(output_dir / "run_metadata.json"))
             report = (output_dir / "report.md").read_text(encoding="utf-8")
             self.assertIn("CLI Smoke", report)
             self.assertIn("## Benchmark: Buy And Hold", report)
@@ -264,6 +278,7 @@ class CliTests(unittest.TestCase):
             strategy_path = temp_path / "strategy.json"
             data_path = temp_path / "ohlcv.csv"
             output_dir = temp_path / "sweep"
+            index_path = temp_path / "research_index.jsonl"
 
             strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
             _write_ohlcv_fixture(data_path)
@@ -286,6 +301,8 @@ class CliTests(unittest.TestCase):
                         "1000",
                         "--quantity",
                         "2",
+                        "--index-path",
+                        str(index_path),
                     ]
                 )
 
@@ -316,6 +333,11 @@ class CliTests(unittest.TestCase):
             self.assertEqual(metadata["run_id"], "run_001")
             self.assertEqual(metadata["parameters"]["sma_2.inputs.length"], 2)
             self.assertIn("strategy", metadata["artifacts"])
+            index_rows = _read_jsonl(index_path)
+            self.assertEqual(len(index_rows), 4)
+            self.assertEqual(index_rows[0]["run_type"], "sweep_run")
+            self.assertIn(index_rows[0]["run_id"], {"run_001", "run_002", "run_003", "run_004"})
+            self.assertEqual(index_rows[0]["symbol"], "TEST")
 
 
 if __name__ == "__main__":

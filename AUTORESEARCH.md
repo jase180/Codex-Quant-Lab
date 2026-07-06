@@ -92,6 +92,11 @@ the same data range whenever possible.
 over relying on chat history when reconstructing command inputs, sizing,
 commission, slippage, Git commit, or artifact paths.
 
+Every run should also append one row to the local research registry,
+`artifacts/research_index.jsonl`, unless a different `--index-path` is used.
+Use the registry to find past runs; use `run_metadata.json` to audit one run in
+detail.
+
 Fetched market data should be cached under `data/cache/` using normalized daily
 OHLCV CSV files. Keep raw provider assumptions in mind: adjusted prices, missing
 sessions, provider outages, and corporate action handling can all affect results.

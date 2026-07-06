@@ -34,6 +34,7 @@ from .benchmarks import (
     excess_total_return,
 )
 from .data_fetch import fetch_market_data, write_market_data_csv
+from .research_index import append_research_index_record, build_run_index_record
 from .rule_based_strategy import build_rule_based_strategy
 from .run_metadata import (
     CostMetadata,
@@ -89,6 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report title. Defaults to the strategy name.",
     )
     add_cost_arguments(run_parser)
+    add_index_argument(run_parser)
     run_parser.set_defaults(func=run_command)
 
     fetch_parser = subparsers.add_parser(
@@ -153,6 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report title prefix. Defaults to the strategy name.",
     )
     add_cost_arguments(sweep_parser)
+    add_index_argument(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
     return parser
 
@@ -178,6 +181,14 @@ def add_cost_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_index_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--index-path",
+        default="artifacts/research_index.jsonl",
+        help="Append-only JSONL research index path. Defaults to artifacts/research_index.jsonl.",
+    )
+
+
 def run_command(args: argparse.Namespace) -> int:
     strategy_spec = load_strategy(args.strategy)
     strategy = build_rule_based_strategy(
@@ -198,22 +209,31 @@ def run_command(args: argparse.Namespace) -> int:
         result.total_return,
     )
     artifact_paths = save_run_report_artifacts(result, args.out, run_name=run_name)
+    run_metrics = summarize_run_metrics(result)
     report_path = Path(artifact_paths["report"])
     report_path.write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, args.out)
     artifact_paths.update(save_charts(result, benchmark_curve, args.out))
     artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
-    artifact_paths["metadata"] = save_run_metadata(
-        build_run_metadata(
-            args=args,
-            strategy_spec=strategy_spec,
-            data=data,
-            run_type="run",
-            run_id=None,
-            parameters={},
-            artifacts=artifact_paths,
-        ),
-        args.out,
+    artifact_paths["research_index"] = str(args.index_path)
+    metadata = build_run_metadata(
+        args=args,
+        strategy_spec=strategy_spec,
+        data=data,
+        run_type="run",
+        run_id=None,
+        parameters={},
+        artifacts=artifact_paths,
+    )
+    artifact_paths["metadata"] = save_run_metadata(metadata, args.out)
+    append_research_index(
+        metadata=metadata,
+        metrics=run_metrics,
+        benchmark_metrics=benchmark_metrics,
+        output_dir=args.out,
+        trade_count=len(result.trades),
+        index_path=args.index_path,
+        strategy_total_return=result.total_return,
     )
 
     print(f"Run complete: {run_name}")
@@ -286,17 +306,25 @@ def sweep_command(args: argparse.Namespace) -> int:
         artifact_paths.update(save_charts(result, benchmark_curve, run_dir))
         artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
         artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
-        artifact_paths["metadata"] = save_run_metadata(
-            build_run_metadata(
-                args=args,
-                strategy_spec=strategy_spec,
-                data=data,
-                run_type="sweep_run",
-                run_id=run_id,
-                parameters=params,
-                artifacts=artifact_paths,
-            ),
-            run_dir,
+        artifact_paths["research_index"] = str(args.index_path)
+        metadata = build_run_metadata(
+            args=args,
+            strategy_spec=strategy_spec,
+            data=data,
+            run_type="sweep_run",
+            run_id=run_id,
+            parameters=params,
+            artifacts=artifact_paths,
+        )
+        artifact_paths["metadata"] = save_run_metadata(metadata, run_dir)
+        append_research_index(
+            metadata=metadata,
+            metrics=metrics,
+            benchmark_metrics=benchmark_metrics,
+            output_dir=run_dir,
+            trade_count=len(result.trades),
+            index_path=args.index_path,
+            strategy_total_return=result.total_return,
         )
 
         summary_rows.append(
@@ -352,6 +380,27 @@ def build_engine(args: argparse.Namespace) -> BacktestEngine:
         initial_cash=args.initial_cash,
         execution_model=ExecutionModel(cost_model=cost_model),
     )
+
+
+def append_research_index(
+    *,
+    metadata: RunMetadata,
+    metrics,
+    benchmark_metrics,
+    output_dir: str | Path,
+    trade_count: int,
+    index_path: str | Path,
+    strategy_total_return: float,
+) -> str:
+    record = build_run_index_record(
+        metadata=metadata,
+        metrics=metrics,
+        benchmark_metrics=benchmark_metrics,
+        excess_return=excess_total_return(strategy_total_return, benchmark_metrics.total_return),
+        trade_count=trade_count,
+        output_dir=output_dir,
+    )
+    return append_research_index_record(record, index_path)
 
 
 def build_run_metadata(

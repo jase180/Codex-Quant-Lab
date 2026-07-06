@@ -16,6 +16,7 @@ It owns:
 - `rule_based_strategy.py`: turns a validated strategy spec into an executable strategy.
 - `benchmarks.py`: builds buy-and-hold benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
+- `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, and `quant-lab sweep`.
 
@@ -120,6 +121,11 @@ Each run directory also includes `run_metadata.json`. The metadata file uses a
 versioned nested schema so future fields can be added without changing the
 basic structure. It records command tokens, strategy metadata, data range,
 sizing, cost assumptions, Git commit, sweep parameters, and artifact paths.
+
+The CLI also appends one flat record per run to `artifacts/research_index.jsonl`
+by default. `run_metadata.json` is the detailed per-run source of truth; the
+JSONL index is the lab-level table for finding and comparing past runs. Override
+the index location with `--index-path`.
 
 ## Notes For Future Work
 

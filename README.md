@@ -151,6 +151,8 @@ artifacts/qqq_sma_crossover/
   report.md
   trades.csv
   run_metadata.json
+
+artifacts/research_index.jsonl
 ```
 
 `report.md` includes a buy-and-hold benchmark section built from the same CSV
@@ -166,6 +168,9 @@ next open. For example, `--slippage-bps 5` means 0.05% one-way slippage.
 `run_metadata.json` records the command, strategy identity, data range, sizing,
 cost assumptions, Git commit, and artifact paths. Treat it as the source of
 truth for how a run folder was produced.
+
+Each run also appends one flat JSON line to `artifacts/research_index.jsonl` by
+default. Use `--index-path` to write the registry somewhere else.
 
 ### Run A Parameter Sweep
 
@@ -195,6 +200,8 @@ artifacts/research/qqq_sma_crossover_2015_2025/
     trades.csv
     run_metadata.json
     strategy.json
+
+artifacts/research_index.jsonl
 ```
 
 `summary.csv` is sorted by total return, best first.
