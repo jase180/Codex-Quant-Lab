@@ -35,6 +35,7 @@ from .benchmarks import (
 )
 from .data_fetch import fetch_market_data, write_market_data_csv
 from .research_index import append_research_index_record, build_run_index_record
+from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
 from .rule_based_strategy import build_rule_based_strategy
 from .run_metadata import (
     CostMetadata,
@@ -111,6 +112,39 @@ def build_parser() -> argparse.ArgumentParser:
         help="Market data interval. Only 1d is supported for now.",
     )
     fetch_parser.set_defaults(func=fetch_command)
+
+    list_parser = subparsers.add_parser(
+        "list-runs",
+        help="List runs from the local research index.",
+    )
+    add_index_argument(list_parser)
+    list_parser.add_argument("--symbol", default=None, help="Only show runs for one symbol, such as QQQ.")
+    list_parser.add_argument(
+        "--sort",
+        default="created_at_utc",
+        choices=[
+            "created_at_utc",
+            "total_return",
+            "benchmark_total_return",
+            "excess_total_return",
+            "sharpe_ratio",
+            "max_drawdown",
+            "trade_count",
+        ],
+        help="Index field to sort by. Defaults to created_at_utc.",
+    )
+    list_parser.add_argument(
+        "--ascending",
+        action="store_true",
+        help="Sort smallest to largest. Defaults to descending.",
+    )
+    list_parser.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Maximum rows to print. Defaults to 20.",
+    )
+    list_parser.set_defaults(func=list_runs_command)
 
     sweep_parser = subparsers.add_parser(
         "sweep",
@@ -265,6 +299,23 @@ def fetch_command(args: argparse.Namespace) -> int:
     )
     print(f"Fetched {len(data)} rows for {args.symbol.upper()}")
     print(f"data: {csv_path}")
+    return 0
+
+
+def list_runs_command(args: argparse.Namespace) -> int:
+    if args.limit < 1:
+        raise ValueError("--limit must be at least 1")
+
+    records = load_research_index(args.index_path)
+    records = filter_index_records(records, symbol=args.symbol)
+    records = sort_index_records(records, args.sort, descending=not args.ascending)
+    records = records[: args.limit]
+
+    if not records:
+        print(f"No runs found in {args.index_path}")
+        return 0
+
+    print(format_index_table(records))
     return 0
 
 

@@ -83,6 +83,12 @@ quant-lab sweep \
   --out artifacts/research/sma_sweep
 ```
 
+List previous runs:
+
+```bash
+quant-lab list-runs --symbol QQQ --sort sharpe_ratio --limit 10
+```
+
 ## Sizing
 
 The CLI supports:
@@ -126,6 +132,9 @@ The CLI also appends one flat record per run to `artifacts/research_index.jsonl`
 by default. `run_metadata.json` is the detailed per-run source of truth; the
 JSONL index is the lab-level table for finding and comparing past runs. Override
 the index location with `--index-path`.
+
+`list-runs` reads that index and prints a compact table. It supports filtering
+by symbol, sorting by common metrics, ascending order, and row limits.
 
 ## Notes For Future Work
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Iterable
 
 from metrics_reporting import RunMetrics
 
@@ -101,3 +102,86 @@ def append_research_index_record(record: RunIndexRecord, index_path: str | Path)
     with destination.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record.to_dict(), sort_keys=True) + "\n")
     return str(destination)
+
+
+def load_research_index(index_path: str | Path) -> list[dict]:
+    path = Path(index_path)
+    if not path.exists():
+        return []
+
+    records: list[dict] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON in research index {path} on line {line_number}") from exc
+    return records
+
+
+def filter_index_records(records: Iterable[dict], symbol: str | None = None) -> list[dict]:
+    filtered = list(records)
+    if symbol is not None:
+        requested_symbol = symbol.upper()
+        filtered = [record for record in filtered if str(record.get("symbol", "")).upper() == requested_symbol]
+    return filtered
+
+
+def sort_index_records(records: Iterable[dict], sort_key: str, descending: bool = True) -> list[dict]:
+    sortable_records = list(records)
+    return sorted(
+        sortable_records,
+        key=lambda record: _sortable_value(record, sort_key),
+        reverse=descending,
+    )
+
+
+def format_index_table(records: list[dict]) -> str:
+    columns = [
+        ("created", "created_at_utc"),
+        ("symbol", "symbol"),
+        ("strategy", "strategy_id"),
+        ("type", "run_type"),
+        ("run", "run_id"),
+        ("return", "total_return"),
+        ("bench", "benchmark_total_return"),
+        ("excess", "excess_total_return"),
+        ("sharpe", "sharpe_ratio"),
+        ("dd", "max_drawdown"),
+        ("trades", "trade_count"),
+        ("out", "output_dir"),
+    ]
+    table_rows = [
+        [_format_table_value(record.get(field), field) for _, field in columns]
+        for record in records
+    ]
+    header = [label for label, _ in columns]
+    widths = [
+        max(len(header[index]), *[len(row[index]) for row in table_rows]) if table_rows else len(header[index])
+        for index in range(len(header))
+    ]
+    lines = [
+        "  ".join(header[index].ljust(widths[index]) for index in range(len(header))),
+        "  ".join("-" * widths[index] for index in range(len(header))),
+    ]
+    for row in table_rows:
+        lines.append("  ".join(row[index].ljust(widths[index]) for index in range(len(row))))
+    return "\n".join(lines)
+
+
+def _sortable_value(record: dict, sort_key: str) -> tuple[bool, object]:
+    value = record.get(sort_key)
+    return (value is None, value)
+
+
+def _format_table_value(value: object, field: str) -> str:
+    if value is None:
+        return "-"
+    if field == "created_at_utc":
+        return str(value).replace("T", " ")[:19]
+    if field in {"total_return", "benchmark_total_return", "excess_total_return", "max_drawdown"}:
+        return f"{float(value):.2%}"
+    if field == "sharpe_ratio":
+        return f"{float(value):.2f}"
+    return str(value)

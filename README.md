@@ -172,6 +172,18 @@ truth for how a run folder was produced.
 Each run also appends one flat JSON line to `artifacts/research_index.jsonl` by
 default. Use `--index-path` to write the registry somewhere else.
 
+### List Previous Runs
+
+```bash
+quant-lab list-runs \
+  --symbol QQQ \
+  --sort sharpe_ratio \
+  --limit 10
+```
+
+This reads `artifacts/research_index.jsonl` by default and prints a compact
+table of past runs. Use `--index-path` to inspect a different registry.
+
 ### Run A Parameter Sweep
 
 ```bash

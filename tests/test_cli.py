@@ -72,6 +72,74 @@ def _read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def _write_index_fixture(path: Path) -> None:
+    records = [
+        {
+            "index_schema_version": "research_index.v1",
+            "created_at_utc": "2026-01-01T00:00:00Z",
+            "run_type": "run",
+            "run_id": None,
+            "strategy_id": "slow_strategy",
+            "strategy_name": "Slow Strategy",
+            "symbol": "SPY",
+            "timeframe": "1d",
+            "data_start": "2026-01-01",
+            "data_end": "2026-01-31",
+            "final_equity": 1010,
+            "total_return": 0.01,
+            "cagr": 0.12,
+            "sharpe_ratio": 0.5,
+            "max_drawdown": -0.05,
+            "trade_count": 2,
+            "benchmark_total_return": 0.02,
+            "benchmark_max_drawdown": -0.03,
+            "excess_total_return": -0.01,
+            "sizing": "fixed-shares",
+            "initial_cash": 1000,
+            "quantity": 1,
+            "allocation": 1,
+            "commission_fixed": 0,
+            "commission_rate": 0,
+            "slippage_bps": 0,
+            "output_dir": "artifacts/spy_run",
+            "metadata_path": "artifacts/spy_run/run_metadata.json",
+            "git_commit": "abc",
+        },
+        {
+            "index_schema_version": "research_index.v1",
+            "created_at_utc": "2026-01-02T00:00:00Z",
+            "run_type": "run",
+            "run_id": None,
+            "strategy_id": "fast_strategy",
+            "strategy_name": "Fast Strategy",
+            "symbol": "QQQ",
+            "timeframe": "1d",
+            "data_start": "2026-01-01",
+            "data_end": "2026-01-31",
+            "final_equity": 1100,
+            "total_return": 0.10,
+            "cagr": 1.2,
+            "sharpe_ratio": 1.5,
+            "max_drawdown": -0.10,
+            "trade_count": 4,
+            "benchmark_total_return": 0.06,
+            "benchmark_max_drawdown": -0.08,
+            "excess_total_return": 0.04,
+            "sizing": "percent-equity",
+            "initial_cash": 1000,
+            "quantity": 1,
+            "allocation": 1,
+            "commission_fixed": 0,
+            "commission_rate": 0,
+            "slippage_bps": 0,
+            "output_dir": "artifacts/qqq_run",
+            "metadata_path": "artifacts/qqq_run/run_metadata.json",
+            "git_commit": "def",
+        },
+    ]
+    path.write_text("\n".join(json.dumps(record) for record in records) + "\n", encoding="utf-8")
+
+
 class CliTests(unittest.TestCase):
     def test_parse_param_sweeps_coerces_numbers(self) -> None:
         params = parse_param_sweeps(
@@ -271,6 +339,43 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertTrue(csv_path.exists())
             self.assertIn("2026-01-02,100,102,99,101,1000", csv_path.read_text(encoding="utf-8"))
+
+    def test_list_runs_command_filters_and_sorts_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            index_path = Path(temp_dir) / "research_index.jsonl"
+            _write_index_fixture(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "list-runs",
+                        "--index-path",
+                        str(index_path),
+                        "--symbol",
+                        "QQQ",
+                        "--sort",
+                        "total_return",
+                        "--limit",
+                        "1",
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("strategy", output)
+            self.assertIn("fast_strategy", output)
+            self.assertIn("10.00%", output)
+            self.assertNotIn("slow_strategy", output)
+
+    def test_list_runs_command_handles_empty_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            index_path = Path(temp_dir) / "missing.jsonl"
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["list-runs", "--index-path", str(index_path)])
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("No runs found", stdout.getvalue())
 
     def test_sweep_command_writes_summary_and_per_run_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
