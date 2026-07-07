@@ -19,7 +19,8 @@ It owns:
 - `data_quality.py`: summarizes suspicious input-data conditions for artifacts.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
-- `cli.py`: implements `quant-lab fetch`, `quant-lab run`, and `quant-lab sweep`.
+- `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
+  and run inspection commands.
 
 ## Strategy Flow
 
@@ -83,6 +84,44 @@ quant-lab sweep \
   --allocation 1.0 \
   --out artifacts/research/sma_sweep
 ```
+
+Run a train/test sweep:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/sample_ohlcv.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --train-end 2020-12-31 \
+  --test-start 2021-01-01 \
+  --select-by total_return \
+  --out artifacts/research/sma_train_test
+```
+
+Providing `--train-end` and `--test-start` switches `sweep` into train/test
+mode. The command runs every parameter variant on rows up to `--train-end`,
+selects the best train row by `--select-by`, and reruns only that selected
+variant on rows from `--test-start` onward. The dates must be disjoint:
+`--train-end` must be earlier than `--test-start`.
+
+Train/test output uses this shape:
+
+```text
+artifacts/research/sma_train_test/
+  research.md
+  train_sweep/
+    summary.csv
+    run_001/
+  test_summary/
+    summary.csv
+  test_selected/
+    run_metadata.json
+```
+
+The selected test run is recorded with run type `test_selected_run`. Its
+metadata parameters include the split dates, the selection metric, and the
+selected train run id.
 
 List previous runs:
 

@@ -134,7 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("--strategy-id", default=None, help="Only show runs for one strategy id.")
     list_parser.add_argument(
         "--run-type",
-        choices=["run", "sweep_run"],
+        choices=["run", "sweep_run", "train_sweep_run", "test_selected_run"],
         default=None,
         help="Only show one run type.",
     )
@@ -226,6 +226,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--run-name",
         default=None,
         help="Report title prefix. Defaults to the strategy name.",
+    )
+    sweep_parser.add_argument("--train-end", default=None, help="Final train date for train/test sweep mode.")
+    sweep_parser.add_argument("--test-start", default=None, help="First test date for train/test sweep mode.")
+    sweep_parser.add_argument(
+        "--select-by",
+        choices=["total_return", "sharpe_ratio"],
+        default="total_return",
+        help="Metric used to select the train winner for test rerun. Defaults to total_return.",
     )
     add_cost_arguments(sweep_parser)
     add_index_argument(sweep_parser)
@@ -394,6 +402,9 @@ def compare_runs_command(args: argparse.Namespace) -> int:
 
 def sweep_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
+    if args.train_end or args.test_start:
+        return train_test_sweep_command(args)
+
     base_payload = load_strategy_payload(args.strategy)
     param_sweeps = parse_param_sweeps(args.param)
     variants = build_sweep_variants(base_payload, param_sweeps)
@@ -411,78 +422,22 @@ def sweep_command(args: argparse.Namespace) -> int:
         strategy_payload = variant["payload"]
         params = variant["params"]
         strategy_spec = parse_strategy(strategy_payload)
-        strategy = build_rule_based_strategy(
-            strategy_spec,
-            order_quantity=args.quantity,
-            sizing=args.sizing,
-            allocation=args.allocation,
-        )
-
-        result = build_engine(args).run(data, strategy)
-        metrics = summarize_run_metrics(result)
-        research_warnings = build_research_warnings(metrics, result.trades)
         run_name_prefix = args.run_name or strategy_spec.name
-        report = append_benchmark_section(
-            build_run_report(result, run_name=f"{run_name_prefix} {run_id}"),
-            benchmark_metrics,
-            result.total_return,
-        )
-        report = append_data_quality_section(report, data_quality)
-        report = append_research_warnings_section(report, research_warnings)
-        artifact_paths = save_run_report_artifacts(result, run_dir, run_name=f"{run_name_prefix} {run_id}")
-        Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
-        artifact_paths["trades"] = save_trades(result.trades, run_dir)
-        artifact_paths.update(save_charts(result, benchmark_curve, run_dir))
-        artifact_paths["data_quality"] = save_data_quality_report(data_quality, run_dir)
-        artifact_paths["research_warnings"] = save_research_warnings(research_warnings, run_dir)
-        artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
-        artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
-        artifact_paths["research_index"] = str(args.index_path)
-        metadata = build_run_metadata(
-            args=args,
-            strategy_spec=strategy_spec,
-            data=data,
-            run_type="sweep_run",
-            run_id=run_id,
-            parameters=params,
-            artifacts=artifact_paths,
-        )
-        artifact_paths["metadata"] = save_run_metadata(metadata, run_dir)
-        append_research_index(
-            metadata=metadata,
-            metrics=metrics,
-            benchmark_metrics=benchmark_metrics,
-            output_dir=run_dir,
-            trade_count=len(result.trades),
-            index_path=args.index_path,
-            strategy_total_return=result.total_return,
-        )
-
         summary_rows.append(
-            {
-                "run_id": run_id,
-                "strategy_id": strategy_spec.strategy_id,
-                "params": json.dumps(params, sort_keys=True),
-                "final_equity": result.final_equity,
-                "total_return": result.total_return,
-                "cagr": metrics.cagr,
-                "sharpe_ratio": metrics.sharpe_ratio,
-                "max_drawdown": metrics.max_drawdown,
-                "trade_count": len(result.trades),
-                "sizing": args.sizing,
-                "quantity": args.quantity,
-                "allocation": args.allocation,
-                "cost_preset": args.cost_assumptions.preset,
-                "commission_fixed": args.cost_assumptions.commission_fixed,
-                "commission_rate": args.cost_assumptions.commission_rate,
-                "slippage_bps": args.cost_assumptions.slippage_bps,
-                **benchmark_summary_fields(benchmark_metrics),
-                "excess_total_return": excess_total_return(
-                    result.total_return,
-                    benchmark_metrics.total_return,
-                ),
-                "output_dir": str(run_dir),
-            }
+            run_sweep_variant(
+                args=args,
+                data=data,
+                benchmark_curve=benchmark_curve,
+                benchmark_metrics=benchmark_metrics,
+                data_quality=data_quality,
+                strategy_spec=strategy_spec,
+                strategy_payload=strategy_payload,
+                run_dir=run_dir,
+                run_name=f"{run_name_prefix} {run_id}",
+                parameters=params,
+                run_type="sweep_run",
+                run_id=run_id,
+            )
         )
 
     # Sorting after all runs keeps the run directories stable while making the
@@ -500,6 +455,291 @@ def sweep_command(args: argparse.Namespace) -> int:
         print(f"best_total_return: {float(best['total_return']):.2%}")
         print(f"best_excess_total_return: {float(best['excess_total_return']):.2%}")
     return 0
+
+
+def train_test_sweep_command(args: argparse.Namespace) -> int:
+    if not args.train_end or not args.test_start:
+        raise ValueError("--train-end and --test-start must be provided together.")
+
+    base_payload = load_strategy_payload(args.strategy)
+    param_sweeps = parse_param_sweeps(args.param)
+    variants = build_sweep_variants(base_payload, param_sweeps)
+    data = pd.read_csv(args.data)
+    train_data, test_data = split_train_test_data(data, args.train_end, args.test_start)
+    output_dir = Path(args.out)
+    train_dir = output_dir / "train_sweep"
+    test_dir = output_dir / "test_selected"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    train_benchmark_curve = buy_and_hold_equity_curve(train_data, args.initial_cash)
+    train_benchmark_metrics = buy_and_hold_metrics(train_data, args.initial_cash)
+    train_data_quality = build_data_quality_report(train_data)
+    train_rows: list[dict[str, str | int | float | None]] = []
+    variants_by_run_id: dict[str, dict] = {}
+
+    for index, variant in enumerate(variants, start=1):
+        run_id = f"run_{index:03d}"
+        variants_by_run_id[run_id] = variant
+        strategy_payload = variant["payload"]
+        params = {
+            **variant["params"],
+            "_split_phase": "train",
+            "_train_end": args.train_end,
+            "_test_start": args.test_start,
+            "_select_by": args.select_by,
+        }
+        strategy_spec = parse_strategy(strategy_payload)
+        run_name_prefix = args.run_name or strategy_spec.name
+        train_rows.append(
+            run_sweep_variant(
+                args=args,
+                data=train_data,
+                benchmark_curve=train_benchmark_curve,
+                benchmark_metrics=train_benchmark_metrics,
+                data_quality=train_data_quality,
+                strategy_spec=strategy_spec,
+                strategy_payload=strategy_payload,
+                run_dir=train_dir / run_id,
+                run_name=f"{run_name_prefix} train {run_id}",
+                parameters=params,
+                run_type="train_sweep_run",
+                run_id=run_id,
+            )
+        )
+
+    train_rows.sort(key=lambda row: _selection_value(row, args.select_by), reverse=True)
+    train_summary_path = save_sweep_summary(train_rows, train_dir)
+    best_train = train_rows[0]
+    best_variant = variants_by_run_id[str(best_train["run_id"])]
+
+    test_benchmark_curve = buy_and_hold_equity_curve(test_data, args.initial_cash)
+    test_benchmark_metrics = buy_and_hold_metrics(test_data, args.initial_cash)
+    test_data_quality = build_data_quality_report(test_data)
+    test_strategy_payload = best_variant["payload"]
+    test_strategy_spec = parse_strategy(test_strategy_payload)
+    test_params = {
+        **best_variant["params"],
+        "_split_phase": "test",
+        "_selected_train_run_id": best_train["run_id"],
+        "_train_end": args.train_end,
+        "_test_start": args.test_start,
+        "_select_by": args.select_by,
+    }
+    test_row = run_sweep_variant(
+        args=args,
+        data=test_data,
+        benchmark_curve=test_benchmark_curve,
+        benchmark_metrics=test_benchmark_metrics,
+        data_quality=test_data_quality,
+        strategy_spec=test_strategy_spec,
+        strategy_payload=test_strategy_payload,
+        run_dir=test_dir,
+        run_name=f"{args.run_name or test_strategy_spec.name} test selected",
+        parameters=test_params,
+        run_type="test_selected_run",
+        run_id="test_selected",
+    )
+    test_summary_path = save_sweep_summary([test_row], output_dir / "test_summary")
+    research_path = save_train_test_research_summary(
+        args=args,
+        train_rows=train_rows,
+        test_row=test_row,
+        output_dir=output_dir,
+        train_summary_path=train_summary_path,
+        test_summary_path=test_summary_path,
+    )
+
+    print(f"Train/test sweep complete: {len(train_rows)} train runs")
+    print(f"train_summary: {train_summary_path}")
+    print(f"test_summary: {test_summary_path}")
+    print(f"research: {research_path}")
+    print(f"selected_train_run: {best_train['run_id']}")
+    print(f"selected_train_{args.select_by}: {_selection_value(best_train, args.select_by):.4f}")
+    print(f"test_total_return: {float(test_row['total_return']):.2%}")
+    return 0
+
+
+def split_train_test_data(data: pd.DataFrame, train_end: str, test_start: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    if "date" not in data.columns:
+        raise ValueError("train/test split requires a date column.")
+    train_end_date = pd.Timestamp(train_end)
+    test_start_date = pd.Timestamp(test_start)
+    if train_end_date >= test_start_date:
+        raise ValueError("--train-end must be earlier than --test-start.")
+
+    dates = pd.to_datetime(data["date"])
+    # Keep the two samples disjoint: the train set is used to choose a
+    # parameter variant, and the test set is reserved for the selected variant.
+    train_data = data.loc[dates <= train_end_date].copy()
+    test_data = data.loc[dates >= test_start_date].copy()
+    if train_data.empty:
+        raise ValueError("train split is empty.")
+    if test_data.empty:
+        raise ValueError("test split is empty.")
+    return train_data, test_data
+
+
+def _selection_value(row: dict[str, str | int | float | None], select_by: str) -> float:
+    value = row.get(select_by)
+    if value is None:
+        return float("-inf")
+    return float(value)
+
+
+def save_train_test_research_summary(
+    *,
+    args: argparse.Namespace,
+    train_rows: Sequence[dict[str, str | int | float | None]],
+    test_row: dict[str, str | int | float | None],
+    output_dir: str | Path,
+    train_summary_path: str,
+    test_summary_path: str,
+) -> str:
+    destination = Path(output_dir)
+    research_path = destination / "research.md"
+    best_train = train_rows[0]
+    research_path.write_text(
+        f"""# Train/Test Sweep Research Summary
+
+## Split
+
+- Train end: `{args.train_end}`
+- Test start: `{args.test_start}`
+- Selection metric: `{args.select_by}`
+
+## Artifacts
+
+- Train summary: `{train_summary_path}`
+- Test summary: `{test_summary_path}`
+- Selected train run: `{best_train['run_id']}`
+- Test output directory: `{test_row['output_dir']}`
+
+## Results
+
+- Selected train {args.select_by}: {float(_selection_value(best_train, args.select_by)):.4f}
+- Selected train total return: {float(best_train['total_return']):.2%}
+- Test total return: {float(test_row['total_return']):.2%}
+- Test excess total return: {float(test_row['excess_total_return']):.2%}
+
+## Skeptic Pass
+
+- Treat the test result as a guardrail, not proof of an edge.
+- Check whether the selected train parameters are near other strong train runs.
+- Compare test excess return against the same-period benchmark.
+- Re-run promising ideas on a different symbol or date range.
+""",
+        encoding="utf-8",
+    )
+    return str(research_path)
+
+
+def run_sweep_variant(
+    *,
+    args: argparse.Namespace,
+    data: pd.DataFrame,
+    benchmark_curve,
+    benchmark_metrics,
+    data_quality,
+    strategy_spec,
+    strategy_payload: dict,
+    run_dir: Path,
+    run_name: str,
+    parameters: dict[str, str | int | float],
+    run_type: str,
+    run_id: str,
+) -> dict[str, str | int | float | None]:
+    strategy = build_rule_based_strategy(
+        strategy_spec,
+        order_quantity=args.quantity,
+        sizing=args.sizing,
+        allocation=args.allocation,
+    )
+    result = build_engine(args).run(data, strategy)
+    metrics = summarize_run_metrics(result)
+    research_warnings = build_research_warnings(metrics, result.trades)
+    report = append_benchmark_section(
+        build_run_report(result, run_name=run_name),
+        benchmark_metrics,
+        result.total_return,
+    )
+    report = append_data_quality_section(report, data_quality)
+    report = append_research_warnings_section(report, research_warnings)
+    artifact_paths = save_run_report_artifacts(result, run_dir, run_name=run_name)
+    Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
+    artifact_paths["trades"] = save_trades(result.trades, run_dir)
+    artifact_paths.update(save_charts(result, benchmark_curve, run_dir))
+    artifact_paths["data_quality"] = save_data_quality_report(data_quality, run_dir)
+    artifact_paths["research_warnings"] = save_research_warnings(research_warnings, run_dir)
+    artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
+    artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
+    artifact_paths["research_index"] = str(args.index_path)
+    metadata = build_run_metadata(
+        args=args,
+        strategy_spec=strategy_spec,
+        data=data,
+        run_type=run_type,
+        run_id=run_id,
+        parameters=parameters,
+        artifacts=artifact_paths,
+    )
+    artifact_paths["metadata"] = save_run_metadata(metadata, run_dir)
+    append_research_index(
+        metadata=metadata,
+        metrics=metrics,
+        benchmark_metrics=benchmark_metrics,
+        output_dir=run_dir,
+        trade_count=len(result.trades),
+        index_path=args.index_path,
+        strategy_total_return=result.total_return,
+    )
+
+    return build_summary_row(
+        run_id=run_id,
+        strategy_id=strategy_spec.strategy_id,
+        params=parameters,
+        result=result,
+        metrics=metrics,
+        benchmark_metrics=benchmark_metrics,
+        output_dir=run_dir,
+        args=args,
+    )
+
+
+def build_summary_row(
+    *,
+    run_id: str,
+    strategy_id: str,
+    params: dict[str, str | int | float],
+    result,
+    metrics,
+    benchmark_metrics,
+    output_dir: str | Path,
+    args: argparse.Namespace,
+) -> dict[str, str | int | float | None]:
+    return {
+        "run_id": run_id,
+        "strategy_id": strategy_id,
+        "params": json.dumps(params, sort_keys=True),
+        "final_equity": result.final_equity,
+        "total_return": result.total_return,
+        "cagr": metrics.cagr,
+        "sharpe_ratio": metrics.sharpe_ratio,
+        "max_drawdown": metrics.max_drawdown,
+        "trade_count": len(result.trades),
+        "sizing": args.sizing,
+        "quantity": args.quantity,
+        "allocation": args.allocation,
+        "cost_preset": args.cost_assumptions.preset,
+        "commission_fixed": args.cost_assumptions.commission_fixed,
+        "commission_rate": args.cost_assumptions.commission_rate,
+        "slippage_bps": args.cost_assumptions.slippage_bps,
+        **benchmark_summary_fields(benchmark_metrics),
+        "excess_total_return": excess_total_return(
+            result.total_return,
+            benchmark_metrics.total_return,
+        ),
+        "output_dir": str(output_dir),
+    }
 
 
 def build_engine(args: argparse.Namespace) -> BacktestEngine:

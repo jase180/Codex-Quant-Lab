@@ -15,6 +15,8 @@ tool that makes backtest assumptions visible.
 - Execute SMA, EMA, and RSI-based long-only strategies.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
+- Run a train/test parameter sweep that selects on the train period and reruns
+  only the selected variant on the later test period.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
 - Write data-quality summaries for run inputs.
 - Compare strategy results with an automatic buy-and-hold benchmark.
@@ -271,6 +273,53 @@ commission_rate
 slippage_bps
 ```
 
+### Run A Train/Test Sweep
+
+Use train/test mode when you want to choose parameters on an earlier period and
+then check the selected variant on a later period:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --sizing percent-equity \
+  --allocation 1.0 \
+  --cost-preset retail-liquid \
+  --train-end 2020-12-31 \
+  --test-start 2021-01-01 \
+  --select-by sharpe_ratio \
+  --out artifacts/research/qqq_sma_train_test_2015_2025
+```
+
+Outputs:
+
+```text
+artifacts/research/qqq_sma_train_test_2015_2025/
+  research.md
+  train_sweep/
+    summary.csv
+    run_001/
+      run_metadata.json
+      strategy.json
+      report.md
+  test_summary/
+    summary.csv
+  test_selected/
+    run_metadata.json
+    strategy.json
+    report.md
+```
+
+The train and test periods must not overlap. `--select-by` currently supports
+`total_return` and `sharpe_ratio`. The test run metadata records the split
+dates, selection metric, and selected train run id in `parameters`.
+
+This workflow reduces in-sample overconfidence, but it does not prove an edge.
+Treat the test result as one skeptical check before trying another symbol, date
+range, or nearby parameter grid.
+
 ### Sizing Modes
 
 The CLI supports two sizing modes:
@@ -337,6 +386,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Add richer research summaries.
-2. Add more benchmark options.
-3. Add optional cost presets for common broker assumptions.
+1. Finish benchmark variant support.
+2. Add richer research summaries.
+3. Keep expanding validation around data, costs, and out-of-sample checks.

@@ -13,7 +13,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from quant_lab.cli import build_sweep_variants, main, parse_param_sweeps  # noqa: E402
+from quant_lab.cli import build_sweep_variants, main, parse_param_sweeps, split_train_test_data  # noqa: E402
 
 
 def _strategy_payload() -> dict:
@@ -650,6 +650,75 @@ class CliTests(unittest.TestCase):
             self.assertEqual(index_rows[0]["run_type"], "sweep_run")
             self.assertIn(index_rows[0]["run_id"], {"run_001", "run_002", "run_003", "run_004"})
             self.assertEqual(index_rows[0]["symbol"], "TEST")
+
+    def test_sweep_command_supports_train_test_split(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "split"
+            index_path = temp_path / "research_index.jsonl"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "sweep",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--param",
+                        "sma_2.inputs.length=2,3",
+                        "--param",
+                        "sma_3.inputs.length=3,4",
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "2",
+                        "--train-end",
+                        "2026-01-02",
+                        "--test-start",
+                        "2026-01-03",
+                        "--select-by",
+                        "total_return",
+                        "--index-path",
+                        str(index_path),
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Train/test sweep complete", stdout.getvalue())
+            self.assertTrue((output_dir / "train_sweep" / "summary.csv").exists())
+            self.assertTrue((output_dir / "test_summary" / "summary.csv").exists())
+            self.assertTrue((output_dir / "research.md").exists())
+            self.assertTrue((output_dir / "train_sweep" / "run_001" / "run_metadata.json").exists())
+            self.assertTrue((output_dir / "test_selected" / "run_metadata.json").exists())
+
+            metadata = json.loads((output_dir / "test_selected" / "run_metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["run_type"], "test_selected_run")
+            self.assertEqual(metadata["parameters"]["_split_phase"], "test")
+            self.assertEqual(metadata["parameters"]["_train_end"], "2026-01-02")
+            self.assertEqual(metadata["parameters"]["_test_start"], "2026-01-03")
+
+            index_rows = _read_jsonl(index_path)
+            self.assertEqual(len(index_rows), 5)
+            self.assertEqual(index_rows[-1]["run_type"], "test_selected_run")
+
+    def test_train_test_split_rejects_overlapping_dates(self) -> None:
+        data = pd.DataFrame(
+            [
+                {"date": "2026-01-01", "open": 10, "high": 10, "low": 10, "close": 10, "volume": 100},
+                {"date": "2026-01-02", "open": 11, "high": 11, "low": 11, "close": 11, "volume": 100},
+            ]
+        )
+
+        with self.assertRaisesRegex(ValueError, "earlier than --test-start"):
+            split_train_test_data(data, "2026-01-02", "2026-01-02")
 
 
 if __name__ == "__main__":

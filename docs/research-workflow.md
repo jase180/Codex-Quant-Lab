@@ -132,7 +132,46 @@ quant-lab list-runs \
   --csv
 ```
 
-## 6. Inspect One Run
+## 6. Run A Train/Test Check
+
+When a sweep looks promising, repeat the sweep with a train/test date split
+before treating the result as meaningful:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --sizing percent-equity \
+  --allocation 1.0 \
+  --cost-preset retail-liquid \
+  --train-end 2020-12-31 \
+  --test-start 2021-01-01 \
+  --select-by sharpe_ratio \
+  --out artifacts/research/sma_qqq_2015_2025/train_test_001
+```
+
+This runs all parameter variants on the train period, chooses one winner by the
+selection metric, and reruns only that selected variant on the test period. The
+test result is out-of-sample relative to parameter selection, but it is still
+only evidence. It can fail on another symbol, data provider, cost assumption, or
+date range.
+
+Inspect these files first:
+
+```text
+train_sweep/summary.csv
+test_summary/summary.csv
+test_selected/run_metadata.json
+research.md
+```
+
+The train and test periods must not overlap. If you move the split date after
+seeing the result, record that as a new experiment instead of overwriting the
+old one.
+
+## 7. Inspect One Run
 
 Use `show-run` on a candidate run:
 
@@ -159,7 +198,7 @@ Check:
 If the result looks promising, open the run's `report.md`, `trades.csv`,
 `equity_curve.png`, and `drawdown.png`.
 
-## 7. Compare Runs
+## 8. Compare Runs
 
 Compare the baseline against a candidate sweep run:
 
@@ -181,7 +220,7 @@ quant-lab compare-runs \
 Do not choose a run by total return alone. Look at drawdown, Sharpe, trade
 count, and excess return over buy-and-hold.
 
-## 8. Write A Skeptic Pass
+## 9. Write A Skeptic Pass
 
 For any promising result, answer:
 
@@ -190,6 +229,7 @@ For any promising result, answer:
 - Are costs and slippage included?
 - Is the sample long enough?
 - Are nearby parameter values also good, or is the best result isolated?
+- Did the selected train winner survive the later test period?
 - Would the conclusion change if the data range started or ended differently?
 - Does the drawdown chart show behavior you would actually tolerate?
 
@@ -205,7 +245,7 @@ windows produce similar results and whether the result survives a different
 date range.
 ```
 
-## 9. Decide The Next Experiment
+## 10. Decide The Next Experiment
 
 Good next experiments are small:
 

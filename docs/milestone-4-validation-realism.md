@@ -179,7 +179,7 @@ Acceptance criteria:
 
 ## Deliverable 4: Train/Test Date Split
 
-Status: fourth priority.
+Status: delivered.
 
 Goal: support basic out-of-sample thinking without adding optimization logic.
 
@@ -205,16 +205,32 @@ First version:
 
 Implementation notes:
 
-- Keep selection metric explicit with `--select-by`.
-- Avoid automatic over-optimization beyond selecting one row.
-- Record split dates in metadata and research summary.
+- Keep selection metric explicit with `--select-by`. Delivered.
+- Avoid automatic over-optimization beyond selecting one row. Delivered.
+- Record split dates in metadata and research summary. Delivered.
+- Require non-overlapping split dates. Delivered.
+
+Delivered output shape:
+
+```text
+artifacts/research/sma_split_001/
+  research.md
+  train_sweep/
+    summary.csv
+    run_001/
+      run_metadata.json
+  test_summary/
+    summary.csv
+  test_selected/
+    run_metadata.json
+```
 
 Acceptance criteria:
 
-- Sweep can produce train and test outputs.
-- Selected train parameters are saved.
-- Test run metadata records that it came from a train/test workflow.
-- Docs explain that this is a guardrail, not proof.
+- Sweep can produce train and test outputs. Delivered.
+- Selected train parameters are saved. Delivered.
+- Test run metadata records that it came from a train/test workflow. Delivered.
+- Docs explain that this is a guardrail, not proof. Delivered.
 
 ## Deliverable 5: Benchmark Variants
 
