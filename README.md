@@ -26,6 +26,7 @@ data/
   sample_ohlcv.csv              Small sample dataset.
   strategies/                   Example strategy JSON files.
 docs/
+  milestone-4-validation-realism.md  Detailed Milestone 4 plan.
   milestones.md                  Project milestone plan.
   research-workflow.md           End-to-end research workflow.
   strategy-schema.md            Strategy schema notes.
@@ -41,6 +42,7 @@ data/cache/                     Ignored local market-data cache.
 More detailed module notes:
 
 - [docs/milestones.md](docs/milestones.md)
+- [docs/milestone-4-validation-realism.md](docs/milestone-4-validation-realism.md)
 - [docs/research-workflow.md](docs/research-workflow.md)
 - [src/backtester_core/README.md](src/backtester_core/README.md)
 - [src/quant_lab/README.md](src/quant_lab/README.md)

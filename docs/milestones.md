@@ -85,6 +85,8 @@ Status: planned.
 
 Goal: reduce false confidence from unrealistic assumptions.
 
+Detailed plan: [milestone-4-validation-realism.md](milestone-4-validation-realism.md)
+
 Likely work:
 
 - Add cost presets for common broker assumptions.
