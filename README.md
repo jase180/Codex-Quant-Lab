@@ -26,6 +26,7 @@ data/
   sample_ohlcv.csv              Small sample dataset.
   strategies/                   Example strategy JSON files.
 docs/
+  milestones.md                  Project milestone plan.
   strategy-schema.md            Strategy schema notes.
 src/
   backtester_core/              Backtest engine, portfolio, execution, data validation.
@@ -38,6 +39,7 @@ data/cache/                     Ignored local market-data cache.
 
 More detailed module notes:
 
+- [docs/milestones.md](docs/milestones.md)
 - [src/backtester_core/README.md](src/backtester_core/README.md)
 - [src/quant_lab/README.md](src/quant_lab/README.md)
 - [src/metrics_reporting/README.md](src/metrics_reporting/README.md)
