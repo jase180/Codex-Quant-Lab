@@ -61,6 +61,8 @@ Status: next.
 
 Goal: make it easier to compare and interpret runs without opening many files.
 
+Detailed plan: [milestone-3-research-usability.md](milestone-3-research-usability.md)
+
 Likely work:
 
 - Add `quant-lab show-run` to print one run's metadata, metrics, and artifact paths.
