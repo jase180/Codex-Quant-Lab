@@ -60,16 +60,11 @@ Delivered:
 
 ## Milestone 3: Research Usability
 
-Status: next.
+Status: complete.
 
 Goal: make it easier to compare and interpret runs without opening many files.
 
 Detailed plan: [milestone-3-research-usability.md](milestone-3-research-usability.md)
-
-Likely work:
-
-- Add clearer research summaries for sweeps, including best, worst, median, and benchmark context.
-- Add docs for a complete research workflow from fetch to list-runs.
 
 Delivered:
 
@@ -78,6 +73,7 @@ Delivered:
 - `quant-lab compare-runs --metadata` compares two or more runs in one table.
 - `quant-lab list-runs` supports strategy id filtering, run-type filtering, and
   CSV output.
+- [research-workflow.md](research-workflow.md) documents the full research loop.
 
 Exit criteria:
 
@@ -139,7 +135,7 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Write the complete research workflow doc next.
+Start Milestone 4 next.
 
-Reason: the main inspection commands are now in place. The remaining Milestone 3
-gap is a clear end-to-end workflow a future user can follow.
+Reason: Milestone 3 now covers finding, inspecting, comparing, and documenting
+local research runs. The next gap is better validation and realism.

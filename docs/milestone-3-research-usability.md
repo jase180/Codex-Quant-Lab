@@ -173,7 +173,7 @@ Acceptance criteria:
 
 ## Deliverable 4: Workflow Documentation
 
-Status: fourth priority.
+Status: delivered.
 
 Goal: document one complete research loop.
 
@@ -196,7 +196,7 @@ It should show:
 Acceptance criteria:
 
 - A future user can follow the doc from an empty artifact folder to a completed
-  research summary.
+  research summary. Delivered.
 
 ## Suggested Build Order
 
@@ -220,11 +220,11 @@ Acceptance criteria:
 
 Milestone 3 is complete when:
 
-- `list-runs` finds candidate runs.
-- `show-run` explains one selected run.
-- `compare-runs` compares selected runs.
-- docs show the complete research workflow.
-- all commands are covered by focused tests.
+- `list-runs` finds candidate runs. Delivered.
+- `show-run` explains one selected run. Delivered.
+- `compare-runs` compares selected runs. Delivered.
+- docs show the complete research workflow. Delivered.
+- all commands are covered by focused tests. Delivered.
 
 At that point, the lab should support a full local workflow:
 
