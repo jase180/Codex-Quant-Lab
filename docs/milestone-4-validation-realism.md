@@ -56,7 +56,7 @@ turn it into a production trading system.
 
 ## Deliverable 1: Data Quality Report
 
-Status: first priority.
+Status: delivered.
 
 Goal: summarize basic input-data risks for every run and sweep.
 
@@ -94,12 +94,12 @@ Implementation notes:
 
 Acceptance criteria:
 
-- Every run writes `data_quality.json`.
-- Every sweep sub-run writes `data_quality.json`.
+- Every run writes `data_quality.json`. Delivered.
+- Every sweep sub-run writes `data_quality.json`. Delivered.
 - Tests cover clean data, zero volume, missing values, non-positive prices, and
-  duplicate dates.
+  duplicate dates. Delivered.
 - Docs explain that warnings are research prompts, not automatic proof of bad
-  data.
+  data. Delivered.
 
 ## Deliverable 2: Cost Presets
 

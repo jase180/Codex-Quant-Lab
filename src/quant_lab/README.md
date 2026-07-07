@@ -16,6 +16,7 @@ It owns:
 - `rule_based_strategy.py`: turns a validated strategy spec into an executable strategy.
 - `benchmarks.py`: builds buy-and-hold benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
+- `data_quality.py`: summarizes suspicious input-data conditions for artifacts.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, and `quant-lab sweep`.
@@ -141,6 +142,10 @@ Each run directory also includes `run_metadata.json`. The metadata file uses a
 versioned nested schema so future fields can be added without changing the
 basic structure. It records command tokens, strategy metadata, data range,
 sizing, cost assumptions, Git commit, sweep parameters, and artifact paths.
+
+Each run directory also includes `data_quality.json`, and `report.md` includes a
+data-quality section. The report warns about suspicious-but-possibly-valid input
+conditions; strict OHLCV validation still rejects data the backtester cannot use.
 
 The CLI also appends one flat record per run to `artifacts/research_index.jsonl`
 by default. `run_metadata.json` is the detailed per-run source of truth; the

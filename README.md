@@ -16,6 +16,7 @@ tool that makes backtest assumptions visible.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
+- Write data-quality summaries for run inputs.
 - Compare strategy results with an automatic buy-and-hold benchmark.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
@@ -154,6 +155,7 @@ artifacts/qqq_sma_crossover/
   equity_curve.csv
   equity_curve.png
   drawdown.png
+  data_quality.json
   report.md
   trades.csv
   run_metadata.json
@@ -174,6 +176,10 @@ next open. For example, `--slippage-bps 5` means 0.05% one-way slippage.
 `run_metadata.json` records the command, strategy identity, data range, sizing,
 cost assumptions, Git commit, and artifact paths. Treat it as the source of
 truth for how a run folder was produced.
+
+`data_quality.json` summarizes suspicious input-data conditions such as missing
+OHLCV values, duplicate dates, zero volume, non-positive prices, and large gaps.
+These warnings are prompts for review, not automatic proof that the data is bad.
 
 Each run also appends one flat JSON line to `artifacts/research_index.jsonl` by
 default. Use `--index-path` to write the registry somewhere else.
@@ -237,6 +243,7 @@ artifacts/research/qqq_sma_crossover_2015_2025/
     equity_curve.csv
     equity_curve.png
     drawdown.png
+    data_quality.json
     report.md
     trades.csv
     run_metadata.json

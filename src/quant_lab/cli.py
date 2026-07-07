@@ -34,6 +34,11 @@ from .benchmarks import (
     excess_total_return,
 )
 from .data_fetch import fetch_market_data, write_market_data_csv
+from .data_quality import (
+    append_data_quality_section,
+    build_data_quality_report,
+    save_data_quality_report,
+)
 from .research_index import append_research_index_record, build_run_index_record, format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
@@ -260,6 +265,7 @@ def run_command(args: argparse.Namespace) -> int:
         allocation=args.allocation,
     )
     data = pd.read_csv(args.data)
+    data_quality = build_data_quality_report(data)
 
     result = build_engine(args).run(data, strategy)
     run_name = args.run_name or strategy_spec.name
@@ -270,12 +276,14 @@ def run_command(args: argparse.Namespace) -> int:
         benchmark_metrics,
         result.total_return,
     )
+    report = append_data_quality_section(report, data_quality)
     artifact_paths = save_run_report_artifacts(result, args.out, run_name=run_name)
     run_metrics = summarize_run_metrics(result)
     report_path = Path(artifact_paths["report"])
     report_path.write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, args.out)
     artifact_paths.update(save_charts(result, benchmark_curve, args.out))
+    artifact_paths["data_quality"] = save_data_quality_report(data_quality, args.out)
     artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
     artifact_paths["research_index"] = str(args.index_path)
     metadata = build_run_metadata(
@@ -372,6 +380,7 @@ def sweep_command(args: argparse.Namespace) -> int:
     param_sweeps = parse_param_sweeps(args.param)
     variants = build_sweep_variants(base_payload, param_sweeps)
     data = pd.read_csv(args.data)
+    data_quality = build_data_quality_report(data)
     benchmark_curve = buy_and_hold_equity_curve(data, args.initial_cash)
     benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
     output_dir = Path(args.out)
@@ -399,10 +408,12 @@ def sweep_command(args: argparse.Namespace) -> int:
             benchmark_metrics,
             result.total_return,
         )
+        report = append_data_quality_section(report, data_quality)
         artifact_paths = save_run_report_artifacts(result, run_dir, run_name=f"{run_name_prefix} {run_id}")
         Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
         artifact_paths["trades"] = save_trades(result.trades, run_dir)
         artifact_paths.update(save_charts(result, benchmark_curve, run_dir))
+        artifact_paths["data_quality"] = save_data_quality_report(data_quality, run_dir)
         artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
         artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
         artifact_paths["research_index"] = str(args.index_path)
