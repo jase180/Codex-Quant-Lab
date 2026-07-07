@@ -36,7 +36,7 @@ from .benchmarks import (
 from .data_fetch import fetch_market_data, write_market_data_csv
 from .research_index import append_research_index_record, build_run_index_record
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
-from .run_inspection import format_run_summary, load_run_summary
+from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
 from .rule_based_strategy import build_rule_based_strategy
 from .run_metadata import (
     CostMetadata,
@@ -153,6 +153,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     show_parser.add_argument("--metadata", required=True, help="Path to a run_metadata.json file.")
     show_parser.set_defaults(func=show_run_command)
+
+    compare_parser = subparsers.add_parser(
+        "compare-runs",
+        help="Compare two or more saved runs from run_metadata.json files.",
+    )
+    compare_parser.add_argument(
+        "--metadata",
+        action="append",
+        required=True,
+        help="Path to a run_metadata.json file. Provide at least two.",
+    )
+    compare_parser.set_defaults(func=compare_runs_command)
 
     sweep_parser = subparsers.add_parser(
         "sweep",
@@ -330,6 +342,12 @@ def list_runs_command(args: argparse.Namespace) -> int:
 def show_run_command(args: argparse.Namespace) -> int:
     summary = load_run_summary(args.metadata)
     print(format_run_summary(summary))
+    return 0
+
+
+def compare_runs_command(args: argparse.Namespace) -> int:
+    summaries = load_run_summaries(args.metadata)
+    print(format_run_comparison(summaries))
     return 0
 
 

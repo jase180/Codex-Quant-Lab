@@ -90,6 +90,67 @@ def format_run_summary(summary: dict) -> str:
     return "\n".join(lines)
 
 
+def load_run_summaries(metadata_paths: list[str | Path]) -> list[dict]:
+    if len(metadata_paths) < 2:
+        raise ValueError("compare-runs requires at least two --metadata paths")
+    return [load_run_summary(path) for path in metadata_paths]
+
+
+def format_run_comparison(summaries: list[dict]) -> str:
+    rows = [_comparison_row(summary) for summary in summaries]
+    columns = [
+        ("run", "run"),
+        ("symbol", "symbol"),
+        ("strategy", "strategy"),
+        ("return", "total_return"),
+        ("bench", "benchmark_total_return"),
+        ("excess", "excess_total_return"),
+        ("dd", "max_drawdown"),
+        ("sharpe", "sharpe_ratio"),
+        ("trades", "trade_count"),
+        ("comm", "commission_rate"),
+        ("slip", "slippage_bps"),
+        ("out", "output_dir"),
+    ]
+    table_rows = [
+        [_format_comparison_value(row.get(field), field) for _, field in columns]
+        for row in rows
+    ]
+    header = [label for label, _ in columns]
+    widths = [
+        max(len(header[index]), *[len(row[index]) for row in table_rows])
+        for index in range(len(header))
+    ]
+    lines = [
+        "  ".join(header[index].ljust(widths[index]) for index in range(len(header))),
+        "  ".join("-" * widths[index] for index in range(len(header))),
+    ]
+    for row in table_rows:
+        lines.append("  ".join(row[index].ljust(widths[index]) for index in range(len(row))))
+    return "\n".join(lines)
+
+
+def _comparison_row(summary: dict) -> dict:
+    metadata = summary["metadata"]
+    metrics = summary["metrics"]
+    index_record = summary["index_record"] or {}
+    artifacts = metadata.get("artifacts", {})
+    return {
+        "run": metadata.get("run_id") or Path(summary["metadata_path"]).parent.name,
+        "symbol": metadata.get("data", {}).get("symbol"),
+        "strategy": metadata.get("strategy", {}).get("strategy_id"),
+        "total_return": metrics.get("total_return"),
+        "benchmark_total_return": index_record.get("benchmark_total_return"),
+        "excess_total_return": index_record.get("excess_total_return"),
+        "max_drawdown": metrics.get("max_drawdown"),
+        "sharpe_ratio": metrics.get("sharpe_ratio"),
+        "trade_count": index_record.get("trade_count"),
+        "commission_rate": metadata.get("costs", {}).get("commission_rate"),
+        "slippage_bps": metadata.get("costs", {}).get("slippage_bps"),
+        "output_dir": Path(artifacts.get("metadata", summary["metadata_path"])).parent,
+    }
+
+
 def _find_index_record(metadata: dict) -> dict | None:
     artifacts = metadata.get("artifacts", {})
     index_path = artifacts.get("research_index")
@@ -129,3 +190,13 @@ def _format_decimal(value: object) -> str:
     if value is None:
         return "-"
     return f"{float(value):.4f}"
+
+
+def _format_comparison_value(value: object, field: str) -> str:
+    if value is None:
+        return "-"
+    if field in {"total_return", "benchmark_total_return", "excess_total_return", "max_drawdown"}:
+        return _format_percent(value)
+    if field in {"sharpe_ratio", "commission_rate"}:
+        return _format_decimal(value)
+    return str(value)

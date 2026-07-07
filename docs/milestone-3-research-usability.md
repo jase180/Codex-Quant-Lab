@@ -103,7 +103,7 @@ Acceptance criteria:
 
 ## Deliverable 2: `quant-lab compare-runs`
 
-Status: second priority.
+Status: delivered for metadata-path comparison.
 
 Goal: compare two or more runs side by side.
 
@@ -134,15 +134,15 @@ output_dir
 
 Implementation notes:
 
-- Build this on top of the same reader/formatter helpers used by `show-run`.
-- Keep the first version metadata-path based.
+- Build this on top of the same reader/formatter helpers used by `show-run`. Delivered.
+- Keep the first version metadata-path based. Delivered.
 - Index-based selection can come later.
 
 Acceptance criteria:
 
-- Two or more metadata paths produce one comparison table.
+- Two or more metadata paths produce one comparison table. Delivered.
 - Missing files fail clearly.
-- Tests cover ordering and key metric formatting.
+- Tests cover ordering and key metric formatting. Delivered.
 
 ## Deliverable 3: `list-runs` Improvements
 

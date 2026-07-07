@@ -95,6 +95,14 @@ Inspect one run:
 quant-lab show-run --metadata artifacts/run/run_metadata.json
 ```
 
+Compare runs:
+
+```bash
+quant-lab compare-runs \
+  --metadata artifacts/run_a/run_metadata.json \
+  --metadata artifacts/run_b/run_metadata.json
+```
+
 ## Sizing
 
 The CLI supports:
@@ -145,6 +153,9 @@ by symbol, sorting by common metrics, ascending order, and row limits.
 `show-run` reads one `run_metadata.json` file plus its linked `metrics.json`.
 When the metadata points to a research index, it also shows benchmark and trade
 count context from the matching index row.
+
+`compare-runs` reads two or more metadata files and prints a compact comparison
+table using the same metrics and index context.
 
 ## Notes For Future Work
 

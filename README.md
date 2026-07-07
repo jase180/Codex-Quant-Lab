@@ -195,6 +195,17 @@ quant-lab show-run --metadata artifacts/qqq_sma_crossover/run_metadata.json
 This prints the run identity, data range, metrics, benchmark comparison when
 available, cost assumptions, artifact paths, and original command.
 
+Compare saved runs:
+
+```bash
+quant-lab compare-runs \
+  --metadata artifacts/run_a/run_metadata.json \
+  --metadata artifacts/run_b/run_metadata.json
+```
+
+This prints a compact table with returns, benchmark context, drawdown, Sharpe,
+trade count, cost assumptions, and output directories.
+
 ### Run A Parameter Sweep
 
 ```bash

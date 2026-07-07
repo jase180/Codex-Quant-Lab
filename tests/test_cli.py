@@ -430,6 +430,65 @@ class CliTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 main(["show-run", "--metadata", str(missing_path)])
 
+    def test_compare_runs_command_prints_comparison_table(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            first_output_dir = temp_path / "first"
+            second_output_dir = temp_path / "second"
+            index_path = temp_path / "research_index.jsonl"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            for output_dir, quantity in [(first_output_dir, "2"), (second_output_dir, "3")]:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    main(
+                        [
+                            "run",
+                            "--strategy",
+                            str(strategy_path),
+                            "--data",
+                            str(data_path),
+                            "--out",
+                            str(output_dir),
+                            "--initial-cash",
+                            "1000",
+                            "--quantity",
+                            quantity,
+                            "--index-path",
+                            str(index_path),
+                        ]
+                    )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "compare-runs",
+                        "--metadata",
+                        str(first_output_dir / "run_metadata.json"),
+                        "--metadata",
+                        str(second_output_dir / "run_metadata.json"),
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("strategy", output)
+            self.assertIn("cli_smoke", output)
+            self.assertIn("return", output)
+            self.assertIn("bench", output)
+            self.assertIn(str(first_output_dir), output)
+            self.assertIn(str(second_output_dir), output)
+
+    def test_compare_runs_command_requires_two_metadata_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            metadata_path = Path(temp_dir) / "run_metadata.json"
+
+            with self.assertRaises(ValueError):
+                main(["compare-runs", "--metadata", str(metadata_path)])
+
     def test_sweep_command_writes_summary_and_per_run_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
