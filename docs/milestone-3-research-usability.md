@@ -53,7 +53,7 @@ The milestone should stay focused on making existing artifacts useful.
 
 ## Deliverable 1: `quant-lab show-run`
 
-Status: first priority.
+Status: delivered for metadata-path inspection.
 
 Goal: inspect one run from either a metadata path or an index row.
 
@@ -67,7 +67,8 @@ quant-lab show-run --metadata artifacts/qqq_run/run_metadata.json
 quant-lab show-run --index-path artifacts/research_index.jsonl --output-dir artifacts/qqq_run
 ```
 
-First version can require `--metadata`. Index lookup can come next if needed.
+The first version requires `--metadata`. Index lookup by output directory can
+come next if needed.
 
 Output should include:
 
@@ -95,10 +96,10 @@ Implementation notes:
 
 Acceptance criteria:
 
-- A valid metadata path prints a useful summary.
-- Missing metadata path gives an explicit error.
+- A valid metadata path prints a useful summary. Delivered.
+- Missing metadata path gives an explicit error. Delivered.
 - Missing metrics artifact gives an explicit error.
-- Tests cover normal output and missing-file behavior.
+- Tests cover normal output and missing-file behavior. Delivered.
 
 ## Deliverable 2: `quant-lab compare-runs`
 

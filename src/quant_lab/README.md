@@ -89,6 +89,12 @@ List previous runs:
 quant-lab list-runs --symbol QQQ --sort sharpe_ratio --limit 10
 ```
 
+Inspect one run:
+
+```bash
+quant-lab show-run --metadata artifacts/run/run_metadata.json
+```
+
 ## Sizing
 
 The CLI supports:
@@ -135,6 +141,10 @@ the index location with `--index-path`.
 
 `list-runs` reads that index and prints a compact table. It supports filtering
 by symbol, sorting by common metrics, ascending order, and row limits.
+
+`show-run` reads one `run_metadata.json` file plus its linked `metrics.json`.
+When the metadata points to a research index, it also shows benchmark and trade
+count context from the matching index row.
 
 ## Notes For Future Work
 

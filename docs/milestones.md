@@ -21,6 +21,7 @@ Working capabilities:
 - Save metrics, reports, trades, equity curves, charts, and metadata.
 - Append every run to a local JSONL research index.
 - List previous runs with `quant-lab list-runs`.
+- Inspect one saved run with `quant-lab show-run`.
 
 ## Milestone 1: Reproducible Backtesting Foundation
 
@@ -65,11 +66,15 @@ Detailed plan: [milestone-3-research-usability.md](milestone-3-research-usabilit
 
 Likely work:
 
-- Add `quant-lab show-run` to print one run's metadata, metrics, and artifact paths.
 - Add `quant-lab compare-runs` for two or more metadata paths or index rows.
 - Add optional CSV export from `list-runs`.
 - Add clearer research summaries for sweeps, including best, worst, median, and benchmark context.
 - Add docs for a complete research workflow from fetch to list-runs.
+
+Delivered:
+
+- `quant-lab show-run --metadata` prints one run's metadata, metrics, costs,
+  benchmark context when available, and artifact paths.
 
 Exit criteria:
 
@@ -131,7 +136,7 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build `quant-lab show-run` next.
+Build `quant-lab compare-runs` next.
 
-Reason: `list-runs` helps find candidate runs, but the next natural action is
-to inspect one run without manually opening JSON, CSV, and Markdown files.
+Reason: `list-runs` can find candidate runs, and `show-run` can inspect one run.
+The next natural action is comparing two or more runs side by side.

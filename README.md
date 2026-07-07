@@ -186,6 +186,15 @@ quant-lab list-runs \
 This reads `artifacts/research_index.jsonl` by default and prints a compact
 table of past runs. Use `--index-path` to inspect a different registry.
 
+Inspect one saved run:
+
+```bash
+quant-lab show-run --metadata artifacts/qqq_sma_crossover/run_metadata.json
+```
+
+This prints the run identity, data range, metrics, benchmark comparison when
+available, cost assumptions, artifact paths, and original command.
+
 ### Run A Parameter Sweep
 
 ```bash

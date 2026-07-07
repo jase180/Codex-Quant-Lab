@@ -377,6 +377,59 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertIn("No runs found", stdout.getvalue())
 
+    def test_show_run_command_prints_metadata_and_metrics(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "artifacts"
+            index_path = temp_path / "research_index.jsonl"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "run",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "3",
+                        "--commission-rate",
+                        "0.01",
+                        "--index-path",
+                        str(index_path),
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["show-run", "--metadata", str(output_dir / "run_metadata.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Run Summary", output)
+            self.assertIn("cli_smoke", output)
+            self.assertIn("TEST", output)
+            self.assertIn("Total return", output)
+            self.assertIn("Benchmark return", output)
+            self.assertIn("Commission rate: 0.0100", output)
+            self.assertIn("metrics:", output)
+            self.assertIn("trades:", output)
+
+    def test_show_run_command_rejects_missing_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            missing_path = Path(temp_dir) / "missing.json"
+
+            with self.assertRaises(FileNotFoundError):
+                main(["show-run", "--metadata", str(missing_path)])
+
     def test_sweep_command_writes_summary_and_per_run_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
