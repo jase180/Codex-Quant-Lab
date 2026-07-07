@@ -42,6 +42,11 @@ from .data_quality import (
 )
 from .research_index import append_research_index_record, build_run_index_record, format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
+from .research_warnings import (
+    append_research_warnings_section,
+    build_research_warnings,
+    save_research_warnings,
+)
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
 from .rule_based_strategy import build_rule_based_strategy
 from .run_metadata import (
@@ -287,11 +292,14 @@ def run_command(args: argparse.Namespace) -> int:
     report = append_data_quality_section(report, data_quality)
     artifact_paths = save_run_report_artifacts(result, args.out, run_name=run_name)
     run_metrics = summarize_run_metrics(result)
+    research_warnings = build_research_warnings(run_metrics, result.trades)
+    report = append_research_warnings_section(report, research_warnings)
     report_path = Path(artifact_paths["report"])
     report_path.write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, args.out)
     artifact_paths.update(save_charts(result, benchmark_curve, args.out))
     artifact_paths["data_quality"] = save_data_quality_report(data_quality, args.out)
+    artifact_paths["research_warnings"] = save_research_warnings(research_warnings, args.out)
     artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
     artifact_paths["research_index"] = str(args.index_path)
     metadata = build_run_metadata(
@@ -412,6 +420,7 @@ def sweep_command(args: argparse.Namespace) -> int:
 
         result = build_engine(args).run(data, strategy)
         metrics = summarize_run_metrics(result)
+        research_warnings = build_research_warnings(metrics, result.trades)
         run_name_prefix = args.run_name or strategy_spec.name
         report = append_benchmark_section(
             build_run_report(result, run_name=f"{run_name_prefix} {run_id}"),
@@ -419,11 +428,13 @@ def sweep_command(args: argparse.Namespace) -> int:
             result.total_return,
         )
         report = append_data_quality_section(report, data_quality)
+        report = append_research_warnings_section(report, research_warnings)
         artifact_paths = save_run_report_artifacts(result, run_dir, run_name=f"{run_name_prefix} {run_id}")
         Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
         artifact_paths["trades"] = save_trades(result.trades, run_dir)
         artifact_paths.update(save_charts(result, benchmark_curve, run_dir))
         artifact_paths["data_quality"] = save_data_quality_report(data_quality, run_dir)
+        artifact_paths["research_warnings"] = save_research_warnings(research_warnings, run_dir)
         artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
         artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
         artifact_paths["research_index"] = str(args.index_path)

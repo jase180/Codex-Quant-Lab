@@ -183,6 +183,10 @@ truth for how a run folder was produced.
 OHLCV values, duplicate dates, zero volume, non-positive prices, and large gaps.
 These warnings are prompts for review, not automatic proof that the data is bad.
 
+`research_warnings.json` flags weak evidence such as short samples, tiny trade
+counts, no trades, no completed exits, and drawdown that is large relative to
+return.
+
 Each run also appends one flat JSON line to `artifacts/research_index.jsonl` by
 default. Use `--index-path` to write the registry somewhere else.
 

@@ -151,6 +151,11 @@ Each run directory also includes `data_quality.json`, and `report.md` includes a
 data-quality section. The report warns about suspicious-but-possibly-valid input
 conditions; strict OHLCV validation still rejects data the backtester cannot use.
 
+Each run also includes `research_warnings.json`. These warnings call out weak
+evidence conditions such as short samples, tiny trade counts, no trades, no
+completed exits, and drawdown that is large relative to return. They are meant
+to guide skepticism, not reject runs automatically.
+
 The CLI also appends one flat record per run to `artifacts/research_index.jsonl`
 by default. `run_metadata.json` is the detailed per-run source of truth; the
 JSONL index is the lab-level table for finding and comparing past runs. Override

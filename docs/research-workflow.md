@@ -67,6 +67,7 @@ drawdown.png
 report.md
 trades.csv
 run_metadata.json
+research_warnings.json
 ```
 
 The run also appends one row to:
@@ -223,6 +224,7 @@ truth. The source of truth is:
 
 ```text
 run_metadata.json
+research_warnings.json
 metrics.json
 trades.csv
 equity_curve.csv

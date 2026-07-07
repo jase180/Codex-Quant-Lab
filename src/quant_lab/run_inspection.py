@@ -22,11 +22,14 @@ def load_run_summary(metadata_path: str | Path) -> dict:
     if not metrics_file.exists():
         raise FileNotFoundError(f"metrics file not found: {metrics_file}")
 
+    warnings_path = metadata.get("artifacts", {}).get("research_warnings")
+    warnings = _read_json(Path(warnings_path)) if warnings_path and Path(warnings_path).exists() else None
     index_record = _find_index_record(metadata)
     return {
         "metadata_path": str(metadata_file),
         "metadata": metadata,
         "metrics": _read_json(metrics_file),
+        "research_warnings": warnings,
         "index_record": index_record,
     }
 
@@ -34,6 +37,7 @@ def load_run_summary(metadata_path: str | Path) -> dict:
 def format_run_summary(summary: dict) -> str:
     metadata = summary["metadata"]
     metrics = summary["metrics"]
+    research_warnings = summary.get("research_warnings") or {}
     index_record = summary["index_record"] or {}
     artifacts = metadata.get("artifacts", {})
 
@@ -67,6 +71,9 @@ def format_run_summary(summary: dict) -> str:
         f"  Sharpe: {_format_decimal(metrics.get('sharpe_ratio'))}",
         f"  Max drawdown: {_format_percent(metrics.get('max_drawdown'))}",
         f"  Trades: {_format_plain(index_record.get('trade_count'))}",
+        "",
+        "Research Warnings",
+        *_warning_lines(research_warnings),
         "",
         "Sizing And Costs",
         f"  Sizing: {_format_plain(metadata.get('sizing', {}).get('mode'))}",
@@ -167,6 +174,13 @@ def _find_index_record(metadata: dict) -> dict | None:
 
 def _read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _warning_lines(research_warnings: dict) -> list[str]:
+    warnings = research_warnings.get("warnings") or []
+    if not warnings:
+        return ["  None"]
+    return [f"  - {warning}" for warning in warnings]
 
 
 def _format_plain(value: object) -> str:

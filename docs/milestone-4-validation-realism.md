@@ -146,7 +146,7 @@ Acceptance criteria:
 
 ## Deliverable 3: Sample And Trade Count Warnings
 
-Status: third priority.
+Status: delivered.
 
 Goal: make weak evidence obvious in reports and inspection commands.
 
@@ -172,10 +172,10 @@ Implementation notes:
 
 Acceptance criteria:
 
-- Runs with zero trades show a warning.
-- Runs with very few trades show a warning.
-- Short samples show a warning.
-- Tests cover warning generation.
+- Runs with zero trades show a warning. Delivered.
+- Runs with very few trades show a warning. Delivered.
+- Short samples show a warning. Delivered.
+- Tests cover warning generation. Delivered.
 
 ## Deliverable 4: Train/Test Date Split
 
