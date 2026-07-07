@@ -142,8 +142,7 @@ quant-lab run \
   --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
   --sizing percent-equity \
   --allocation 1.0 \
-  --commission-rate 0.0005 \
-  --slippage-bps 5 \
+  --cost-preset retail-liquid \
   --out artifacts/qqq_sma_crossover
 ```
 
@@ -172,6 +171,9 @@ The cost flags are optional. `--commission-fixed` charges a flat amount per
 fill, `--commission-rate` charges a fraction of trade value, and
 `--slippage-bps` moves buy fills above the next open and sell fills below the
 next open. For example, `--slippage-bps 5` means 0.05% one-way slippage.
+Use `--cost-preset` for named assumptions such as `none`, `retail-liquid`,
+`retail-conservative`, and `high-friction`. Explicit cost flags override preset
+values.
 
 `run_metadata.json` records the command, strategy identity, data range, sizing,
 cost assumptions, Git commit, and artifact paths. Treat it as the source of

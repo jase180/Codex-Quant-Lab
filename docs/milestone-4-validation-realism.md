@@ -103,7 +103,7 @@ Acceptance criteria:
 
 ## Deliverable 2: Cost Presets
 
-Status: second priority.
+Status: delivered.
 
 Goal: make cost assumptions reusable and less error-prone.
 
@@ -140,9 +140,9 @@ Implementation notes:
 
 Acceptance criteria:
 
-- Run and sweep accept `--cost-preset`.
-- Metadata records preset and resolved values.
-- Tests cover preset defaults and explicit override behavior.
+- Run and sweep accept `--cost-preset`. Delivered.
+- Metadata records preset and resolved values. Delivered.
+- Tests cover preset defaults and explicit override behavior. Delivered.
 
 ## Deliverable 3: Sample And Trade Count Warnings
 

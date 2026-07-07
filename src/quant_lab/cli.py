@@ -33,6 +33,7 @@ from .benchmarks import (
     buy_and_hold_metrics,
     excess_total_return,
 )
+from .costs import COST_PRESETS, CostAssumptions, resolve_cost_assumptions
 from .data_fetch import fetch_market_data, write_market_data_csv
 from .data_quality import (
     append_data_quality_section,
@@ -229,22 +230,28 @@ def build_parser() -> argparse.ArgumentParser:
 
 def add_cost_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
+        "--cost-preset",
+        choices=sorted(COST_PRESETS),
+        default="none",
+        help="Named transaction cost preset. Explicit cost flags override preset values.",
+    )
+    parser.add_argument(
         "--commission-fixed",
         type=float,
-        default=0.0,
-        help="Flat commission charged per fill. Defaults to 0.",
+        default=None,
+        help="Flat commission charged per fill. Overrides --cost-preset.",
     )
     parser.add_argument(
         "--commission-rate",
         type=float,
-        default=0.0,
-        help="Commission as a decimal fraction of trade notional. Defaults to 0.",
+        default=None,
+        help="Commission as a decimal fraction of trade notional. Overrides --cost-preset.",
     )
     parser.add_argument(
         "--slippage-bps",
         type=float,
-        default=0.0,
-        help="One-way slippage in basis points. Defaults to 0.",
+        default=None,
+        help="One-way slippage in basis points. Overrides --cost-preset.",
     )
 
 
@@ -257,6 +264,7 @@ def add_index_argument(parser: argparse.ArgumentParser) -> None:
 
 
 def run_command(args: argparse.Namespace) -> int:
+    args.cost_assumptions = resolve_cli_costs(args)
     strategy_spec = load_strategy(args.strategy)
     strategy = build_rule_based_strategy(
         strategy_spec,
@@ -313,9 +321,10 @@ def run_command(args: argparse.Namespace) -> int:
     print(f"total_return: {result.total_return:.2%}")
     print(f"benchmark_total_return: {benchmark_metrics.total_return:.2%}")
     print(f"excess_total_return: {excess_total_return(result.total_return, benchmark_metrics.total_return):.2%}")
-    print(f"commission_fixed: {args.commission_fixed}")
-    print(f"commission_rate: {args.commission_rate}")
-    print(f"slippage_bps: {args.slippage_bps}")
+    print(f"cost_preset: {args.cost_assumptions.preset}")
+    print(f"commission_fixed: {args.cost_assumptions.commission_fixed}")
+    print(f"commission_rate: {args.cost_assumptions.commission_rate}")
+    print(f"slippage_bps: {args.cost_assumptions.slippage_bps}")
     return 0
 
 
@@ -376,6 +385,7 @@ def compare_runs_command(args: argparse.Namespace) -> int:
 
 
 def sweep_command(args: argparse.Namespace) -> int:
+    args.cost_assumptions = resolve_cli_costs(args)
     base_payload = load_strategy_payload(args.strategy)
     param_sweeps = parse_param_sweeps(args.param)
     variants = build_sweep_variants(base_payload, param_sweeps)
@@ -451,9 +461,10 @@ def sweep_command(args: argparse.Namespace) -> int:
                 "sizing": args.sizing,
                 "quantity": args.quantity,
                 "allocation": args.allocation,
-                "commission_fixed": args.commission_fixed,
-                "commission_rate": args.commission_rate,
-                "slippage_bps": args.slippage_bps,
+                "cost_preset": args.cost_assumptions.preset,
+                "commission_fixed": args.cost_assumptions.commission_fixed,
+                "commission_rate": args.cost_assumptions.commission_rate,
+                "slippage_bps": args.cost_assumptions.slippage_bps,
                 **benchmark_summary_fields(benchmark_metrics),
                 "excess_total_return": excess_total_return(
                     result.total_return,
@@ -481,14 +492,24 @@ def sweep_command(args: argparse.Namespace) -> int:
 
 
 def build_engine(args: argparse.Namespace) -> BacktestEngine:
+    cost_assumptions = args.cost_assumptions
     cost_model = TransactionCostModel(
-        commission_fixed=args.commission_fixed,
-        commission_rate=args.commission_rate,
-        slippage_bps=args.slippage_bps,
+        commission_fixed=cost_assumptions.commission_fixed,
+        commission_rate=cost_assumptions.commission_rate,
+        slippage_bps=cost_assumptions.slippage_bps,
     )
     return BacktestEngine(
         initial_cash=args.initial_cash,
         execution_model=ExecutionModel(cost_model=cost_model),
+    )
+
+
+def resolve_cli_costs(args: argparse.Namespace) -> CostAssumptions:
+    return resolve_cost_assumptions(
+        cost_preset=args.cost_preset,
+        commission_fixed=args.commission_fixed,
+        commission_rate=args.commission_rate,
+        slippage_bps=args.slippage_bps,
     )
 
 
@@ -554,9 +575,10 @@ def build_run_metadata(
             allocation=float(args.allocation),
         ),
         costs=CostMetadata(
-            commission_fixed=float(args.commission_fixed),
-            commission_rate=float(args.commission_rate),
-            slippage_bps=float(args.slippage_bps),
+            preset=args.cost_assumptions.preset,
+            commission_fixed=float(args.cost_assumptions.commission_fixed),
+            commission_rate=float(args.cost_assumptions.commission_rate),
+            slippage_bps=float(args.cost_assumptions.slippage_bps),
         ),
         environment=EnvironmentMetadata(git_commit=current_git_commit()),
         parameters=dict(parameters),
@@ -682,6 +704,7 @@ def save_sweep_summary(rows: Sequence[dict[str, str | int | float | None]], outp
         "sizing",
         "quantity",
         "allocation",
+        "cost_preset",
         "commission_fixed",
         "commission_rate",
         "slippage_bps",
@@ -732,9 +755,10 @@ def save_research_summary(
             *[f"  --param {raw_param} \\" for raw_param in args.param],
             f"  --sizing {args.sizing} \\",
             f"  --allocation {args.allocation} \\",
-            f"  --commission-fixed {args.commission_fixed} \\",
-            f"  --commission-rate {args.commission_rate} \\",
-            f"  --slippage-bps {args.slippage_bps} \\",
+            f"  --cost-preset {args.cost_assumptions.preset} \\",
+            f"  --commission-fixed {args.cost_assumptions.commission_fixed} \\",
+            f"  --commission-rate {args.cost_assumptions.commission_rate} \\",
+            f"  --slippage-bps {args.cost_assumptions.slippage_bps} \\",
             f"  --out {args.out}",
         ]
     )
@@ -755,9 +779,10 @@ def save_research_summary(
 - Quantity: `{args.quantity}`
 - Sizing: `{args.sizing}`
 - Allocation: `{args.allocation}`
-- Commission fixed: `{args.commission_fixed}`
-- Commission rate: `{args.commission_rate}`
-- Slippage bps: `{args.slippage_bps}`
+- Cost preset: `{args.cost_assumptions.preset}`
+- Commission fixed: `{args.cost_assumptions.commission_fixed}`
+- Commission rate: `{args.cost_assumptions.commission_rate}`
+- Slippage bps: `{args.cost_assumptions.slippage_bps}`
 - Git commit: `{git_commit}`
 
 ## Parameters

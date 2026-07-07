@@ -73,6 +73,7 @@ def format_run_summary(summary: dict) -> str:
         f"  Initial cash: {_format_money(metadata.get('sizing', {}).get('initial_cash'))}",
         f"  Quantity: {_format_plain(metadata.get('sizing', {}).get('quantity'))}",
         f"  Allocation: {_format_plain(metadata.get('sizing', {}).get('allocation'))}",
+        f"  Cost preset: {_format_plain(metadata.get('costs', {}).get('preset'))}",
         f"  Commission fixed: {_format_money(metadata.get('costs', {}).get('commission_fixed'))}",
         f"  Commission rate: {_format_decimal(metadata.get('costs', {}).get('commission_rate'))}",
         f"  Slippage bps: {_format_plain(metadata.get('costs', {}).get('slippage_bps'))}",

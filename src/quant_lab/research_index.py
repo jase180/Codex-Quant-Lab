@@ -45,6 +45,7 @@ class RunIndexRecord:
     initial_cash: float
     quantity: float
     allocation: float
+    cost_preset: str
     commission_fixed: float
     commission_rate: float
     slippage_bps: float
@@ -89,6 +90,7 @@ def build_run_index_record(
         initial_cash=metadata.sizing.initial_cash,
         quantity=metadata.sizing.quantity,
         allocation=metadata.sizing.allocation,
+        cost_preset=metadata.costs.preset,
         commission_fixed=metadata.costs.commission_fixed,
         commission_rate=metadata.costs.commission_rate,
         slippage_bps=metadata.costs.slippage_bps,

@@ -118,6 +118,7 @@ model as the rest of the backtester.
 
 `run` and `sweep` support simple cost assumptions:
 
+- `--cost-preset`: named cost preset.
 - `--commission-fixed`: flat cash commission per fill.
 - `--commission-rate`: commission as a decimal fraction of trade value.
 - `--slippage-bps`: one-way slippage in basis points.
@@ -126,6 +127,9 @@ The cost model is applied at the fill. Buys pay above the next open when
 slippage is nonzero, sells receive below the next open, and commissions reduce
 cash. Sweep summaries include the cost settings so result tables remain
 auditable.
+
+Available presets are `none`, `retail-liquid`, `retail-conservative`, and
+`high-friction`. Explicit numeric cost flags override preset values.
 
 ## Benchmarks
 

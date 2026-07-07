@@ -307,6 +307,46 @@ class CliTests(unittest.TestCase):
             self.assertEqual(metadata["costs"]["slippage_bps"], 100.0)
             self.assertEqual(metadata["command"][0], "quant-lab")
 
+    def test_run_command_records_cost_preset(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "artifacts"
+            index_path = temp_path / "research_index.jsonl"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                exit_code = main(
+                    [
+                        "run",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "3",
+                        "--cost-preset",
+                        "retail-liquid",
+                        "--index-path",
+                        str(index_path),
+                    ]
+                )
+
+            metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
+            index_rows = _read_jsonl(index_path)
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(metadata["costs"]["preset"], "retail-liquid")
+            self.assertEqual(metadata["costs"]["commission_rate"], 0.0005)
+            self.assertEqual(metadata["costs"]["slippage_bps"], 5.0)
+            self.assertEqual(index_rows[0]["cost_preset"], "retail-liquid")
+
     def test_fetch_command_writes_normalized_csv(self) -> None:
         fetched_data = pd.DataFrame(
             [

@@ -36,6 +36,7 @@ class SizingMetadata:
 
 @dataclass(frozen=True)
 class CostMetadata:
+    preset: str
     commission_fixed: float
     commission_rate: float
     slippage_bps: float
