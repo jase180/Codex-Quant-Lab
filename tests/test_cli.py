@@ -367,6 +367,52 @@ class CliTests(unittest.TestCase):
             self.assertIn("10.00%", output)
             self.assertNotIn("slow_strategy", output)
 
+    def test_list_runs_command_filters_strategy_and_run_type(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            index_path = Path(temp_dir) / "research_index.jsonl"
+            _write_index_fixture(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "list-runs",
+                        "--index-path",
+                        str(index_path),
+                        "--strategy-id",
+                        "slow_strategy",
+                        "--run-type",
+                        "run",
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("slow_strategy", output)
+            self.assertNotIn("fast_strategy", output)
+
+    def test_list_runs_command_can_print_csv(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            index_path = Path(temp_dir) / "research_index.jsonl"
+            _write_index_fixture(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "list-runs",
+                        "--index-path",
+                        str(index_path),
+                        "--symbol",
+                        "QQQ",
+                        "--csv",
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("created,symbol,strategy,type,run,return", output)
+            self.assertIn("QQQ,fast_strategy", output)
+            self.assertNotIn("SPY,slow_strategy", output)
+
     def test_list_runs_command_handles_empty_index(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             index_path = Path(temp_dir) / "missing.jsonl"

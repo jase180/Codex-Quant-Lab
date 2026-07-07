@@ -179,12 +179,15 @@ default. Use `--index-path` to write the registry somewhere else.
 ```bash
 quant-lab list-runs \
   --symbol QQQ \
+  --strategy-id sma_crossover \
+  --run-type sweep_run \
   --sort sharpe_ratio \
   --limit 10
 ```
 
 This reads `artifacts/research_index.jsonl` by default and prints a compact
-table of past runs. Use `--index-path` to inspect a different registry.
+table of past runs. Use `--index-path` to inspect a different registry, and
+`--csv` when you want comma-separated output.
 
 Inspect one saved run:
 

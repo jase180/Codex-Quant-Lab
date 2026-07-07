@@ -146,22 +146,22 @@ Acceptance criteria:
 
 ## Deliverable 3: `list-runs` Improvements
 
-Status: third priority.
+Status: delivered for strategy/run-type filtering and CSV output.
 
 Goal: make the run registry more useful without turning it into a dashboard.
 
 Likely additions:
 
-- `--strategy-id`
-- `--run-type`
+- `--strategy-id` delivered.
+- `--run-type` delivered.
+- `--csv` delivered.
 - `--since`
-- `--csv`
 - `--columns`
 
 Suggested order:
 
-1. Add `--strategy-id`.
-2. Add `--csv` export.
+1. Add `--strategy-id`. Delivered.
+2. Add `--csv` export. Delivered.
 3. Add `--columns` only if the default table becomes noisy.
 
 Acceptance criteria:

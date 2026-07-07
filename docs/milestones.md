@@ -23,6 +23,7 @@ Working capabilities:
 - List previous runs with `quant-lab list-runs`.
 - Inspect one saved run with `quant-lab show-run`.
 - Compare saved runs with `quant-lab compare-runs`.
+- Filter and export the run index with `list-runs` options.
 
 ## Milestone 1: Reproducible Backtesting Foundation
 
@@ -67,7 +68,6 @@ Detailed plan: [milestone-3-research-usability.md](milestone-3-research-usabilit
 
 Likely work:
 
-- Add optional CSV export from `list-runs`.
 - Add clearer research summaries for sweeps, including best, worst, median, and benchmark context.
 - Add docs for a complete research workflow from fetch to list-runs.
 
@@ -76,6 +76,8 @@ Delivered:
 - `quant-lab show-run --metadata` prints one run's metadata, metrics, costs,
   benchmark context when available, and artifact paths.
 - `quant-lab compare-runs --metadata` compares two or more runs in one table.
+- `quant-lab list-runs` supports strategy id filtering, run-type filtering, and
+  CSV output.
 
 Exit criteria:
 
@@ -137,8 +139,7 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Improve `quant-lab list-runs` next.
+Write the complete research workflow doc next.
 
-Reason: `list-runs`, `show-run`, and `compare-runs` now cover the basic inspect
-and compare loop. The next useful step is improving filtering and export from
-the registry.
+Reason: the main inspection commands are now in place. The remaining Milestone 3
+gap is a clear end-to-end workflow a future user can follow.

@@ -86,7 +86,7 @@ quant-lab sweep \
 List previous runs:
 
 ```bash
-quant-lab list-runs --symbol QQQ --sort sharpe_ratio --limit 10
+quant-lab list-runs --symbol QQQ --strategy-id sma_crossover --sort sharpe_ratio --limit 10
 ```
 
 Inspect one run:
@@ -148,7 +148,8 @@ JSONL index is the lab-level table for finding and comparing past runs. Override
 the index location with `--index-path`.
 
 `list-runs` reads that index and prints a compact table. It supports filtering
-by symbol, sorting by common metrics, ascending order, and row limits.
+by symbol, strategy id, and run type; sorting by common metrics; ascending
+order; row limits; and CSV output with `--csv`.
 
 `show-run` reads one `run_metadata.json` file plus its linked `metrics.json`.
 When the metadata points to a research index, it also shows benchmark and trade

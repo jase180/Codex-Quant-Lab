@@ -34,7 +34,7 @@ from .benchmarks import (
     excess_total_return,
 )
 from .data_fetch import fetch_market_data, write_market_data_csv
-from .research_index import append_research_index_record, build_run_index_record
+from .research_index import append_research_index_record, build_run_index_record, format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
 from .rule_based_strategy import build_rule_based_strategy
@@ -120,6 +120,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_index_argument(list_parser)
     list_parser.add_argument("--symbol", default=None, help="Only show runs for one symbol, such as QQQ.")
+    list_parser.add_argument("--strategy-id", default=None, help="Only show runs for one strategy id.")
+    list_parser.add_argument(
+        "--run-type",
+        choices=["run", "sweep_run"],
+        default=None,
+        help="Only show one run type.",
+    )
+    list_parser.add_argument("--csv", action="store_true", help="Print CSV instead of a fixed-width table.")
     list_parser.add_argument(
         "--sort",
         default="created_at_utc",
@@ -327,7 +335,12 @@ def list_runs_command(args: argparse.Namespace) -> int:
         raise ValueError("--limit must be at least 1")
 
     records = load_research_index(args.index_path)
-    records = filter_index_records(records, symbol=args.symbol)
+    records = filter_index_records(
+        records,
+        symbol=args.symbol,
+        strategy_id=args.strategy_id,
+        run_type=args.run_type,
+    )
     records = sort_index_records(records, args.sort, descending=not args.ascending)
     records = records[: args.limit]
 
@@ -335,7 +348,10 @@ def list_runs_command(args: argparse.Namespace) -> int:
         print(f"No runs found in {args.index_path}")
         return 0
 
-    print(format_index_table(records))
+    if args.csv:
+        print(format_index_csv(records))
+    else:
+        print(format_index_table(records))
     return 0
 
 

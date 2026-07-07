@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import csv
+import io
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
@@ -120,11 +122,36 @@ def load_research_index(index_path: str | Path) -> list[dict]:
     return records
 
 
-def filter_index_records(records: Iterable[dict], symbol: str | None = None) -> list[dict]:
+INDEX_TABLE_COLUMNS = [
+    ("created", "created_at_utc"),
+    ("symbol", "symbol"),
+    ("strategy", "strategy_id"),
+    ("type", "run_type"),
+    ("run", "run_id"),
+    ("return", "total_return"),
+    ("bench", "benchmark_total_return"),
+    ("excess", "excess_total_return"),
+    ("sharpe", "sharpe_ratio"),
+    ("dd", "max_drawdown"),
+    ("trades", "trade_count"),
+    ("out", "output_dir"),
+]
+
+
+def filter_index_records(
+    records: Iterable[dict],
+    symbol: str | None = None,
+    strategy_id: str | None = None,
+    run_type: str | None = None,
+) -> list[dict]:
     filtered = list(records)
     if symbol is not None:
         requested_symbol = symbol.upper()
         filtered = [record for record in filtered if str(record.get("symbol", "")).upper() == requested_symbol]
+    if strategy_id is not None:
+        filtered = [record for record in filtered if record.get("strategy_id") == strategy_id]
+    if run_type is not None:
+        filtered = [record for record in filtered if record.get("run_type") == run_type]
     return filtered
 
 
@@ -138,25 +165,11 @@ def sort_index_records(records: Iterable[dict], sort_key: str, descending: bool 
 
 
 def format_index_table(records: list[dict]) -> str:
-    columns = [
-        ("created", "created_at_utc"),
-        ("symbol", "symbol"),
-        ("strategy", "strategy_id"),
-        ("type", "run_type"),
-        ("run", "run_id"),
-        ("return", "total_return"),
-        ("bench", "benchmark_total_return"),
-        ("excess", "excess_total_return"),
-        ("sharpe", "sharpe_ratio"),
-        ("dd", "max_drawdown"),
-        ("trades", "trade_count"),
-        ("out", "output_dir"),
-    ]
     table_rows = [
-        [_format_table_value(record.get(field), field) for _, field in columns]
+        [_format_table_value(record.get(field), field) for _, field in INDEX_TABLE_COLUMNS]
         for record in records
     ]
-    header = [label for label, _ in columns]
+    header = [label for label, _ in INDEX_TABLE_COLUMNS]
     widths = [
         max(len(header[index]), *[len(row[index]) for row in table_rows]) if table_rows else len(header[index])
         for index in range(len(header))
@@ -168,6 +181,21 @@ def format_index_table(records: list[dict]) -> str:
     for row in table_rows:
         lines.append("  ".join(row[index].ljust(widths[index]) for index in range(len(row))))
     return "\n".join(lines)
+
+
+def format_index_csv(records: list[dict]) -> str:
+    output = io.StringIO()
+    fieldnames = [label for label, _ in INDEX_TABLE_COLUMNS]
+    writer = csv.DictWriter(output, fieldnames=fieldnames, lineterminator="\n")
+    writer.writeheader()
+    for record in records:
+        writer.writerow(
+            {
+                label: _format_table_value(record.get(field), field)
+                for label, field in INDEX_TABLE_COLUMNS
+            }
+        )
+    return output.getvalue().rstrip("\n")
 
 
 def _sortable_value(record: dict, sort_key: str) -> tuple[bool, object]:
