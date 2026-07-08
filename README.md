@@ -12,12 +12,14 @@ tool that makes backtest assumptions visible.
 - Fetch daily market data with `yfinance`.
 - Cache normalized OHLCV CSV files locally.
 - Define rule-based strategies in strict JSON.
+- Create valid starter strategy JSON from built-in templates.
 - Execute SMA, EMA, and RSI-based long-only strategies.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
 - Run a train/test parameter sweep that selects on the train period and reruns
   only the selected variant on the later test period.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
+- Save optional research notes beside run and sweep artifacts.
 - Write data-quality summaries for run inputs.
 - Compare strategy results with explicit benchmarks. Buy-and-hold is the
   default, and cash is available as a flat baseline.
@@ -31,6 +33,7 @@ data/
   strategies/                   Example strategy JSON files.
 docs/
   milestone-4-validation-realism.md  Detailed Milestone 4 plan.
+  milestone-5-strategy-research-depth.md  Detailed Milestone 5 plan.
   milestones.md                  Project milestone plan.
   research-workflow.md           End-to-end research workflow.
   strategy-schema.md            Strategy schema notes.
@@ -47,6 +50,7 @@ More detailed module notes:
 
 - [docs/milestones.md](docs/milestones.md)
 - [docs/milestone-4-validation-realism.md](docs/milestone-4-validation-realism.md)
+- [docs/milestone-5-strategy-research-depth.md](docs/milestone-5-strategy-research-depth.md)
 - [docs/research-workflow.md](docs/research-workflow.md)
 - [src/backtester_core/README.md](src/backtester_core/README.md)
 - [src/quant_lab/README.md](src/quant_lab/README.md)
@@ -117,6 +121,36 @@ Schema details are in [docs/strategy-schema.md](docs/strategy-schema.md).
 
 ## CLI Usage
 
+### Create A Strategy From A Template
+
+List the built-in starter templates:
+
+```bash
+quant-lab list-strategy-templates
+```
+
+Create a valid v1 strategy JSON file:
+
+```bash
+quant-lab new-strategy \
+  --template sma-crossover \
+  --symbol QQQ \
+  --strategy-id qqq_sma_crossover \
+  --name "QQQ SMA Crossover" \
+  --out data/strategies/qqq_sma_crossover.json
+```
+
+Available templates are:
+
+```text
+sma-crossover
+ema-trend-follow
+rsi-reversion
+```
+
+The command validates the generated JSON before writing it and refuses to
+overwrite an existing file unless `--force` is provided.
+
 ### Fetch Data
 
 ```bash
@@ -146,6 +180,7 @@ quant-lab run \
   --sizing percent-equity \
   --allocation 1.0 \
   --cost-preset retail-liquid \
+  --note "Hypothesis: the crossover may reduce drawdown versus buy-and-hold." \
   --out artifacts/qqq_sma_crossover
 ```
 
@@ -160,6 +195,7 @@ artifacts/qqq_sma_crossover/
   data_quality.json
   report.md
   trades.csv
+  research_note.md
   run_metadata.json
 
 artifacts/research_index.jsonl
@@ -190,6 +226,10 @@ These warnings are prompts for review, not automatic proof that the data is bad.
 `research_warnings.json` flags weak evidence such as short samples, tiny trade
 counts, no trades, no completed exits, and drawdown that is large relative to
 return.
+
+`research_note.md` is written when you pass `--note` or `--note-file`. Use it
+for the research question, hypothesis, or conclusion that should live beside
+the artifacts instead of only in chat.
 
 Each run also appends one flat JSON line to `artifacts/research_index.jsonl` by
 default. Use `--index-path` to write the registry somewhere else.

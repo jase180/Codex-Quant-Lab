@@ -60,6 +60,11 @@ from .run_metadata import (
     save_run_metadata,
 )
 from .strategy_schema import load_strategy, parse_strategy
+from .strategy_templates import (
+    available_strategy_templates,
+    build_strategy_template,
+    write_strategy_template,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -104,6 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_cost_arguments(run_parser)
     add_benchmark_argument(run_parser)
+    add_note_arguments(run_parser)
     add_index_argument(run_parser)
     run_parser.set_defaults(func=run_command)
 
@@ -125,6 +131,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Market data interval. Only 1d is supported for now.",
     )
     fetch_parser.set_defaults(func=fetch_command)
+
+    template_list_parser = subparsers.add_parser(
+        "list-strategy-templates",
+        help="List built-in strategy templates.",
+    )
+    template_list_parser.set_defaults(func=list_strategy_templates_command)
+
+    new_strategy_parser = subparsers.add_parser(
+        "new-strategy",
+        help="Create a valid v1 strategy JSON file from a built-in template.",
+    )
+    new_strategy_parser.add_argument(
+        "--template",
+        required=True,
+        choices=available_strategy_templates(),
+        help="Template name.",
+    )
+    new_strategy_parser.add_argument("--symbol", required=True, help="Market symbol, such as QQQ or SPY.")
+    new_strategy_parser.add_argument("--out", required=True, help="Path where the strategy JSON is written.")
+    new_strategy_parser.add_argument("--strategy-id", default=None, help="Optional strategy_id override.")
+    new_strategy_parser.add_argument("--name", default=None, help="Optional display name override.")
+    new_strategy_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
+    new_strategy_parser.set_defaults(func=new_strategy_command)
 
     list_parser = subparsers.add_parser(
         "list-runs",
@@ -238,6 +267,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_cost_arguments(sweep_parser)
     add_benchmark_argument(sweep_parser)
+    add_note_arguments(sweep_parser)
     add_index_argument(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
     return parser
@@ -287,6 +317,20 @@ def add_benchmark_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_note_arguments(parser: argparse.ArgumentParser) -> None:
+    note_group = parser.add_mutually_exclusive_group()
+    note_group.add_argument(
+        "--note",
+        default=None,
+        help="Research note text saved as research_note.md beside run artifacts.",
+    )
+    note_group.add_argument(
+        "--note-file",
+        default=None,
+        help="Path to a markdown/text file saved as research_note.md beside run artifacts.",
+    )
+
+
 def run_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
     strategy_spec = load_strategy(args.strategy)
@@ -319,6 +363,9 @@ def run_command(args: argparse.Namespace) -> int:
     artifact_paths.update(save_charts(result, benchmark.curve, args.out, benchmark.display_name))
     artifact_paths["data_quality"] = save_data_quality_report(data_quality, args.out)
     artifact_paths["research_warnings"] = save_research_warnings(research_warnings, args.out)
+    note = load_research_note(args)
+    if note is not None:
+        artifact_paths["research_note"] = save_research_note(note, args.out)
     artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
     artifact_paths["research_index"] = str(args.index_path)
     metadata = build_run_metadata(
@@ -375,6 +422,27 @@ def fetch_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def list_strategy_templates_command(args: argparse.Namespace) -> int:
+    for template_name in available_strategy_templates():
+        print(template_name)
+    return 0
+
+
+def new_strategy_command(args: argparse.Namespace) -> int:
+    payload = build_strategy_template(
+        args.template,
+        symbol=args.symbol,
+        strategy_id=args.strategy_id,
+        name=args.name,
+    )
+    output_path = write_strategy_template(payload, args.out, force=args.force)
+    print(f"Strategy template written: {output_path}")
+    print(f"template: {args.template}")
+    print(f"strategy_id: {payload['strategy_id']}")
+    print(f"symbol: {payload['market']['symbol']}")
+    return 0
+
+
 def list_runs_command(args: argparse.Namespace) -> int:
     if args.limit < 1:
         raise ValueError("--limit must be at least 1")
@@ -425,6 +493,8 @@ def sweep_command(args: argparse.Namespace) -> int:
     benchmark = build_benchmark(data, args.initial_cash, args.benchmark)
     output_dir = Path(args.out)
     output_dir.mkdir(parents=True, exist_ok=True)
+    note = load_research_note(args)
+    research_note_path = save_research_note(note, output_dir) if note is not None else None
 
     summary_rows: list[dict[str, str | int | float | None]] = []
     for index, variant in enumerate(variants, start=1):
@@ -449,6 +519,7 @@ def sweep_command(args: argparse.Namespace) -> int:
                 parameters=params,
                 run_type="sweep_run",
                 run_id=run_id,
+                research_note_path=research_note_path,
             )
         )
 
@@ -482,6 +553,8 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     train_dir = output_dir / "train_sweep"
     test_dir = output_dir / "test_selected"
     output_dir.mkdir(parents=True, exist_ok=True)
+    note = load_research_note(args)
+    research_note_path = save_research_note(note, output_dir) if note is not None else None
 
     train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
     train_data_quality = build_data_quality_report(train_data)
@@ -516,6 +589,7 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
                 parameters=params,
                 run_type="train_sweep_run",
                 run_id=run_id,
+                research_note_path=research_note_path,
             )
         )
 
@@ -550,6 +624,7 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
         parameters=test_params,
         run_type="test_selected_run",
         run_id="test_selected",
+        research_note_path=research_note_path,
     )
     test_summary_path = save_sweep_summary([test_row], output_dir / "test_summary")
     research_path = save_train_test_research_summary(
@@ -626,6 +701,7 @@ def save_train_test_research_summary(
 - Test summary: `{test_summary_path}`
 - Selected train run: `{best_train['run_id']}`
 - Test output directory: `{test_row['output_dir']}`
+{_research_note_summary_line(args, output_dir)}
 
 ## Results
 
@@ -646,6 +722,38 @@ def save_train_test_research_summary(
     return str(research_path)
 
 
+def load_research_note(args: argparse.Namespace) -> str | None:
+    if getattr(args, "note", None) is not None:
+        note = str(args.note).strip()
+        return note if note else None
+    if getattr(args, "note_file", None) is not None:
+        note = Path(args.note_file).read_text(encoding="utf-8").strip()
+        return note if note else None
+    return None
+
+
+def save_research_note(note: str, output_dir: str | Path) -> str:
+    destination = Path(output_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    note_path = destination / "research_note.md"
+    note_path.write_text(note.rstrip() + "\n", encoding="utf-8")
+    return str(note_path)
+
+
+def _research_note_summary_line(args: argparse.Namespace, output_dir: str | Path) -> str:
+    if getattr(args, "note", None) is None and getattr(args, "note_file", None) is None:
+        return ""
+    return f"- Research note: `{Path(output_dir) / 'research_note.md'}`"
+
+
+def _note_command_lines(args: argparse.Namespace) -> list[str]:
+    if getattr(args, "note", None) is not None:
+        return [f"  --note {json.dumps(str(args.note))} \\"]
+    if getattr(args, "note_file", None) is not None:
+        return [f"  --note-file {args.note_file} \\"]
+    return []
+
+
 def run_sweep_variant(
     *,
     args: argparse.Namespace,
@@ -661,6 +769,7 @@ def run_sweep_variant(
     parameters: dict[str, str | int | float],
     run_type: str,
     run_id: str,
+    research_note_path: str | None = None,
 ) -> dict[str, str | int | float | None]:
     strategy = build_rule_based_strategy(
         strategy_spec,
@@ -686,6 +795,8 @@ def run_sweep_variant(
     artifact_paths["data_quality"] = save_data_quality_report(data_quality, run_dir)
     artifact_paths["research_warnings"] = save_research_warnings(research_warnings, run_dir)
     artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
+    if research_note_path is not None:
+        artifact_paths["research_note"] = research_note_path
     artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
     artifact_paths["research_index"] = str(args.index_path)
     metadata = build_run_metadata(
@@ -1023,6 +1134,9 @@ def save_research_summary(
     benchmark_lines = ""
     if benchmark_total_return is not None:
         benchmark_lines = f"- Benchmark `{args.benchmark}` total return: {float(benchmark_total_return):.2%}\n"
+    note_lines = ""
+    if getattr(args, "note", None) is not None or getattr(args, "note_file", None) is not None:
+        note_lines = f"- Research note: `{destination / 'research_note.md'}`\n"
 
     param_lines = "\n".join(f"- `{raw_param}`" for raw_param in args.param)
     command_lines = "\n".join(
@@ -1033,10 +1147,12 @@ def save_research_summary(
             *[f"  --param {raw_param} \\" for raw_param in args.param],
             f"  --sizing {args.sizing} \\",
             f"  --allocation {args.allocation} \\",
+            f"  --benchmark {args.benchmark} \\",
             f"  --cost-preset {args.cost_assumptions.preset} \\",
             f"  --commission-fixed {args.cost_assumptions.commission_fixed} \\",
             f"  --commission-rate {args.cost_assumptions.commission_rate} \\",
             f"  --slippage-bps {args.cost_assumptions.slippage_bps} \\",
+            *(_note_command_lines(args)),
             f"  --out {args.out}",
         ]
     )
@@ -1057,11 +1173,13 @@ def save_research_summary(
 - Quantity: `{args.quantity}`
 - Sizing: `{args.sizing}`
 - Allocation: `{args.allocation}`
+- Benchmark: `{args.benchmark}`
 - Cost preset: `{args.cost_assumptions.preset}`
 - Commission fixed: `{args.cost_assumptions.commission_fixed}`
 - Commission rate: `{args.cost_assumptions.commission_rate}`
 - Slippage bps: `{args.cost_assumptions.slippage_bps}`
 - Git commit: `{git_commit}`
+{note_lines}
 
 ## Parameters
 

@@ -16,9 +16,10 @@ Working capabilities:
 - Run SMA, EMA, and RSI rule-based strategies.
 - Backtest with next-bar-open fills.
 - Run parameter sweeps.
-- Compare against buy-and-hold.
+- Compare against explicit benchmarks.
 - Model simple commission and slippage assumptions.
 - Save metrics, reports, trades, equity curves, charts, and metadata.
+- Save research notes with run and sweep artifacts.
 - Append every run to a local JSONL research index.
 - List previous runs with `quant-lab list-runs`.
 - Inspect one saved run with `quant-lab show-run`.
@@ -81,41 +82,49 @@ Exit criteria:
 
 ## Milestone 4: Better Validation And Realism
 
-Status: planned.
+Status: complete.
 
 Goal: reduce false confidence from unrealistic assumptions.
 
 Detailed plan: [milestone-4-validation-realism.md](milestone-4-validation-realism.md)
 
-Likely work:
+Delivered:
 
-- Add cost presets for common broker assumptions.
-- Add explicit data-quality checks for missing dates, zero volume, and suspicious prices.
-- Add optional train/test or walk-forward split support.
-- Add benchmark variants beyond buy-and-hold.
-- Add warnings for tiny trade counts and short samples.
+- Data-quality artifacts for runs and sweeps.
+- Cost presets for common broker assumptions.
+- Research warnings for weak samples and tiny trade counts.
+- Basic train/test sweep workflow.
+- Explicit benchmark selection with buy-and-hold default and cash baseline.
 
 Exit criteria:
 
 - A promising result has enough context to decide whether it deserves more research.
 
-## Milestone 5: Strategy Research Expansion
+## Milestone 5: Strategy Research Depth
 
-Status: planned.
+Status: in progress.
 
-Goal: support a broader set of simple, inspectable strategy ideas.
+Goal: make the lab better at forming, documenting, and comparing strategy ideas.
 
-Likely work:
+Detailed plan: [milestone-5-strategy-research-depth.md](milestone-5-strategy-research-depth.md)
 
+Delivered:
+
+- Built-in starter strategy templates.
+- `quant-lab list-strategy-templates`.
+- `quant-lab new-strategy`.
+- Optional `--note` and `--note-file` artifacts for runs and sweeps.
+
+Likely next work:
+
+- Add sweep stability summaries.
+- Add walk-forward-lite checks.
 - Add more indicators, such as ATR, rolling high/low, and volatility.
-- Add more condition types.
-- Add stop-loss and take-profit style exits.
-- Add strategy templates or examples for common research patterns.
-- Add richer parameter sweep controls.
 
 Exit criteria:
 
-- The lab can test several common daily-system ideas without code changes.
+- The lab can create, document, and evaluate several common daily-system ideas
+  without code changes.
 
 ## Milestone 6: Portfolio And Multi-Asset Research
 
@@ -137,7 +146,7 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 4 next.
+Continue Milestone 5 with sweep stability summaries.
 
-Reason: Milestone 3 now covers finding, inspecting, comparing, and documenting
-local research runs. The next gap is better validation and realism.
+Reason: templates and notes make new ideas easier to start and audit. The next
+gap is judging whether sweep winners are robust or isolated.

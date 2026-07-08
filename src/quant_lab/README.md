@@ -13,6 +13,7 @@ It owns:
 ## Main Pieces
 
 - `strategy_schema.py`: strict v1 schema validation for strategy JSON.
+- `strategy_templates.py`: built-in starter strategy JSON templates.
 - `rule_based_strategy.py`: turns a validated strategy spec into an executable strategy.
 - `benchmarks.py`: builds benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
@@ -55,6 +56,27 @@ All indicators are close-based in v1.
 
 ## CLI Commands
 
+List strategy templates:
+
+```bash
+quant-lab list-strategy-templates
+```
+
+Create a strategy JSON file:
+
+```bash
+quant-lab new-strategy \
+  --template sma-crossover \
+  --symbol QQQ \
+  --strategy-id qqq_sma_crossover \
+  --name "QQQ SMA Crossover" \
+  --out data/strategies/qqq_sma_crossover.json
+```
+
+`new-strategy` validates the generated payload with the same strict v1 parser
+used by backtests. It refuses to overwrite an existing file unless `--force` is
+provided.
+
 Fetch data:
 
 ```bash
@@ -69,6 +91,7 @@ quant-lab run \
   --data data/sample_ohlcv.csv \
   --sizing percent-equity \
   --allocation 1.0 \
+  --note "Hypothesis: test whether trend following reduces drawdown." \
   --out artifacts/run
 ```
 
@@ -212,6 +235,18 @@ count context from the matching index row.
 
 `compare-runs` reads two or more metadata files and prints a compact comparison
 table using the same metrics and index context.
+
+## Research Notes
+
+`run` and `sweep` accept one optional note source:
+
+- `--note`: inline note text.
+- `--note-file`: path to a markdown or text file.
+
+The note is saved as `research_note.md`. For one run, the note is saved in that
+run directory. For sweeps, the note is saved at the sweep root and each sub-run
+metadata links to it. This keeps the hypothesis or conclusion attached to the
+artifacts that produced the result.
 
 ## Notes For Future Work
 

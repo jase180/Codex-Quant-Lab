@@ -429,6 +429,91 @@ class CliTests(unittest.TestCase):
             self.assertTrue(csv_path.exists())
             self.assertIn("2026-01-02,100,102,99,101,1000", csv_path.read_text(encoding="utf-8"))
 
+    def test_list_strategy_templates_command_prints_templates(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            exit_code = main(["list-strategy-templates"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("sma-crossover", stdout.getvalue())
+        self.assertIn("rsi-reversion", stdout.getvalue())
+
+    def test_new_strategy_command_writes_valid_template(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "qqq_sma.json"
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "new-strategy",
+                        "--template",
+                        "sma-crossover",
+                        "--symbol",
+                        "qqq",
+                        "--strategy-id",
+                        "qqq_sma",
+                        "--name",
+                        "QQQ SMA",
+                        "--out",
+                        str(output_path),
+                    ]
+                )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Strategy template written", stdout.getvalue())
+            self.assertEqual(payload["strategy_id"], "qqq_sma")
+            self.assertEqual(payload["name"], "QQQ SMA")
+            self.assertEqual(payload["market"]["symbol"], "QQQ")
+
+            with self.assertRaises(FileExistsError):
+                main(
+                    [
+                        "new-strategy",
+                        "--template",
+                        "sma-crossover",
+                        "--symbol",
+                        "QQQ",
+                        "--out",
+                        str(output_path),
+                    ]
+                )
+
+    def test_run_command_saves_research_note(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "artifacts"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                exit_code = main(
+                    [
+                        "run",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "3",
+                        "--note",
+                        "Hypothesis: tiny fixture should still save notes.",
+                    ]
+                )
+
+            metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
+            note_path = output_dir / "research_note.md"
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(note_path.exists())
+            self.assertEqual(note_path.read_text(encoding="utf-8").strip(), "Hypothesis: tiny fixture should still save notes.")
+            self.assertEqual(metadata["artifacts"]["research_note"], str(note_path))
+
     def test_list_runs_command_filters_and_sorts_index(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             index_path = Path(temp_dir) / "research_index.jsonl"
@@ -632,9 +717,11 @@ class CliTests(unittest.TestCase):
             data_path = temp_path / "ohlcv.csv"
             output_dir = temp_path / "sweep"
             index_path = temp_path / "research_index.jsonl"
+            note_path = temp_path / "note.md"
 
             strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
             _write_ohlcv_fixture(data_path)
+            note_path.write_text("Hypothesis: sweep note should link to every run.\n", encoding="utf-8")
 
             with contextlib.redirect_stdout(io.StringIO()):
                 exit_code = main(
@@ -654,6 +741,8 @@ class CliTests(unittest.TestCase):
                         "1000",
                         "--quantity",
                         "2",
+                        "--note-file",
+                        str(note_path),
                         "--index-path",
                         str(index_path),
                     ]
@@ -662,6 +751,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertTrue((output_dir / "summary.csv").exists())
             self.assertTrue((output_dir / "research.md").exists())
+            self.assertTrue((output_dir / "research_note.md").exists())
 
             summary = (output_dir / "summary.csv").read_text(encoding="utf-8")
             self.assertIn("run_id,strategy_id,params", summary)
@@ -689,6 +779,8 @@ class CliTests(unittest.TestCase):
             self.assertEqual(metadata["run_id"], "run_001")
             self.assertEqual(metadata["parameters"]["sma_2.inputs.length"], 2)
             self.assertIn("strategy", metadata["artifacts"])
+            self.assertEqual(metadata["artifacts"]["research_note"], str(output_dir / "research_note.md"))
+            self.assertIn("Research note", (output_dir / "research.md").read_text(encoding="utf-8"))
             index_rows = _read_jsonl(index_path)
             self.assertEqual(len(index_rows), 4)
             self.assertEqual(index_rows[0]["run_type"], "sweep_run")

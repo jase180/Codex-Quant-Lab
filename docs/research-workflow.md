@@ -55,6 +55,7 @@ quant-lab run \
   --benchmark buy-and-hold \
   --commission-rate 0.0005 \
   --slippage-bps 5 \
+  --note "Hypothesis: SMA crossovers may reduce drawdown but may underperform strong trends." \
   --out artifacts/research/sma_qqq_2015_2025/baseline
 ```
 
@@ -69,6 +70,7 @@ report.md
 trades.csv
 run_metadata.json
 research_warnings.json
+research_note.md
 ```
 
 The run also appends one row to:
@@ -93,11 +95,16 @@ quant-lab sweep \
   --benchmark buy-and-hold \
   --commission-rate 0.0005 \
   --slippage-bps 5 \
+  --note-file docs/local_notes/sma_qqq_hypothesis.md \
   --out artifacts/research/sma_qqq_2015_2025/sweep_001
 ```
 
 Each sweep sub-run writes its own artifacts and appends its own row to the
 research index.
+
+Use `--note` for a short inline hypothesis or `--note-file` when the note is
+longer. The saved `research_note.md` should explain what you were trying to
+learn before you inspect the result.
 
 ## 5. Find Candidate Runs
 
