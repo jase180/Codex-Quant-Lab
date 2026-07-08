@@ -38,6 +38,7 @@ class RunIndexRecord:
     sharpe_ratio: float | None
     max_drawdown: float
     trade_count: int
+    benchmark_name: str
     benchmark_total_return: float
     benchmark_max_drawdown: float
     excess_total_return: float
@@ -83,6 +84,7 @@ def build_run_index_record(
         sharpe_ratio=metrics.sharpe_ratio,
         max_drawdown=metrics.max_drawdown,
         trade_count=trade_count,
+        benchmark_name=metadata.benchmark.name,
         benchmark_total_return=benchmark_metrics.total_return,
         benchmark_max_drawdown=benchmark_metrics.max_drawdown,
         excess_total_return=excess_return,
@@ -131,6 +133,7 @@ INDEX_TABLE_COLUMNS = [
     ("type", "run_type"),
     ("run", "run_id"),
     ("return", "total_return"),
+    ("bench_name", "benchmark_name"),
     ("bench", "benchmark_total_return"),
     ("excess", "excess_total_return"),
     ("sharpe", "sharpe_ratio"),

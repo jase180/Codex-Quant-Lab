@@ -41,6 +41,7 @@ def save_equity_curve_chart(
     strategy_curve: Sequence[dict[str, float | str]],
     benchmark_curve: Sequence[dict[str, float | str]],
     output_path: str | Path,
+    benchmark_label: str = "Benchmark",
 ) -> str:
     strategy_frame = _curve_frame(strategy_curve, "equity")
     benchmark_frame = _curve_frame(benchmark_curve, "equity")
@@ -49,7 +50,7 @@ def save_equity_curve_chart(
 
     fig, axis = plt.subplots(figsize=(10, 5))
     axis.plot(strategy_frame["date"], strategy_frame["equity"], label="Strategy")
-    axis.plot(benchmark_frame["date"], benchmark_frame["equity"], label="Buy and Hold")
+    axis.plot(benchmark_frame["date"], benchmark_frame["equity"], label=benchmark_label)
     axis.set_title("Equity Curve")
     axis.set_xlabel("Date")
     axis.set_ylabel("Equity")
@@ -66,6 +67,7 @@ def save_drawdown_chart(
     strategy_curve: Sequence[dict[str, float | str]],
     benchmark_curve: Sequence[dict[str, float | str]],
     output_path: str | Path,
+    benchmark_label: str = "Benchmark",
 ) -> str:
     strategy_frame = _drawdown_frame(strategy_curve)
     benchmark_frame = _drawdown_frame(benchmark_curve)
@@ -74,7 +76,7 @@ def save_drawdown_chart(
 
     fig, axis = plt.subplots(figsize=(10, 5))
     axis.plot(strategy_frame["date"], strategy_frame["drawdown"], label="Strategy")
-    axis.plot(benchmark_frame["date"], benchmark_frame["drawdown"], label="Buy and Hold")
+    axis.plot(benchmark_frame["date"], benchmark_frame["drawdown"], label=benchmark_label)
     axis.set_title("Drawdown")
     axis.set_xlabel("Date")
     axis.set_ylabel("Drawdown")

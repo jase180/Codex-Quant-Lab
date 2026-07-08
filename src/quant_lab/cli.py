@@ -29,8 +29,7 @@ from metrics_reporting import save_drawdown_chart, save_equity_curve_chart
 from .benchmarks import (
     append_benchmark_section,
     benchmark_summary_fields,
-    buy_and_hold_equity_curve,
-    buy_and_hold_metrics,
+    build_benchmark,
     excess_total_return,
 )
 from .costs import COST_PRESETS, CostAssumptions, resolve_cost_assumptions
@@ -50,6 +49,7 @@ from .research_warnings import (
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
 from .rule_based_strategy import build_rule_based_strategy
 from .run_metadata import (
+    BenchmarkMetadata,
     CostMetadata,
     DataMetadata,
     EnvironmentMetadata,
@@ -103,6 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Report title. Defaults to the strategy name.",
     )
     add_cost_arguments(run_parser)
+    add_benchmark_argument(run_parser)
     add_index_argument(run_parser)
     run_parser.set_defaults(func=run_command)
 
@@ -236,6 +237,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Metric used to select the train winner for test rerun. Defaults to total_return.",
     )
     add_cost_arguments(sweep_parser)
+    add_benchmark_argument(sweep_parser)
     add_index_argument(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
     return parser
@@ -276,6 +278,15 @@ def add_index_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_benchmark_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--benchmark",
+        choices=["buy-and-hold", "cash"],
+        default="buy-and-hold",
+        help="Benchmark used in reports, summaries, charts, and metadata. Defaults to buy-and-hold.",
+    )
+
+
 def run_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
     strategy_spec = load_strategy(args.strategy)
@@ -290,12 +301,12 @@ def run_command(args: argparse.Namespace) -> int:
 
     result = build_engine(args).run(data, strategy)
     run_name = args.run_name or strategy_spec.name
-    benchmark_curve = buy_and_hold_equity_curve(data, args.initial_cash)
-    benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
+    benchmark = build_benchmark(data, args.initial_cash, args.benchmark)
     report = append_benchmark_section(
         build_run_report(result, run_name=run_name),
-        benchmark_metrics,
+        benchmark.metrics,
         result.total_return,
+        benchmark.display_name,
     )
     report = append_data_quality_section(report, data_quality)
     artifact_paths = save_run_report_artifacts(result, args.out, run_name=run_name)
@@ -305,7 +316,7 @@ def run_command(args: argparse.Namespace) -> int:
     report_path = Path(artifact_paths["report"])
     report_path.write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, args.out)
-    artifact_paths.update(save_charts(result, benchmark_curve, args.out))
+    artifact_paths.update(save_charts(result, benchmark.curve, args.out, benchmark.display_name))
     artifact_paths["data_quality"] = save_data_quality_report(data_quality, args.out)
     artifact_paths["research_warnings"] = save_research_warnings(research_warnings, args.out)
     artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
@@ -323,7 +334,7 @@ def run_command(args: argparse.Namespace) -> int:
     append_research_index(
         metadata=metadata,
         metrics=run_metrics,
-        benchmark_metrics=benchmark_metrics,
+        benchmark_metrics=benchmark.metrics,
         output_dir=args.out,
         trade_count=len(result.trades),
         index_path=args.index_path,
@@ -335,8 +346,9 @@ def run_command(args: argparse.Namespace) -> int:
         print(f"{artifact_name}: {artifact_paths[artifact_name]}")
     print(f"final_equity: {result.final_equity:.2f}")
     print(f"total_return: {result.total_return:.2%}")
-    print(f"benchmark_total_return: {benchmark_metrics.total_return:.2%}")
-    print(f"excess_total_return: {excess_total_return(result.total_return, benchmark_metrics.total_return):.2%}")
+    print(f"benchmark: {benchmark.name}")
+    print(f"benchmark_total_return: {benchmark.metrics.total_return:.2%}")
+    print(f"excess_total_return: {excess_total_return(result.total_return, benchmark.metrics.total_return):.2%}")
     print(f"cost_preset: {args.cost_assumptions.preset}")
     print(f"commission_fixed: {args.cost_assumptions.commission_fixed}")
     print(f"commission_rate: {args.cost_assumptions.commission_rate}")
@@ -410,8 +422,7 @@ def sweep_command(args: argparse.Namespace) -> int:
     variants = build_sweep_variants(base_payload, param_sweeps)
     data = pd.read_csv(args.data)
     data_quality = build_data_quality_report(data)
-    benchmark_curve = buy_and_hold_equity_curve(data, args.initial_cash)
-    benchmark_metrics = buy_and_hold_metrics(data, args.initial_cash)
+    benchmark = build_benchmark(data, args.initial_cash, args.benchmark)
     output_dir = Path(args.out)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -427,8 +438,9 @@ def sweep_command(args: argparse.Namespace) -> int:
             run_sweep_variant(
                 args=args,
                 data=data,
-                benchmark_curve=benchmark_curve,
-                benchmark_metrics=benchmark_metrics,
+                benchmark_curve=benchmark.curve,
+                benchmark_metrics=benchmark.metrics,
+                benchmark_display_name=benchmark.display_name,
                 data_quality=data_quality,
                 strategy_spec=strategy_spec,
                 strategy_payload=strategy_payload,
@@ -471,8 +483,7 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     test_dir = output_dir / "test_selected"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    train_benchmark_curve = buy_and_hold_equity_curve(train_data, args.initial_cash)
-    train_benchmark_metrics = buy_and_hold_metrics(train_data, args.initial_cash)
+    train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
     train_data_quality = build_data_quality_report(train_data)
     train_rows: list[dict[str, str | int | float | None]] = []
     variants_by_run_id: dict[str, dict] = {}
@@ -494,8 +505,9 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
             run_sweep_variant(
                 args=args,
                 data=train_data,
-                benchmark_curve=train_benchmark_curve,
-                benchmark_metrics=train_benchmark_metrics,
+                benchmark_curve=train_benchmark.curve,
+                benchmark_metrics=train_benchmark.metrics,
+                benchmark_display_name=train_benchmark.display_name,
                 data_quality=train_data_quality,
                 strategy_spec=strategy_spec,
                 strategy_payload=strategy_payload,
@@ -512,8 +524,7 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     best_train = train_rows[0]
     best_variant = variants_by_run_id[str(best_train["run_id"])]
 
-    test_benchmark_curve = buy_and_hold_equity_curve(test_data, args.initial_cash)
-    test_benchmark_metrics = buy_and_hold_metrics(test_data, args.initial_cash)
+    test_benchmark = build_benchmark(test_data, args.initial_cash, args.benchmark)
     test_data_quality = build_data_quality_report(test_data)
     test_strategy_payload = best_variant["payload"]
     test_strategy_spec = parse_strategy(test_strategy_payload)
@@ -528,8 +539,9 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     test_row = run_sweep_variant(
         args=args,
         data=test_data,
-        benchmark_curve=test_benchmark_curve,
-        benchmark_metrics=test_benchmark_metrics,
+        benchmark_curve=test_benchmark.curve,
+        benchmark_metrics=test_benchmark.metrics,
+        benchmark_display_name=test_benchmark.display_name,
         data_quality=test_data_quality,
         strategy_spec=test_strategy_spec,
         strategy_payload=test_strategy_payload,
@@ -606,6 +618,7 @@ def save_train_test_research_summary(
 - Train end: `{args.train_end}`
 - Test start: `{args.test_start}`
 - Selection metric: `{args.select_by}`
+- Benchmark: `{args.benchmark}`
 
 ## Artifacts
 
@@ -639,6 +652,7 @@ def run_sweep_variant(
     data: pd.DataFrame,
     benchmark_curve,
     benchmark_metrics,
+    benchmark_display_name: str,
     data_quality,
     strategy_spec,
     strategy_payload: dict,
@@ -661,13 +675,14 @@ def run_sweep_variant(
         build_run_report(result, run_name=run_name),
         benchmark_metrics,
         result.total_return,
+        benchmark_display_name,
     )
     report = append_data_quality_section(report, data_quality)
     report = append_research_warnings_section(report, research_warnings)
     artifact_paths = save_run_report_artifacts(result, run_dir, run_name=run_name)
     Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
     artifact_paths["trades"] = save_trades(result.trades, run_dir)
-    artifact_paths.update(save_charts(result, benchmark_curve, run_dir))
+    artifact_paths.update(save_charts(result, benchmark_curve, run_dir, benchmark_display_name))
     artifact_paths["data_quality"] = save_data_quality_report(data_quality, run_dir)
     artifact_paths["research_warnings"] = save_research_warnings(research_warnings, run_dir)
     artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
@@ -733,7 +748,7 @@ def build_summary_row(
         "commission_fixed": args.cost_assumptions.commission_fixed,
         "commission_rate": args.cost_assumptions.commission_rate,
         "slippage_bps": args.cost_assumptions.slippage_bps,
-        **benchmark_summary_fields(benchmark_metrics),
+        **benchmark_summary_fields(args.benchmark, benchmark_metrics),
         "excess_total_return": excess_total_return(
             result.total_return,
             benchmark_metrics.total_return,
@@ -831,6 +846,10 @@ def build_run_metadata(
             commission_rate=float(args.cost_assumptions.commission_rate),
             slippage_bps=float(args.cost_assumptions.slippage_bps),
         ),
+        benchmark=BenchmarkMetadata(
+            name=args.benchmark,
+            display_name=args.benchmark.replace("-", " ").title(),
+        ),
         environment=EnvironmentMetadata(git_commit=current_git_commit()),
         parameters=dict(parameters),
     )
@@ -849,7 +868,12 @@ def save_trades(trades: pd.DataFrame, output_dir: str | Path) -> str:
     return str(trades_path)
 
 
-def save_charts(result, benchmark_curve, output_dir: str | Path) -> dict[str, str]:
+def save_charts(
+    result,
+    benchmark_curve,
+    output_dir: str | Path,
+    benchmark_display_name: str,
+) -> dict[str, str]:
     destination = Path(output_dir)
     strategy_curve = equity_curve_from_result(result)
     return {
@@ -857,11 +881,13 @@ def save_charts(result, benchmark_curve, output_dir: str | Path) -> dict[str, st
             strategy_curve,
             benchmark_curve,
             destination / "equity_curve.png",
+            benchmark_display_name,
         ),
         "drawdown_chart": save_drawdown_chart(
             strategy_curve,
             benchmark_curve,
             destination / "drawdown.png",
+            benchmark_display_name,
         ),
     }
 
@@ -959,6 +985,7 @@ def save_sweep_summary(rows: Sequence[dict[str, str | int | float | None]], outp
         "commission_fixed",
         "commission_rate",
         "slippage_bps",
+        "benchmark_name",
         "benchmark_final_equity",
         "benchmark_total_return",
         "benchmark_cagr",
@@ -995,7 +1022,7 @@ def save_research_summary(
         )
     benchmark_lines = ""
     if benchmark_total_return is not None:
-        benchmark_lines = f"- Buy-and-hold total return: {float(benchmark_total_return):.2%}\n"
+        benchmark_lines = f"- Benchmark `{args.benchmark}` total return: {float(benchmark_total_return):.2%}\n"
 
     param_lines = "\n".join(f"- `{raw_param}`" for raw_param in args.param)
     command_lines = "\n".join(

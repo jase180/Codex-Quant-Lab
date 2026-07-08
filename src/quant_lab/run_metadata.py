@@ -43,6 +43,12 @@ class CostMetadata:
 
 
 @dataclass(frozen=True)
+class BenchmarkMetadata:
+    name: str
+    display_name: str
+
+
+@dataclass(frozen=True)
 class EnvironmentMetadata:
     git_commit: str
 
@@ -65,6 +71,7 @@ class RunMetadata:
     data: DataMetadata
     sizing: SizingMetadata
     costs: CostMetadata
+    benchmark: BenchmarkMetadata
     environment: EnvironmentMetadata
     parameters: dict[str, str | int | float] = field(default_factory=dict)
     artifacts: dict[str, str] = field(default_factory=dict)

@@ -20,7 +20,7 @@ Already available:
 - research index,
 - list/inspect/compare CLI commands.
 
-Main gaps:
+Original gaps:
 
 - Data quality issues are not summarized for research runs.
 - Cost assumptions are manually typed each time.
@@ -234,7 +234,7 @@ Acceptance criteria:
 
 ## Deliverable 5: Benchmark Variants
 
-Status: fifth priority.
+Status: delivered.
 
 Goal: compare strategies against more than one simple baseline.
 
@@ -246,14 +246,14 @@ Possible benchmarks:
 
 Recommendation:
 
-- Start with `cash` benchmark only if it clarifies reports.
-- Keep buy-and-hold as the default and primary benchmark.
+- Start with `cash` benchmark only if it clarifies reports. Delivered.
+- Keep buy-and-hold as the default and primary benchmark. Delivered.
 
 Acceptance criteria:
 
-- Benchmark choice is recorded in metadata.
-- Reports and summaries name the benchmark clearly.
-- Existing buy-and-hold behavior remains default.
+- Benchmark choice is recorded in metadata. Delivered.
+- Reports and summaries name the benchmark clearly. Delivered.
+- Existing buy-and-hold behavior remains default. Delivered.
 
 ## Suggested Build Order
 
@@ -285,12 +285,12 @@ Reasoning:
 
 Milestone 4 is complete when:
 
-- Runs and sweeps produce data-quality artifacts.
-- Cost presets are available and recorded.
-- Weak samples and tiny trade counts are called out.
-- A basic train/test sweep workflow exists.
-- Benchmark assumptions are explicit in outputs.
-- Docs explain how to use these guardrails without overclaiming.
+- Runs and sweeps produce data-quality artifacts. Delivered.
+- Cost presets are available and recorded. Delivered.
+- Weak samples and tiny trade counts are called out. Delivered.
+- A basic train/test sweep workflow exists. Delivered.
+- Benchmark assumptions are explicit in outputs. Delivered.
+- Docs explain how to use these guardrails without overclaiming. Delivered.
 
 At that point, the lab should support a more skeptical workflow:
 
@@ -298,9 +298,9 @@ At that point, the lab should support a more skeptical workflow:
 run experiment -> inspect data quality -> apply realistic costs -> check sample warnings -> compare train/test evidence -> decide next experiment
 ```
 
-## Near-Term Recommendation
+## Delivered Milestone Summary
 
-Build `data_quality.json` first.
-
-Reason: better data warnings improve every future experiment and are less risky
-than changing strategy execution or sweep behavior.
+Milestone 4 added data-quality artifacts, named cost presets, research warning
+artifacts, train/test sweep mode, and explicit benchmark selection. The lab now
+has a more skeptical default workflow without adding live trading, intraday
+execution, or multi-asset portfolio complexity.

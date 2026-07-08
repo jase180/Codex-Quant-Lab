@@ -52,6 +52,7 @@ quant-lab run \
   --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
   --sizing percent-equity \
   --allocation 1.0 \
+  --benchmark buy-and-hold \
   --commission-rate 0.0005 \
   --slippage-bps 5 \
   --out artifacts/research/sma_qqq_2015_2025/baseline
@@ -89,6 +90,7 @@ quant-lab sweep \
   --param sma_50.inputs.length=50,100,200 \
   --sizing percent-equity \
   --allocation 1.0 \
+  --benchmark buy-and-hold \
   --commission-rate 0.0005 \
   --slippage-bps 5 \
   --out artifacts/research/sma_qqq_2015_2025/sweep_001
@@ -145,6 +147,7 @@ quant-lab sweep \
   --param sma_50.inputs.length=50,100,200 \
   --sizing percent-equity \
   --allocation 1.0 \
+  --benchmark buy-and-hold \
   --cost-preset retail-liquid \
   --train-end 2020-12-31 \
   --test-start 2021-01-01 \
@@ -187,6 +190,7 @@ Check:
 - parameter overrides,
 - sizing,
 - commission and slippage,
+- benchmark choice,
 - total return,
 - benchmark return,
 - excess return,
@@ -225,6 +229,7 @@ count, and excess return over buy-and-hold.
 For any promising result, answer:
 
 - Did the strategy beat buy-and-hold on the same dates?
+- Would the interpretation change against `--benchmark cash`?
 - Is the result driven by one or two trades?
 - Are costs and slippage included?
 - Is the sample long enough?

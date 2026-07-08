@@ -19,7 +19,8 @@ tool that makes backtest assumptions visible.
   only the selected variant on the later test period.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
 - Write data-quality summaries for run inputs.
-- Compare strategy results with an automatic buy-and-hold benchmark.
+- Compare strategy results with explicit benchmarks. Buy-and-hold is the
+  default, and cash is available as a flat baseline.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map
@@ -164,10 +165,11 @@ artifacts/qqq_sma_crossover/
 artifacts/research_index.jsonl
 ```
 
-`report.md` includes a buy-and-hold benchmark section built from the same CSV
-date range and initial cash. The PNG charts plot the strategy beside that same
-benchmark so the path of returns and drawdowns is easier to inspect than raw
-CSV rows.
+`report.md` includes a benchmark section built from the same CSV date range and
+initial cash. Buy-and-hold is the default benchmark. Use `--benchmark cash` when
+you want a flat cash baseline instead. The PNG charts plot the strategy beside
+the selected benchmark so the path of returns and drawdowns is easier to inspect
+than raw CSV rows.
 
 The cost flags are optional. `--commission-fixed` charges a flat amount per
 fill, `--commission-rate` charges a fraction of trade value, and
@@ -178,8 +180,8 @@ Use `--cost-preset` for named assumptions such as `none`, `retail-liquid`,
 values.
 
 `run_metadata.json` records the command, strategy identity, data range, sizing,
-cost assumptions, Git commit, and artifact paths. Treat it as the source of
-truth for how a run folder was produced.
+cost assumptions, benchmark choice, Git commit, and artifact paths. Treat it as
+the source of truth for how a run folder was produced.
 
 `data_quality.json` summarizes suspicious input-data conditions such as missing
 OHLCV values, duplicate dates, zero volume, non-positive prices, and large gaps.
@@ -262,9 +264,10 @@ artifacts/research_index.jsonl
 
 `summary.csv` is sorted by total return, best first.
 
-Sweep summaries include buy-and-hold benchmark columns:
+Sweep summaries include selected benchmark columns:
 
 ```text
+benchmark_name
 benchmark_total_return
 benchmark_max_drawdown
 excess_total_return
@@ -314,7 +317,7 @@ artifacts/research/qqq_sma_train_test_2015_2025/
 
 The train and test periods must not overlap. `--select-by` currently supports
 `total_return` and `sharpe_ratio`. The test run metadata records the split
-dates, selection metric, and selected train run id in `parameters`.
+dates, selection metric, selected train run id, and benchmark choice.
 
 This workflow reduces in-sample overconfidence, but it does not prove an edge.
 Treat the test result as one skeptical check before trying another symbol, date
@@ -386,6 +389,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Finish benchmark variant support.
-2. Add richer research summaries.
+1. Add richer research summaries.
+2. Expand strategy expressiveness carefully.
 3. Keep expanding validation around data, costs, and out-of-sample checks.

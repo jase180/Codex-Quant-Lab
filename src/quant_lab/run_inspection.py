@@ -65,6 +65,7 @@ def format_run_summary(summary: dict) -> str:
         "Results",
         f"  Final equity: {_format_money(metrics.get('ending_equity'))}",
         f"  Total return: {_format_percent(metrics.get('total_return'))}",
+        f"  Benchmark: {_format_plain(_benchmark_name(metadata, index_record))}",
         f"  Benchmark return: {_format_percent(index_record.get('benchmark_total_return'))}",
         f"  Excess return: {_format_percent(index_record.get('excess_total_return'))}",
         f"  CAGR: {_format_percent(metrics.get('cagr'))}",
@@ -111,6 +112,7 @@ def format_run_comparison(summaries: list[dict]) -> str:
         ("symbol", "symbol"),
         ("strategy", "strategy"),
         ("return", "total_return"),
+        ("bench_name", "benchmark_name"),
         ("bench", "benchmark_total_return"),
         ("excess", "excess_total_return"),
         ("dd", "max_drawdown"),
@@ -148,6 +150,7 @@ def _comparison_row(summary: dict) -> dict:
         "symbol": metadata.get("data", {}).get("symbol"),
         "strategy": metadata.get("strategy", {}).get("strategy_id"),
         "total_return": metrics.get("total_return"),
+        "benchmark_name": _benchmark_name(metadata, index_record),
         "benchmark_total_return": index_record.get("benchmark_total_return"),
         "excess_total_return": index_record.get("excess_total_return"),
         "max_drawdown": metrics.get("max_drawdown"),
@@ -170,6 +173,10 @@ def _find_index_record(metadata: dict) -> dict | None:
         if record.get("metadata_path") == metadata_path:
             return record
     return None
+
+
+def _benchmark_name(metadata: dict, index_record: dict) -> str | None:
+    return index_record.get("benchmark_name") or metadata.get("benchmark", {}).get("name")
 
 
 def _read_json(path: Path) -> dict:

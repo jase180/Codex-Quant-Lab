@@ -7,14 +7,14 @@ It owns:
 - strategy JSON parsing,
 - executable rule-based strategies,
 - market data fetching,
-- buy-and-hold benchmark comparison helpers,
+- benchmark comparison helpers,
 - and the `quant-lab` CLI.
 
 ## Main Pieces
 
 - `strategy_schema.py`: strict v1 schema validation for strategy JSON.
 - `rule_based_strategy.py`: turns a validated strategy spec into an executable strategy.
-- `benchmarks.py`: builds buy-and-hold benchmark curves and report sections.
+- `benchmarks.py`: builds benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
 - `data_quality.py`: summarizes suspicious input-data conditions for artifacts.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
@@ -172,19 +172,21 @@ Available presets are `none`, `retail-liquid`, `retail-conservative`, and
 
 ## Benchmarks
 
-The CLI adds a buy-and-hold benchmark using the same CSV and initial cash. The
-benchmark buys at the first close and marks equity at each later close. Sweep
-summaries include benchmark and excess-return columns.
+The CLI adds a benchmark using the same CSV and initial cash. Buy-and-hold is
+the default and buys at the first close, then marks equity at each later close.
+`--benchmark cash` uses a flat cash curve over the same dates. Sweep summaries
+include benchmark name, benchmark metrics, and excess-return columns.
 
 Run and sweep artifacts also include two PNG charts:
 
-- `equity_curve.png`: strategy equity compared with buy-and-hold.
-- `drawdown.png`: strategy drawdown compared with buy-and-hold.
+- `equity_curve.png`: strategy equity compared with the selected benchmark.
+- `drawdown.png`: strategy drawdown compared with the selected benchmark.
 
 Each run directory also includes `run_metadata.json`. The metadata file uses a
 versioned nested schema so future fields can be added without changing the
 basic structure. It records command tokens, strategy metadata, data range,
-sizing, cost assumptions, Git commit, sweep parameters, and artifact paths.
+sizing, cost assumptions, benchmark choice, Git commit, sweep parameters, and
+artifact paths.
 
 Each run directory also includes `data_quality.json`, and `report.md` includes a
 data-quality section. The report warns about suspicious-but-possibly-valid input

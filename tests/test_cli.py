@@ -350,6 +350,49 @@ class CliTests(unittest.TestCase):
             self.assertEqual(metadata["costs"]["slippage_bps"], 5.0)
             self.assertEqual(index_rows[0]["cost_preset"], "retail-liquid")
 
+    def test_run_command_records_cash_benchmark(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "artifacts"
+            index_path = temp_path / "research_index.jsonl"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "run",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "3",
+                        "--benchmark",
+                        "cash",
+                        "--index-path",
+                        str(index_path),
+                    ]
+                )
+
+            metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
+            index_rows = _read_jsonl(index_path)
+            report = (output_dir / "report.md").read_text(encoding="utf-8")
+            self.assertEqual(exit_code, 0)
+            self.assertIn("benchmark: cash", stdout.getvalue())
+            self.assertEqual(metadata["benchmark"]["name"], "cash")
+            self.assertEqual(metadata["benchmark"]["display_name"], "Cash")
+            self.assertEqual(index_rows[0]["benchmark_name"], "cash")
+            self.assertEqual(index_rows[0]["benchmark_total_return"], 0.0)
+            self.assertIn("## Benchmark: Cash", report)
+
     def test_fetch_command_writes_normalized_csv(self) -> None:
         fetched_data = pd.DataFrame(
             [
@@ -624,6 +667,7 @@ class CliTests(unittest.TestCase):
             self.assertIn("run_id,strategy_id,params", summary)
             self.assertIn("commission_fixed", summary)
             self.assertIn("slippage_bps", summary)
+            self.assertIn("benchmark_name", summary)
             self.assertIn("benchmark_total_return", summary)
             self.assertIn("excess_total_return", summary)
             self.assertIn("run_001", summary)
