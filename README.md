@@ -16,6 +16,7 @@ tool that makes backtest assumptions visible.
 - Execute SMA, EMA, and RSI-based long-only strategies.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
+- Read sweep research summaries with top-run and parameter-stability context.
 - Run a train/test parameter sweep that selects on the train period and reruns
   only the selected variant on the later test period.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
@@ -303,6 +304,12 @@ artifacts/research_index.jsonl
 ```
 
 `summary.csv` is sorted by total return, best first.
+
+`research.md` includes a top-runs table and a parameter-stability section. The
+stability check is a deterministic heuristic: it looks for one-parameter
+neighbors around the best run and flags whether the winner looks supported,
+mixed, isolated, or too sparse to judge. Treat it as a prompt for follow-up
+testing, not statistical proof.
 
 Sweep summaries include selected benchmark columns:
 

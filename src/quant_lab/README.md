@@ -108,6 +108,16 @@ quant-lab sweep \
   --out artifacts/research/sma_sweep
 ```
 
+Sweep `research.md` includes:
+
+- a top-runs table,
+- the selected benchmark return,
+- a parameter-stability heuristic for the best row.
+
+The stability heuristic checks one-parameter neighbors around the best run and
+labels the result as `supported`, `mixed`, `isolated`, or `grid_too_sparse`.
+This is only a research prompt; it is not statistical proof.
+
 Run a train/test sweep:
 
 ```bash

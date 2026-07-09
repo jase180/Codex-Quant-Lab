@@ -106,6 +106,10 @@ Use `--note` for a short inline hypothesis or `--note-file` when the note is
 longer. The saved `research_note.md` should explain what you were trying to
 learn before you inspect the result.
 
+After the sweep, read `research.md` before picking a winner. It includes a
+top-runs table and a parameter-stability heuristic. `supported` is better than
+`isolated`, but none of these labels prove an edge.
+
 ## 5. Find Candidate Runs
 
 List the best QQQ runs by Sharpe ratio:
@@ -241,6 +245,8 @@ For any promising result, answer:
 - Are costs and slippage included?
 - Is the sample long enough?
 - Are nearby parameter values also good, or is the best result isolated?
+- Does sweep `research.md` label the best run as `supported`, `mixed`,
+  `isolated`, or `grid_too_sparse`?
 - Did the selected train winner survive the later test period?
 - Would the conclusion change if the data range started or ended differently?
 - Does the drawdown chart show behavior you would actually tolerate?

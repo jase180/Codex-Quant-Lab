@@ -93,21 +93,30 @@ Acceptance criteria:
 
 ## Deliverable 2: Sweep Stability Summary
 
-Status: second priority.
+Status: delivered.
 
 Goal: help distinguish robust parameter regions from isolated winners.
 
 First version:
 
-- include top N rows in `research.md`,
-- show whether the best run's nearby parameter values were also strong,
-- flag when the winner is isolated relative to the sweep grid.
+- include top N rows in `research.md`. Delivered.
+- show whether the best run's nearby parameter values were also strong. Delivered.
+- flag when the winner is isolated relative to the sweep grid. Delivered.
+
+Delivered heuristic:
+
+- Treat rows that differ from the best run by exactly one parameter as
+  one-parameter neighbors.
+- Mark a neighbor as strong when its total return is within 5 percentage points
+  of the best run, or within 25% of the best return magnitude, whichever is
+  wider.
+- Report `supported`, `mixed`, `isolated`, or `grid_too_sparse`.
 
 Acceptance criteria:
 
-- Sweep `research.md` includes top-run context.
-- Tests cover stable and isolated grids.
-- Docs explain that this is a heuristic, not statistical proof.
+- Sweep `research.md` includes top-run context. Delivered.
+- Tests cover stable and isolated grids. Delivered.
+- Docs explain that this is a heuristic, not statistical proof. Delivered.
 
 ## Deliverable 3: Walk-Forward Lite
 

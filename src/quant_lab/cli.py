@@ -65,6 +65,7 @@ from .strategy_templates import (
     build_strategy_template,
     write_strategy_template,
 )
+from .sweep_analysis import format_sweep_analysis_section
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1190,10 +1191,13 @@ def save_research_summary(
 - Runs: {len(rows)}
 {benchmark_lines}
 {best_lines}
+{format_sweep_analysis_section(rows)}
+
 ## Skeptic Pass
 
 - Check whether the best result is supported by enough trades.
 - Check whether nearby parameter values are also strong.
+- Treat `isolated` or `grid_too_sparse` stability as a reason to run a tighter follow-up grid.
 - Compare excess return against buy-and-hold before treating a result as useful.
 - Re-run promising variants on a longer or different sample before trusting them.
 """,

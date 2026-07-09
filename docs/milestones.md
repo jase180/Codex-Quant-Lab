@@ -114,10 +114,10 @@ Delivered:
 - `quant-lab list-strategy-templates`.
 - `quant-lab new-strategy`.
 - Optional `--note` and `--note-file` artifacts for runs and sweeps.
+- Sweep `research.md` top-runs and parameter-stability summaries.
 
 Likely next work:
 
-- Add sweep stability summaries.
 - Add walk-forward-lite checks.
 - Add more indicators, such as ATR, rolling high/low, and volatility.
 
@@ -146,7 +146,7 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Continue Milestone 5 with sweep stability summaries.
+Continue Milestone 5 with walk-forward-lite checks.
 
-Reason: templates and notes make new ideas easier to start and audit. The next
-gap is judging whether sweep winners are robust or isolated.
+Reason: templates, notes, and sweep stability improve single-sample research.
+The next gap is repeated out-of-sample checking across multiple windows.
