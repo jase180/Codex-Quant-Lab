@@ -165,7 +165,14 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("--strategy-id", default=None, help="Only show runs for one strategy id.")
     list_parser.add_argument(
         "--run-type",
-        choices=["run", "sweep_run", "train_sweep_run", "test_selected_run"],
+        choices=[
+            "run",
+            "sweep_run",
+            "train_sweep_run",
+            "test_selected_run",
+            "walk_forward_train_run",
+            "walk_forward_test_run",
+        ],
         default=None,
         help="Only show one run type.",
     )
@@ -265,6 +272,15 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["total_return", "sharpe_ratio"],
         default="total_return",
         help="Metric used to select the train winner for test rerun. Defaults to total_return.",
+    )
+    sweep_parser.add_argument(
+        "--walk-forward-window",
+        action="append",
+        default=[],
+        help=(
+            "Explicit walk-forward window in train_start,train_end,test_start,test_end form. "
+            "May be provided more than once."
+        ),
     )
     add_cost_arguments(sweep_parser)
     add_benchmark_argument(sweep_parser)
@@ -483,6 +499,8 @@ def compare_runs_command(args: argparse.Namespace) -> int:
 
 def sweep_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
+    if args.walk_forward_window:
+        return walk_forward_sweep_command(args)
     if args.train_end or args.test_start:
         return train_test_sweep_command(args)
 
@@ -538,6 +556,127 @@ def sweep_command(args: argparse.Namespace) -> int:
         print(f"best_run: {best['run_id']}")
         print(f"best_total_return: {float(best['total_return']):.2%}")
         print(f"best_excess_total_return: {float(best['excess_total_return']):.2%}")
+    return 0
+
+
+def walk_forward_sweep_command(args: argparse.Namespace) -> int:
+    if args.train_end or args.test_start:
+        raise ValueError("--walk-forward-window cannot be combined with --train-end or --test-start.")
+
+    windows = parse_walk_forward_windows(args.walk_forward_window)
+    base_payload = load_strategy_payload(args.strategy)
+    param_sweeps = parse_param_sweeps(args.param)
+    variants = build_sweep_variants(base_payload, param_sweeps)
+    data = pd.read_csv(args.data)
+    output_dir = Path(args.out)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    note = load_research_note(args)
+    research_note_path = save_research_note(note, output_dir) if note is not None else None
+
+    summary_rows: list[dict[str, str | int | float | None]] = []
+    for window_index, window in enumerate(windows, start=1):
+        window_id = f"window_{window_index:03d}"
+        window_dir = output_dir / window_id
+        train_data = slice_date_range_data(data, window["train_start"], window["train_end"], "train")
+        test_data = slice_date_range_data(data, window["test_start"], window["test_end"], "test")
+        train_dir = window_dir / "train_sweep"
+        test_dir = window_dir / "test_selected"
+
+        train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
+        train_data_quality = build_data_quality_report(train_data)
+        train_rows: list[dict[str, str | int | float | None]] = []
+        variants_by_run_id: dict[str, dict] = {}
+        for variant_index, variant in enumerate(variants, start=1):
+            run_id = f"run_{variant_index:03d}"
+            variants_by_run_id[run_id] = variant
+            strategy_payload = variant["payload"]
+            params = {
+                **variant["params"],
+                "_workflow": "walk_forward",
+                "_split_phase": "train",
+                "_window_id": window_id,
+                "_train_start": window["train_start"],
+                "_train_end": window["train_end"],
+                "_test_start": window["test_start"],
+                "_test_end": window["test_end"],
+                "_select_by": args.select_by,
+            }
+            strategy_spec = parse_strategy(strategy_payload)
+            run_name_prefix = args.run_name or strategy_spec.name
+            train_rows.append(
+                run_sweep_variant(
+                    args=args,
+                    data=train_data,
+                    benchmark_curve=train_benchmark.curve,
+                    benchmark_metrics=train_benchmark.metrics,
+                    benchmark_display_name=train_benchmark.display_name,
+                    data_quality=train_data_quality,
+                    strategy_spec=strategy_spec,
+                    strategy_payload=strategy_payload,
+                    run_dir=train_dir / run_id,
+                    run_name=f"{run_name_prefix} {window_id} train {run_id}",
+                    parameters=params,
+                    run_type="walk_forward_train_run",
+                    run_id=f"{window_id}_{run_id}",
+                    research_note_path=research_note_path,
+                )
+            )
+
+        train_rows.sort(key=lambda row: _selection_value(row, args.select_by), reverse=True)
+        train_summary_path = save_sweep_summary(train_rows, train_dir)
+        best_train = train_rows[0]
+        selected_train_run_id = str(best_train["run_id"]).removeprefix(f"{window_id}_")
+        best_variant = variants_by_run_id[selected_train_run_id]
+
+        test_benchmark = build_benchmark(test_data, args.initial_cash, args.benchmark)
+        test_data_quality = build_data_quality_report(test_data)
+        test_strategy_payload = best_variant["payload"]
+        test_strategy_spec = parse_strategy(test_strategy_payload)
+        test_params = {
+            **best_variant["params"],
+            "_workflow": "walk_forward",
+            "_split_phase": "test",
+            "_window_id": window_id,
+            "_selected_train_run_id": best_train["run_id"],
+            "_train_start": window["train_start"],
+            "_train_end": window["train_end"],
+            "_test_start": window["test_start"],
+            "_test_end": window["test_end"],
+            "_select_by": args.select_by,
+        }
+        test_row = run_sweep_variant(
+            args=args,
+            data=test_data,
+            benchmark_curve=test_benchmark.curve,
+            benchmark_metrics=test_benchmark.metrics,
+            benchmark_display_name=test_benchmark.display_name,
+            data_quality=test_data_quality,
+            strategy_spec=test_strategy_spec,
+            strategy_payload=test_strategy_payload,
+            run_dir=test_dir,
+            run_name=f"{args.run_name or test_strategy_spec.name} {window_id} test selected",
+            parameters=test_params,
+            run_type="walk_forward_test_run",
+            run_id=f"{window_id}_test_selected",
+            research_note_path=research_note_path,
+        )
+        test_summary_path = save_sweep_summary([test_row], window_dir / "test_summary")
+        summary_rows.append(
+            build_walk_forward_summary_row(
+                window_id=window_id,
+                window=window,
+                best_train=best_train,
+                test_row=test_row,
+                train_summary_path=train_summary_path,
+                test_summary_path=test_summary_path,
+            )
+        )
+
+    summary_path = save_walk_forward_summary(summary_rows, output_dir)
+    research_path = save_walk_forward_research_summary(args, summary_rows, output_dir, summary_path)
+    print(f"Walk-forward sweep complete: {len(summary_rows)} windows")
+    print(f"summary: {summary_path}")
+    print(f"research: {research_path}")
     return 0
 
 
@@ -665,6 +804,55 @@ def split_train_test_data(data: pd.DataFrame, train_end: str, test_start: str) -
     if test_data.empty:
         raise ValueError("test split is empty.")
     return train_data, test_data
+
+
+def parse_walk_forward_windows(raw_windows: Sequence[str]) -> list[dict[str, str]]:
+    if not raw_windows:
+        raise ValueError("At least one --walk-forward-window is required.")
+
+    windows: list[dict[str, str]] = []
+    previous_test_end: pd.Timestamp | None = None
+    for index, raw_window in enumerate(raw_windows, start=1):
+        parts = [part.strip() for part in raw_window.split(",")]
+        if len(parts) != 4 or any(not part for part in parts):
+            raise ValueError(
+                "--walk-forward-window must use train_start,train_end,test_start,test_end format."
+            )
+        train_start, train_end, test_start, test_end = parts
+        train_start_date = pd.Timestamp(train_start)
+        train_end_date = pd.Timestamp(train_end)
+        test_start_date = pd.Timestamp(test_start)
+        test_end_date = pd.Timestamp(test_end)
+        if train_start_date > train_end_date:
+            raise ValueError(f"walk-forward window {index} train_start must be on or before train_end.")
+        if test_start_date > test_end_date:
+            raise ValueError(f"walk-forward window {index} test_start must be on or before test_end.")
+        if train_end_date >= test_start_date:
+            raise ValueError(f"walk-forward window {index} train_end must be earlier than test_start.")
+        if previous_test_end is not None and test_start_date <= previous_test_end:
+            raise ValueError("walk-forward test windows must be provided in increasing, non-overlapping order.")
+        previous_test_end = test_end_date
+        windows.append(
+            {
+                "train_start": train_start,
+                "train_end": train_end,
+                "test_start": test_start,
+                "test_end": test_end,
+            }
+        )
+    return windows
+
+
+def slice_date_range_data(data: pd.DataFrame, start: str, end: str, label: str) -> pd.DataFrame:
+    if "date" not in data.columns:
+        raise ValueError("walk-forward windows require a date column.")
+    dates = pd.to_datetime(data["date"])
+    sliced = data.loc[(dates >= pd.Timestamp(start)) & (dates <= pd.Timestamp(end))].copy()
+    if sliced.empty:
+        raise ValueError(f"{label} window is empty: {start} to {end}.")
+    if len(sliced) < 2:
+        raise ValueError(f"{label} window must contain at least two rows: {start} to {end}.")
+    return sliced
 
 
 def _selection_value(row: dict[str, str | int | float | None], select_by: str) -> float:
@@ -1111,6 +1299,127 @@ def save_sweep_summary(rows: Sequence[dict[str, str | int | float | None]], outp
         writer.writeheader()
         writer.writerows(rows)
     return str(summary_path)
+
+
+def build_walk_forward_summary_row(
+    *,
+    window_id: str,
+    window: dict[str, str],
+    best_train: dict[str, str | int | float | None],
+    test_row: dict[str, str | int | float | None],
+    train_summary_path: str,
+    test_summary_path: str,
+) -> dict[str, str | int | float | None]:
+    return {
+        "window_id": window_id,
+        "train_start": window["train_start"],
+        "train_end": window["train_end"],
+        "test_start": window["test_start"],
+        "test_end": window["test_end"],
+        "selected_train_run_id": best_train["run_id"],
+        "selected_train_params": public_params_json(str(best_train["params"])),
+        "selected_train_total_return": best_train["total_return"],
+        "selected_train_sharpe_ratio": best_train["sharpe_ratio"],
+        "test_run_id": test_row["run_id"],
+        "test_total_return": test_row["total_return"],
+        "test_excess_total_return": test_row["excess_total_return"],
+        "test_sharpe_ratio": test_row["sharpe_ratio"],
+        "test_trade_count": test_row["trade_count"],
+        "train_summary_path": train_summary_path,
+        "test_summary_path": test_summary_path,
+        "test_output_dir": test_row["output_dir"],
+    }
+
+
+def public_params_json(raw_params: str) -> str:
+    params = json.loads(raw_params)
+    if not isinstance(params, dict):
+        return raw_params
+    public_params = {key: value for key, value in params.items() if not str(key).startswith("_")}
+    return json.dumps(public_params, sort_keys=True)
+
+
+def save_walk_forward_summary(
+    rows: Sequence[dict[str, str | int | float | None]],
+    output_dir: str | Path,
+) -> str:
+    destination = Path(output_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    summary_path = destination / "walk_forward_summary.csv"
+    fieldnames = [
+        "window_id",
+        "train_start",
+        "train_end",
+        "test_start",
+        "test_end",
+        "selected_train_run_id",
+        "selected_train_params",
+        "selected_train_total_return",
+        "selected_train_sharpe_ratio",
+        "test_run_id",
+        "test_total_return",
+        "test_excess_total_return",
+        "test_sharpe_ratio",
+        "test_trade_count",
+        "train_summary_path",
+        "test_summary_path",
+        "test_output_dir",
+    ]
+    with summary_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    return str(summary_path)
+
+
+def save_walk_forward_research_summary(
+    args: argparse.Namespace,
+    rows: Sequence[dict[str, str | int | float | None]],
+    output_dir: str | Path,
+    summary_path: str,
+) -> str:
+    destination = Path(output_dir)
+    research_path = destination / "research.md"
+    window_lines = "\n".join(
+        (
+            f"| `{row['window_id']}` | {row['train_start']} to {row['train_end']} | "
+            f"{row['test_start']} to {row['test_end']} | `{row['selected_train_run_id']}` | "
+            f"{float(row['selected_train_total_return']):.2%} | "
+            f"{float(row['test_total_return']):.2%} | "
+            f"{float(row['test_excess_total_return']):.2%} | "
+            f"{int(row['test_trade_count'])} |"
+        )
+        for row in rows
+    )
+    research_path.write_text(
+        f"""# Walk-Forward Research Summary
+
+## Inputs
+
+- Strategy: `{args.strategy}`
+- Data: `{args.data}`
+- Selection metric: `{args.select_by}`
+- Benchmark: `{args.benchmark}`
+- Windows: {len(rows)}
+- Summary: `{summary_path}`
+{_research_note_summary_line(args, output_dir)}
+
+## Window Results
+
+| Window | Train | Test | Selected Train Run | Train Return | Test Return | Test Excess Return | Test Trades |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: |
+{window_lines}
+
+## Skeptic Pass
+
+- Treat this as repeated out-of-sample evidence, not proof of an edge.
+- Do not move window dates after seeing the results.
+- Check whether the same parameter region is selected repeatedly.
+- Check whether test excess return is consistent across windows.
+""",
+        encoding="utf-8",
+    )
+    return str(research_path)
 
 
 def save_research_summary(

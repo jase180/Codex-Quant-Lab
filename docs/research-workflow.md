@@ -213,7 +213,30 @@ Check:
 If the result looks promising, open the run's `report.md`, `trades.csv`,
 `equity_curve.png`, and `drawdown.png`.
 
-## 8. Compare Runs
+## 8. Run Walk-Forward Windows
+
+If a single train/test split still looks interesting, run explicit
+walk-forward windows:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --sizing percent-equity \
+  --allocation 1.0 \
+  --cost-preset retail-liquid \
+  --walk-forward-window 2015-01-01,2018-12-31,2019-01-01,2020-12-31 \
+  --walk-forward-window 2017-01-01,2020-12-31,2021-01-01,2022-12-31 \
+  --select-by sharpe_ratio \
+  --out artifacts/research/sma_qqq_2015_2025/walk_forward_001
+```
+
+Read `walk_forward_summary.csv` and `research.md`. Do not move window dates
+after seeing the output; use a new output folder for a new experiment.
+
+## 9. Compare Runs
 
 Compare the baseline against a candidate sweep run:
 
@@ -235,7 +258,7 @@ quant-lab compare-runs \
 Do not choose a run by total return alone. Look at drawdown, Sharpe, trade
 count, and excess return over buy-and-hold.
 
-## 9. Write A Skeptic Pass
+## 10. Write A Skeptic Pass
 
 For any promising result, answer:
 
@@ -248,6 +271,7 @@ For any promising result, answer:
 - Does sweep `research.md` label the best run as `supported`, `mixed`,
   `isolated`, or `grid_too_sparse`?
 - Did the selected train winner survive the later test period?
+- Did test behavior stay consistent across walk-forward windows?
 - Would the conclusion change if the data range started or ended differently?
 - Does the drawdown chart show behavior you would actually tolerate?
 
@@ -263,7 +287,7 @@ windows produce similar results and whether the result survives a different
 date range.
 ```
 
-## 10. Decide The Next Experiment
+## 11. Decide The Next Experiment
 
 Good next experiments are small:
 

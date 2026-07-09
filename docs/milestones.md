@@ -115,10 +115,10 @@ Delivered:
 - `quant-lab new-strategy`.
 - Optional `--note` and `--note-file` artifacts for runs and sweeps.
 - Sweep `research.md` top-runs and parameter-stability summaries.
+- Explicit walk-forward windows with `walk_forward_summary.csv`.
 
 Likely next work:
 
-- Add walk-forward-lite checks.
 - Add more indicators, such as ATR, rolling high/low, and volatility.
 
 Exit criteria:
@@ -146,7 +146,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Continue Milestone 5 with walk-forward-lite checks.
+Continue Milestone 5 with additional strategy primitives.
 
 Reason: templates, notes, and sweep stability improve single-sample research.
-The next gap is repeated out-of-sample checking across multiple windows.
+Walk-forward-lite adds repeated out-of-sample checks. The next gap is expanding
+the simple strategy ideas the lab can express.

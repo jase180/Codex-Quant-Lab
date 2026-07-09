@@ -13,7 +13,13 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from quant_lab.cli import build_sweep_variants, main, parse_param_sweeps, split_train_test_data  # noqa: E402
+from quant_lab.cli import (  # noqa: E402
+    build_sweep_variants,
+    main,
+    parse_param_sweeps,
+    parse_walk_forward_windows,
+    split_train_test_data,
+)
 
 
 def _strategy_payload() -> dict:
@@ -61,6 +67,24 @@ def _write_ohlcv_fixture(path: Path) -> None:
                 "2026-01-02,11,11,11,11,100",
                 "2026-01-03,12,12,12,12,100",
                 "2026-01-04,9,9,9,9,100",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_walk_forward_ohlcv_fixture(path: Path) -> None:
+    path.write_text(
+        "\n".join(
+            [
+                "date,open,high,low,close,volume",
+                "2026-01-01,10,10,10,10,100",
+                "2026-01-02,11,11,11,11,100",
+                "2026-01-03,12,12,12,12,100",
+                "2026-01-04,13,13,13,13,100",
+                "2026-01-05,12,12,12,12,100",
+                "2026-01-06,14,14,14,14,100",
             ]
         )
         + "\n",
@@ -848,6 +872,72 @@ class CliTests(unittest.TestCase):
             self.assertEqual(len(index_rows), 5)
             self.assertEqual(index_rows[-1]["run_type"], "test_selected_run")
 
+    def test_sweep_command_supports_walk_forward_windows(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "walk_forward"
+            index_path = temp_path / "research_index.jsonl"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_walk_forward_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "sweep",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--param",
+                        "sma_2.inputs.length=2,3",
+                        "--param",
+                        "sma_3.inputs.length=3,4",
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "2",
+                        "--walk-forward-window",
+                        "2026-01-01,2026-01-02,2026-01-03,2026-01-04",
+                        "--walk-forward-window",
+                        "2026-01-02,2026-01-03,2026-01-05,2026-01-06",
+                        "--select-by",
+                        "total_return",
+                        "--index-path",
+                        str(index_path),
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Walk-forward sweep complete: 2 windows", stdout.getvalue())
+            self.assertTrue((output_dir / "walk_forward_summary.csv").exists())
+            self.assertTrue((output_dir / "research.md").exists())
+            self.assertTrue((output_dir / "window_001" / "train_sweep" / "summary.csv").exists())
+            self.assertTrue((output_dir / "window_001" / "test_selected" / "run_metadata.json").exists())
+            self.assertTrue((output_dir / "window_002" / "test_selected" / "run_metadata.json").exists())
+
+            summary = (output_dir / "walk_forward_summary.csv").read_text(encoding="utf-8")
+            self.assertIn("window_id,train_start,train_end,test_start,test_end", summary)
+            self.assertIn("window_001", summary)
+            self.assertIn("window_002", summary)
+            self.assertNotIn("_workflow", summary)
+
+            metadata = json.loads(
+                (output_dir / "window_001" / "test_selected" / "run_metadata.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(metadata["run_type"], "walk_forward_test_run")
+            self.assertEqual(metadata["parameters"]["_workflow"], "walk_forward")
+            self.assertEqual(metadata["parameters"]["_window_id"], "window_001")
+            self.assertEqual(metadata["parameters"]["_test_end"], "2026-01-04")
+
+            index_rows = _read_jsonl(index_path)
+            self.assertEqual(len(index_rows), 10)
+            self.assertEqual(index_rows[-1]["run_type"], "walk_forward_test_run")
+
     def test_train_test_split_rejects_overlapping_dates(self) -> None:
         data = pd.DataFrame(
             [
@@ -858,6 +948,15 @@ class CliTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "earlier than --test-start"):
             split_train_test_data(data, "2026-01-02", "2026-01-02")
+
+    def test_parse_walk_forward_windows_rejects_overlapping_test_windows(self) -> None:
+        with self.assertRaisesRegex(ValueError, "non-overlapping"):
+            parse_walk_forward_windows(
+                [
+                    "2026-01-01,2026-01-02,2026-01-03,2026-01-05",
+                    "2026-01-02,2026-01-03,2026-01-05,2026-01-06",
+                ]
+            )
 
 
 if __name__ == "__main__":

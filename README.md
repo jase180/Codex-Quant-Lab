@@ -19,6 +19,7 @@ tool that makes backtest assumptions visible.
 - Read sweep research summaries with top-run and parameter-stability context.
 - Run a train/test parameter sweep that selects on the train period and reruns
   only the selected variant on the later test period.
+- Run explicit walk-forward windows for repeated train/test checks.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
 - Save optional research notes beside run and sweep artifacts.
 - Write data-quality summaries for run inputs.
@@ -369,6 +370,47 @@ dates, selection metric, selected train run id, and benchmark choice.
 This workflow reduces in-sample overconfidence, but it does not prove an edge.
 Treat the test result as one skeptical check before trying another symbol, date
 range, or nearby parameter grid.
+
+### Run Walk-Forward Windows
+
+Use walk-forward mode when you want repeated train/test checks across multiple
+explicit windows:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --sizing percent-equity \
+  --allocation 1.0 \
+  --cost-preset retail-liquid \
+  --walk-forward-window 2015-01-01,2018-12-31,2019-01-01,2020-12-31 \
+  --walk-forward-window 2017-01-01,2020-12-31,2021-01-01,2022-12-31 \
+  --select-by sharpe_ratio \
+  --out artifacts/research/qqq_sma_walk_forward_2015_2022
+```
+
+Each window runs the full grid on its train dates, selects one train winner,
+and reruns only that selected variant on the window's test dates.
+
+Outputs:
+
+```text
+artifacts/research/qqq_sma_walk_forward_2015_2022/
+  walk_forward_summary.csv
+  research.md
+  window_001/
+    train_sweep/
+      summary.csv
+    test_summary/
+      summary.csv
+    test_selected/
+      run_metadata.json
+```
+
+Window dates are recorded in test metadata. Do not adjust window dates after
+seeing results; create a new experiment folder instead.
 
 ### Sizing Modes
 

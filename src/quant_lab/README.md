@@ -156,6 +156,25 @@ The selected test run is recorded with run type `test_selected_run`. Its
 metadata parameters include the split dates, the selection metric, and the
 selected train run id.
 
+Run walk-forward windows:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/sample_ohlcv.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --walk-forward-window 2015-01-01,2018-12-31,2019-01-01,2020-12-31 \
+  --walk-forward-window 2017-01-01,2020-12-31,2021-01-01,2022-12-31 \
+  --select-by sharpe_ratio \
+  --out artifacts/research/sma_walk_forward
+```
+
+Each `--walk-forward-window` value is `train_start,train_end,test_start,test_end`.
+The command writes `walk_forward_summary.csv`, root `research.md`, and one
+`window_###/` artifact directory per window. Each test run is recorded with run
+type `walk_forward_test_run`.
+
 List previous runs:
 
 ```bash

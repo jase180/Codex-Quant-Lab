@@ -120,21 +120,45 @@ Acceptance criteria:
 
 ## Deliverable 3: Walk-Forward Lite
 
-Status: third priority.
+Status: delivered.
 
 Goal: repeat the train/test idea across multiple ordered windows.
 
 First version:
 
-- accept explicit split windows,
-- run the same parameter grid across each window,
-- summarize selected train winner and test result per window.
+- accept explicit split windows. Delivered.
+- run the same parameter grid across each window. Delivered.
+- summarize selected train winner and test result per window. Delivered.
+
+Delivered CLI:
+
+```bash
+quant-lab sweep \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --param sma_20.inputs.length=5,10,20 \
+  --param sma_50.inputs.length=50,100,200 \
+  --walk-forward-window 2015-01-01,2018-12-31,2019-01-01,2020-12-31 \
+  --walk-forward-window 2017-01-01,2020-12-31,2021-01-01,2022-12-31 \
+  --out artifacts/research/sma_walk_forward_001
+```
+
+Delivered output:
+
+```text
+walk_forward_summary.csv
+research.md
+window_001/
+  train_sweep/
+  test_selected/
+  test_summary/
+```
 
 Acceptance criteria:
 
-- Workflow writes one summary row per test window.
-- Metadata records window dates.
-- Docs explain how to avoid moving windows after seeing results.
+- Workflow writes one summary row per test window. Delivered.
+- Metadata records window dates. Delivered.
+- Docs explain how to avoid moving windows after seeing results. Delivered.
 
 ## Deliverable 4: Additional Strategy Primitives
 
