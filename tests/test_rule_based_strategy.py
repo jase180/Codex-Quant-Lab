@@ -38,6 +38,8 @@ class RuleBasedStrategyTests(unittest.TestCase):
         self.assertEqual(indicator_values("sma", 3, [1, 2, 3, 4]), [None, None, 2.0, 3.0])
         self.assertEqual(indicator_values("ema", 3, [10, 20, 30]), [10.0, 15.0, 22.5])
         self.assertEqual(indicator_values("rsi", 2, [10, 11, 12]), [None, None, 100.0])
+        self.assertEqual(indicator_values("rolling_high", 2, [1, 2, 3, 2]), [None, None, 2.0, 3.0])
+        self.assertEqual(indicator_values("rolling_low", 2, [3, 2, 1, 2]), [None, None, 2.0, 1.0])
 
     def test_sma_crossover_spec_runs_as_backtest_strategy(self) -> None:
         spec = parse_strategy(
@@ -84,6 +86,61 @@ class RuleBasedStrategyTests(unittest.TestCase):
         self.assertEqual(result.trades.iloc[0]["quantity"], 2)
         self.assertEqual(result.trades.iloc[0]["price"], 6.0)
         self.assertEqual(result.final_position, 2)
+
+    def test_rolling_breakout_spec_runs_as_backtest_strategy(self) -> None:
+        spec = parse_strategy(
+            _strategy_payload(
+                indicators=[
+                    {
+                        "id": "high_3",
+                        "kind": "rolling_high",
+                        "inputs": {"source": "close", "length": 3},
+                    },
+                    {
+                        "id": "low_2",
+                        "kind": "rolling_low",
+                        "inputs": {"source": "close", "length": 2},
+                    },
+                ],
+                entry_conditions=[
+                    {
+                        "left": {"price": "close"},
+                        "operator": "gt",
+                        "right": {"indicator": "high_3"},
+                    }
+                ],
+                exit_conditions=[
+                    {
+                        "left": {"price": "close"},
+                        "operator": "lt",
+                        "right": {"indicator": "low_2"},
+                    }
+                ],
+            )
+        )
+        data = pd.DataFrame(
+            [
+                {"date": "2026-01-01", "open": 10, "high": 10, "low": 10, "close": 10, "volume": 100},
+                {"date": "2026-01-02", "open": 11, "high": 11, "low": 11, "close": 11, "volume": 100},
+                {"date": "2026-01-03", "open": 12, "high": 12, "low": 12, "close": 12, "volume": 100},
+                {"date": "2026-01-04", "open": 13, "high": 13, "low": 13, "close": 13, "volume": 100},
+                {"date": "2026-01-05", "open": 14, "high": 14, "low": 14, "close": 14, "volume": 100},
+                {"date": "2026-01-06", "open": 9, "high": 9, "low": 9, "close": 9, "volume": 100},
+                {"date": "2026-01-07", "open": 8, "high": 8, "low": 8, "close": 8, "volume": 100},
+            ]
+        )
+
+        result = BacktestEngine(initial_cash=1_000).run(
+            data,
+            build_rule_based_strategy(spec, order_quantity=2),
+        )
+
+        self.assertEqual(len(result.trades), 2)
+        self.assertEqual(result.trades.index[0], pd.Timestamp("2026-01-05"))
+        self.assertEqual(result.trades.iloc[0]["side"], "buy")
+        self.assertEqual(result.trades.index[1], pd.Timestamp("2026-01-07"))
+        self.assertEqual(result.trades.iloc[1]["side"], "sell")
+        self.assertEqual(result.final_position, 0)
 
     def test_final_bar_signal_is_not_filled(self) -> None:
         spec = parse_strategy(

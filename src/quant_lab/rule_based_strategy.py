@@ -40,6 +40,15 @@ class IndicatorState:
 
     def update(self, close: float) -> float | None:
         self.previous_value = self.current_value
+        if self.kind == "rolling_high":
+            self.current_value = self._update_prior_rolling_high()
+            self.closes.append(float(close))
+            return self.current_value
+        if self.kind == "rolling_low":
+            self.current_value = self._update_prior_rolling_low()
+            self.closes.append(float(close))
+            return self.current_value
+
         self.closes.append(float(close))
 
         if self.kind == "sma":
@@ -58,6 +67,21 @@ class IndicatorState:
             return None
         window = self.closes[-self.length :]
         return sum(window) / self.length
+
+    def _update_prior_rolling_high(self) -> float | None:
+        # Breakout rules need the prior N closes, not a window that includes the
+        # current close. Including the current close would make `close > high`
+        # impossible on the breakout bar.
+        if len(self.closes) < self.length:
+            return None
+        return max(self.closes[-self.length :])
+
+    def _update_prior_rolling_low(self) -> float | None:
+        # Symmetric to rolling_high: exits can compare the current close against
+        # the prior N-close low without seeing into the current bar's result.
+        if len(self.closes) < self.length:
+            return None
+        return min(self.closes[-self.length :])
 
     def _update_ema(self, close: float) -> float | None:
         alpha = 2 / (self.length + 1)

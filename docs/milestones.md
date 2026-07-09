@@ -116,10 +116,12 @@ Delivered:
 - Optional `--note` and `--note-file` artifacts for runs and sweeps.
 - Sweep `research.md` top-runs and parameter-stability summaries.
 - Explicit walk-forward windows with `walk_forward_summary.csv`.
+- Rolling high/low indicators plus a breakout strategy example and template.
 
 Likely next work:
 
-- Add more indicators, such as ATR, rolling high/low, and volatility.
+- Decide whether Milestone 6 should start next or whether to add ATR and
+  volatility filters inside Milestone 5.
 
 Exit criteria:
 
@@ -146,8 +148,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Continue Milestone 5 with additional strategy primitives.
+Decide the next milestone direction.
 
 Reason: templates, notes, and sweep stability improve single-sample research.
 Walk-forward-lite adds repeated out-of-sample checks. The next gap is expanding
-the simple strategy ideas the lab can express.
+either portfolio scope or more advanced single-symbol strategy primitives.

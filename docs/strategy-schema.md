@@ -55,6 +55,13 @@ Supported v1 indicator kinds:
 - `sma`
 - `ema`
 - `rsi`
+- `rolling_high`
+- `rolling_low`
+
+`rolling_high` and `rolling_low` use the prior `length` closes, excluding the
+current close. That makes breakout rules like `close > high_20` possible
+without lookahead: the current close is compared with a level known before the
+current close is added to the rolling window.
 
 ### Conditions
 
@@ -104,6 +111,8 @@ This structure is intentionally close to how a natural-language extraction pipel
 
 - "Buy when the 20-day SMA crosses above the 50-day SMA" maps cleanly into two declared indicators plus one `crosses_above` condition.
 - "Exit when RSI gets above 55" maps into an indicator reference, a numeric constant, and a comparison operator.
+- "Buy when close breaks above the prior 20-day high" maps into a
+  `rolling_high` indicator plus a `gt` condition.
 - Because indicators, operators, and reference types are enumerated, an NLP or LLM system can target a small controlled vocabulary instead of emitting free-form code.
 
 That makes a future NLP layer easier to build in two stages:
@@ -119,5 +128,5 @@ Intentionally not included in v1:
 - short-selling or multi-position modes
 - stop loss, take profit, trailing exits, or bracket orders
 - multi-asset universes and portfolio allocation rules
-- parameter ranges, optimization metadata, or templated strategies
+- parameter ranges or optimization metadata inside strategy files
 - richer indicator graphs or indicators built from non-close sources

@@ -20,7 +20,7 @@ class StrategyTemplateTests(unittest.TestCase):
     def test_available_templates_are_stable(self) -> None:
         self.assertEqual(
             available_strategy_templates(),
-            ("sma-crossover", "ema-trend-follow", "rsi-reversion"),
+            ("sma-crossover", "ema-trend-follow", "rsi-reversion", "breakout-trend"),
         )
 
     def test_build_strategy_template_returns_valid_payload(self) -> None:
@@ -35,6 +35,15 @@ class StrategyTemplateTests(unittest.TestCase):
         self.assertEqual(spec.strategy_id, "qqq_sma")
         self.assertEqual(spec.name, "QQQ SMA")
         self.assertEqual(spec.market.symbol, "QQQ")
+
+    def test_build_breakout_template_returns_valid_payload(self) -> None:
+        payload = build_strategy_template("breakout-trend", symbol="spy")
+
+        spec = parse_strategy(payload)
+        self.assertEqual(spec.strategy_id, "breakout_trend")
+        self.assertEqual(spec.market.symbol, "SPY")
+        self.assertEqual(spec.indicators[0].kind, "rolling_high")
+        self.assertEqual(spec.indicators[1].kind, "rolling_low")
 
     def test_write_strategy_template_refuses_overwrite_without_force(self) -> None:
         payload = build_strategy_template("rsi-reversion", symbol="SPY")

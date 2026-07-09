@@ -162,23 +162,23 @@ Acceptance criteria:
 
 ## Deliverable 4: Additional Strategy Primitives
 
-Status: fourth priority.
+Status: delivered.
 
 Goal: expand strategy ideas while preserving strict validation.
 
 Candidate primitives:
 
 - ATR,
-- highest high,
-- lowest low,
-- simple breakout conditions,
+- highest high. Delivered as `rolling_high`.
+- lowest low. Delivered as `rolling_low`.
+- simple breakout conditions. Delivered through the `breakout_trend` example and template.
 - optional volatility filter.
 
 Acceptance criteria:
 
-- Schema validation stays explicit.
-- Rule engine tests cover each primitive.
-- Example strategies and templates are updated.
+- Schema validation stays explicit. Delivered.
+- Rule engine tests cover each primitive. Delivered.
+- Example strategies and templates are updated. Delivered.
 
 ## Suggested Build Order
 

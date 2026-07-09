@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 _ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
-_ALLOWED_INDICATORS = {"sma", "ema", "rsi"}
+_ALLOWED_INDICATORS = {"sma", "ema", "rsi", "rolling_high", "rolling_low"}
 _ALLOWED_SIGNAL_PRICE_FIELDS = {"close"}
 _ALLOWED_OPERATORS = {
     "gt",
@@ -36,7 +36,7 @@ class MarketSpec:
 @dataclass(frozen=True)
 class IndicatorSpec:
     id: str
-    kind: Literal["sma", "ema", "rsi"]
+    kind: Literal["sma", "ema", "rsi", "rolling_high", "rolling_low"]
     inputs: dict[str, Any]
 
 

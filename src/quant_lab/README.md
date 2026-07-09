@@ -41,8 +41,12 @@ runtime behavior: indicator updates, condition checks, and order generation.
 - SMA
 - EMA
 - RSI
+- rolling_high
+- rolling_low
 
-All indicators are close-based in v1.
+All indicators are close-based in v1. `rolling_high` and `rolling_low` use the
+prior `length` closes, excluding the current close, so breakout rules can compare
+the current close against a level that was already known.
 
 ## Supported Conditions
 
@@ -76,6 +80,9 @@ quant-lab new-strategy \
 `new-strategy` validates the generated payload with the same strict v1 parser
 used by backtests. It refuses to overwrite an existing file unless `--force` is
 provided.
+
+Built-in templates are `sma-crossover`, `ema-trend-follow`, `rsi-reversion`,
+and `breakout-trend`.
 
 Fetch data:
 

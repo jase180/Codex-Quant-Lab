@@ -13,7 +13,7 @@ tool that makes backtest assumptions visible.
 - Cache normalized OHLCV CSV files locally.
 - Define rule-based strategies in strict JSON.
 - Create valid starter strategy JSON from built-in templates.
-- Execute SMA, EMA, and RSI-based long-only strategies.
+- Execute SMA, EMA, RSI, rolling-high, and rolling-low based long-only strategies.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
 - Read sweep research summaries with top-run and parameter-stability context.
@@ -110,12 +110,15 @@ Strategies live in `data/strategies/`. Example:
 - [data/strategies/sma_crossover.json](data/strategies/sma_crossover.json)
 - [data/strategies/rsi_reversion.json](data/strategies/rsi_reversion.json)
 - [data/strategies/ema_trend_follow.json](data/strategies/ema_trend_follow.json)
+- [data/strategies/breakout_trend.json](data/strategies/breakout_trend.json)
 
 The v1 schema supports:
 
 - `sma`
 - `ema`
 - `rsi`
+- `rolling_high`
+- `rolling_low`
 - comparison operators like `gt`, `gte`, `lt`, `lte`, `eq`
 - crossover operators like `crosses_above` and `crosses_below`
 
@@ -148,6 +151,7 @@ Available templates are:
 sma-crossover
 ema-trend-follow
 rsi-reversion
+breakout-trend
 ```
 
 The command validates the generated JSON before writing it and refuses to

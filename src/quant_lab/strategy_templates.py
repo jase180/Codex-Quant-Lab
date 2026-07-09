@@ -13,6 +13,7 @@ TEMPLATE_NAMES = (
     "sma-crossover",
     "ema-trend-follow",
     "rsi-reversion",
+    "breakout-trend",
 )
 
 
@@ -35,6 +36,8 @@ def build_strategy_template(
         payload = _ema_trend_follow_template(symbol)
     elif template_name == "rsi-reversion":
         payload = _rsi_reversion_template(symbol)
+    elif template_name == "breakout-trend":
+        payload = _breakout_trend_template(symbol)
     else:
         raise ValueError(f"Unknown strategy template: {template_name}")
 
@@ -156,6 +159,37 @@ def _rsi_reversion_template(symbol: str) -> dict[str, Any]:
             "when": "all",
             "conditions": [
                 {"left": {"indicator": "rsi_14"}, "operator": "gte", "right": {"value": 55}},
+            ],
+        },
+    }
+
+
+def _breakout_trend_template(symbol: str) -> dict[str, Any]:
+    return {
+        "schema_version": "v1",
+        "strategy_id": "breakout_trend",
+        "name": "Breakout Trend",
+        "description": (
+            "Enter when close breaks above the prior 20-close high and exit "
+            "when close breaks below the prior 10-close low."
+        ),
+        "strategy_type": "rule_based",
+        "position_mode": "long_only",
+        "market": {"symbol": symbol.upper(), "timeframe": "1d"},
+        "indicators": [
+            {"id": "high_20", "kind": "rolling_high", "inputs": {"source": "close", "length": 20}},
+            {"id": "low_10", "kind": "rolling_low", "inputs": {"source": "close", "length": 10}},
+        ],
+        "entry": {
+            "when": "all",
+            "conditions": [
+                {"left": {"price": "close"}, "operator": "gt", "right": {"indicator": "high_20"}},
+            ],
+        },
+        "exit": {
+            "when": "all",
+            "conditions": [
+                {"left": {"price": "close"}, "operator": "lt", "right": {"indicator": "low_10"}},
             ],
         },
     }

@@ -37,6 +37,13 @@ class StrategySchemaTests(unittest.TestCase):
         self.assertEqual(strategy.position_mode, "long_only")
         self.assertEqual(strategy.exit.when, "any")
 
+    def test_parse_valid_rolling_breakout_strategy(self) -> None:
+        strategy = load_strategy(FIXTURES_DIR / "breakout_trend.json")
+
+        self.assertEqual(strategy.strategy_id, "breakout_trend")
+        self.assertEqual(strategy.indicators[0].kind, "rolling_high")
+        self.assertEqual(strategy.indicators[1].kind, "rolling_low")
+
     def test_missing_required_field_raises_clear_error(self) -> None:
         payload = {
             "schema_version": "v1",

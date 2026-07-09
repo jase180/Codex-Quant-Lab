@@ -60,7 +60,7 @@
             "pattern": "^[a-z][a-z0-9_]*$"
           },
           "kind": {
-            "enum": ["sma", "ema", "rsi"]
+            "enum": ["sma", "ema", "rsi", "rolling_high", "rolling_low"]
           },
           "inputs": {
             "type": "object",
