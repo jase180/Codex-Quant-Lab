@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Sequence
+
+from .summary_rows import SummaryValue
 
 
 @dataclass(frozen=True)
@@ -19,7 +22,7 @@ class StabilityAssessment:
 
 
 def format_sweep_analysis_section(
-    rows: Sequence[dict[str, str | int | float | None]],
+    rows: Sequence[Mapping[str, SummaryValue]],
     *,
     top_n: int = 5,
 ) -> str:
@@ -36,7 +39,7 @@ def format_sweep_analysis_section(
     )
 
 
-def analyze_parameter_stability(rows: Sequence[dict[str, str | int | float | None]]) -> StabilityAssessment:
+def analyze_parameter_stability(rows: Sequence[Mapping[str, SummaryValue]]) -> StabilityAssessment:
     if not rows:
         raise ValueError("At least one sweep row is required.")
 
@@ -80,7 +83,7 @@ def analyze_parameter_stability(rows: Sequence[dict[str, str | int | float | Non
 
 
 def _format_top_runs_table(
-    rows: Sequence[dict[str, str | int | float | None]],
+    rows: Sequence[Mapping[str, SummaryValue]],
     *,
     top_n: int,
 ) -> str:
@@ -121,7 +124,7 @@ def _format_stability_assessment(assessment: StabilityAssessment) -> str:
     )
 
 
-def _row_params(row: dict[str, str | int | float | None]) -> dict[str, Any]:
+def _row_params(row: Mapping[str, SummaryValue]) -> dict[str, Any]:
     raw_params = row.get("params")
     if not isinstance(raw_params, str):
         return {}

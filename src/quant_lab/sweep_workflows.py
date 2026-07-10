@@ -18,6 +18,12 @@ from .data_quality import build_data_quality_report
 from .run_artifacts import current_git_commit, load_strategy_payload, run_sweep_variant
 from .run_notes import load_research_note, note_command_lines, research_note_summary_line, save_research_note
 from .strategy_schema import parse_strategy
+from .summary_rows import (
+    SWEEP_SUMMARY_FIELDNAMES,
+    WALK_FORWARD_SUMMARY_FIELDNAMES,
+    SweepSummaryRow,
+    WalkForwardSummaryRow,
+)
 from .sweep_analysis import format_sweep_analysis_section
 
 
@@ -45,7 +51,7 @@ def sweep_command(args: argparse.Namespace) -> int:
     note = load_research_note(args)
     research_note_path = save_research_note(note, output_dir) if note is not None else None
 
-    summary_rows: list[dict[str, str | int | float | None]] = []
+    summary_rows: list[SweepSummaryRow] = []
     for index, variant in enumerate(variants, start=1):
         run_id = f"run_{index:03d}"
         strategy_payload = variant["payload"]
@@ -102,7 +108,7 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
     note = load_research_note(args)
     research_note_path = save_research_note(note, output_dir) if note is not None else None
 
-    summary_rows: list[dict[str, str | int | float | None]] = []
+    summary_rows: list[WalkForwardSummaryRow] = []
     for window_index, window in enumerate(windows, start=1):
         window_id = f"window_{window_index:03d}"
         window_dir = output_dir / window_id
@@ -113,7 +119,7 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
 
         train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
         train_data_quality = build_data_quality_report(train_data)
-        train_rows: list[dict[str, str | int | float | None]] = []
+        train_rows: list[SweepSummaryRow] = []
         variants_by_run_id: dict[str, dict] = {}
         for variant_index, variant in enumerate(variants, start=1):
             run_id = f"run_{variant_index:03d}"
@@ -227,7 +233,7 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
 
     train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
     train_data_quality = build_data_quality_report(train_data)
-    train_rows: list[dict[str, str | int | float | None]] = []
+    train_rows: list[SweepSummaryRow] = []
     variants_by_run_id: dict[str, dict] = {}
 
     for index, variant in enumerate(variants, start=1):
@@ -384,7 +390,7 @@ def slice_date_range_data(data: pd.DataFrame, start: str, end: str, label: str) 
     return sliced
 
 
-def _selection_value(row: dict[str, str | int | float | None], select_by: str) -> float:
+def _selection_value(row: SweepSummaryRow, select_by: str) -> float:
     value = row.get(select_by)
     if value is None:
         return float("-inf")
@@ -394,8 +400,8 @@ def _selection_value(row: dict[str, str | int | float | None], select_by: str) -
 def save_train_test_research_summary(
     *,
     args: argparse.Namespace,
-    train_rows: Sequence[dict[str, str | int | float | None]],
-    test_row: dict[str, str | int | float | None],
+    train_rows: Sequence[SweepSummaryRow],
+    test_row: SweepSummaryRow,
     output_dir: str | Path,
     train_summary_path: str,
     test_summary_path: str,
@@ -496,40 +502,14 @@ def apply_strategy_override(payload: dict, path: str, value: str | int | float) 
     raise ValueError(f"Unknown indicator id in parameter path: {indicator_id}")
 
 
-def save_sweep_summary(rows: Sequence[dict[str, str | int | float | None]], output_dir: str | Path) -> str:
+def save_sweep_summary(rows: Sequence[SweepSummaryRow], output_dir: str | Path) -> str:
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     summary_path = destination / "summary.csv"
-    fieldnames = [
-        "run_id",
-        "strategy_id",
-        "params",
-        "final_equity",
-        "total_return",
-        "cagr",
-        "sharpe_ratio",
-        "max_drawdown",
-        "trade_count",
-        "sizing",
-        "quantity",
-        "allocation",
-        "cost_preset",
-        "commission_fixed",
-        "commission_rate",
-        "slippage_bps",
-        "benchmark_name",
-        "benchmark_final_equity",
-        "benchmark_total_return",
-        "benchmark_cagr",
-        "benchmark_sharpe_ratio",
-        "benchmark_max_drawdown",
-        "excess_total_return",
-        "output_dir",
-    ]
     with summary_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=SWEEP_SUMMARY_FIELDNAMES)
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(row.to_dict() for row in rows)
     return str(summary_path)
 
 
@@ -537,30 +517,30 @@ def build_walk_forward_summary_row(
     *,
     window_id: str,
     window: dict[str, str],
-    best_train: dict[str, str | int | float | None],
-    test_row: dict[str, str | int | float | None],
+    best_train: SweepSummaryRow,
+    test_row: SweepSummaryRow,
     train_summary_path: str,
     test_summary_path: str,
-) -> dict[str, str | int | float | None]:
-    return {
-        "window_id": window_id,
-        "train_start": window["train_start"],
-        "train_end": window["train_end"],
-        "test_start": window["test_start"],
-        "test_end": window["test_end"],
-        "selected_train_run_id": best_train["run_id"],
-        "selected_train_params": public_params_json(str(best_train["params"])),
-        "selected_train_total_return": best_train["total_return"],
-        "selected_train_sharpe_ratio": best_train["sharpe_ratio"],
-        "test_run_id": test_row["run_id"],
-        "test_total_return": test_row["total_return"],
-        "test_excess_total_return": test_row["excess_total_return"],
-        "test_sharpe_ratio": test_row["sharpe_ratio"],
-        "test_trade_count": test_row["trade_count"],
-        "train_summary_path": train_summary_path,
-        "test_summary_path": test_summary_path,
-        "test_output_dir": test_row["output_dir"],
-    }
+) -> WalkForwardSummaryRow:
+    return WalkForwardSummaryRow(
+        window_id=window_id,
+        train_start=window["train_start"],
+        train_end=window["train_end"],
+        test_start=window["test_start"],
+        test_end=window["test_end"],
+        selected_train_run_id=str(best_train["run_id"]),
+        selected_train_params=public_params_json(str(best_train["params"])),
+        selected_train_total_return=float(best_train["total_return"]),
+        selected_train_sharpe_ratio=best_train["sharpe_ratio"],
+        test_run_id=str(test_row["run_id"]),
+        test_total_return=float(test_row["total_return"]),
+        test_excess_total_return=float(test_row["excess_total_return"]),
+        test_sharpe_ratio=test_row["sharpe_ratio"],
+        test_trade_count=int(test_row["trade_count"]),
+        train_summary_path=train_summary_path,
+        test_summary_path=test_summary_path,
+        test_output_dir=str(test_row["output_dir"]),
+    )
 
 
 def public_params_json(raw_params: str) -> str:
@@ -572,41 +552,22 @@ def public_params_json(raw_params: str) -> str:
 
 
 def save_walk_forward_summary(
-    rows: Sequence[dict[str, str | int | float | None]],
+    rows: Sequence[WalkForwardSummaryRow],
     output_dir: str | Path,
 ) -> str:
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     summary_path = destination / "walk_forward_summary.csv"
-    fieldnames = [
-        "window_id",
-        "train_start",
-        "train_end",
-        "test_start",
-        "test_end",
-        "selected_train_run_id",
-        "selected_train_params",
-        "selected_train_total_return",
-        "selected_train_sharpe_ratio",
-        "test_run_id",
-        "test_total_return",
-        "test_excess_total_return",
-        "test_sharpe_ratio",
-        "test_trade_count",
-        "train_summary_path",
-        "test_summary_path",
-        "test_output_dir",
-    ]
     with summary_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=WALK_FORWARD_SUMMARY_FIELDNAMES)
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(row.to_dict() for row in rows)
     return str(summary_path)
 
 
 def save_walk_forward_research_summary(
     args: argparse.Namespace,
-    rows: Sequence[dict[str, str | int | float | None]],
+    rows: Sequence[WalkForwardSummaryRow],
     output_dir: str | Path,
     summary_path: str,
 ) -> str:
@@ -656,7 +617,7 @@ def save_walk_forward_research_summary(
 
 def save_research_summary(
     args: argparse.Namespace,
-    rows: Sequence[dict[str, str | int | float | None]],
+    rows: Sequence[SweepSummaryRow],
     output_dir: str | Path,
 ) -> str:
     destination = Path(output_dir)

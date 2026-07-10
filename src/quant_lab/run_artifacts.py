@@ -36,6 +36,7 @@ from .run_metadata import (
     StrategyMetadata,
     save_run_metadata,
 )
+from .summary_rows import SweepSummaryRow
 
 
 def run_sweep_variant(
@@ -54,7 +55,7 @@ def run_sweep_variant(
     run_type: str,
     run_id: str,
     research_note_path: str | None = None,
-) -> dict[str, str | int | float | None]:
+) -> SweepSummaryRow:
     strategy = build_rule_based_strategy(
         strategy_spec,
         order_quantity=args.quantity,
@@ -125,31 +126,37 @@ def build_summary_row(
     benchmark_metrics,
     output_dir: str | Path,
     args: argparse.Namespace,
-) -> dict[str, str | int | float | None]:
-    return {
-        "run_id": run_id,
-        "strategy_id": strategy_id,
-        "params": json.dumps(params, sort_keys=True),
-        "final_equity": result.final_equity,
-        "total_return": result.total_return,
-        "cagr": metrics.cagr,
-        "sharpe_ratio": metrics.sharpe_ratio,
-        "max_drawdown": metrics.max_drawdown,
-        "trade_count": len(result.trades),
-        "sizing": args.sizing,
-        "quantity": args.quantity,
-        "allocation": args.allocation,
-        "cost_preset": args.cost_assumptions.preset,
-        "commission_fixed": args.cost_assumptions.commission_fixed,
-        "commission_rate": args.cost_assumptions.commission_rate,
-        "slippage_bps": args.cost_assumptions.slippage_bps,
-        **benchmark_summary_fields(args.benchmark, benchmark_metrics),
-        "excess_total_return": excess_total_return(
+) -> SweepSummaryRow:
+    benchmark_fields = benchmark_summary_fields(args.benchmark, benchmark_metrics)
+    return SweepSummaryRow(
+        run_id=run_id,
+        strategy_id=strategy_id,
+        params=json.dumps(params, sort_keys=True),
+        final_equity=result.final_equity,
+        total_return=result.total_return,
+        cagr=metrics.cagr,
+        sharpe_ratio=metrics.sharpe_ratio,
+        max_drawdown=metrics.max_drawdown,
+        trade_count=len(result.trades),
+        sizing=args.sizing,
+        quantity=args.quantity,
+        allocation=args.allocation,
+        cost_preset=args.cost_assumptions.preset,
+        commission_fixed=args.cost_assumptions.commission_fixed,
+        commission_rate=args.cost_assumptions.commission_rate,
+        slippage_bps=args.cost_assumptions.slippage_bps,
+        benchmark_name=str(benchmark_fields["benchmark_name"]),
+        benchmark_final_equity=float(benchmark_fields["benchmark_final_equity"]),
+        benchmark_total_return=float(benchmark_fields["benchmark_total_return"]),
+        benchmark_cagr=benchmark_fields["benchmark_cagr"],
+        benchmark_sharpe_ratio=benchmark_fields["benchmark_sharpe_ratio"],
+        benchmark_max_drawdown=float(benchmark_fields["benchmark_max_drawdown"]),
+        excess_total_return=excess_total_return(
             result.total_return,
             benchmark_metrics.total_return,
         ),
-        "output_dir": str(output_dir),
-    }
+        output_dir=str(output_dir),
+    )
 
 
 def build_engine(args: argparse.Namespace) -> BacktestEngine:
