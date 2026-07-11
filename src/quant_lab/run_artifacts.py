@@ -36,6 +36,7 @@ from .run_metadata import (
     StrategyMetadata,
     save_run_metadata,
 )
+from .run_config import RunExecutionConfig
 from .summary_rows import SweepSummaryRow
 
 
@@ -56,13 +57,14 @@ def run_sweep_variant(
     run_id: str,
     research_note_path: str | None = None,
 ) -> SweepSummaryRow:
+    config = RunExecutionConfig.from_args(args)
     strategy = build_rule_based_strategy(
         strategy_spec,
-        order_quantity=args.quantity,
-        sizing=args.sizing,
-        allocation=args.allocation,
+        order_quantity=config.quantity,
+        sizing=config.sizing,
+        allocation=config.allocation,
     )
-    result = build_engine(args).run(data, strategy)
+    result = build_engine(config).run(data, strategy)
     metrics = summarize_run_metrics(result)
     research_warnings = build_research_warnings(metrics, result.trades)
     report = append_benchmark_section(
@@ -83,9 +85,9 @@ def run_sweep_variant(
     if research_note_path is not None:
         artifact_paths["research_note"] = research_note_path
     artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
-    artifact_paths["research_index"] = str(args.index_path)
+    artifact_paths["research_index"] = str(config.index_path)
     metadata = build_run_metadata(
-        args=args,
+        config=config,
         strategy_spec=strategy_spec,
         data=data,
         run_type=run_type,
@@ -100,7 +102,7 @@ def run_sweep_variant(
         benchmark_metrics=benchmark_metrics,
         output_dir=run_dir,
         trade_count=len(result.trades),
-        index_path=args.index_path,
+        index_path=config.index_path,
         strategy_total_return=result.total_return,
     )
 
@@ -112,7 +114,7 @@ def run_sweep_variant(
         metrics=metrics,
         benchmark_metrics=benchmark_metrics,
         output_dir=run_dir,
-        args=args,
+        config=config,
     )
 
 
@@ -125,9 +127,9 @@ def build_summary_row(
     metrics,
     benchmark_metrics,
     output_dir: str | Path,
-    args: argparse.Namespace,
+    config: RunExecutionConfig,
 ) -> SweepSummaryRow:
-    benchmark_fields = benchmark_summary_fields(args.benchmark, benchmark_metrics)
+    benchmark_fields = benchmark_summary_fields(config.benchmark, benchmark_metrics)
     return SweepSummaryRow(
         run_id=run_id,
         strategy_id=strategy_id,
@@ -138,13 +140,13 @@ def build_summary_row(
         sharpe_ratio=metrics.sharpe_ratio,
         max_drawdown=metrics.max_drawdown,
         trade_count=len(result.trades),
-        sizing=args.sizing,
-        quantity=args.quantity,
-        allocation=args.allocation,
-        cost_preset=args.cost_assumptions.preset,
-        commission_fixed=args.cost_assumptions.commission_fixed,
-        commission_rate=args.cost_assumptions.commission_rate,
-        slippage_bps=args.cost_assumptions.slippage_bps,
+        sizing=config.sizing,
+        quantity=config.quantity,
+        allocation=config.allocation,
+        cost_preset=config.cost_assumptions.preset,
+        commission_fixed=config.cost_assumptions.commission_fixed,
+        commission_rate=config.cost_assumptions.commission_rate,
+        slippage_bps=config.cost_assumptions.slippage_bps,
         benchmark_name=str(benchmark_fields["benchmark_name"]),
         benchmark_final_equity=float(benchmark_fields["benchmark_final_equity"]),
         benchmark_total_return=float(benchmark_fields["benchmark_total_return"]),
@@ -159,15 +161,15 @@ def build_summary_row(
     )
 
 
-def build_engine(args: argparse.Namespace) -> BacktestEngine:
-    cost_assumptions = args.cost_assumptions
+def build_engine(config: RunExecutionConfig) -> BacktestEngine:
+    cost_assumptions = config.cost_assumptions
     cost_model = TransactionCostModel(
         commission_fixed=cost_assumptions.commission_fixed,
         commission_rate=cost_assumptions.commission_rate,
         slippage_bps=cost_assumptions.slippage_bps,
     )
     return BacktestEngine(
-        initial_cash=args.initial_cash,
+        initial_cash=config.initial_cash,
         execution_model=ExecutionModel(cost_model=cost_model),
     )
 
@@ -195,7 +197,7 @@ def append_research_index(
 
 def build_run_metadata(
     *,
-    args: argparse.Namespace,
+    config: RunExecutionConfig,
     strategy_spec,
     data: pd.DataFrame,
     run_type: str,
@@ -212,7 +214,7 @@ def build_run_metadata(
         run_type=run_type,
         run_id=run_id,
         created_at_utc=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-        command=list(args.command_tokens),
+        command=list(config.command_tokens),
         strategy=StrategyMetadata(
             strategy_id=strategy_spec.strategy_id,
             name=strategy_spec.name,
@@ -220,7 +222,7 @@ def build_run_metadata(
             strategy_type=strategy_spec.strategy_type,
         ),
         data=DataMetadata(
-            path=str(args.data),
+            path=str(config.data_path),
             row_count=int(len(data)),
             start=_metadata_date(data_dates.min()) if not data_dates.empty else None,
             end=_metadata_date(data_dates.max()) if not data_dates.empty else None,
@@ -228,20 +230,20 @@ def build_run_metadata(
             timeframe=strategy_spec.market.timeframe,
         ),
         sizing=SizingMetadata(
-            mode=args.sizing,
-            initial_cash=float(args.initial_cash),
-            quantity=float(args.quantity),
-            allocation=float(args.allocation),
+            mode=config.sizing,
+            initial_cash=float(config.initial_cash),
+            quantity=float(config.quantity),
+            allocation=float(config.allocation),
         ),
         costs=CostMetadata(
-            preset=args.cost_assumptions.preset,
-            commission_fixed=float(args.cost_assumptions.commission_fixed),
-            commission_rate=float(args.cost_assumptions.commission_rate),
-            slippage_bps=float(args.cost_assumptions.slippage_bps),
+            preset=config.cost_assumptions.preset,
+            commission_fixed=float(config.cost_assumptions.commission_fixed),
+            commission_rate=float(config.cost_assumptions.commission_rate),
+            slippage_bps=float(config.cost_assumptions.slippage_bps),
         ),
         benchmark=BenchmarkMetadata(
-            name=args.benchmark,
-            display_name=args.benchmark.replace("-", " ").title(),
+            name=config.benchmark,
+            display_name=config.benchmark.replace("-", " ").title(),
         ),
         environment=EnvironmentMetadata(git_commit=current_git_commit()),
         parameters=dict(parameters),

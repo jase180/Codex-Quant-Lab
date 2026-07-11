@@ -32,6 +32,7 @@ from .research_warnings import (
 )
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
 from .run_artifacts import append_research_index, build_engine, build_run_metadata, save_charts, save_trades
+from .run_config import RunExecutionConfig
 from .run_notes import load_research_note, save_research_note
 from .run_metadata import (
     command_tokens,
@@ -344,19 +345,20 @@ def resolve_cli_costs(args: argparse.Namespace) -> CostAssumptions:
 
 def run_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
+    config = RunExecutionConfig.from_args(args)
     strategy_spec = load_strategy(args.strategy)
     strategy = build_rule_based_strategy(
         strategy_spec,
-        order_quantity=args.quantity,
-        sizing=args.sizing,
-        allocation=args.allocation,
+        order_quantity=config.quantity,
+        sizing=config.sizing,
+        allocation=config.allocation,
     )
     data = pd.read_csv(args.data)
     data_quality = build_data_quality_report(data)
 
-    result = build_engine(args).run(data, strategy)
+    result = build_engine(config).run(data, strategy)
     run_name = args.run_name or strategy_spec.name
-    benchmark = build_benchmark(data, args.initial_cash, args.benchmark)
+    benchmark = build_benchmark(data, config.initial_cash, config.benchmark)
     report = append_benchmark_section(
         build_run_report(result, run_name=run_name),
         benchmark.metrics,
@@ -378,9 +380,9 @@ def run_command(args: argparse.Namespace) -> int:
     if note is not None:
         artifact_paths["research_note"] = save_research_note(note, args.out)
     artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
-    artifact_paths["research_index"] = str(args.index_path)
+    artifact_paths["research_index"] = str(config.index_path)
     metadata = build_run_metadata(
-        args=args,
+        config=config,
         strategy_spec=strategy_spec,
         data=data,
         run_type="run",
@@ -395,7 +397,7 @@ def run_command(args: argparse.Namespace) -> int:
         benchmark_metrics=benchmark.metrics,
         output_dir=args.out,
         trade_count=len(result.trades),
-        index_path=args.index_path,
+        index_path=config.index_path,
         strategy_total_return=result.total_return,
     )
 
@@ -407,10 +409,10 @@ def run_command(args: argparse.Namespace) -> int:
     print(f"benchmark: {benchmark.name}")
     print(f"benchmark_total_return: {benchmark.metrics.total_return:.2%}")
     print(f"excess_total_return: {excess_total_return(result.total_return, benchmark.metrics.total_return):.2%}")
-    print(f"cost_preset: {args.cost_assumptions.preset}")
-    print(f"commission_fixed: {args.cost_assumptions.commission_fixed}")
-    print(f"commission_rate: {args.cost_assumptions.commission_rate}")
-    print(f"slippage_bps: {args.cost_assumptions.slippage_bps}")
+    print(f"cost_preset: {config.cost_assumptions.preset}")
+    print(f"commission_fixed: {config.cost_assumptions.commission_fixed}")
+    print(f"commission_rate: {config.cost_assumptions.commission_rate}")
+    print(f"slippage_bps: {config.cost_assumptions.slippage_bps}")
     return 0
 
 
