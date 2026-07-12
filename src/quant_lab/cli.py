@@ -4,41 +4,20 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 from typing import Sequence
 
 import pandas as pd
 
-from backtester_core import build_run_report, save_run_report_artifacts, summarize_run_metrics
-
-from .benchmarks import (
-    append_benchmark_section,
-    build_benchmark,
-    excess_total_return,
-)
 from .costs import COST_PRESETS, CostAssumptions, resolve_cost_assumptions
 from .data_fetch import fetch_market_data, write_market_data_csv
-from .data_quality import (
-    append_data_quality_section,
-    build_data_quality_report,
-    save_data_quality_report,
-)
+from .data_quality import build_data_quality_report
 from .research_index import format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
-from .research_warnings import (
-    append_research_warnings_section,
-    build_research_warnings,
-    save_research_warnings,
-)
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
-from .run_artifacts import append_research_index, build_engine, build_run_metadata, save_charts, save_trades
+from .run_artifacts import run_single_backtest
 from .run_config import RunExecutionConfig
 from .run_notes import load_research_note, save_research_note
-from .run_metadata import (
-    command_tokens,
-    save_run_metadata,
-)
-from .rule_based_strategy import build_rule_based_strategy
+from .run_metadata import command_tokens
 from .strategy_schema import load_strategy
 from .strategy_templates import (
     available_strategy_templates,
@@ -347,68 +326,29 @@ def run_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
     config = RunExecutionConfig.from_args(args)
     strategy_spec = load_strategy(args.strategy)
-    strategy = build_rule_based_strategy(
-        strategy_spec,
-        order_quantity=config.quantity,
-        sizing=config.sizing,
-        allocation=config.allocation,
-    )
     data = pd.read_csv(args.data)
     data_quality = build_data_quality_report(data)
-
-    result = build_engine(config).run(data, strategy)
     run_name = args.run_name or strategy_spec.name
-    benchmark = build_benchmark(data, config.initial_cash, config.benchmark)
-    report = append_benchmark_section(
-        build_run_report(result, run_name=run_name),
-        benchmark.metrics,
-        result.total_return,
-        benchmark.display_name,
-    )
-    report = append_data_quality_section(report, data_quality)
-    artifact_paths = save_run_report_artifacts(result, args.out, run_name=run_name)
-    run_metrics = summarize_run_metrics(result)
-    research_warnings = build_research_warnings(run_metrics, result.trades)
-    report = append_research_warnings_section(report, research_warnings)
-    report_path = Path(artifact_paths["report"])
-    report_path.write_text(report, encoding="utf-8")
-    artifact_paths["trades"] = save_trades(result.trades, args.out)
-    artifact_paths.update(save_charts(result, benchmark.curve, args.out, benchmark.display_name))
-    artifact_paths["data_quality"] = save_data_quality_report(data_quality, args.out)
-    artifact_paths["research_warnings"] = save_research_warnings(research_warnings, args.out)
     note = load_research_note(args)
-    if note is not None:
-        artifact_paths["research_note"] = save_research_note(note, args.out)
-    artifact_paths["metadata"] = str(Path(args.out) / "run_metadata.json")
-    artifact_paths["research_index"] = str(config.index_path)
-    metadata = build_run_metadata(
+    research_note_path = save_research_note(note, args.out) if note is not None else None
+    run_output = run_single_backtest(
         config=config,
-        strategy_spec=strategy_spec,
         data=data,
-        run_type="run",
-        run_id=None,
-        parameters={},
-        artifacts=artifact_paths,
-    )
-    artifact_paths["metadata"] = save_run_metadata(metadata, args.out)
-    append_research_index(
-        metadata=metadata,
-        metrics=run_metrics,
-        benchmark_metrics=benchmark.metrics,
+        data_quality=data_quality,
+        strategy_spec=strategy_spec,
         output_dir=args.out,
-        trade_count=len(result.trades),
-        index_path=config.index_path,
-        strategy_total_return=result.total_return,
+        run_name=run_name,
+        research_note_path=research_note_path,
     )
 
     print(f"Run complete: {run_name}")
-    for artifact_name in sorted(artifact_paths):
-        print(f"{artifact_name}: {artifact_paths[artifact_name]}")
-    print(f"final_equity: {result.final_equity:.2f}")
-    print(f"total_return: {result.total_return:.2%}")
-    print(f"benchmark: {benchmark.name}")
-    print(f"benchmark_total_return: {benchmark.metrics.total_return:.2%}")
-    print(f"excess_total_return: {excess_total_return(result.total_return, benchmark.metrics.total_return):.2%}")
+    for artifact_name in sorted(run_output.artifact_paths):
+        print(f"{artifact_name}: {run_output.artifact_paths[artifact_name]}")
+    print(f"final_equity: {run_output.final_equity:.2f}")
+    print(f"total_return: {run_output.total_return:.2%}")
+    print(f"benchmark: {run_output.benchmark_name}")
+    print(f"benchmark_total_return: {run_output.benchmark_total_return:.2%}")
+    print(f"excess_total_return: {run_output.excess_total_return:.2%}")
     print(f"cost_preset: {config.cost_assumptions.preset}")
     print(f"commission_fixed: {config.cost_assumptions.commission_fixed}")
     print(f"commission_rate: {config.cost_assumptions.commission_rate}")

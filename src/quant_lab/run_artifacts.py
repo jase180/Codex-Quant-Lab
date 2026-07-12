@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from backtester_core import (
 )
 from metrics_reporting import save_drawdown_chart, save_equity_curve_chart
 
-from .benchmarks import append_benchmark_section, benchmark_summary_fields, excess_total_return
+from .benchmarks import append_benchmark_section, benchmark_summary_fields, build_benchmark, excess_total_return
 from .data_quality import append_data_quality_section, save_data_quality_report
 from .research_index import append_research_index_record, build_run_index_record
 from .research_warnings import append_research_warnings_section, build_research_warnings, save_research_warnings
@@ -38,6 +39,86 @@ from .run_metadata import (
 )
 from .run_config import RunExecutionConfig
 from .summary_rows import SweepSummaryRow
+
+
+@dataclass(frozen=True)
+class RunArtifactResult:
+    run_name: str
+    artifact_paths: dict[str, str]
+    final_equity: float
+    total_return: float
+    benchmark_name: str
+    benchmark_total_return: float
+    excess_total_return: float
+
+
+def run_single_backtest(
+    *,
+    config: RunExecutionConfig,
+    data: pd.DataFrame,
+    data_quality,
+    strategy_spec,
+    output_dir: str | Path,
+    run_name: str,
+    research_note_path: str | None = None,
+) -> RunArtifactResult:
+    strategy = build_rule_based_strategy(
+        strategy_spec,
+        order_quantity=config.quantity,
+        sizing=config.sizing,
+        allocation=config.allocation,
+    )
+    result = build_engine(config).run(data, strategy)
+    benchmark = build_benchmark(data, config.initial_cash, config.benchmark)
+    report = append_benchmark_section(
+        build_run_report(result, run_name=run_name),
+        benchmark.metrics,
+        result.total_return,
+        benchmark.display_name,
+    )
+    report = append_data_quality_section(report, data_quality)
+    artifact_paths = save_run_report_artifacts(result, output_dir, run_name=run_name)
+    metrics = summarize_run_metrics(result)
+    research_warnings = build_research_warnings(metrics, result.trades)
+    report = append_research_warnings_section(report, research_warnings)
+    Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
+    artifact_paths["trades"] = save_trades(result.trades, output_dir)
+    artifact_paths.update(save_charts(result, benchmark.curve, output_dir, benchmark.display_name))
+    artifact_paths["data_quality"] = save_data_quality_report(data_quality, output_dir)
+    artifact_paths["research_warnings"] = save_research_warnings(research_warnings, output_dir)
+    if research_note_path is not None:
+        artifact_paths["research_note"] = research_note_path
+    artifact_paths["metadata"] = str(Path(output_dir) / "run_metadata.json")
+    artifact_paths["research_index"] = str(config.index_path)
+    metadata = build_run_metadata(
+        config=config,
+        strategy_spec=strategy_spec,
+        data=data,
+        run_type="run",
+        run_id=None,
+        parameters={},
+        artifacts=artifact_paths,
+    )
+    artifact_paths["metadata"] = save_run_metadata(metadata, output_dir)
+    append_research_index(
+        metadata=metadata,
+        metrics=metrics,
+        benchmark_metrics=benchmark.metrics,
+        output_dir=output_dir,
+        trade_count=len(result.trades),
+        index_path=config.index_path,
+        strategy_total_return=result.total_return,
+    )
+
+    return RunArtifactResult(
+        run_name=run_name,
+        artifact_paths=artifact_paths,
+        final_equity=result.final_equity,
+        total_return=result.total_return,
+        benchmark_name=benchmark.name,
+        benchmark_total_return=benchmark.metrics.total_return,
+        excess_total_return=excess_total_return(result.total_return, benchmark.metrics.total_return),
+    )
 
 
 def run_sweep_variant(
