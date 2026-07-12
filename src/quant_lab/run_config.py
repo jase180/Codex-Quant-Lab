@@ -27,6 +27,7 @@ class RunExecutionConfig:
     benchmark: str
     cost_assumptions: CostAssumptions
     command_tokens: tuple[str, ...]
+    experiment_id: str | None = None
 
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> "RunExecutionConfig":
@@ -40,6 +41,7 @@ class RunExecutionConfig:
             benchmark=str(args.benchmark),
             cost_assumptions=args.cost_assumptions,
             command_tokens=tuple(args.command_tokens),
+            experiment_id=getattr(args, "experiment_id", None),
         )
 
     @classmethod
@@ -55,6 +57,7 @@ class RunExecutionConfig:
         benchmark: str,
         cost_assumptions: CostAssumptions,
         command_tokens: Sequence[str],
+        experiment_id: str | None = None,
     ) -> "RunExecutionConfig":
         return cls(
             data_path=data_path,
@@ -66,4 +69,5 @@ class RunExecutionConfig:
             benchmark=benchmark,
             cost_assumptions=cost_assumptions,
             command_tokens=tuple(command_tokens),
+            experiment_id=experiment_id,
         )

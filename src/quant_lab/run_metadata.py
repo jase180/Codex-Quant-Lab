@@ -73,6 +73,7 @@ class RunMetadata:
     costs: CostMetadata
     benchmark: BenchmarkMetadata
     environment: EnvironmentMetadata
+    experiment_id: str | None = None
     parameters: dict[str, str | int | float] = field(default_factory=dict)
     artifacts: dict[str, str] = field(default_factory=dict)
 

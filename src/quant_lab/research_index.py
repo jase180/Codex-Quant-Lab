@@ -26,6 +26,7 @@ class RunIndexRecord:
     created_at_utc: str
     run_type: str
     run_id: str | None
+    experiment_id: str | None
     strategy_id: str
     strategy_name: str
     symbol: str | None
@@ -72,6 +73,7 @@ def build_run_index_record(
         created_at_utc=metadata.created_at_utc,
         run_type=metadata.run_type,
         run_id=metadata.run_id,
+        experiment_id=metadata.experiment_id,
         strategy_id=metadata.strategy.strategy_id,
         strategy_name=metadata.strategy.name,
         symbol=metadata.data.symbol,
@@ -148,6 +150,7 @@ def filter_index_records(
     symbol: str | None = None,
     strategy_id: str | None = None,
     run_type: str | None = None,
+    experiment_id: str | None = None,
 ) -> list[dict]:
     filtered = list(records)
     if symbol is not None:
@@ -157,6 +160,8 @@ def filter_index_records(
         filtered = [record for record in filtered if record.get("strategy_id") == strategy_id]
     if run_type is not None:
         filtered = [record for record in filtered if record.get("run_type") == run_type]
+    if experiment_id is not None:
+        filtered = [record for record in filtered if record.get("experiment_id") == experiment_id]
     return filtered
 
 

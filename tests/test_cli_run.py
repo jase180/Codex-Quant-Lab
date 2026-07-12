@@ -51,6 +51,8 @@ class CliRunTests(unittest.TestCase):
                         "3",
                         "--index-path",
                         str(index_path),
+                        "--experiment-id",
+                        "EXP-001",
                     ]
                 )
 
@@ -67,6 +69,7 @@ class CliRunTests(unittest.TestCase):
             metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["metadata_schema_version"], "run_metadata.v1")
             self.assertEqual(metadata["run_type"], "run")
+            self.assertEqual(metadata["experiment_id"], "EXP-001")
             self.assertEqual(metadata["strategy"]["strategy_id"], "cli_smoke")
             self.assertEqual(metadata["data"]["row_count"], 4)
             self.assertEqual(metadata["sizing"]["initial_cash"], 1000.0)
@@ -79,6 +82,7 @@ class CliRunTests(unittest.TestCase):
             self.assertEqual(len(index_rows), 1)
             self.assertEqual(index_rows[0]["index_schema_version"], "research_index.v1")
             self.assertEqual(index_rows[0]["run_type"], "run")
+            self.assertEqual(index_rows[0]["experiment_id"], "EXP-001")
             self.assertEqual(index_rows[0]["strategy_id"], "cli_smoke")
             self.assertEqual(index_rows[0]["metadata_path"], str(output_dir / "run_metadata.json"))
             report = (output_dir / "report.md").read_text(encoding="utf-8")

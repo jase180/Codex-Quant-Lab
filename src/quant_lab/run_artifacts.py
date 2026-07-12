@@ -356,6 +356,7 @@ def build_run_metadata(
             display_name=config.benchmark.replace("-", " ").title(),
         ),
         environment=EnvironmentMetadata(git_commit=current_git_commit()),
+        experiment_id=config.experiment_id,
         parameters=dict(parameters),
     )
     return metadata.with_artifacts(artifacts)

@@ -29,6 +29,7 @@ class RunConfigTests(unittest.TestCase):
             benchmark="cash",
             cost_assumptions=costs,
             command_tokens=["quant-lab", "run"],
+            experiment_id="EXP-001",
         )
 
         config = RunExecutionConfig.from_args(args)
@@ -39,6 +40,7 @@ class RunConfigTests(unittest.TestCase):
         self.assertEqual(config.quantity, 3.0)
         self.assertEqual(config.cost_assumptions, costs)
         self.assertEqual(config.command_tokens, ("quant-lab", "run"))
+        self.assertEqual(config.experiment_id, "EXP-001")
 
 
 if __name__ == "__main__":

@@ -187,6 +187,7 @@ quant-lab run \
   --sizing percent-equity \
   --allocation 1.0 \
   --cost-preset retail-liquid \
+  --experiment-id EXP-001 \
   --note "Hypothesis: the crossover may reduce drawdown versus buy-and-hold." \
   --out artifacts/qqq_sma_crossover
 ```
@@ -223,8 +224,9 @@ Use `--cost-preset` for named assumptions such as `none`, `retail-liquid`,
 values.
 
 `run_metadata.json` records the command, strategy identity, data range, sizing,
-cost assumptions, benchmark choice, Git commit, and artifact paths. Treat it as
-the source of truth for how a run folder was produced.
+cost assumptions, benchmark choice, optional experiment id, Git commit, and
+artifact paths. Treat it as the source of truth for how a run folder was
+produced.
 
 `data_quality.json` summarizes suspicious input-data conditions such as missing
 OHLCV values, duplicate dates, zero volume, non-positive prices, and large gaps.
@@ -239,7 +241,9 @@ for the research question, hypothesis, or conclusion that should live beside
 the artifacts instead of only in chat.
 
 Each run also appends one flat JSON line to `artifacts/research_index.jsonl` by
-default. Use `--index-path` to write the registry somewhere else.
+default. Use `--index-path` to write the registry somewhere else. Pass
+`--experiment-id EXP-001` to link run metadata and index rows back to a research
+experiment.
 
 ### List Previous Runs
 
@@ -247,6 +251,7 @@ default. Use `--index-path` to write the registry somewhere else.
 quant-lab list-runs \
   --symbol QQQ \
   --strategy-id sma_crossover \
+  --experiment-id EXP-001 \
   --run-type sweep_run \
   --sort sharpe_ratio \
   --limit 10
@@ -307,7 +312,8 @@ quant-lab show-experiment --experiment-id EXP-001
 ```
 
 Phase 1 of the registry tracks hypotheses and planned inputs. Later phases will
-link run metadata and decisions back to these experiment IDs.
+link decisions back to these experiment IDs. Runs and sweeps can already store
+the experiment id by passing `--experiment-id`.
 
 ### Run A Parameter Sweep
 
@@ -319,6 +325,7 @@ quant-lab sweep \
   --param sma_50.inputs.length=50,100,200 \
   --sizing percent-equity \
   --allocation 1.0 \
+  --experiment-id EXP-001 \
   --out artifacts/research/qqq_sma_crossover_2015_2025
 ```
 
@@ -376,6 +383,7 @@ quant-lab sweep \
   --sizing percent-equity \
   --allocation 1.0 \
   --cost-preset retail-liquid \
+  --experiment-id EXP-001 \
   --train-end 2020-12-31 \
   --test-start 2021-01-01 \
   --select-by sharpe_ratio \

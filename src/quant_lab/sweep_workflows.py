@@ -409,6 +409,7 @@ def save_train_test_research_summary(
     destination = Path(output_dir)
     research_path = destination / "research.md"
     best_train = train_rows[0]
+    experiment_line = _experiment_summary_line(args)
     research_path.write_text(
         f"""# Train/Test Sweep Research Summary
 
@@ -418,6 +419,7 @@ def save_train_test_research_summary(
 - Test start: `{args.test_start}`
 - Selection metric: `{args.select_by}`
 - Benchmark: `{args.benchmark}`
+{experiment_line}
 
 ## Artifacts
 
@@ -573,6 +575,7 @@ def save_walk_forward_research_summary(
 ) -> str:
     destination = Path(output_dir)
     research_path = destination / "research.md"
+    experiment_line = _experiment_summary_line(args)
     window_lines = "\n".join(
         (
             f"| `{row['window_id']}` | {row['train_start']} to {row['train_end']} | "
@@ -593,6 +596,7 @@ def save_walk_forward_research_summary(
 - Data: `{args.data}`
 - Selection metric: `{args.select_by}`
 - Benchmark: `{args.benchmark}`
+{experiment_line}
 - Windows: {len(rows)}
 - Summary: `{summary_path}`
 {research_note_summary_line(args, output_dir)}
@@ -624,6 +628,7 @@ def save_research_summary(
     destination.mkdir(parents=True, exist_ok=True)
     research_path = destination / "research.md"
     git_commit = current_git_commit()
+    experiment_line = _experiment_summary_line(args)
     benchmark_total_return = rows[0].get("benchmark_total_return") if rows else None
     best = rows[0] if rows else None
     best_lines = ""
@@ -678,6 +683,7 @@ def save_research_summary(
 - Allocation: `{args.allocation}`
 - Benchmark: `{args.benchmark}`
 - Git commit: `{git_commit}`
+{experiment_line}
 - Cost preset: `{args.cost_assumptions.preset}`
 - Commission fixed: `{args.cost_assumptions.commission_fixed}`
 - Commission rate: `{args.cost_assumptions.commission_rate}`
@@ -717,3 +723,10 @@ def _coerce_param_value(raw_value: str) -> str | int | float:
         return float(raw_value)
     except ValueError:
         return raw_value
+
+
+def _experiment_summary_line(args: argparse.Namespace) -> str:
+    experiment_id = getattr(args, "experiment_id", None)
+    if not experiment_id:
+        return ""
+    return f"- Experiment: `{experiment_id}`"

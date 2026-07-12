@@ -58,6 +58,8 @@ class CliSweepWorkflowTests(unittest.TestCase):
                         str(note_path),
                         "--index-path",
                         str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
                     ]
                 )
 
@@ -90,6 +92,7 @@ class CliSweepWorkflowTests(unittest.TestCase):
             metadata = json.loads((first_run / "run_metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["run_type"], "sweep_run")
             self.assertEqual(metadata["run_id"], "run_001")
+            self.assertEqual(metadata["experiment_id"], "EXP-002")
             self.assertEqual(metadata["parameters"]["sma_2.inputs.length"], 2)
             self.assertIn("strategy", metadata["artifacts"])
             self.assertEqual(metadata["artifacts"]["research_note"], str(output_dir / "research_note.md"))
@@ -100,6 +103,7 @@ class CliSweepWorkflowTests(unittest.TestCase):
             index_rows = _read_jsonl(index_path)
             self.assertEqual(len(index_rows), 4)
             self.assertEqual(index_rows[0]["run_type"], "sweep_run")
+            self.assertEqual(index_rows[0]["experiment_id"], "EXP-002")
             self.assertIn(index_rows[0]["run_id"], {"run_001", "run_002", "run_003", "run_004"})
             self.assertEqual(index_rows[0]["symbol"], "TEST")
 

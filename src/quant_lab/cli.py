@@ -89,6 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_cost_arguments(run_parser)
     add_benchmark_argument(run_parser)
     add_note_arguments(run_parser)
+    add_experiment_link_argument(run_parser)
     add_index_argument(run_parser)
     run_parser.set_defaults(func=run_command)
 
@@ -141,6 +142,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_index_argument(list_parser)
     list_parser.add_argument("--symbol", default=None, help="Only show runs for one symbol, such as QQQ.")
     list_parser.add_argument("--strategy-id", default=None, help="Only show runs for one strategy id.")
+    list_parser.add_argument("--experiment-id", default=None, help="Only show runs linked to one experiment id.")
     list_parser.add_argument(
         "--run-type",
         choices=[
@@ -321,6 +323,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_cost_arguments(sweep_parser)
     add_benchmark_argument(sweep_parser)
     add_note_arguments(sweep_parser)
+    add_experiment_link_argument(sweep_parser)
     add_index_argument(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
     return parser
@@ -366,6 +369,14 @@ def add_experiment_registry_argument(parser: argparse.ArgumentParser) -> None:
         "--experiments-path",
         default="artifacts/experiments.jsonl",
         help="Append-only JSONL experiment registry path. Defaults to artifacts/experiments.jsonl.",
+    )
+
+
+def add_experiment_link_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--experiment-id",
+        default=None,
+        help="Optional experiment id to store in run metadata and the research index, such as EXP-001.",
     )
 
 
@@ -485,6 +496,7 @@ def list_runs_command(args: argparse.Namespace) -> int:
         symbol=args.symbol,
         strategy_id=args.strategy_id,
         run_type=args.run_type,
+        experiment_id=args.experiment_id,
     )
     records = sort_index_records(records, args.sort, descending=not args.ascending)
     records = records[: args.limit]

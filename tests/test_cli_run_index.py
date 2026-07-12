@@ -72,6 +72,27 @@ class CliRunIndexTests(unittest.TestCase):
             self.assertIn("slow_strategy", output)
             self.assertNotIn("fast_strategy", output)
 
+    def test_list_runs_command_filters_experiment_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            index_path = Path(temp_dir) / "research_index.jsonl"
+            _write_index_fixture(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "list-runs",
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("fast_strategy", output)
+            self.assertNotIn("slow_strategy", output)
+
     def test_list_runs_command_can_print_csv(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             index_path = Path(temp_dir) / "research_index.jsonl"
