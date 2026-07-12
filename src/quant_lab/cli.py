@@ -13,6 +13,19 @@ from .data_fetch import fetch_market_data, write_market_data_csv
 from .data_quality import build_data_quality_report
 from .research_index import format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
+from .research_registry import (
+    EXPERIMENT_STATUSES,
+    append_experiment_record,
+    create_experiment_record,
+    filter_experiments,
+    find_experiment,
+    format_experiment_csv,
+    format_experiment_detail,
+    format_experiment_table,
+    load_experiments,
+    next_experiment_id,
+    normalize_tags,
+)
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
 from .run_artifacts import run_single_backtest
 from .run_config import RunExecutionConfig
@@ -188,6 +201,64 @@ def build_parser() -> argparse.ArgumentParser:
     )
     compare_parser.set_defaults(func=compare_runs_command)
 
+    new_experiment_parser = subparsers.add_parser(
+        "new-experiment",
+        help="Create a research experiment record.",
+    )
+    add_experiment_registry_argument(new_experiment_parser)
+    new_experiment_parser.add_argument("--title", required=True, help="Short experiment title.")
+    new_experiment_parser.add_argument("--hypothesis", required=True, help="Research hypothesis being tested.")
+    new_experiment_parser.add_argument(
+        "--experiment-id",
+        default=None,
+        help="Optional explicit id such as EXP-001. Defaults to the next local id.",
+    )
+    new_experiment_parser.add_argument(
+        "--status",
+        choices=EXPERIMENT_STATUSES,
+        default="planned",
+        help="Initial experiment status. Defaults to planned.",
+    )
+    new_experiment_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Experiment tag. May be repeated or comma-separated.",
+    )
+    new_experiment_parser.add_argument("--strategy", default=None, help="Optional strategy JSON path.")
+    new_experiment_parser.add_argument("--data", default=None, help="Optional OHLCV CSV path.")
+    new_experiment_parser.add_argument("--notes", default=None, help="Optional free-form notes.")
+    new_experiment_parser.set_defaults(func=new_experiment_command)
+
+    list_experiments_parser = subparsers.add_parser(
+        "list-experiments",
+        help="List research experiment records.",
+    )
+    add_experiment_registry_argument(list_experiments_parser)
+    list_experiments_parser.add_argument(
+        "--status",
+        choices=EXPERIMENT_STATUSES,
+        default=None,
+        help="Only show experiments with this status.",
+    )
+    list_experiments_parser.add_argument("--tag", default=None, help="Only show experiments with this tag.")
+    list_experiments_parser.add_argument("--csv", action="store_true", help="Print CSV instead of a table.")
+    list_experiments_parser.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Maximum rows to print. Defaults to 20.",
+    )
+    list_experiments_parser.set_defaults(func=list_experiments_command)
+
+    show_experiment_parser = subparsers.add_parser(
+        "show-experiment",
+        help="Show one research experiment record.",
+    )
+    add_experiment_registry_argument(show_experiment_parser)
+    show_experiment_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
+    show_experiment_parser.set_defaults(func=show_experiment_command)
+
     sweep_parser = subparsers.add_parser(
         "sweep",
         help="Run every combination of strategy parameter overrides.",
@@ -287,6 +358,14 @@ def add_index_argument(parser: argparse.ArgumentParser) -> None:
         "--index-path",
         default="artifacts/research_index.jsonl",
         help="Append-only JSONL research index path. Defaults to artifacts/research_index.jsonl.",
+    )
+
+
+def add_experiment_registry_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--experiments-path",
+        default="artifacts/experiments.jsonl",
+        help="Append-only JSONL experiment registry path. Defaults to artifacts/experiments.jsonl.",
     )
 
 
@@ -430,6 +509,54 @@ def show_run_command(args: argparse.Namespace) -> int:
 def compare_runs_command(args: argparse.Namespace) -> int:
     summaries = load_run_summaries(args.metadata)
     print(format_run_comparison(summaries))
+    return 0
+
+
+def new_experiment_command(args: argparse.Namespace) -> int:
+    records = load_experiments(args.experiments_path)
+    experiment_id = args.experiment_id or next_experiment_id(records)
+    record = create_experiment_record(
+        experiment_id=experiment_id,
+        title=args.title,
+        hypothesis=args.hypothesis,
+        status=args.status,
+        tags=normalize_tags(args.tag),
+        strategy_path=args.strategy,
+        data_path=args.data,
+        notes=args.notes,
+    )
+    registry_path = append_experiment_record(record, args.experiments_path)
+
+    print(f"Experiment created: {record.experiment_id}")
+    print(f"registry: {registry_path}")
+    print(f"status: {record.status}")
+    print(f"title: {record.title}")
+    return 0
+
+
+def list_experiments_command(args: argparse.Namespace) -> int:
+    if args.limit < 1:
+        raise ValueError("--limit must be at least 1")
+
+    records = load_experiments(args.experiments_path)
+    records = filter_experiments(records, status=args.status, tag=args.tag)
+    records = records[: args.limit]
+
+    if not records:
+        print(f"No experiments found in {args.experiments_path}")
+        return 0
+
+    if args.csv:
+        print(format_experiment_csv(records))
+    else:
+        print(format_experiment_table(records))
+    return 0
+
+
+def show_experiment_command(args: argparse.Namespace) -> int:
+    records = load_experiments(args.experiments_path)
+    record = find_experiment(records, args.experiment_id)
+    print(format_experiment_detail(record))
     return 0
 
 

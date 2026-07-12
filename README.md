@@ -20,6 +20,7 @@ tool that makes backtest assumptions visible.
 - Run a train/test parameter sweep that selects on the train period and reruns
   only the selected variant on the later test period.
 - Run explicit walk-forward windows for repeated train/test checks.
+- Track research hypotheses in a local experiment registry.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
 - Save optional research notes beside run and sweep artifacts.
 - Write data-quality summaries for run inputs.
@@ -274,6 +275,39 @@ quant-lab compare-runs \
 
 This prints a compact table with returns, benchmark context, drawdown, Sharpe,
 trade count, cost assumptions, and output directories.
+
+### Track Research Experiments
+
+Create an experiment record before running a new idea:
+
+```bash
+quant-lab new-experiment \
+  --title "QQQ SMA crossover sweep" \
+  --hypothesis "A shorter fast SMA may improve risk-adjusted returns versus the default crossover." \
+  --tag QQQ \
+  --tag sma \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv
+```
+
+This appends one strict JSON line to `artifacts/experiments.jsonl` by default.
+Use `--experiments-path` to store the registry somewhere else. Experiment IDs
+are local sequential IDs such as `EXP-001`.
+
+List experiments:
+
+```bash
+quant-lab list-experiments --status planned --limit 10
+```
+
+Inspect one experiment:
+
+```bash
+quant-lab show-experiment --experiment-id EXP-001
+```
+
+Phase 1 of the registry tracks hypotheses and planned inputs. Later phases will
+link run metadata and decisions back to these experiment IDs.
 
 ### Run A Parameter Sweep
 
