@@ -52,6 +52,49 @@ class RunArtifactResult:
     excess_total_return: float
 
 
+@dataclass(frozen=True)
+class SavedBacktestArtifacts:
+    metrics: object
+    artifact_paths: dict[str, str]
+
+
+def save_backtest_artifacts(
+    *,
+    result,
+    benchmark_curve,
+    benchmark_metrics,
+    benchmark_display_name: str,
+    data_quality,
+    output_dir: str | Path,
+    run_name: str,
+    strategy_payload: dict | None = None,
+    research_note_path: str | None = None,
+) -> SavedBacktestArtifacts:
+    metrics = summarize_run_metrics(result)
+    research_warnings = build_research_warnings(metrics, result.trades)
+    report = append_benchmark_section(
+        build_run_report(result, run_name=run_name),
+        benchmark_metrics,
+        result.total_return,
+        benchmark_display_name,
+    )
+    report = append_data_quality_section(report, data_quality)
+    report = append_research_warnings_section(report, research_warnings)
+
+    artifact_paths = save_run_report_artifacts(result, output_dir, run_name=run_name)
+    Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
+    artifact_paths["trades"] = save_trades(result.trades, output_dir)
+    artifact_paths.update(save_charts(result, benchmark_curve, output_dir, benchmark_display_name))
+    artifact_paths["data_quality"] = save_data_quality_report(data_quality, output_dir)
+    artifact_paths["research_warnings"] = save_research_warnings(research_warnings, output_dir)
+    if strategy_payload is not None:
+        artifact_paths["strategy"] = save_strategy_payload(strategy_payload, output_dir)
+    if research_note_path is not None:
+        artifact_paths["research_note"] = research_note_path
+    artifact_paths["metadata"] = str(Path(output_dir) / "run_metadata.json")
+    return SavedBacktestArtifacts(metrics=metrics, artifact_paths=artifact_paths)
+
+
 def run_single_backtest(
     *,
     config: RunExecutionConfig,
@@ -70,25 +113,18 @@ def run_single_backtest(
     )
     result = build_engine(config).run(data, strategy)
     benchmark = build_benchmark(data, config.initial_cash, config.benchmark)
-    report = append_benchmark_section(
-        build_run_report(result, run_name=run_name),
-        benchmark.metrics,
-        result.total_return,
-        benchmark.display_name,
+    saved = save_backtest_artifacts(
+        result=result,
+        benchmark_curve=benchmark.curve,
+        benchmark_metrics=benchmark.metrics,
+        benchmark_display_name=benchmark.display_name,
+        data_quality=data_quality,
+        output_dir=output_dir,
+        run_name=run_name,
+        research_note_path=research_note_path,
     )
-    report = append_data_quality_section(report, data_quality)
-    artifact_paths = save_run_report_artifacts(result, output_dir, run_name=run_name)
-    metrics = summarize_run_metrics(result)
-    research_warnings = build_research_warnings(metrics, result.trades)
-    report = append_research_warnings_section(report, research_warnings)
-    Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
-    artifact_paths["trades"] = save_trades(result.trades, output_dir)
-    artifact_paths.update(save_charts(result, benchmark.curve, output_dir, benchmark.display_name))
-    artifact_paths["data_quality"] = save_data_quality_report(data_quality, output_dir)
-    artifact_paths["research_warnings"] = save_research_warnings(research_warnings, output_dir)
-    if research_note_path is not None:
-        artifact_paths["research_note"] = research_note_path
-    artifact_paths["metadata"] = str(Path(output_dir) / "run_metadata.json")
+    metrics = saved.metrics
+    artifact_paths = saved.artifact_paths
     artifact_paths["research_index"] = str(config.index_path)
     metadata = build_run_metadata(
         config=config,
@@ -146,26 +182,19 @@ def run_sweep_variant(
         allocation=config.allocation,
     )
     result = build_engine(config).run(data, strategy)
-    metrics = summarize_run_metrics(result)
-    research_warnings = build_research_warnings(metrics, result.trades)
-    report = append_benchmark_section(
-        build_run_report(result, run_name=run_name),
-        benchmark_metrics,
-        result.total_return,
-        benchmark_display_name,
+    saved = save_backtest_artifacts(
+        result=result,
+        benchmark_curve=benchmark_curve,
+        benchmark_metrics=benchmark_metrics,
+        benchmark_display_name=benchmark_display_name,
+        data_quality=data_quality,
+        output_dir=run_dir,
+        run_name=run_name,
+        strategy_payload=strategy_payload,
+        research_note_path=research_note_path,
     )
-    report = append_data_quality_section(report, data_quality)
-    report = append_research_warnings_section(report, research_warnings)
-    artifact_paths = save_run_report_artifacts(result, run_dir, run_name=run_name)
-    Path(artifact_paths["report"]).write_text(report, encoding="utf-8")
-    artifact_paths["trades"] = save_trades(result.trades, run_dir)
-    artifact_paths.update(save_charts(result, benchmark_curve, run_dir, benchmark_display_name))
-    artifact_paths["data_quality"] = save_data_quality_report(data_quality, run_dir)
-    artifact_paths["research_warnings"] = save_research_warnings(research_warnings, run_dir)
-    artifact_paths["strategy"] = save_strategy_payload(strategy_payload, run_dir)
-    if research_note_path is not None:
-        artifact_paths["research_note"] = research_note_path
-    artifact_paths["metadata"] = str(run_dir / "run_metadata.json")
+    metrics = saved.metrics
+    artifact_paths = saved.artifact_paths
     artifact_paths["research_index"] = str(config.index_path)
     metadata = build_run_metadata(
         config=config,
