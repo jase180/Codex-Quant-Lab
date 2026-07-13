@@ -120,6 +120,94 @@ class CliExperimentTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertIn("No experiments found", stdout.getvalue())
 
+    def test_update_experiment_changes_status_decision_notes_and_tags(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            registry_path = Path(temp_dir) / "experiments.jsonl"
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                        "--tag",
+                        "qqq",
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "update-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-001",
+                        "--status",
+                        "completed",
+                        "--decision",
+                        "Reject until a stronger benchmark comparison appears.",
+                        "--notes",
+                        "Too few trades.",
+                        "--tag",
+                        "rejected",
+                    ]
+                )
+
+            payload = json.loads(registry_path.read_text(encoding="utf-8").strip())
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Experiment updated: EXP-001", stdout.getvalue())
+            self.assertEqual(payload["status"], "completed")
+            self.assertEqual(payload["decision"], "Reject until a stronger benchmark comparison appears.")
+            self.assertEqual(payload["notes"], "Too few trades.")
+            self.assertEqual(payload["tags"], ["qqq", "rejected"])
+
+            with contextlib.redirect_stdout(io.StringIO()) as show_stdout:
+                main(
+                    [
+                        "show-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-001",
+                    ]
+                )
+
+            output = show_stdout.getvalue()
+            self.assertIn("Status: completed", output)
+            self.assertIn("Reject until", output)
+            self.assertIn("Too few trades.", output)
+
+    def test_update_experiment_rejects_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            registry_path = Path(temp_dir) / "experiments.jsonl"
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                    ]
+                )
+
+            with self.assertRaisesRegex(ValueError, "requires at least one"):
+                main(
+                    [
+                        "update-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-001",
+                    ]
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

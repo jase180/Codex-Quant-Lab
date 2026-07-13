@@ -311,9 +311,18 @@ Inspect one experiment:
 quant-lab show-experiment --experiment-id EXP-001
 ```
 
-Phase 1 of the registry tracks hypotheses and planned inputs. Later phases will
-link decisions back to these experiment IDs. Runs and sweeps can already store
-the experiment id by passing `--experiment-id`.
+After reviewing linked run or sweep results, update the experiment decision:
+
+```bash
+quant-lab update-experiment \
+  --experiment-id EXP-001 \
+  --status completed \
+  --decision "Reject until a stronger benchmark comparison appears." \
+  --notes "Promising drawdown, but too few trades." \
+  --tag rejected
+```
+
+Runs and sweeps can store the experiment id by passing `--experiment-id`.
 
 ### Run A Parameter Sweep
 

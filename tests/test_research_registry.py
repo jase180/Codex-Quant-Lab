@@ -16,6 +16,8 @@ from quant_lab.research_registry import (  # noqa: E402
     load_experiments,
     next_experiment_id,
     normalize_tags,
+    replace_experiment_record,
+    update_experiment_record,
 )
 
 
@@ -89,6 +91,34 @@ class ResearchRegistryTests(unittest.TestCase):
         self.assertEqual(filter_experiments([planned, running], status="running"), [running])
         self.assertEqual(filter_experiments([planned, running], tag="TREND"), [planned])
         self.assertEqual(normalize_tags(["QQQ, SMA", "qqq"]), ["qqq", "sma"])
+
+    def test_update_and_replace_experiment_record(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            registry_path = Path(temp_dir) / "experiments.jsonl"
+            original = create_experiment_record(
+                experiment_id="EXP-001",
+                title="Valid",
+                hypothesis="A valid hypothesis.",
+                tags=["trend"],
+                created_at_utc="2026-01-01T00:00:00Z",
+            )
+            append_experiment_record(original, registry_path)
+
+            updated = update_experiment_record(
+                original,
+                status="completed",
+                decision="Do a tighter follow-up sweep.",
+                notes="Result was promising but sparse.",
+                add_tags=["follow-up", "trend"],
+            )
+            replace_experiment_record(updated, registry_path)
+            loaded = load_experiments(registry_path)
+
+            self.assertEqual(len(loaded), 1)
+            self.assertEqual(loaded[0].status, "completed")
+            self.assertEqual(loaded[0].decision, "Do a tighter follow-up sweep.")
+            self.assertEqual(loaded[0].notes, "Result was promising but sparse.")
+            self.assertEqual(loaded[0].tags, ["trend", "follow-up"])
 
     def test_load_reports_invalid_json_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

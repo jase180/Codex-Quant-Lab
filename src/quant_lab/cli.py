@@ -25,6 +25,8 @@ from .research_registry import (
     load_experiments,
     next_experiment_id,
     normalize_tags,
+    replace_experiment_record,
+    update_experiment_record,
 )
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
 from .run_artifacts import run_single_backtest
@@ -260,6 +262,28 @@ def build_parser() -> argparse.ArgumentParser:
     add_experiment_registry_argument(show_experiment_parser)
     show_experiment_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
     show_experiment_parser.set_defaults(func=show_experiment_command)
+
+    update_experiment_parser = subparsers.add_parser(
+        "update-experiment",
+        help="Update experiment status, decision, notes, or tags.",
+    )
+    add_experiment_registry_argument(update_experiment_parser)
+    update_experiment_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
+    update_experiment_parser.add_argument(
+        "--status",
+        choices=EXPERIMENT_STATUSES,
+        default=None,
+        help="New experiment status.",
+    )
+    update_experiment_parser.add_argument("--decision", default=None, help="Decision or conclusion text.")
+    update_experiment_parser.add_argument("--notes", default=None, help="Replacement free-form notes.")
+    update_experiment_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Tag to add. May be repeated or comma-separated.",
+    )
+    update_experiment_parser.set_defaults(func=update_experiment_command)
 
     sweep_parser = subparsers.add_parser(
         "sweep",
@@ -569,6 +593,29 @@ def show_experiment_command(args: argparse.Namespace) -> int:
     records = load_experiments(args.experiments_path)
     record = find_experiment(records, args.experiment_id)
     print(format_experiment_detail(record))
+    return 0
+
+
+def update_experiment_command(args: argparse.Namespace) -> int:
+    if args.status is None and args.decision is None and args.notes is None and not args.tag:
+        raise ValueError("update-experiment requires at least one of --status, --decision, --notes, or --tag")
+
+    records = load_experiments(args.experiments_path)
+    record = find_experiment(records, args.experiment_id)
+    updated = update_experiment_record(
+        record,
+        status=args.status,
+        decision=args.decision,
+        notes=args.notes,
+        add_tags=args.tag,
+    )
+    registry_path = replace_experiment_record(updated, args.experiments_path)
+
+    print(f"Experiment updated: {updated.experiment_id}")
+    print(f"registry: {registry_path}")
+    print(f"status: {updated.status}")
+    if updated.decision is not None:
+        print(f"decision: {updated.decision}")
     return 0
 
 

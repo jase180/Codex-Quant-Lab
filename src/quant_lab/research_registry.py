@@ -6,7 +6,7 @@ import csv
 import io
 import json
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Iterable
@@ -100,6 +100,51 @@ def append_experiment_record(record: ExperimentRecord, registry_path: str | Path
     return str(destination)
 
 
+def update_experiment_record(
+    record: ExperimentRecord,
+    *,
+    status: str | None = None,
+    decision: str | None = None,
+    notes: str | None = None,
+    add_tags: Iterable[str] | None = None,
+) -> ExperimentRecord:
+    merged_tags = record.tags
+    if add_tags:
+        merged_tags = normalize_tags([*record.tags, *add_tags])
+
+    updated = replace(
+        record,
+        status=status if status is not None else record.status,
+        decision=decision.strip() if decision is not None else record.decision,
+        notes=notes.strip() if notes is not None else record.notes,
+        tags=merged_tags,
+    )
+    validate_experiment_record(updated)
+    return updated
+
+
+def replace_experiment_record(updated_record: ExperimentRecord, registry_path: str | Path) -> str:
+    destination = Path(registry_path)
+    records = load_experiments(destination)
+    replaced = False
+    next_records: list[ExperimentRecord] = []
+    for record in records:
+        if record.experiment_id == updated_record.experiment_id:
+            next_records.append(updated_record)
+            replaced = True
+        else:
+            next_records.append(record)
+    if not replaced:
+        raise ValueError(f"experiment not found: {updated_record.experiment_id}")
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        "".join(json.dumps(record.to_dict(), sort_keys=True) + "\n" for record in next_records),
+        encoding="utf-8",
+    )
+    return str(destination)
+
+
 def load_experiments(registry_path: str | Path) -> list[ExperimentRecord]:
     path = Path(registry_path)
     if not path.exists():
@@ -160,6 +205,10 @@ def validate_experiment_record(record: ExperimentRecord) -> None:
         raise ValueError("experiment tags must be a list of strings")
     if not isinstance(record.linked_runs, list) or any(not isinstance(run, str) for run in record.linked_runs):
         raise ValueError("experiment linked_runs must be a list of strings")
+    if record.decision is not None and not isinstance(record.decision, str):
+        raise ValueError("experiment decision must be a string or null")
+    if record.notes is not None and not isinstance(record.notes, str):
+        raise ValueError("experiment notes must be a string or null")
 
 
 def find_experiment(records: Iterable[ExperimentRecord], experiment_id: str) -> ExperimentRecord:
