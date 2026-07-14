@@ -11,6 +11,7 @@ import pandas as pd
 from .costs import COST_PRESETS, CostAssumptions, resolve_cost_assumptions
 from .data_fetch import fetch_market_data, write_market_data_csv
 from .data_quality import build_data_quality_report
+from .experiment_summary import format_experiment_evidence_summary
 from .research_index import format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
 from .research_registry import (
@@ -284,6 +285,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Tag to add. May be repeated or comma-separated.",
     )
     update_experiment_parser.set_defaults(func=update_experiment_command)
+
+    summarize_experiment_parser = subparsers.add_parser(
+        "summarize-experiment",
+        help="Summarize an experiment and its linked run evidence.",
+    )
+    add_experiment_registry_argument(summarize_experiment_parser)
+    add_index_argument(summarize_experiment_parser)
+    summarize_experiment_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
+    summarize_experiment_parser.add_argument(
+        "--recent-limit",
+        type=int,
+        default=5,
+        help="Maximum recent linked runs to show. Defaults to 5.",
+    )
+    summarize_experiment_parser.set_defaults(func=summarize_experiment_command)
 
     sweep_parser = subparsers.add_parser(
         "sweep",
@@ -616,6 +632,23 @@ def update_experiment_command(args: argparse.Namespace) -> int:
     print(f"status: {updated.status}")
     if updated.decision is not None:
         print(f"decision: {updated.decision}")
+    return 0
+
+
+def summarize_experiment_command(args: argparse.Namespace) -> int:
+    if args.recent_limit < 1:
+        raise ValueError("--recent-limit must be at least 1")
+
+    records = load_experiments(args.experiments_path)
+    experiment = find_experiment(records, args.experiment_id)
+    index_records = load_research_index(args.index_path)
+    print(
+        format_experiment_evidence_summary(
+            experiment,
+            index_records,
+            recent_limit=args.recent_limit,
+        )
+    )
     return 0
 
 

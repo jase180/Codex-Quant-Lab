@@ -311,6 +311,14 @@ Inspect one experiment:
 quant-lab show-experiment --experiment-id EXP-001
 ```
 
+Summarize an experiment with linked run evidence from the research index:
+
+```bash
+quant-lab summarize-experiment \
+  --experiment-id EXP-001 \
+  --index-path artifacts/research_index.jsonl
+```
+
 After reviewing linked run or sweep results, update the experiment decision:
 
 ```bash

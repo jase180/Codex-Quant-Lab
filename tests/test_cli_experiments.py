@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from quant_lab.cli import main  # noqa: E402
+from cli_fixtures import _write_index_fixture  # noqa: E402
 
 
 class CliExperimentTests(unittest.TestCase):
@@ -207,6 +208,47 @@ class CliExperimentTests(unittest.TestCase):
                         "EXP-001",
                     ]
                 )
+
+    def test_summarize_experiment_prints_linked_run_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            registry_path = temp_path / "experiments.jsonl"
+            index_path = temp_path / "research_index.jsonl"
+            _write_index_fixture(index_path)
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "summarize-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Experiment Evidence Summary", output)
+            self.assertIn("Linked index rows: 1", output)
+            self.assertIn("fast_strategy", output)
+            self.assertIn("Best excess return", output)
 
 
 if __name__ == "__main__":
