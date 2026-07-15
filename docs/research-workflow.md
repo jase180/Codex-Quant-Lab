@@ -282,7 +282,23 @@ quant-lab compare-runs \
 Do not choose a run by total return alone. Look at drawdown, Sharpe, trade
 count, and excess return over buy-and-hold.
 
-## 10. Write A Skeptic Pass
+## 10. Summarize The Experiment Evidence
+
+After the baseline, sweep, and validation runs are linked to the experiment,
+summarize the whole evidence set:
+
+```bash
+quant-lab summarize-experiment \
+  --experiment-id EXP-001 \
+  --index-path artifacts/research_index.jsonl
+```
+
+Read the strongest and weakest excess-return lines together. A good research
+decision should explain both, not only the best run. Also check the run type
+breakdown so you can tell whether the support came from one broad sweep, a
+train/test validation, or repeated walk-forward tests.
+
+## 11. Write A Skeptic Pass
 
 For any promising result, answer:
 
@@ -311,7 +327,7 @@ windows produce similar results and whether the result survives a different
 date range.
 ```
 
-## 11. Decide The Next Experiment
+## 12. Decide The Next Experiment
 
 Good next experiments are small:
 

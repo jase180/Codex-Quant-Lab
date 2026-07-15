@@ -321,6 +321,13 @@ quant-lab summarize-experiment \
   --index-path artifacts/research_index.jsonl
 ```
 
+The summary reconciles two links: metadata paths stored on the experiment
+record and rows in the research index with the same experiment id. It highlights
+the strongest and weakest excess-return evidence, groups evidence by run type,
+and shows recent linked runs. This is meant to help you decide whether an
+experiment should keep running, be rejected, or move to a stricter validation
+step.
+
 Attach an existing run metadata file to the experiment record:
 
 ```bash
