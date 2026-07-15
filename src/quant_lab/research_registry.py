@@ -15,6 +15,22 @@ from typing import Iterable
 EXPERIMENT_SCHEMA_VERSION = "experiment.v1"
 EXPERIMENT_ID_PATTERN = re.compile(r"^EXP-\d{3,}$")
 EXPERIMENT_STATUSES = ("planned", "running", "completed", "archived")
+EXPERIMENT_DECISION_OUTCOMES = ("accept", "reject", "continue")
+
+
+@dataclass(frozen=True)
+class ExperimentDecision:
+    """Structured decision made after reviewing linked experiment evidence."""
+
+    outcome: str
+    decided_at_utc: str
+    rationale: str
+    supporting_run: str | None = None
+    contradicting_run: str | None = None
+    next_action: str | None = None
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -32,6 +48,7 @@ class ExperimentRecord:
     data_path: str | None = None
     linked_runs: list[str] = field(default_factory=list)
     decision: str | None = None
+    decision_record: ExperimentDecision | None = None
     notes: str | None = None
 
     def to_dict(self) -> dict:
@@ -63,6 +80,7 @@ def create_experiment_record(
         data_path=data_path,
         linked_runs=[],
         decision=None,
+        decision_record=None,
         notes=notes.strip() if notes is not None else None,
     )
     validate_experiment_record(record)
@@ -117,6 +135,46 @@ def update_experiment_record(
         status=status if status is not None else record.status,
         decision=decision.strip() if decision is not None else record.decision,
         notes=notes.strip() if notes is not None else record.notes,
+        tags=merged_tags,
+    )
+    validate_experiment_record(updated)
+    return updated
+
+
+def create_experiment_decision(
+    *,
+    outcome: str,
+    rationale: str,
+    supporting_run: str | None = None,
+    contradicting_run: str | None = None,
+    next_action: str | None = None,
+    decided_at_utc: str | None = None,
+) -> ExperimentDecision:
+    decision = ExperimentDecision(
+        outcome=outcome,
+        decided_at_utc=decided_at_utc or datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        rationale=rationale.strip(),
+        supporting_run=_optional_str(supporting_run),
+        contradicting_run=_optional_str(contradicting_run),
+        next_action=_optional_str(next_action),
+    )
+    validate_experiment_decision(decision)
+    return decision
+
+
+def decide_experiment_record(
+    record: ExperimentRecord,
+    decision_record: ExperimentDecision,
+    *,
+    add_tags: Iterable[str] | None = None,
+) -> ExperimentRecord:
+    status = "running" if decision_record.outcome == "continue" else "completed"
+    merged_tags = normalize_tags([*record.tags, *(add_tags or [])])
+    updated = replace(
+        record,
+        status=status,
+        decision=f"{decision_record.outcome}: {decision_record.rationale}",
+        decision_record=decision_record,
         tags=merged_tags,
     )
     validate_experiment_record(updated)
@@ -225,7 +283,9 @@ def experiment_from_dict(payload: dict, *, path: Path | None = None, line_number
         "decision",
         "notes",
     }
-    extra_fields = set(payload) - required_fields
+    optional_fields = {"decision_record"}
+    allowed_fields = required_fields | optional_fields
+    extra_fields = set(payload) - allowed_fields
     missing_fields = required_fields - set(payload)
     location = f" in {path} on line {line_number}" if path is not None and line_number is not None else ""
     if missing_fields:
@@ -233,9 +293,38 @@ def experiment_from_dict(payload: dict, *, path: Path | None = None, line_number
     if extra_fields:
         raise ValueError(f"Experiment record has unknown fields{location}: {sorted(extra_fields)}")
 
-    record = ExperimentRecord(**payload)
+    normalized_payload = dict(payload)
+    normalized_payload.setdefault("decision_record", None)
+    if normalized_payload["decision_record"] is not None:
+        normalized_payload["decision_record"] = experiment_decision_from_dict(normalized_payload["decision_record"])
+
+    record = ExperimentRecord(**normalized_payload)
     validate_experiment_record(record)
     return record
+
+
+def experiment_decision_from_dict(payload: dict) -> ExperimentDecision:
+    if not isinstance(payload, dict):
+        raise ValueError("Experiment decision must be an object or null")
+
+    required_fields = {
+        "outcome",
+        "decided_at_utc",
+        "rationale",
+        "supporting_run",
+        "contradicting_run",
+        "next_action",
+    }
+    extra_fields = set(payload) - required_fields
+    missing_fields = required_fields - set(payload)
+    if missing_fields:
+        raise ValueError(f"Experiment decision missing fields: {sorted(missing_fields)}")
+    if extra_fields:
+        raise ValueError(f"Experiment decision has unknown fields: {sorted(extra_fields)}")
+
+    decision = ExperimentDecision(**payload)
+    validate_experiment_decision(decision)
+    return decision
 
 
 def validate_experiment_record(record: ExperimentRecord) -> None:
@@ -255,8 +344,25 @@ def validate_experiment_record(record: ExperimentRecord) -> None:
         raise ValueError("experiment linked_runs must be a list of strings")
     if record.decision is not None and not isinstance(record.decision, str):
         raise ValueError("experiment decision must be a string or null")
+    if record.decision_record is not None:
+        validate_experiment_decision(record.decision_record)
     if record.notes is not None and not isinstance(record.notes, str):
         raise ValueError("experiment notes must be a string or null")
+
+
+def validate_experiment_decision(decision: ExperimentDecision) -> None:
+    if not isinstance(decision, ExperimentDecision):
+        raise ValueError("experiment decision_record must be an ExperimentDecision or null")
+    if decision.outcome not in EXPERIMENT_DECISION_OUTCOMES:
+        raise ValueError(f"invalid experiment decision outcome: {decision.outcome}")
+    if not decision.decided_at_utc.strip():
+        raise ValueError("experiment decision decided_at_utc must not be empty")
+    if not decision.rationale.strip():
+        raise ValueError("experiment decision rationale must not be empty")
+    for field_name in ("supporting_run", "contradicting_run", "next_action"):
+        value = getattr(decision, field_name)
+        if value is not None and not isinstance(value, str):
+            raise ValueError(f"experiment decision {field_name} must be a string or null")
 
 
 def find_experiment(records: Iterable[ExperimentRecord], experiment_id: str) -> ExperimentRecord:
@@ -347,12 +453,27 @@ def format_experiment_detail(record: ExperimentRecord) -> str:
         *[f"  {run}" for run in linked_runs],
         "",
         "Decision",
-        record.decision or "-",
+        *_format_decision_lines(record),
         "",
         "Notes",
         record.notes or "-",
     ]
     return "\n".join(lines)
+
+
+def _format_decision_lines(record: ExperimentRecord) -> list[str]:
+    if record.decision_record is None:
+        return [record.decision or "-"]
+
+    decision = record.decision_record
+    return [
+        f"  Outcome: {decision.outcome}",
+        f"  Decided UTC: {decision.decided_at_utc}",
+        f"  Rationale: {decision.rationale}",
+        f"  Supporting Run: {decision.supporting_run or '-'}",
+        f"  Contradicting Run: {decision.contradicting_run or '-'}",
+        f"  Next Action: {decision.next_action or '-'}",
+    ]
 
 
 def _format_experiment_value(record: ExperimentRecord, field: str) -> str:
@@ -364,3 +485,10 @@ def _format_experiment_value(record: ExperimentRecord, field: str) -> str:
     if value is None:
         return "-"
     return str(value)
+
+
+def _optional_str(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None

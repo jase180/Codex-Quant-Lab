@@ -339,6 +339,23 @@ Good next experiments are small:
 
 Avoid jumping to a more complex strategy until the simple result is understood.
 
+Record the decision while the evidence is fresh:
+
+```bash
+quant-lab decide-experiment \
+  --experiment-id EXP-001 \
+  --outcome continue \
+  --rationale "The sweep improved drawdown, but the train/test check is not strong enough yet." \
+  --supporting-run artifacts/research/sma_qqq_2015_2025/sweep_001/run_004/run_metadata.json \
+  --contradicting-run artifacts/research/sma_qqq_2015_2025/train_test_001/test_selected/run_metadata.json \
+  --next-action "Run walk-forward windows and test the same idea on SPY." \
+  --tag needs-walk-forward
+```
+
+Use `accept` only when the evidence is strong enough to promote the idea to a
+stricter validation or paper-trading phase. Use `reject` when the evidence does
+not justify more time. Use `continue` when the next action is still research.
+
 ## Artifact Rule
 
 If a result matters, keep the artifact folder. Chat history is not the source of

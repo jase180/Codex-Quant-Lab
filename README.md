@@ -343,16 +343,26 @@ cleanup.
 After reviewing linked run or sweep results, update the experiment decision:
 
 ```bash
-quant-lab update-experiment \
+quant-lab decide-experiment \
   --experiment-id EXP-001 \
-  --status completed \
-  --decision "Reject until a stronger benchmark comparison appears." \
-  --notes "Promising drawdown, but too few trades." \
+  --outcome reject \
+  --rationale "Best run still underperformed buy-and-hold after costs." \
+  --supporting-run artifacts/research/qqq_sma_crossover_2015_2025/run_004/run_metadata.json \
+  --contradicting-run artifacts/research/qqq_sma_train_test_2015_2025/test_selected/run_metadata.json \
+  --next-action "Try the same research question on SPY before adding complexity." \
   --tag rejected
 ```
 
 Runs and sweeps require the experiment to already exist when `--experiment-id`
 is provided. This catches typos before a long backtest or sweep starts.
+
+`decide-experiment` stores a structured `decision_record` in the experiment
+registry while also keeping the older plain `decision` text. Outcomes are
+`accept`, `reject`, and `continue`. `accept` and `reject` mark the experiment
+`completed`; `continue` keeps it `running`.
+
+Use `update-experiment` for simple status, notes, tag, or legacy decision text
+edits when you do not need the structured decision fields.
 
 ### Run A Parameter Sweep
 

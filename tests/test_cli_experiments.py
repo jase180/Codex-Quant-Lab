@@ -209,6 +209,86 @@ class CliExperimentTests(unittest.TestCase):
                     ]
                 )
 
+    def test_decide_experiment_writes_structured_decision(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            registry_path = Path(temp_dir) / "experiments.jsonl"
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                        "--tag",
+                        "qqq",
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "decide-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-001",
+                        "--outcome",
+                        "continue",
+                        "--rationale",
+                        "The best sweep is promising but the validation set is too small.",
+                        "--supporting-run",
+                        "artifacts/sweep/run_004/run_metadata.json",
+                        "--contradicting-run",
+                        "artifacts/train_test/test_selected/run_metadata.json",
+                        "--next-action",
+                        "Run walk-forward windows before accepting or rejecting.",
+                        "--tag",
+                        "needs-walk-forward",
+                    ]
+                )
+
+            payload = json.loads(registry_path.read_text(encoding="utf-8").strip())
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Experiment decided: EXP-001", stdout.getvalue())
+            self.assertEqual(payload["status"], "running")
+            self.assertEqual(
+                payload["decision"],
+                "continue: The best sweep is promising but the validation set is too small.",
+            )
+            self.assertEqual(payload["decision_record"]["outcome"], "continue")
+            self.assertEqual(
+                payload["decision_record"]["supporting_run"],
+                "artifacts/sweep/run_004/run_metadata.json",
+            )
+            self.assertEqual(
+                payload["decision_record"]["contradicting_run"],
+                "artifacts/train_test/test_selected/run_metadata.json",
+            )
+            self.assertEqual(
+                payload["decision_record"]["next_action"],
+                "Run walk-forward windows before accepting or rejecting.",
+            )
+            self.assertEqual(payload["tags"], ["qqq", "needs-walk-forward"])
+
+            with contextlib.redirect_stdout(io.StringIO()) as show_stdout:
+                main(
+                    [
+                        "show-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-001",
+                    ]
+                )
+
+            output = show_stdout.getvalue()
+            self.assertIn("Outcome: continue", output)
+            self.assertIn("Supporting Run: artifacts/sweep/run_004/run_metadata.json", output)
+            self.assertIn("Next Action: Run walk-forward windows", output)
+
     def test_link_run_adds_metadata_path_to_experiment(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)

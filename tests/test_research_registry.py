@@ -10,7 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from quant_lab.research_registry import (  # noqa: E402
     append_experiment_record,
+    create_experiment_decision,
     create_experiment_record,
+    decide_experiment_record,
     experiment_from_dict,
     filter_experiments,
     link_runs_to_experiment,
@@ -44,7 +46,22 @@ class ResearchRegistryTests(unittest.TestCase):
             self.assertEqual(loaded[0].experiment_id, "EXP-001")
             self.assertEqual(loaded[0].tags, ["qqq", "sma", "trend"])
             self.assertEqual(loaded[0].linked_runs, [])
+            self.assertIsNone(loaded[0].decision_record)
             self.assertEqual(next_experiment_id(loaded), "EXP-002")
+
+    def test_loads_older_record_without_structured_decision(self) -> None:
+        payload = create_experiment_record(
+            experiment_id="EXP-001",
+            title="Valid",
+            hypothesis="A valid hypothesis.",
+            created_at_utc="2026-01-01T00:00:00Z",
+        ).to_dict()
+        payload.pop("decision_record")
+
+        record = experiment_from_dict(payload)
+
+        self.assertEqual(record.experiment_id, "EXP-001")
+        self.assertIsNone(record.decision_record)
 
     def test_rejects_unknown_fields_in_experiment_json(self) -> None:
         payload = create_experiment_record(
@@ -120,6 +137,30 @@ class ResearchRegistryTests(unittest.TestCase):
             self.assertEqual(loaded[0].decision, "Do a tighter follow-up sweep.")
             self.assertEqual(loaded[0].notes, "Result was promising but sparse.")
             self.assertEqual(loaded[0].tags, ["trend", "follow-up"])
+
+    def test_decide_experiment_record_stores_structured_decision(self) -> None:
+        original = create_experiment_record(
+            experiment_id="EXP-001",
+            title="Valid",
+            hypothesis="A valid hypothesis.",
+            tags=["trend"],
+            created_at_utc="2026-01-01T00:00:00Z",
+        )
+        decision = create_experiment_decision(
+            outcome="reject",
+            rationale="Best run underperformed the benchmark after costs.",
+            supporting_run="artifacts/run_a/run_metadata.json",
+            contradicting_run="artifacts/run_b/run_metadata.json",
+            next_action="Try a different symbol before adding complexity.",
+            decided_at_utc="2026-01-02T00:00:00Z",
+        )
+
+        updated = decide_experiment_record(original, decision, add_tags=["rejected"])
+
+        self.assertEqual(updated.status, "completed")
+        self.assertEqual(updated.decision, "reject: Best run underperformed the benchmark after costs.")
+        self.assertEqual(updated.decision_record, decision)
+        self.assertEqual(updated.tags, ["trend", "rejected"])
 
     def test_link_runs_to_experiment_deduplicates_metadata_paths(self) -> None:
         record = create_experiment_record(

@@ -16,9 +16,12 @@ from .experiment_summary import format_experiment_evidence_summary
 from .research_index import format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
 from .research_registry import (
+    EXPERIMENT_DECISION_OUTCOMES,
     EXPERIMENT_STATUSES,
     append_experiment_record,
+    create_experiment_decision,
     create_experiment_record,
+    decide_experiment_record,
     filter_experiments,
     find_experiment,
     format_experiment_csv,
@@ -289,6 +292,38 @@ def build_parser() -> argparse.ArgumentParser:
         help="Tag to add. May be repeated or comma-separated.",
     )
     update_experiment_parser.set_defaults(func=update_experiment_command)
+
+    decide_experiment_parser = subparsers.add_parser(
+        "decide-experiment",
+        help="Record a structured research decision for an experiment.",
+    )
+    add_experiment_registry_argument(decide_experiment_parser)
+    decide_experiment_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
+    decide_experiment_parser.add_argument(
+        "--outcome",
+        required=True,
+        choices=EXPERIMENT_DECISION_OUTCOMES,
+        help="Research decision outcome. Accept/reject complete the experiment; continue keeps it running.",
+    )
+    decide_experiment_parser.add_argument("--rationale", required=True, help="Why this decision follows from evidence.")
+    decide_experiment_parser.add_argument(
+        "--supporting-run",
+        default=None,
+        help="Metadata path or run label for the strongest supporting evidence.",
+    )
+    decide_experiment_parser.add_argument(
+        "--contradicting-run",
+        default=None,
+        help="Metadata path or run label for the strongest contradictory evidence.",
+    )
+    decide_experiment_parser.add_argument("--next-action", default=None, help="Concrete next research action.")
+    decide_experiment_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Tag to add with the decision. May be repeated or comma-separated.",
+    )
+    decide_experiment_parser.set_defaults(func=decide_experiment_command)
 
     link_run_parser = subparsers.add_parser(
         "link-run",
@@ -652,6 +687,29 @@ def update_experiment_command(args: argparse.Namespace) -> int:
     print(f"status: {updated.status}")
     if updated.decision is not None:
         print(f"decision: {updated.decision}")
+    return 0
+
+
+def decide_experiment_command(args: argparse.Namespace) -> int:
+    records = load_experiments(args.experiments_path)
+    record = find_experiment(records, args.experiment_id)
+    decision_record = create_experiment_decision(
+        outcome=args.outcome,
+        rationale=args.rationale,
+        supporting_run=args.supporting_run,
+        contradicting_run=args.contradicting_run,
+        next_action=args.next_action,
+    )
+    updated = decide_experiment_record(record, decision_record, add_tags=args.tag)
+    registry_path = replace_experiment_record(updated, args.experiments_path)
+
+    print(f"Experiment decided: {updated.experiment_id}")
+    print(f"registry: {registry_path}")
+    print(f"status: {updated.status}")
+    print(f"outcome: {decision_record.outcome}")
+    print(f"rationale: {decision_record.rationale}")
+    if decision_record.next_action is not None:
+        print(f"next_action: {decision_record.next_action}")
     return 0
 
 
