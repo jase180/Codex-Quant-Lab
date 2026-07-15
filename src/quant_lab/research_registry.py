@@ -137,6 +137,40 @@ def link_runs_to_experiment(record: ExperimentRecord, metadata_paths: Iterable[s
     return updated
 
 
+def require_experiment(registry_path: str | Path, experiment_id: str | None) -> ExperimentRecord | None:
+    """Return the experiment when a command explicitly links work to one.
+
+    Runs can take a while once the lab has real data and broad parameter
+    sweeps. Checking the registry before the run starts gives a fast, clear
+    error for a mistyped experiment id instead of failing after artifacts have
+    already been written.
+    """
+
+    if experiment_id is None:
+        return None
+    return find_experiment(load_experiments(registry_path), experiment_id)
+
+
+def link_run_metadata_path(
+    *,
+    registry_path: str | Path | None,
+    experiment_id: str | None,
+    metadata_path: str | Path,
+) -> str | None:
+    """Attach one generated run metadata file to an experiment registry record."""
+
+    if experiment_id is None:
+        return None
+    if registry_path is None:
+        raise ValueError("--experiments-path is required when --experiment-id is provided")
+
+    record = require_experiment(registry_path, experiment_id)
+    if record is None:
+        return None
+    updated = link_runs_to_experiment(record, [str(metadata_path)])
+    return replace_experiment_record(updated, registry_path)
+
+
 def replace_experiment_record(updated_record: ExperimentRecord, registry_path: str | Path) -> str:
     destination = Path(registry_path)
     records = load_experiments(destination)

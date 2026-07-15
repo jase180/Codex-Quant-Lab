@@ -31,11 +31,25 @@ class CliRunTests(unittest.TestCase):
             data_path = temp_path / "ohlcv.csv"
             output_dir = temp_path / "artifacts"
             index_path = temp_path / "research_index.jsonl"
+            experiments_path = temp_path / "experiments.jsonl"
 
             strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
             _write_ohlcv_fixture(data_path)
 
             with contextlib.redirect_stdout(io.StringIO()):
+                create_exit_code = main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--experiment-id",
+                        "EXP-001",
+                        "--title",
+                        "CLI run link",
+                        "--hypothesis",
+                        "A valid run should link its metadata automatically.",
+                    ]
+                )
                 exit_code = main(
                     [
                         "run",
@@ -51,11 +65,14 @@ class CliRunTests(unittest.TestCase):
                         "3",
                         "--index-path",
                         str(index_path),
+                        "--experiments-path",
+                        str(experiments_path),
                         "--experiment-id",
                         "EXP-001",
                     ]
                 )
 
+            self.assertEqual(create_exit_code, 0)
             self.assertEqual(exit_code, 0)
             self.assertTrue((output_dir / "metrics.json").exists())
             self.assertTrue((output_dir / "equity_curve.csv").exists())
@@ -85,6 +102,8 @@ class CliRunTests(unittest.TestCase):
             self.assertEqual(index_rows[0]["experiment_id"], "EXP-001")
             self.assertEqual(index_rows[0]["strategy_id"], "cli_smoke")
             self.assertEqual(index_rows[0]["metadata_path"], str(output_dir / "run_metadata.json"))
+            experiment_rows = _read_jsonl(experiments_path)
+            self.assertEqual(experiment_rows[0]["linked_runs"], [str(output_dir / "run_metadata.json")])
             report = (output_dir / "report.md").read_text(encoding="utf-8")
             self.assertIn("CLI Smoke", report)
             self.assertIn("## Benchmark: Buy And Hold", report)

@@ -15,6 +15,7 @@ import pandas as pd
 from .benchmarks import build_benchmark
 from .costs import resolve_cost_assumptions
 from .data_quality import build_data_quality_report
+from .research_registry import require_experiment
 from .run_artifacts import current_git_commit, load_strategy_payload, run_sweep_variant
 from .run_notes import load_research_note, note_command_lines, research_note_summary_line, save_research_note
 from .strategy_schema import parse_strategy
@@ -34,6 +35,7 @@ def sweep_command(args: argparse.Namespace) -> int:
         commission_rate=args.commission_rate,
         slippage_bps=args.slippage_bps,
     )
+    require_experiment(args.experiments_path, args.experiment_id)
 
     if args.walk_forward_window:
         return walk_forward_sweep_command(args)

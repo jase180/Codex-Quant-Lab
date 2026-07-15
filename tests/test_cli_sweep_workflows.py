@@ -30,6 +30,7 @@ class CliSweepWorkflowTests(unittest.TestCase):
             data_path = temp_path / "ohlcv.csv"
             output_dir = temp_path / "sweep"
             index_path = temp_path / "research_index.jsonl"
+            experiments_path = temp_path / "experiments.jsonl"
             note_path = temp_path / "note.md"
 
             strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
@@ -37,6 +38,19 @@ class CliSweepWorkflowTests(unittest.TestCase):
             note_path.write_text("Hypothesis: sweep note should link to every run.\n", encoding="utf-8")
 
             with contextlib.redirect_stdout(io.StringIO()):
+                create_exit_code = main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--title",
+                        "CLI sweep link",
+                        "--hypothesis",
+                        "A valid sweep should link every generated run metadata file.",
+                    ]
+                )
                 exit_code = main(
                     [
                         "sweep",
@@ -58,11 +72,14 @@ class CliSweepWorkflowTests(unittest.TestCase):
                         str(note_path),
                         "--index-path",
                         str(index_path),
+                        "--experiments-path",
+                        str(experiments_path),
                         "--experiment-id",
                         "EXP-002",
                     ]
                 )
 
+            self.assertEqual(create_exit_code, 0)
             self.assertEqual(exit_code, 0)
             self.assertTrue((output_dir / "summary.csv").exists())
             self.assertTrue((output_dir / "research.md").exists())
@@ -106,6 +123,10 @@ class CliSweepWorkflowTests(unittest.TestCase):
             self.assertEqual(index_rows[0]["experiment_id"], "EXP-002")
             self.assertIn(index_rows[0]["run_id"], {"run_001", "run_002", "run_003", "run_004"})
             self.assertEqual(index_rows[0]["symbol"], "TEST")
+            experiment_rows = _read_jsonl(experiments_path)
+            self.assertEqual(len(experiment_rows[0]["linked_runs"]), 4)
+            self.assertIn(str(output_dir / "run_001" / "run_metadata.json"), experiment_rows[0]["linked_runs"])
+            self.assertIn(str(output_dir / "run_004" / "run_metadata.json"), experiment_rows[0]["linked_runs"])
 
     def test_sweep_command_supports_train_test_split(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

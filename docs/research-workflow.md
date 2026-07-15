@@ -21,6 +21,22 @@ Hypothesis: faster moving-average windows may reduce drawdown, but may also
 underperform buy-and-hold if they exit during strong trends.
 ```
 
+Create an experiment record for the hypothesis:
+
+```bash
+quant-lab new-experiment \
+  --title "QQQ SMA crossover research" \
+  --hypothesis "Faster moving-average windows may reduce drawdown, but may also underperform buy-and-hold during strong trends." \
+  --tag QQQ \
+  --tag sma \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv
+```
+
+The command prints an id such as `EXP-001`. Use that id on related `run` and
+`sweep` commands so generated `run_metadata.json` files are linked back to the
+experiment automatically.
+
 ## 2. Fetch Or Choose Data
 
 Fetch fresh data:
@@ -55,6 +71,7 @@ quant-lab run \
   --benchmark buy-and-hold \
   --commission-rate 0.0005 \
   --slippage-bps 5 \
+  --experiment-id EXP-001 \
   --note "Hypothesis: SMA crossovers may reduce drawdown but may underperform strong trends." \
   --out artifacts/research/sma_qqq_2015_2025/baseline
 ```
@@ -79,6 +96,9 @@ The run also appends one row to:
 artifacts/research_index.jsonl
 ```
 
+It also appends the generated `run_metadata.json` path to the experiment's
+`linked_runs` when `--experiment-id` is provided.
+
 ## 4. Run A Controlled Sweep
 
 Change a small set of parameters, and keep the data, sizing, commission, and
@@ -95,12 +115,14 @@ quant-lab sweep \
   --benchmark buy-and-hold \
   --commission-rate 0.0005 \
   --slippage-bps 5 \
+  --experiment-id EXP-001 \
   --note-file docs/local_notes/sma_qqq_hypothesis.md \
   --out artifacts/research/sma_qqq_2015_2025/sweep_001
 ```
 
 Each sweep sub-run writes its own artifacts and appends its own row to the
-research index.
+research index. Each sub-run also links its metadata path to the experiment
+record when `--experiment-id` is provided.
 
 Use `--note` for a short inline hypothesis or `--note-file` when the note is
 longer. The saved `research_note.md` should explain what you were trying to
@@ -160,6 +182,7 @@ quant-lab sweep \
   --allocation 1.0 \
   --benchmark buy-and-hold \
   --cost-preset retail-liquid \
+  --experiment-id EXP-001 \
   --train-end 2020-12-31 \
   --test-start 2021-01-01 \
   --select-by sharpe_ratio \
@@ -227,6 +250,7 @@ quant-lab sweep \
   --sizing percent-equity \
   --allocation 1.0 \
   --cost-preset retail-liquid \
+  --experiment-id EXP-001 \
   --walk-forward-window 2015-01-01,2018-12-31,2019-01-01,2020-12-31 \
   --walk-forward-window 2017-01-01,2020-12-31,2021-01-01,2022-12-31 \
   --select-by sharpe_ratio \

@@ -29,6 +29,7 @@ from .research_registry import (
     next_experiment_id,
     normalize_tags,
     replace_experiment_record,
+    require_experiment,
     update_experiment_record,
 )
 from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
@@ -94,6 +95,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_cost_arguments(run_parser)
     add_benchmark_argument(run_parser)
     add_note_arguments(run_parser)
+    add_experiment_registry_argument(run_parser)
     add_experiment_link_argument(run_parser)
     add_index_argument(run_parser)
     run_parser.set_defaults(func=run_command)
@@ -379,6 +381,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_cost_arguments(sweep_parser)
     add_benchmark_argument(sweep_parser)
     add_note_arguments(sweep_parser)
+    add_experiment_registry_argument(sweep_parser)
     add_experiment_link_argument(sweep_parser)
     add_index_argument(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
@@ -470,6 +473,7 @@ def resolve_cli_costs(args: argparse.Namespace) -> CostAssumptions:
 
 def run_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
+    require_experiment(args.experiments_path, args.experiment_id)
     config = RunExecutionConfig.from_args(args)
     strategy_spec = load_strategy(args.strategy)
     data = pd.read_csv(args.data)

@@ -242,8 +242,10 @@ the artifacts instead of only in chat.
 
 Each run also appends one flat JSON line to `artifacts/research_index.jsonl` by
 default. Use `--index-path` to write the registry somewhere else. Pass
-`--experiment-id EXP-001` to link run metadata and index rows back to a research
-experiment.
+`--experiment-id EXP-001` to store the experiment id in run metadata and index
+rows, and to automatically append the generated `run_metadata.json` path to the
+experiment's `linked_runs`. Use `--experiments-path` too when the experiment
+registry is not the default `artifacts/experiments.jsonl`.
 
 ### List Previous Runs
 
@@ -327,6 +329,10 @@ quant-lab link-run \
   --metadata artifacts/qqq_sma_crossover/run_metadata.json
 ```
 
+New `run` and `sweep` commands do this linking automatically when you pass
+`--experiment-id`. Keep `link-run` for older artifacts or one-off manual
+cleanup.
+
 After reviewing linked run or sweep results, update the experiment decision:
 
 ```bash
@@ -338,7 +344,8 @@ quant-lab update-experiment \
   --tag rejected
 ```
 
-Runs and sweeps can store the experiment id by passing `--experiment-id`.
+Runs and sweeps require the experiment to already exist when `--experiment-id`
+is provided. This catches typos before a long backtest or sweep starts.
 
 ### Run A Parameter Sweep
 
@@ -375,6 +382,11 @@ artifacts/research_index.jsonl
 ```
 
 `summary.csv` is sorted by total return, best first.
+
+Each sweep run writes its own `run_metadata.json`. When the sweep uses
+`--experiment-id`, every generated metadata path is appended to that
+experiment's `linked_runs`, so `show-experiment` and `summarize-experiment`
+can find the evidence without a separate manual linking step.
 
 `research.md` includes a top-runs table and a parameter-stability section. The
 stability check is a deterministic heuristic: it looks for one-parameter

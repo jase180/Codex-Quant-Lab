@@ -25,6 +25,7 @@ from metrics_reporting import save_drawdown_chart, save_equity_curve_chart
 from .benchmarks import append_benchmark_section, benchmark_summary_fields, build_benchmark, excess_total_return
 from .data_quality import append_data_quality_section, save_data_quality_report
 from .research_index import append_research_index_record, build_run_index_record
+from .research_registry import link_run_metadata_path
 from .research_warnings import append_research_warnings_section, build_research_warnings, save_research_warnings
 from .rule_based_strategy import build_rule_based_strategy
 from .run_metadata import (
@@ -136,6 +137,11 @@ def run_single_backtest(
         artifacts=artifact_paths,
     )
     artifact_paths["metadata"] = save_run_metadata(metadata, output_dir)
+    link_run_metadata_path(
+        registry_path=config.experiments_path,
+        experiment_id=config.experiment_id,
+        metadata_path=artifact_paths["metadata"],
+    )
     append_research_index(
         metadata=metadata,
         metrics=metrics,
@@ -206,6 +212,11 @@ def run_sweep_variant(
         artifacts=artifact_paths,
     )
     artifact_paths["metadata"] = save_run_metadata(metadata, run_dir)
+    link_run_metadata_path(
+        registry_path=config.experiments_path,
+        experiment_id=config.experiment_id,
+        metadata_path=artifact_paths["metadata"],
+    )
     append_research_index(
         metadata=metadata,
         metrics=metrics,
