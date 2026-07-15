@@ -319,6 +319,14 @@ quant-lab summarize-experiment \
   --index-path artifacts/research_index.jsonl
 ```
 
+Attach an existing run metadata file to the experiment record:
+
+```bash
+quant-lab link-run \
+  --experiment-id EXP-001 \
+  --metadata artifacts/qqq_sma_crossover/run_metadata.json
+```
+
 After reviewing linked run or sweep results, update the experiment decision:
 
 ```bash

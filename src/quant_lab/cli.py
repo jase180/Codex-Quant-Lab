@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Sequence
 
 import pandas as pd
@@ -23,6 +24,7 @@ from .research_registry import (
     format_experiment_csv,
     format_experiment_detail,
     format_experiment_table,
+    link_runs_to_experiment,
     load_experiments,
     next_experiment_id,
     normalize_tags,
@@ -285,6 +287,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Tag to add. May be repeated or comma-separated.",
     )
     update_experiment_parser.set_defaults(func=update_experiment_command)
+
+    link_run_parser = subparsers.add_parser(
+        "link-run",
+        help="Attach one or more run metadata paths to an experiment record.",
+    )
+    add_experiment_registry_argument(link_run_parser)
+    link_run_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
+    link_run_parser.add_argument(
+        "--metadata",
+        action="append",
+        required=True,
+        help="Path to a run_metadata.json file. May be provided more than once.",
+    )
+    link_run_parser.set_defaults(func=link_run_command)
 
     summarize_experiment_parser = subparsers.add_parser(
         "summarize-experiment",
@@ -632,6 +648,23 @@ def update_experiment_command(args: argparse.Namespace) -> int:
     print(f"status: {updated.status}")
     if updated.decision is not None:
         print(f"decision: {updated.decision}")
+    return 0
+
+
+def link_run_command(args: argparse.Namespace) -> int:
+    metadata_paths = [str(Path(metadata_path)) for metadata_path in args.metadata]
+    missing_paths = [metadata_path for metadata_path in metadata_paths if not Path(metadata_path).exists()]
+    if missing_paths:
+        raise FileNotFoundError(f"run metadata file not found: {missing_paths[0]}")
+
+    records = load_experiments(args.experiments_path)
+    record = find_experiment(records, args.experiment_id)
+    updated = link_runs_to_experiment(record, metadata_paths)
+    registry_path = replace_experiment_record(updated, args.experiments_path)
+
+    print(f"Experiment linked: {updated.experiment_id}")
+    print(f"registry: {registry_path}")
+    print(f"linked_runs: {len(updated.linked_runs)}")
     return 0
 
 

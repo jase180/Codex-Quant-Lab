@@ -123,6 +123,20 @@ def update_experiment_record(
     return updated
 
 
+def link_runs_to_experiment(record: ExperimentRecord, metadata_paths: Iterable[str]) -> ExperimentRecord:
+    linked_runs = list(record.linked_runs)
+    for metadata_path in metadata_paths:
+        normalized_path = str(metadata_path).strip()
+        if not normalized_path:
+            raise ValueError("linked run metadata path must not be empty")
+        if normalized_path not in linked_runs:
+            linked_runs.append(normalized_path)
+
+    updated = replace(record, linked_runs=linked_runs)
+    validate_experiment_record(updated)
+    return updated
+
+
 def replace_experiment_record(updated_record: ExperimentRecord, registry_path: str | Path) -> str:
     destination = Path(registry_path)
     records = load_experiments(destination)

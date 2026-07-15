@@ -13,6 +13,7 @@ from quant_lab.research_registry import (  # noqa: E402
     create_experiment_record,
     experiment_from_dict,
     filter_experiments,
+    link_runs_to_experiment,
     load_experiments,
     next_experiment_id,
     normalize_tags,
@@ -119,6 +120,31 @@ class ResearchRegistryTests(unittest.TestCase):
             self.assertEqual(loaded[0].decision, "Do a tighter follow-up sweep.")
             self.assertEqual(loaded[0].notes, "Result was promising but sparse.")
             self.assertEqual(loaded[0].tags, ["trend", "follow-up"])
+
+    def test_link_runs_to_experiment_deduplicates_metadata_paths(self) -> None:
+        record = create_experiment_record(
+            experiment_id="EXP-001",
+            title="Valid",
+            hypothesis="A valid hypothesis.",
+            created_at_utc="2026-01-01T00:00:00Z",
+        )
+
+        updated = link_runs_to_experiment(
+            record,
+            [
+                "artifacts/run_a/run_metadata.json",
+                "artifacts/run_a/run_metadata.json",
+                "artifacts/run_b/run_metadata.json",
+            ],
+        )
+
+        self.assertEqual(
+            updated.linked_runs,
+            [
+                "artifacts/run_a/run_metadata.json",
+                "artifacts/run_b/run_metadata.json",
+            ],
+        )
 
     def test_load_reports_invalid_json_line(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
