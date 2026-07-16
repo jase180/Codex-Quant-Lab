@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from quant_lab.experiment_summary import format_experiment_evidence_summary  # noqa: E402
+from quant_lab.experiment_summary import format_experiment_decision_draft, format_experiment_evidence_summary  # noqa: E402
 from quant_lab.research_registry import create_experiment_record, link_runs_to_experiment  # noqa: E402
 
 
@@ -89,6 +89,95 @@ class ExperimentSummaryTests(unittest.TestCase):
 
         self.assertIn("Linked index rows: 0", summary)
         self.assertIn("No linked runs found", summary)
+
+    def test_drafts_continue_decision_without_validation_evidence(self) -> None:
+        experiment = create_experiment_record(
+            experiment_id="EXP-001",
+            title="QQQ idea",
+            hypothesis="A valid hypothesis.",
+            created_at_utc="2026-01-01T00:00:00Z",
+        )
+        records = [
+            {
+                "experiment_id": "EXP-001",
+                "created_at_utc": "2026-01-02T00:00:00Z",
+                "run_type": "sweep_run",
+                "run_id": "run_001",
+                "metadata_path": "artifacts/sweep/run_001/run_metadata.json",
+                "excess_total_return": 0.12,
+            }
+        ]
+
+        draft = format_experiment_decision_draft(experiment, records)
+
+        self.assertIn("Experiment Decision Draft", draft)
+        self.assertIn("Suggested outcome: continue", draft)
+        self.assertIn("no train/test or walk-forward validation run is linked yet", draft)
+        self.assertIn("--supporting-run \"artifacts/sweep/run_001/run_metadata.json\"", draft)
+
+    def test_drafts_reject_when_validation_underperforms(self) -> None:
+        experiment = create_experiment_record(
+            experiment_id="EXP-001",
+            title="QQQ idea",
+            hypothesis="A valid hypothesis.",
+            created_at_utc="2026-01-01T00:00:00Z",
+        )
+        records = [
+            {
+                "experiment_id": "EXP-001",
+                "created_at_utc": "2026-01-02T00:00:00Z",
+                "run_type": "sweep_run",
+                "run_id": "run_004",
+                "metadata_path": "artifacts/sweep/run_004/run_metadata.json",
+                "excess_total_return": 0.15,
+            },
+            {
+                "experiment_id": "EXP-001",
+                "created_at_utc": "2026-01-03T00:00:00Z",
+                "run_type": "test_selected_run",
+                "run_id": "test_selected",
+                "metadata_path": "artifacts/test/run_metadata.json",
+                "excess_total_return": -0.03,
+            },
+        ]
+
+        draft = format_experiment_decision_draft(experiment, records)
+
+        self.assertIn("Suggested outcome: reject", draft)
+        self.assertIn("Validation evidence did not beat the benchmark", draft)
+        self.assertIn("--contradicting-run \"artifacts/test/run_metadata.json\"", draft)
+
+    def test_drafts_accept_when_validation_and_all_linked_evidence_are_positive(self) -> None:
+        experiment = create_experiment_record(
+            experiment_id="EXP-001",
+            title="QQQ idea",
+            hypothesis="A valid hypothesis.",
+            created_at_utc="2026-01-01T00:00:00Z",
+        )
+        records = [
+            {
+                "experiment_id": "EXP-001",
+                "created_at_utc": "2026-01-02T00:00:00Z",
+                "run_type": "sweep_run",
+                "run_id": "run_004",
+                "metadata_path": "artifacts/sweep/run_004/run_metadata.json",
+                "excess_total_return": 0.08,
+            },
+            {
+                "experiment_id": "EXP-001",
+                "created_at_utc": "2026-01-03T00:00:00Z",
+                "run_type": "walk_forward_test_run",
+                "run_id": "window_001_test_selected",
+                "metadata_path": "artifacts/walk_forward/window_001/test_selected/run_metadata.json",
+                "excess_total_return": 0.04,
+            },
+        ]
+
+        draft = format_experiment_decision_draft(experiment, records)
+
+        self.assertIn("Suggested outcome: accept", draft)
+        self.assertIn("Linked evidence and validation evidence both show positive excess return", draft)
+        self.assertIn("--next-action \"Promote this idea to stricter validation or paper-trading research.\"", draft)
 
 
 if __name__ == "__main__":

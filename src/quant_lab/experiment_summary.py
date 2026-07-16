@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from .research_registry import ExperimentRecord, format_experiment_detail
 
+VALIDATION_RUN_TYPES = {"test_selected_run", "walk_forward_test_run"}
+
 
 def format_experiment_evidence_summary(
     experiment: ExperimentRecord,
@@ -87,6 +89,125 @@ def format_experiment_evidence_summary(
         ]
     )
     return "\n".join(lines)
+
+
+def format_experiment_decision_draft(
+    experiment: ExperimentRecord,
+    index_records: list[dict],
+) -> str:
+    linked_records = _linked_index_records(experiment, index_records)
+    linked_records.sort(key=lambda record: str(record.get("created_at_utc", "")), reverse=True)
+
+    draft = _draft_decision_fields(linked_records)
+    command = _format_decide_command(experiment.experiment_id, draft)
+    return "\n".join(
+        [
+            "Experiment Decision Draft",
+            "=========================",
+            "",
+            f"Experiment: {experiment.experiment_id}",
+            f"Title: {experiment.title}",
+            "",
+            "Draft",
+            f"  Suggested outcome: {draft['outcome']}",
+            f"  Rationale: {draft['rationale']}",
+            f"  Supporting run: {draft['supporting_run'] or '-'}",
+            f"  Contradicting run: {draft['contradicting_run'] or '-'}",
+            f"  Next action: {draft['next_action']}",
+            "",
+            "Review Notes",
+            "  This command does not write to the experiment registry.",
+            "  Read the evidence summary before copying the decision into the registry.",
+            "  Edit the rationale and next action if your judgment differs from the draft.",
+            "",
+            "Suggested Command",
+            command,
+        ]
+    )
+
+
+def _draft_decision_fields(records: list[dict]) -> dict[str, str | None]:
+    if not records:
+        return {
+            "outcome": "continue",
+            "rationale": "No linked index evidence exists yet.",
+            "supporting_run": None,
+            "contradicting_run": None,
+            "next_action": "Run a baseline and at least one validation check before deciding.",
+        }
+
+    best_excess = max(records, key=lambda record: _numeric(record.get("excess_total_return")))
+    weakest_excess = min(records, key=lambda record: _numeric(record.get("excess_total_return"), missing=float("inf")))
+    validation_records = [record for record in records if record.get("run_type") in VALIDATION_RUN_TYPES]
+    best_validation = (
+        max(validation_records, key=lambda record: _numeric(record.get("excess_total_return")))
+        if validation_records
+        else None
+    )
+    best_excess_value = _numeric(best_excess.get("excess_total_return"))
+    weakest_excess_value = _numeric(weakest_excess.get("excess_total_return"), missing=float("inf"))
+    best_validation_value = (
+        _numeric(best_validation.get("excess_total_return")) if best_validation is not None else None
+    )
+
+    if best_excess_value <= 0:
+        return {
+            "outcome": "reject",
+            "rationale": f"No linked run beat the benchmark on excess return; best excess was {_format_percent(best_excess_value)}.",
+            "supporting_run": _evidence_reference(best_excess),
+            "contradicting_run": _evidence_reference(weakest_excess),
+            "next_action": "Stop this branch or reformulate the hypothesis before running more sweeps.",
+        }
+
+    if best_validation is None:
+        return {
+            "outcome": "continue",
+            "rationale": "Best linked evidence is positive, but no train/test or walk-forward validation run is linked yet.",
+            "supporting_run": _evidence_reference(best_excess),
+            "contradicting_run": _evidence_reference(weakest_excess) if weakest_excess_value < 0 else None,
+            "next_action": "Run train/test or walk-forward validation before accepting or rejecting.",
+        }
+
+    if best_validation_value is not None and best_validation_value <= 0:
+        return {
+            "outcome": "reject",
+            "rationale": f"Validation evidence did not beat the benchmark; best validation excess was {_format_percent(best_validation_value)}.",
+            "supporting_run": _evidence_reference(best_excess),
+            "contradicting_run": _evidence_reference(best_validation),
+            "next_action": "Reject this parameter branch or return to the hypothesis with stricter constraints.",
+        }
+
+    if weakest_excess_value < 0:
+        return {
+            "outcome": "continue",
+            "rationale": "Validation evidence is positive, but linked evidence is mixed across runs.",
+            "supporting_run": _evidence_reference(best_validation),
+            "contradicting_run": _evidence_reference(weakest_excess),
+            "next_action": "Investigate why weaker runs failed before promoting the idea.",
+        }
+
+    return {
+        "outcome": "accept",
+        "rationale": "Linked evidence and validation evidence both show positive excess return.",
+        "supporting_run": _evidence_reference(best_validation),
+        "contradicting_run": None,
+        "next_action": "Promote this idea to stricter validation or paper-trading research.",
+    }
+
+
+def _format_decide_command(experiment_id: str, draft: dict[str, str | None]) -> str:
+    parts = [
+        "quant-lab decide-experiment",
+        f"  --experiment-id {experiment_id}",
+        f"  --outcome {draft['outcome']}",
+        f"  --rationale {_shell_quote(str(draft['rationale']))}",
+    ]
+    if draft["supporting_run"] is not None:
+        parts.append(f"  --supporting-run {_shell_quote(str(draft['supporting_run']))}")
+    if draft["contradicting_run"] is not None:
+        parts.append(f"  --contradicting-run {_shell_quote(str(draft['contradicting_run']))}")
+    parts.append(f"  --next-action {_shell_quote(str(draft['next_action']))}")
+    return " \\\n".join(parts)
 
 
 def _linked_index_records(experiment: ExperimentRecord, index_records: list[dict]) -> list[dict]:
@@ -183,6 +304,14 @@ def _format_recent_runs_table(records: list[dict]) -> str:
 def _run_label(record: dict) -> str:
     run_id = record.get("run_id") or "-"
     return f"{record.get('run_type', '-')}/{run_id}"
+
+
+def _evidence_reference(record: dict) -> str:
+    return str(record.get("metadata_path") or _run_label(record))
+
+
+def _shell_quote(value: str) -> str:
+    return '"' + value.replace('"', '\\"') + '"'
 
 
 def _numeric(value: object, *, missing: float = float("-inf")) -> float:

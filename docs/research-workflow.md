@@ -298,6 +298,18 @@ decision should explain both, not only the best run. Also check the run type
 breakdown so you can tell whether the support came from one broad sweep, a
 train/test validation, or repeated walk-forward tests.
 
+Draft a decision before writing one:
+
+```bash
+quant-lab draft-decision \
+  --experiment-id EXP-001 \
+  --index-path artifacts/research_index.jsonl
+```
+
+The draft is a conservative template. It does not write to the experiment
+registry. Treat it as a checklist, then edit the rationale and next action
+before running `decide-experiment`.
+
 ## 11. Write A Skeptic Pass
 
 For any promising result, answer:

@@ -382,6 +382,48 @@ class CliExperimentTests(unittest.TestCase):
             self.assertIn("fast_strategy", output)
             self.assertIn("Best excess return", output)
 
+    def test_draft_decision_prints_template_without_writing_registry(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            registry_path = temp_path / "experiments.jsonl"
+            index_path = temp_path / "research_index.jsonl"
+            _write_index_fixture(index_path)
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                    ]
+                )
+            before = registry_path.read_text(encoding="utf-8")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "draft-decision",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(registry_path.read_text(encoding="utf-8"), before)
+            self.assertIn("Experiment Decision Draft", output)
+            self.assertIn("Suggested outcome:", output)
+            self.assertIn("quant-lab decide-experiment", output)
+
 
 if __name__ == "__main__":
     unittest.main()

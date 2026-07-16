@@ -12,7 +12,7 @@ import pandas as pd
 from .costs import COST_PRESETS, CostAssumptions, resolve_cost_assumptions
 from .data_fetch import fetch_market_data, write_market_data_csv
 from .data_quality import build_data_quality_report
-from .experiment_summary import format_experiment_evidence_summary
+from .experiment_summary import format_experiment_decision_draft, format_experiment_evidence_summary
 from .research_index import format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
 from .research_registry import (
@@ -353,6 +353,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum recent linked runs to show. Defaults to 5.",
     )
     summarize_experiment_parser.set_defaults(func=summarize_experiment_command)
+
+    draft_decision_parser = subparsers.add_parser(
+        "draft-decision",
+        help="Draft a conservative experiment decision without writing to the registry.",
+    )
+    add_experiment_registry_argument(draft_decision_parser)
+    add_index_argument(draft_decision_parser)
+    draft_decision_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
+    draft_decision_parser.set_defaults(func=draft_decision_command)
 
     sweep_parser = subparsers.add_parser(
         "sweep",
@@ -746,6 +755,13 @@ def summarize_experiment_command(args: argparse.Namespace) -> int:
     )
     return 0
 
+
+def draft_decision_command(args: argparse.Namespace) -> int:
+    records = load_experiments(args.experiments_path)
+    experiment = find_experiment(records, args.experiment_id)
+    index_records = load_research_index(args.index_path)
+    print(format_experiment_decision_draft(experiment, index_records))
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:

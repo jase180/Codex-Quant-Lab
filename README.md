@@ -328,6 +328,19 @@ and shows recent linked runs. This is meant to help you decide whether an
 experiment should keep running, be rejected, or move to a stricter validation
 step.
 
+Draft a conservative decision without writing to the registry:
+
+```bash
+quant-lab draft-decision \
+  --experiment-id EXP-001 \
+  --index-path artifacts/research_index.jsonl
+```
+
+The draft prints a suggested `accept`, `reject`, or `continue` outcome, a short
+rationale, supporting and contradictory run references, a next action, and a
+ready-to-edit `decide-experiment` command. It is intentionally conservative and
+does not modify `artifacts/experiments.jsonl`.
+
 Attach an existing run metadata file to the experiment record:
 
 ```bash
