@@ -191,7 +191,7 @@ Acceptance criteria:
 
 ## Deliverable 5: Trustworthy Example Workflow
 
-Status: planned.
+Status: delivered.
 
 Goal: document one complete skeptical research loop.
 
@@ -207,9 +207,10 @@ The example should include:
 
 Acceptance criteria:
 
-- A learner can copy the command sequence using sample data.
-- The example explains why the conclusion is limited.
-- The example does not imply profitability or trading readiness.
+- A learner can copy the command sequence using sample data. Delivered in
+  [trustworthy-example-workflow.md](trustworthy-example-workflow.md).
+- The example explains why the conclusion is limited. Delivered.
+- The example does not imply profitability or trading readiness. Delivered.
 
 ## Suggested Build Order
 

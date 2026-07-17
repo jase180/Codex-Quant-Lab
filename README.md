@@ -125,6 +125,9 @@ The v1 schema supports:
 
 Schema details are in [docs/strategy-schema.md](docs/strategy-schema.md).
 
+For one copyable skeptical research loop, see
+[docs/trustworthy-example-workflow.md](docs/trustworthy-example-workflow.md).
+
 ## CLI Usage
 
 ### Create A Strategy From A Template

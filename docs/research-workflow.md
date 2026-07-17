@@ -5,6 +5,9 @@ This guide shows one complete local research loop in Codex-Quant-Lab.
 The goal is not to prove a trading edge. The goal is to create inspectable
 evidence, compare it with a benchmark, and decide the next experiment.
 
+For a copyable command sequence with the trust checks included, see
+[trustworthy-example-workflow.md](trustworthy-example-workflow.md).
+
 ## 1. Start From A Research Question
 
 Example:
