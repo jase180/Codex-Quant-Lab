@@ -102,7 +102,7 @@ Exit criteria:
 
 ## Milestone 5: Strategy Research Depth
 
-Status: in progress.
+Status: complete.
 
 Goal: make the lab better at forming, documenting, and comparing strategy ideas.
 
@@ -117,18 +117,37 @@ Delivered:
 - Sweep `research.md` top-runs and parameter-stability summaries.
 - Explicit walk-forward windows with `walk_forward_summary.csv`.
 - Rolling high/low indicators plus a breakout strategy example and template.
-
-Likely next work:
-
-- Decide whether Milestone 6 should start next or whether to add ATR and
-  volatility filters inside Milestone 5.
+- Local experiment records with linked run metadata.
+- Evidence summaries, conservative decision drafts, and structured experiment
+  decisions.
 
 Exit criteria:
 
 - The lab can create, document, and evaluate several common daily-system ideas
   without code changes.
 
-## Milestone 6: Portfolio And Multi-Asset Research
+## Milestone 6: Research Trustworthiness
+
+Status: planned.
+
+Goal: make research conclusions harder to fool yourself with.
+
+Detailed plan: [milestone-6-research-trustworthiness.md](milestone-6-research-trustworthiness.md)
+
+Likely work:
+
+- Dataset fingerprints in run metadata.
+- Stronger data provenance in fetch/cache outputs.
+- Data-quality severity levels and clearer trust warnings.
+- Reproducibility checks that compare a run against the current input file.
+- A small honest example workflow with artifacts and decisions.
+
+Exit criteria:
+
+- A user can tell whether a result used the intended data, whether that data
+  changed later, and whether the result is too weak to trust yet.
+
+## Milestone 7: Portfolio And Multi-Asset Research
 
 Status: later.
 
@@ -148,8 +167,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Decide the next milestone direction.
+Start Milestone 6 with dataset fingerprints.
 
-Reason: templates, notes, and sweep stability improve single-sample research.
-Walk-forward-lite adds repeated out-of-sample checks. The next gap is expanding
-either portfolio scope or more advanced single-symbol strategy primitives.
+Reason: the lab now records experiments and decisions well enough that the next
+major risk is trusting a conclusion whose input data silently changed or was
+never described clearly enough.
