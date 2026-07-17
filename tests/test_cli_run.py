@@ -93,6 +93,7 @@ class CliRunTests(unittest.TestCase):
             self.assertEqual(metadata["data"]["file_sha256"], hashlib.sha256(data_path.read_bytes()).hexdigest())
             self.assertEqual(metadata["data"]["file_size_bytes"], data_path.stat().st_size)
             self.assertTrue(metadata["data"]["modified_at_utc"].endswith("Z"))
+            self.assertEqual(metadata["data"]["quality_severity"], "warning")
             self.assertEqual(metadata["sizing"]["initial_cash"], 1000.0)
             self.assertEqual(metadata["costs"]["slippage_bps"], 0.0)
             self.assertIn("metrics", metadata["artifacts"])

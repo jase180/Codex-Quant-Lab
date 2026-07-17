@@ -12,6 +12,7 @@ OHLCV_COLUMNS = ("open", "high", "low", "close", "volume")
 PRICE_COLUMNS = ("open", "high", "low", "close")
 LARGE_GAP_THRESHOLD = 0.20
 CALENDAR_GAP_DAYS = 5
+SEVERITY_ORDER = {"none": 0, "info": 1, "warning": 2, "critical": 3}
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,8 @@ class DataQualityReport:
     large_gap_warnings: list[str] = field(default_factory=list)
     calendar_gap_warnings: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    findings: list[dict[str, str]] = field(default_factory=list)
+    worst_severity: str = "none"
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -53,7 +56,7 @@ def build_data_quality_report(data: pd.DataFrame) -> DataQualityReport:
 
     large_gap_warnings = _large_gap_warnings(data, date_series)
     calendar_gap_warnings = _calendar_gap_warnings(date_series)
-    warnings = _summary_warnings(
+    findings = _summary_findings(
         duplicate_dates=duplicate_dates,
         missing_ohlcv_values=missing_ohlcv_values,
         zero_volume_rows=zero_volume_rows,
@@ -61,6 +64,8 @@ def build_data_quality_report(data: pd.DataFrame) -> DataQualityReport:
         large_gap_warnings=large_gap_warnings,
         calendar_gap_warnings=calendar_gap_warnings,
     )
+    warnings = [finding["message"] for finding in findings if finding["severity"] in {"warning", "critical"}]
+    worst_severity = _worst_severity(findings)
 
     return DataQualityReport(
         row_count=row_count,
@@ -73,6 +78,8 @@ def build_data_quality_report(data: pd.DataFrame) -> DataQualityReport:
         large_gap_warnings=large_gap_warnings,
         calendar_gap_warnings=calendar_gap_warnings,
         warnings=warnings,
+        findings=findings,
+        worst_severity=worst_severity,
     )
 
 
@@ -88,11 +95,16 @@ def save_data_quality_report(report: DataQualityReport, output_dir: str | Path) 
 
 
 def data_quality_report_section(report: DataQualityReport) -> str:
-    warning_lines = "\n".join(f"- {warning}" for warning in report.warnings) if report.warnings else "- None"
+    finding_lines = (
+        "\n".join(f"- {finding['severity']}: {finding['message']}" for finding in report.findings)
+        if report.findings
+        else "- None"
+    )
     return f"""## Data Quality
 
 | Check | Value |
 | --- | ---: |
+| Worst Severity | {report.worst_severity} |
 | Rows | {report.row_count} |
 | Start | {report.start or "N/A"} |
 | End | {report.end or "N/A"} |
@@ -103,9 +115,9 @@ def data_quality_report_section(report: DataQualityReport) -> str:
 | Large Gap Warnings | {len(report.large_gap_warnings)} |
 | Calendar Gap Warnings | {len(report.calendar_gap_warnings)} |
 
-Warnings:
+Findings:
 
-{warning_lines}
+{finding_lines}
 """
 
 
@@ -159,7 +171,7 @@ def _calendar_gap_warnings(date_series: pd.Series) -> list[str]:
     return warnings
 
 
-def _summary_warnings(
+def _summary_findings(
     *,
     duplicate_dates: int,
     missing_ohlcv_values: int,
@@ -167,18 +179,28 @@ def _summary_warnings(
     non_positive_price_rows: int,
     large_gap_warnings: list[str],
     calendar_gap_warnings: list[str],
-) -> list[str]:
-    warnings: list[str] = []
+) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
     if duplicate_dates:
-        warnings.append(f"{duplicate_dates} duplicate date rows found.")
+        findings.append(_finding("warning", f"{duplicate_dates} duplicate date rows found."))
     if missing_ohlcv_values:
-        warnings.append(f"{missing_ohlcv_values} missing OHLCV values found.")
+        findings.append(_finding("warning", f"{missing_ohlcv_values} missing OHLCV values found."))
     if zero_volume_rows:
-        warnings.append(f"{zero_volume_rows} zero-volume rows found.")
+        findings.append(_finding("info", f"{zero_volume_rows} zero-volume rows found."))
     if non_positive_price_rows:
-        warnings.append(f"{non_positive_price_rows} rows contain non-positive prices.")
+        findings.append(_finding("critical", f"{non_positive_price_rows} rows contain non-positive prices."))
     if large_gap_warnings:
-        warnings.append(f"{len(large_gap_warnings)} large close-to-close gaps found.")
+        findings.append(_finding("warning", f"{len(large_gap_warnings)} large close-to-close gaps found."))
     if calendar_gap_warnings:
-        warnings.append(f"{len(calendar_gap_warnings)} large calendar gaps found.")
-    return warnings
+        findings.append(_finding("info", f"{len(calendar_gap_warnings)} large calendar gaps found."))
+    return findings
+
+
+def _finding(severity: str, message: str) -> dict[str, str]:
+    return {"severity": severity, "message": message}
+
+
+def _worst_severity(findings: list[dict[str, str]]) -> str:
+    if not findings:
+        return "none"
+    return max((finding["severity"] for finding in findings), key=lambda severity: SEVERITY_ORDER[severity])

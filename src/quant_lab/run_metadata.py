@@ -29,6 +29,7 @@ class DataMetadata:
     file_sha256: str | None = None
     file_size_bytes: int | None = None
     modified_at_utc: str | None = None
+    quality_severity: str | None = None
 
 
 @dataclass(frozen=True)

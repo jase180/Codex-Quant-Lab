@@ -115,6 +115,7 @@ class CliSweepWorkflowTests(unittest.TestCase):
             self.assertEqual(metadata["data"]["file_sha256"], hashlib.sha256(data_path.read_bytes()).hexdigest())
             self.assertEqual(metadata["data"]["file_size_bytes"], data_path.stat().st_size)
             self.assertTrue(metadata["data"]["modified_at_utc"].endswith("Z"))
+            self.assertEqual(metadata["data"]["quality_severity"], "warning")
             self.assertIn("strategy", metadata["artifacts"])
             self.assertEqual(metadata["artifacts"]["research_note"], str(output_dir / "research_note.md"))
             research = (output_dir / "research.md").read_text(encoding="utf-8")

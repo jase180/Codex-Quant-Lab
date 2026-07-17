@@ -234,7 +234,10 @@ changed. Treat it as the source of truth for how a run folder was produced.
 
 `data_quality.json` summarizes suspicious input-data conditions such as missing
 OHLCV values, duplicate dates, zero volume, non-positive prices, and large gaps.
-These warnings are prompts for review, not automatic proof that the data is bad.
+It includes structured findings with `info`, `warning`, or `critical` severity
+plus a top-level `worst_severity`. The same worst severity is copied into
+`run_metadata.json` under `data.quality_severity`. These warnings are prompts
+for review, not automatic proof that the data is bad.
 
 `research_warnings.json` flags weak evidence such as short samples, tiny trade
 counts, no trades, no completed exits, and drawdown that is large relative to

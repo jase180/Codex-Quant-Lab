@@ -139,23 +139,23 @@ Acceptance criteria:
 
 ## Deliverable 3: Data-Quality Severity Levels
 
-Status: planned.
+Status: delivered.
 
 Goal: make data-quality output easier to act on.
 
 First version:
 
-- classify findings as `info`, `warning`, or `critical`,
-- include a top-level worst severity,
-- show worst severity in reports and run metadata,
-- keep raw finding details for auditability.
+- classify findings as `info`, `warning`, or `critical`. Delivered.
+- include a top-level worst severity. Delivered.
+- show worst severity in reports and run metadata. Delivered.
+- keep raw finding details for auditability. Delivered.
 
 Acceptance criteria:
 
-- Missing required OHLCV values are at least `warning`.
-- Non-positive prices are `critical`.
-- Duplicate dates are at least `warning`.
-- Reports include a concise severity line.
+- Missing required OHLCV values are at least `warning`. Delivered.
+- Non-positive prices are `critical`. Delivered.
+- Duplicate dates are at least `warning`. Delivered.
+- Reports include a concise severity line. Delivered.
 
 ## Deliverable 4: Reproducibility Check Command
 
