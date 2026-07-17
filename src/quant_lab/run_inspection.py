@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd
+
 from .research_index import load_research_index
+from .run_metadata import fingerprint_file
 
 
 def load_run_summary(metadata_path: str | Path) -> dict:
@@ -105,6 +108,75 @@ def load_run_summaries(metadata_paths: list[str | Path]) -> list[dict]:
     return [load_run_summary(path) for path in metadata_paths]
 
 
+def verify_run_input_file(metadata_path: str | Path) -> dict:
+    metadata_file = Path(metadata_path)
+    if not metadata_file.exists():
+        raise FileNotFoundError(f"metadata file not found: {metadata_file}")
+
+    metadata = _read_json(metadata_file)
+    expected_data = metadata.get("data", {})
+    data_path = Path(str(expected_data.get("path") or ""))
+    verification = {
+        "metadata_path": str(metadata_file),
+        "data_path": str(data_path) if expected_data.get("path") else None,
+        "checks": {},
+        "result": "reproducible input file",
+    }
+
+    if not expected_data.get("path"):
+        verification["result"] = "metadata missing data path"
+        return verification
+    if not data_path.exists():
+        verification["checks"]["file_exists"] = {"status": "missing"}
+        verification["result"] = "data file missing"
+        return verification
+
+    actual_fingerprint = fingerprint_file(data_path)
+    actual_data = pd.read_csv(data_path)
+    actual_dates = pd.to_datetime(actual_data["date"]) if "date" in actual_data.columns and not actual_data.empty else None
+    actual_start = _metadata_date(actual_dates.min()) if actual_dates is not None else None
+    actual_end = _metadata_date(actual_dates.max()) if actual_dates is not None else None
+
+    checks = {
+        "file_sha256": _verification_check(expected_data.get("file_sha256"), actual_fingerprint["file_sha256"]),
+        "file_size_bytes": _verification_check(expected_data.get("file_size_bytes"), actual_fingerprint["file_size_bytes"]),
+        "row_count": _verification_check(expected_data.get("row_count"), int(len(actual_data))),
+        "date_range": _verification_check(
+            _range_value(expected_data.get("start"), expected_data.get("end")),
+            _range_value(actual_start, actual_end),
+        ),
+    }
+    verification["checks"] = checks
+    if any(check["status"] != "match" for check in checks.values()):
+        verification["result"] = "input file differs from metadata"
+    return verification
+
+
+def format_run_verification(verification: dict) -> str:
+    checks = verification.get("checks", {})
+    lines = [
+        "Run Verification",
+        "================",
+        "",
+        f"metadata: {_format_plain(verification.get('metadata_path'))}",
+        f"data_path: {_format_plain(verification.get('data_path'))}",
+    ]
+    if not checks:
+        lines.append(f"result: {_format_plain(verification.get('result'))}")
+        return "\n".join(lines)
+
+    for check_name in ["file_sha256", "file_size_bytes", "row_count", "date_range", "file_exists"]:
+        if check_name not in checks:
+            continue
+        check = checks[check_name]
+        lines.append(
+            f"{check_name}: {check['status']} "
+            f"(metadata={_format_plain(check.get('expected'))}, current={_format_plain(check.get('actual'))})"
+        )
+    lines.append(f"result: {_format_plain(verification.get('result'))}")
+    return "\n".join(lines)
+
+
 def format_run_comparison(summaries: list[dict]) -> str:
     rows = [_comparison_row(summary) for summary in summaries]
     columns = [
@@ -181,6 +253,22 @@ def _benchmark_name(metadata: dict, index_record: dict) -> str | None:
 
 def _read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _metadata_date(value: pd.Timestamp) -> str:
+    return value.date().isoformat()
+
+
+def _range_value(start: object, end: object) -> str:
+    return f"{start} to {end}"
+
+
+def _verification_check(expected: object, actual: object) -> dict:
+    return {
+        "expected": expected,
+        "actual": actual,
+        "status": "match" if expected == actual else "mismatch",
+    }
 
 
 def _warning_lines(research_warnings: dict) -> list[str]:

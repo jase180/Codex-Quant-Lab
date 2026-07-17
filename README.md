@@ -273,6 +273,16 @@ quant-lab show-run --metadata artifacts/qqq_sma_crossover/run_metadata.json
 This prints the run identity, data range, metrics, benchmark comparison when
 available, cost assumptions, artifact paths, and original command.
 
+Verify that a saved run still matches its local input CSV:
+
+```bash
+quant-lab verify-run --metadata artifacts/qqq_sma_crossover/run_metadata.json
+```
+
+This recomputes the current CSV fingerprint and compares it with the hash, file
+size, row count, and date range stored in `run_metadata.json`. A mismatch means
+the run's original input data no longer matches the local file.
+
 Compare saved runs:
 
 ```bash

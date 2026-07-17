@@ -158,7 +158,7 @@ Acceptance criteria:
 
 ## Deliverable 4: Reproducibility Check Command
 
-Status: planned.
+Status: delivered.
 
 Goal: verify whether a saved run still matches the current local input data.
 
@@ -184,8 +184,9 @@ result: reproducible input file
 Acceptance criteria:
 
 - The command reports match/mismatch for file hash, row count, and date range.
-- Missing data files produce a clear failure message.
-- Tests cover matching, changed, and missing data file cases.
+  Delivered.
+- Missing data files produce a clear failure message. Delivered.
+- Tests cover matching, changed, and missing data file cases. Delivered.
 
 ## Deliverable 5: Trustworthy Example Workflow
 

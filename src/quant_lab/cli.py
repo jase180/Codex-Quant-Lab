@@ -35,7 +35,14 @@ from .research_registry import (
     require_experiment,
     update_experiment_record,
 )
-from .run_inspection import format_run_comparison, format_run_summary, load_run_summaries, load_run_summary
+from .run_inspection import (
+    format_run_comparison,
+    format_run_summary,
+    format_run_verification,
+    load_run_summaries,
+    load_run_summary,
+    verify_run_input_file,
+)
 from .run_artifacts import run_single_backtest
 from .run_config import RunExecutionConfig
 from .run_notes import load_research_note, save_research_note
@@ -200,6 +207,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     show_parser.add_argument("--metadata", required=True, help="Path to a run_metadata.json file.")
     show_parser.set_defaults(func=show_run_command)
+
+    verify_parser = subparsers.add_parser(
+        "verify-run",
+        help="Check whether a saved run still matches its local input data file.",
+    )
+    verify_parser.add_argument("--metadata", required=True, help="Path to a run_metadata.json file.")
+    verify_parser.set_defaults(func=verify_run_command)
 
     compare_parser = subparsers.add_parser(
         "compare-runs",
@@ -619,6 +633,12 @@ def list_runs_command(args: argparse.Namespace) -> int:
 def show_run_command(args: argparse.Namespace) -> int:
     summary = load_run_summary(args.metadata)
     print(format_run_summary(summary))
+    return 0
+
+
+def verify_run_command(args: argparse.Namespace) -> int:
+    verification = verify_run_input_file(args.metadata)
+    print(format_run_verification(verification))
     return 0
 
 
