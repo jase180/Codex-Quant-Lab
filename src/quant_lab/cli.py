@@ -10,7 +10,7 @@ from typing import Sequence
 import pandas as pd
 
 from .costs import COST_PRESETS, CostAssumptions, resolve_cost_assumptions
-from .data_fetch import fetch_market_data, write_market_data_csv
+from .data_fetch import fetch_market_data, write_market_data_csv, write_market_data_provenance
 from .data_quality import build_data_quality_report
 from .experiment_summary import format_experiment_decision_draft, format_experiment_evidence_summary
 from .research_index import format_index_csv
@@ -578,8 +578,17 @@ def fetch_command(args: argparse.Namespace) -> int:
         end=args.end,
         output_dir=args.out,
     )
+    provenance_path = write_market_data_provenance(
+        csv_path=csv_path,
+        data=data,
+        symbol=args.symbol,
+        requested_start=args.start,
+        requested_end=args.end,
+        interval=args.interval,
+    )
     print(f"Fetched {len(data)} rows for {args.symbol.upper()}")
     print(f"data: {csv_path}")
+    print(f"provenance: {provenance_path}")
     return 0
 
 

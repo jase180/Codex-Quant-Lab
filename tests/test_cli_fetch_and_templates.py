@@ -35,7 +35,7 @@ class CliFetchAndTemplateTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch("quant_lab.cli.fetch_market_data", return_value=fetched_data):
-                with contextlib.redirect_stdout(io.StringIO()):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
                     exit_code = main(
                         [
                             "fetch",
@@ -51,9 +51,16 @@ class CliFetchAndTemplateTests(unittest.TestCase):
                     )
 
             csv_path = Path(temp_dir) / "SPY_2026-01-01_2026-01-31.csv"
+            provenance_path = Path(temp_dir) / "SPY_2026-01-01_2026-01-31.provenance.json"
             self.assertEqual(exit_code, 0)
             self.assertTrue(csv_path.exists())
+            self.assertTrue(provenance_path.exists())
             self.assertIn("2026-01-02,100,102,99,101,1000", csv_path.read_text(encoding="utf-8"))
+            self.assertIn(f"provenance: {provenance_path}", stdout.getvalue())
+            provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+            self.assertEqual(provenance["provider"], "yfinance")
+            self.assertEqual(provenance["symbol"], "SPY")
+            self.assertEqual(provenance["row_count"], 1)
 
     def test_list_strategy_templates_command_prints_templates(self) -> None:
         with contextlib.redirect_stdout(io.StringIO()) as stdout:

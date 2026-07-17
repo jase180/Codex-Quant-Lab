@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
+
+from .run_metadata import fingerprint_file
 
 
 OHLCV_COLUMNS = ["date", "open", "high", "low", "close", "volume"]
@@ -99,6 +103,62 @@ def write_market_data_csv(
     return str(csv_path)
 
 
+def write_market_data_provenance(
+    *,
+    csv_path: str | Path,
+    data: pd.DataFrame,
+    symbol: str,
+    requested_start: str,
+    requested_end: str,
+    interval: str,
+    provider: str = "yfinance",
+    fetched_at_utc: str | None = None,
+) -> str:
+    csv_file = Path(csv_path)
+    provenance_path = csv_file.with_suffix(".provenance.json")
+    payload = build_market_data_provenance(
+        csv_path=csv_file,
+        data=data,
+        symbol=symbol,
+        requested_start=requested_start,
+        requested_end=requested_end,
+        interval=interval,
+        provider=provider,
+        fetched_at_utc=fetched_at_utc,
+    )
+    provenance_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return str(provenance_path)
+
+
+def build_market_data_provenance(
+    *,
+    csv_path: str | Path,
+    data: pd.DataFrame,
+    symbol: str,
+    requested_start: str,
+    requested_end: str,
+    interval: str,
+    provider: str = "yfinance",
+    fetched_at_utc: str | None = None,
+) -> dict:
+    data_dates = pd.to_datetime(data["date"]) if "date" in data.columns and not data.empty else None
+    fingerprint = fingerprint_file(csv_path)
+    return {
+        "provenance_schema_version": "market_data_provenance.v1",
+        "provider": provider,
+        "symbol": symbol.strip().upper(),
+        "requested_start": requested_start,
+        "requested_end": requested_end,
+        "interval": interval,
+        "fetched_at_utc": fetched_at_utc or datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "csv_path": str(csv_path),
+        "row_count": int(len(data)),
+        "data_start": _metadata_date(data_dates.min()) if data_dates is not None else None,
+        "data_end": _metadata_date(data_dates.max()) if data_dates is not None else None,
+        **fingerprint,
+    }
+
+
 def market_data_filename(symbol: str, start: str, end: str) -> str:
     safe_symbol = re.sub(r"[^A-Za-z0-9._-]+", "_", symbol.strip().upper())
     return f"{safe_symbol}_{start}_{end}.csv"
@@ -109,3 +169,7 @@ def _first_non_empty_string(values: tuple[object, ...]) -> str:
         if isinstance(value, str) and value:
             return value
     return str(values[0])
+
+
+def _metadata_date(value: pd.Timestamp) -> str:
+    return value.date().isoformat()

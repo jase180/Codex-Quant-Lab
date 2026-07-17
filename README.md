@@ -172,11 +172,14 @@ Output:
 
 ```text
 data/cache/QQQ_2015-01-01_2025-12-31.csv
+data/cache/QQQ_2015-01-01_2025-12-31.provenance.json
 ```
 
 The fetch command currently uses adjusted daily prices from `yfinance`. Provider
 data can have outages, missing sessions, and corporate-action assumptions, so
-treat cached data as research input that may need verification.
+treat cached data as research input that may need verification. The provenance
+JSON records the provider, requested range, fetched timestamp, row count, actual
+data range, and CSV fingerprint.
 
 ### Run One Backtest
 

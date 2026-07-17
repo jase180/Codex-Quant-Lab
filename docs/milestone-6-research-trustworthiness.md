@@ -107,7 +107,7 @@ Acceptance criteria:
 
 ## Deliverable 2: Dataset Provenance For Fetches
 
-Status: planned.
+Status: delivered.
 
 Goal: make cached market data explain where it came from.
 
@@ -132,9 +132,10 @@ Suggested provenance fields:
 
 Acceptance criteria:
 
-- `quant-lab fetch` writes provenance JSON beside the CSV.
-- Provenance JSON includes provider and timestamp.
+- `quant-lab fetch` writes provenance JSON beside the CSV. Delivered.
+- Provenance JSON includes provider and timestamp. Delivered.
 - Tests cover provenance serialization without requiring network access.
+  Delivered.
 
 ## Deliverable 3: Data-Quality Severity Levels
 
