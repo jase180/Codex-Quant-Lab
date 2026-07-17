@@ -225,8 +225,9 @@ values.
 
 `run_metadata.json` records the command, strategy identity, data range, sizing,
 cost assumptions, benchmark choice, optional experiment id, Git commit, and
-artifact paths. Treat it as the source of truth for how a run folder was
-produced.
+artifact paths. It also records a SHA-256 fingerprint, file size, and modified
+timestamp for the input CSV so you can tell later whether the local data file
+changed. Treat it as the source of truth for how a run folder was produced.
 
 `data_quality.json` summarizes suspicious input-data conditions such as missing
 OHLCV values, duplicate dates, zero volume, non-positive prices, and large gaps.

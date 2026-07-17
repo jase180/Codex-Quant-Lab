@@ -36,6 +36,7 @@ from .run_metadata import (
     RunMetadata,
     SizingMetadata,
     StrategyMetadata,
+    fingerprint_file,
     save_run_metadata,
 )
 from .run_config import RunExecutionConfig
@@ -330,6 +331,7 @@ def build_run_metadata(
         data_dates = pd.to_datetime(data["date"])
     else:
         data_dates = pd.Series(dtype="datetime64[ns]")
+    data_fingerprint = fingerprint_file(config.data_path)
     metadata = RunMetadata(
         metadata_schema_version="run_metadata.v1",
         run_type=run_type,
@@ -349,6 +351,9 @@ def build_run_metadata(
             end=_metadata_date(data_dates.max()) if not data_dates.empty else None,
             symbol=strategy_spec.market.symbol,
             timeframe=strategy_spec.market.timeframe,
+            file_sha256=str(data_fingerprint["file_sha256"]),
+            file_size_bytes=int(data_fingerprint["file_size_bytes"]),
+            modified_at_utc=str(data_fingerprint["modified_at_utc"]),
         ),
         sizing=SizingMetadata(
             mode=config.sizing,

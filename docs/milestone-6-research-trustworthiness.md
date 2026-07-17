@@ -68,7 +68,7 @@ single-symbol daily workflow is trustworthy enough.
 
 ## Deliverable 1: Dataset Fingerprints
 
-Status: planned.
+Status: delivered.
 
 Goal: make every run metadata file identify the exact input CSV content.
 
@@ -90,20 +90,20 @@ Proposed metadata fields:
 
 Implementation notes:
 
-- Hash the raw CSV file bytes, not the loaded pandas frame.
+- Hash the raw CSV file bytes, not the loaded pandas frame. Delivered.
 - Keep the existing metadata schema version unless the change remains backward
-  compatible for readers.
+  compatible for readers. Delivered.
 - Store file size and modified time as helpful context, but treat SHA-256 as
-  the reliable identity.
-- Add tests around deterministic hashing and missing-file behavior.
+  the reliable identity. Delivered.
+- Add tests around deterministic hashing and changed-file behavior. Delivered.
 
 Acceptance criteria:
 
 - `run_metadata.json` includes the source file hash for `run`, `sweep`,
-  train/test, and walk-forward runs.
+  train/test, and walk-forward runs. Delivered through shared metadata writing.
 - Tests prove the same file produces the same fingerprint and changed content
-  changes the fingerprint.
-- README documents why the fingerprint exists.
+  changes the fingerprint. Delivered.
+- README documents why the fingerprint exists. Delivered.
 
 ## Deliverable 2: Dataset Provenance For Fetches
 

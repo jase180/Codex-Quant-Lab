@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import asdict, dataclass, field, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Mapping, Sequence
 
@@ -24,6 +26,9 @@ class DataMetadata:
     end: str | None
     symbol: str | None = None
     timeframe: str | None = None
+    file_sha256: str | None = None
+    file_size_bytes: int | None = None
+    modified_at_utc: str | None = None
 
 
 @dataclass(frozen=True)
@@ -95,6 +100,28 @@ def save_run_metadata(metadata: RunMetadata, output_dir: str | Path) -> str:
         encoding="utf-8",
     )
     return str(metadata_path)
+
+
+def fingerprint_file(path: str | Path) -> dict[str, str | int]:
+    """Return stable identity fields for an input data file.
+
+    The hash is computed from raw file bytes instead of a parsed dataframe so it
+    catches any change to the actual research input, including formatting
+    changes that pandas might otherwise hide.
+    """
+
+    source_path = Path(path)
+    stat = source_path.stat()
+    digest = hashlib.sha256()
+    with source_path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+
+    return {
+        "file_sha256": digest.hexdigest(),
+        "file_size_bytes": stat.st_size,
+        "modified_at_utc": datetime.fromtimestamp(stat.st_mtime, UTC).isoformat().replace("+00:00", "Z"),
+    }
 
 
 def command_tokens(program_name: str, argv: Sequence[str]) -> list[str]:
