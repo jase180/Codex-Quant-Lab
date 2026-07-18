@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from .portfolio_research_plan import (
     create_portfolio_research_plan,
@@ -72,6 +73,8 @@ def portfolio_plan_next_command(args: argparse.Namespace) -> int:
         plan,
         records,
         experiment_has_decision=experiment is not None and experiment.decision_record is not None,
+        variants_exist=_portfolio_variants_exist(plan.output_dir),
+        summary_exists=_portfolio_summary_exists(plan.output_dir),
     )
 
     print(f"Portfolio research plan: {args.plan}")
@@ -82,3 +85,12 @@ def portfolio_plan_next_command(args: argparse.Namespace) -> int:
         print("next_command:")
         print(recommendation.command)
     return 0
+
+
+def _portfolio_variants_exist(output_dir: str) -> bool:
+    variants_dir = Path(output_dir) / "portfolio_variants"
+    return variants_dir.exists() and any(variants_dir.glob("*.json"))
+
+
+def _portfolio_summary_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "portfolio_summary.md").exists()

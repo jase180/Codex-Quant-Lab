@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Iterable
 
+from .portfolio_spec import load_portfolio_spec
 from .research_plan import normalize_plan_tags
 from .research_plan_common import (
     add_optional_cost_overrides,
@@ -210,6 +211,8 @@ def recommend_portfolio_next_step(
     index_records: list[dict],
     *,
     experiment_has_decision: bool = False,
+    variants_exist: bool = False,
+    summary_exists: bool = False,
 ) -> PortfolioPlanRecommendation:
     if experiment_has_decision:
         return PortfolioPlanRecommendation(
@@ -237,9 +240,21 @@ def recommend_portfolio_next_step(
             reason="One portfolio run exists; inspect it before making comparisons.",
             command=build_show_portfolio_run_command(metadata_paths[0]),
         )
+    if not summary_exists:
+        return PortfolioPlanRecommendation(
+            step="summarize",
+            reason="Multiple portfolio runs exist; write a portfolio-specific evidence summary.",
+            command=build_portfolio_summarize_command_from_plan(plan),
+        )
+    if not variants_exist:
+        return PortfolioPlanRecommendation(
+            step="variants",
+            reason="Portfolio evidence exists; generate auditable variants before widening the research branch.",
+            command=build_portfolio_variants_command_from_plan(plan),
+        )
     return PortfolioPlanRecommendation(
         step="compare",
-        reason="Multiple portfolio runs exist; compare them before summarizing evidence.",
+        reason="Portfolio variants and a summary exist; compare source runs when you need a terminal table.",
         command=build_compare_portfolio_runs_command(metadata_paths),
     )
 
@@ -282,12 +297,38 @@ def build_portfolio_summarize_command_from_plan(plan: PortfolioResearchPlan) -> 
     return shlex.join(
         [
             "quant-lab",
-            "summarize-experiment",
+            "summarize-portfolio-experiment",
             "--experiment-id",
             plan.experiment_id,
             "--experiments-path",
             plan.experiments_path,
             "--index-path",
             plan.index_path,
+            "--out",
+            str(Path(plan.output_dir) / "portfolio_summary.md"),
         ]
     )
+
+
+def build_portfolio_variants_command_from_plan(plan: PortfolioResearchPlan) -> str:
+    portfolio = load_portfolio_spec(plan.portfolio_path)
+    weights = ",".join(
+        f"{symbol.symbol}={symbol.target_weight:.4g}" for symbol in portfolio.symbols
+    )
+    command = [
+        "quant-lab",
+        "portfolio-variants",
+        "--portfolio",
+        plan.portfolio_path,
+        "--weights",
+        weights,
+        "--rebalance",
+        "none",
+        "--rebalance",
+        "monthly",
+        "--rebalance",
+        "quarterly",
+        "--out",
+        str(Path(plan.output_dir) / "portfolio_variants"),
+    ]
+    return shlex.join(command)

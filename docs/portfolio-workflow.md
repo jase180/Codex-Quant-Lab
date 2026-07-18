@@ -211,7 +211,11 @@ The first version recommends:
 
 - `portfolio-run` when no linked portfolio run exists.
 - `show-portfolio-run` when one linked portfolio run exists.
-- `compare-portfolio-runs` when multiple linked portfolio runs exist.
+- `summarize-portfolio-experiment` when multiple linked portfolio runs exist
+  and `portfolio_summary.md` is not present.
+- `portfolio-variants` when a summary exists but no generated variants are known
+  under `portfolio_variants/*.json`.
+- `compare-portfolio-runs` when variants and a summary are both known.
 - `done` after the experiment has a recorded decision.
 
 ## Assumptions To Remember

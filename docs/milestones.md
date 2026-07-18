@@ -279,10 +279,10 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 10 deliverable 4: guided portfolio plan integration.
+Build Milestone 10 deliverable 5: small static-weight candidate generation.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
 static-weight portfolio ideas, and it can now generate allocation plus rebalance
-variants and summarize linked portfolio runs. The next useful gap is making
-`portfolio-plan next` recommend variant generation and portfolio summaries at
-the right time.
+variants, summarize linked portfolio runs, and guide those steps. The remaining
+Milestone 10 gap is generating a capped grid of candidate portfolio specs from
+explicit symbols.

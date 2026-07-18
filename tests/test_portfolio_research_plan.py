@@ -13,6 +13,8 @@ from quant_lab.portfolio_research_plan import (  # noqa: E402
     PORTFOLIO_RESEARCH_PLAN_SCHEMA_VERSION,
     build_compare_portfolio_runs_command,
     build_portfolio_baseline_command_from_plan,
+    build_portfolio_summarize_command_from_plan,
+    build_portfolio_variants_command_from_plan,
     create_portfolio_research_plan,
     load_portfolio_research_plan,
     recommend_portfolio_next_step,
@@ -97,12 +99,29 @@ class PortfolioResearchPlanTests(unittest.TestCase):
             plan,
             [{"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"}],
         )
+        summarize = recommend_portfolio_next_step(
+            plan,
+            [
+                {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
+                {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
+            ],
+        )
+        variants = recommend_portfolio_next_step(
+            plan,
+            [
+                {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
+                {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
+            ],
+            summary_exists=True,
+        )
         compare = recommend_portfolio_next_step(
             plan,
             [
                 {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
                 {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
             ],
+            summary_exists=True,
+            variants_exist=True,
         )
         done = recommend_portfolio_next_step(plan, [], experiment_has_decision=True)
 
@@ -110,6 +129,10 @@ class PortfolioResearchPlanTests(unittest.TestCase):
         self.assertIn("quant-lab portfolio-run", baseline.command or "")
         self.assertEqual(inspect.step, "inspect")
         self.assertIn("show-portfolio-run", inspect.command or "")
+        self.assertEqual(summarize.step, "summarize")
+        self.assertIn("summarize-portfolio-experiment", summarize.command or "")
+        self.assertEqual(variants.step, "variants")
+        self.assertIn("portfolio-variants", variants.command or "")
         self.assertEqual(compare.step, "compare")
         self.assertIn("compare-portfolio-runs", compare.command or "")
         self.assertEqual(done.step, "done")
@@ -127,9 +150,13 @@ class PortfolioResearchPlanTests(unittest.TestCase):
 
         baseline_command = build_portfolio_baseline_command_from_plan(plan)
         compare_command = build_compare_portfolio_runs_command(["first path/metadata.json", "second/metadata.json"])
+        summarize_command = build_portfolio_summarize_command_from_plan(plan)
+        variants_command = build_portfolio_variants_command_from_plan(plan)
 
         self.assertIn("'artifacts/research/qqq spy/baseline'", baseline_command)
         self.assertIn("'first path/metadata.json'", compare_command)
+        self.assertIn("'artifacts/research/qqq spy/portfolio_summary.md'", summarize_command)
+        self.assertIn("portfolio-variants", variants_command)
 
     def test_render_portfolio_research_plan_markdown_handles_empty_tags(self) -> None:
         plan = create_portfolio_research_plan(

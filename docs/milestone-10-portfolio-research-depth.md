@@ -155,7 +155,7 @@ Delivered implementation:
 
 ### 4. Guided Plan Integration
 
-Status: not started.
+Status: delivered.
 
 Teach `portfolio-plan next` to recommend variant generation and portfolio
 summaries when useful.
@@ -169,6 +169,17 @@ Acceptance criteria:
   `portfolio-variants`.
 - Keep recommendations conservative and copyable.
 - Tests cover the new next-step branches.
+
+Delivered implementation:
+
+- `portfolio-plan next` now checks for the conventional summary artifact at
+  `portfolio_summary.md`.
+- It checks for generated variant specs under `portfolio_variants/*.json`.
+- It recommends inspect after one portfolio run, portfolio summary after
+  multiple runs without a known summary, variant generation after summary
+  exists but no generated variants are known, and comparison after both summary
+  and variants exist.
+- Tests cover direct recommendation branches and CLI output.
 
 ### 5. Small Candidate Generator
 

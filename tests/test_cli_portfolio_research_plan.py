@@ -110,7 +110,7 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
             self.assertIn("quant-lab show-portfolio-run", output)
             self.assertIn("--metadata baseline/portfolio_metadata.json", output)
 
-    def test_portfolio_plan_next_recommends_compare_after_two_runs(self) -> None:
+    def test_portfolio_plan_next_recommends_summary_after_two_runs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
             self._write_index_records(
@@ -136,10 +136,42 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
 
             output = stdout.getvalue()
             self.assertEqual(exit_code, 0)
-            self.assertIn("recommended_step: compare", output)
-            self.assertIn("quant-lab compare-portfolio-runs", output)
-            self.assertIn("--metadata baseline/portfolio_metadata.json", output)
-            self.assertIn("--metadata variant/portfolio_metadata.json", output)
+            self.assertIn("recommended_step: summarize", output)
+            self.assertIn("quant-lab summarize-portfolio-experiment", output)
+            self.assertIn("--out", output)
+            self.assertIn(str(output_dir / "portfolio_summary.md"), output)
+
+    def test_portfolio_plan_next_recommends_variants_after_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "portfolio_summary.md").write_text("# Summary\n", encoding="utf-8")
+            self._write_index_records(
+                index_path,
+                [
+                    {
+                        "run_type": "portfolio_run",
+                        "experiment_id": "EXP-001",
+                        "metadata_path": "baseline/portfolio_metadata.json",
+                    },
+                    {
+                        "run_type": "portfolio_run",
+                        "experiment_id": "EXP-001",
+                        "metadata_path": "variant/portfolio_metadata.json",
+                    },
+                ],
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    ["portfolio-plan", "next", "--plan", str(output_dir / "portfolio_research_plan.json")]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: variants", output)
+            self.assertIn("quant-lab portfolio-variants", output)
+            self.assertIn("--weights QQQ=0.6,SPY=0.4", output)
+            self.assertIn(str(output_dir / "portfolio_variants"), output)
 
     def _create_plan_fixture(self, temp_path: Path) -> tuple[Path, Path, Path]:
         output_dir = temp_path / "research" / "qqq_spy"
