@@ -84,7 +84,14 @@ artifacts/research_index.jsonl
 
 ## 4. Read The Result
 
-Start with `portfolio_report.md`.
+Start with the CLI summary:
+
+```bash
+quant-lab show-portfolio-run \
+  --metadata artifacts/research/qqq_spy_static_60_40/baseline/portfolio_metadata.json
+```
+
+Then read `portfolio_report.md`.
 
 Then inspect:
 

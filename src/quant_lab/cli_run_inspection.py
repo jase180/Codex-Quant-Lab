@@ -12,11 +12,21 @@ from .run_inspection import (
     load_run_summary,
     verify_run_input_file,
 )
+from .portfolio_inspection import (
+    format_portfolio_run_summary,
+    load_portfolio_run_summary,
+)
 
 
 def show_run_command(args: argparse.Namespace) -> int:
     summary = load_run_summary(args.metadata)
     print(format_run_summary(summary))
+    return 0
+
+
+def show_portfolio_run_command(args: argparse.Namespace) -> int:
+    summary = load_portfolio_run_summary(args.metadata)
+    print(format_portfolio_run_summary(summary))
     return 0
 
 

@@ -19,7 +19,12 @@ from .cli_experiments import (
     summarize_experiment_command,
     update_experiment_command,
 )
-from .cli_run_inspection import compare_runs_command, show_run_command, verify_run_command
+from .cli_run_inspection import (
+    compare_runs_command,
+    show_portfolio_run_command,
+    show_run_command,
+    verify_run_command,
+)
 from .cli_portfolio import portfolio_run_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
@@ -226,6 +231,17 @@ def register_run_inspection_commands(subparsers) -> None:
     )
     show_parser.add_argument("--metadata", required=True, help="Path to a run_metadata.json file.")
     show_parser.set_defaults(func=show_run_command)
+
+    show_portfolio_parser = subparsers.add_parser(
+        "show-portfolio-run",
+        help="Inspect one saved portfolio run from portfolio_metadata.json.",
+    )
+    show_portfolio_parser.add_argument(
+        "--metadata",
+        required=True,
+        help="Path to a portfolio_metadata.json file.",
+    )
+    show_portfolio_parser.set_defaults(func=show_portfolio_run_command)
 
     verify_parser = subparsers.add_parser(
         "verify-run",

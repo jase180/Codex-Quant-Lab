@@ -253,8 +253,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 9 deliverable 1: `quant-lab show-portfolio-run`.
+Build Milestone 9 deliverable 2: `quant-lab compare-portfolio-runs`.
 
-Reason: portfolio runs now save rich metadata, but the user still has to open
-several files to understand one saved result. A focused inspection command is
-the fastest way to make portfolio research feel usable.
+Reason: portfolio runs can now be inspected from the CLI. The next usability
+gap is comparing two saved portfolio ideas without opening multiple metadata
+and metrics files manually.

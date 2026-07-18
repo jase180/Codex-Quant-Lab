@@ -323,6 +323,13 @@ configured buy-and-hold benchmark, writes portfolio artifacts, and appends a
 `portfolio_run` row to the research index. See
 [docs/portfolio-workflow.md](docs/portfolio-workflow.md).
 
+Inspect a saved portfolio run:
+
+```bash
+quant-lab show-portfolio-run \
+  --metadata artifacts/research/qqq_spy_static_60_40/baseline/portfolio_metadata.json
+```
+
 ### List Previous Runs
 
 ```bash

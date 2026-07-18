@@ -46,6 +46,8 @@ This milestone should deepen the local CLI research loop first.
 
 ### 1. Inspect One Portfolio Run
 
+Status: delivered.
+
 Add:
 
 ```bash
@@ -62,6 +64,14 @@ Acceptance criteria:
 - Prints clear missing-file errors when metadata or referenced artifacts are
   absent.
 - Tests cover normal output and missing metadata.
+
+Delivered implementation:
+
+- `quant-lab show-portfolio-run --metadata ...`.
+- `quant_lab.portfolio_inspection` loads portfolio metadata and metrics,
+  formats identity, setup, results, symbols, artifacts, and command.
+- `tests/test_portfolio_inspection.py` covers normal output, CLI output,
+  missing metadata, and missing metrics.
 
 ### 2. Compare Portfolio Runs
 

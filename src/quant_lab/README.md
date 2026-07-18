@@ -31,6 +31,7 @@ It owns:
 - `portfolio_metadata.py`: defines and writes the stable
   `portfolio_metadata.json` shape.
 - `portfolio_report.py`: renders the portfolio markdown report.
+- `portfolio_inspection.py`: loads and formats saved portfolio run summaries.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
