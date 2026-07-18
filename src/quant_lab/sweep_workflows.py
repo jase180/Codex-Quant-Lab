@@ -7,6 +7,7 @@ import copy
 import csv
 import itertools
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
@@ -28,6 +29,16 @@ from .summary_rows import (
 from .sweep_analysis import format_sweep_analysis_section
 
 
+@dataclass(frozen=True)
+class SweepSetup:
+    """Inputs shared by every sweep workflow after CLI flags are resolved."""
+
+    variants: list[dict]
+    data: pd.DataFrame
+    output_dir: Path
+    research_note_path: str | None
+
+
 def sweep_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cost_assumptions(
         cost_preset=args.cost_preset,
@@ -42,19 +53,12 @@ def sweep_command(args: argparse.Namespace) -> int:
     if args.train_end or args.test_start:
         return train_test_sweep_command(args)
 
-    base_payload = load_strategy_payload(args.strategy)
-    param_sweeps = parse_param_sweeps(args.param)
-    variants = build_sweep_variants(base_payload, param_sweeps)
-    data = pd.read_csv(args.data)
-    data_quality = build_data_quality_report(data)
-    benchmark = build_benchmark(data, args.initial_cash, args.benchmark)
-    output_dir = Path(args.out)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    note = load_research_note(args)
-    research_note_path = save_research_note(note, output_dir) if note is not None else None
+    setup = prepare_sweep_setup(args)
+    data_quality = build_data_quality_report(setup.data)
+    benchmark = build_benchmark(setup.data, args.initial_cash, args.benchmark)
 
     summary_rows: list[SweepSummaryRow] = []
-    for index, variant in enumerate(variants, start=1):
+    for index, variant in enumerate(setup.variants, start=1):
         run_id = f"run_{index:03d}"
         strategy_payload = variant["payload"]
         params = variant["params"]
@@ -63,27 +67,27 @@ def sweep_command(args: argparse.Namespace) -> int:
         summary_rows.append(
             run_sweep_variant(
                 args=args,
-                data=data,
+                data=setup.data,
                 benchmark_curve=benchmark.curve,
                 benchmark_metrics=benchmark.metrics,
                 benchmark_display_name=benchmark.display_name,
                 data_quality=data_quality,
                 strategy_spec=strategy_spec,
                 strategy_payload=strategy_payload,
-                run_dir=output_dir / run_id,
+                run_dir=setup.output_dir / run_id,
                 run_name=f"{run_name_prefix} {run_id}",
                 parameters=params,
                 run_type="sweep_run",
                 run_id=run_id,
-                research_note_path=research_note_path,
+                research_note_path=setup.research_note_path,
             )
         )
 
     # Sorting after all runs keeps the run directories stable while making the
     # comparison table easy to scan from best to worst total return.
     summary_rows.sort(key=lambda row: float(row["total_return"]), reverse=True)
-    summary_path = save_sweep_summary(summary_rows, output_dir)
-    research_path = save_research_summary(args, summary_rows, output_dir)
+    summary_path = save_sweep_summary(summary_rows, setup.output_dir)
+    research_path = save_research_summary(args, summary_rows, setup.output_dir)
 
     print(f"Sweep complete: {len(summary_rows)} runs")
     print(f"summary: {summary_path}")
@@ -101,21 +105,14 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
         raise ValueError("--walk-forward-window cannot be combined with --train-end or --test-start.")
 
     windows = parse_walk_forward_windows(args.walk_forward_window)
-    base_payload = load_strategy_payload(args.strategy)
-    param_sweeps = parse_param_sweeps(args.param)
-    variants = build_sweep_variants(base_payload, param_sweeps)
-    data = pd.read_csv(args.data)
-    output_dir = Path(args.out)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    note = load_research_note(args)
-    research_note_path = save_research_note(note, output_dir) if note is not None else None
+    setup = prepare_sweep_setup(args)
 
     summary_rows: list[WalkForwardSummaryRow] = []
     for window_index, window in enumerate(windows, start=1):
         window_id = f"window_{window_index:03d}"
-        window_dir = output_dir / window_id
-        train_data = slice_date_range_data(data, window["train_start"], window["train_end"], "train")
-        test_data = slice_date_range_data(data, window["test_start"], window["test_end"], "test")
+        window_dir = setup.output_dir / window_id
+        train_data = slice_date_range_data(setup.data, window["train_start"], window["train_end"], "train")
+        test_data = slice_date_range_data(setup.data, window["test_start"], window["test_end"], "test")
         train_dir = window_dir / "train_sweep"
         test_dir = window_dir / "test_selected"
 
@@ -123,7 +120,7 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
         train_data_quality = build_data_quality_report(train_data)
         train_rows: list[SweepSummaryRow] = []
         variants_by_run_id: dict[str, dict] = {}
-        for variant_index, variant in enumerate(variants, start=1):
+        for variant_index, variant in enumerate(setup.variants, start=1):
             run_id = f"run_{variant_index:03d}"
             variants_by_run_id[run_id] = variant
             strategy_payload = variant["payload"]
@@ -155,7 +152,7 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
                     parameters=params,
                     run_type="walk_forward_train_run",
                     run_id=f"{window_id}_{run_id}",
-                    research_note_path=research_note_path,
+                    research_note_path=setup.research_note_path,
                 )
             )
 
@@ -195,7 +192,7 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
             parameters=test_params,
             run_type="walk_forward_test_run",
             run_id=f"{window_id}_test_selected",
-            research_note_path=research_note_path,
+            research_note_path=setup.research_note_path,
         )
         test_summary_path = save_sweep_summary([test_row], window_dir / "test_summary")
         summary_rows.append(
@@ -209,8 +206,8 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
             )
         )
 
-    summary_path = save_walk_forward_summary(summary_rows, output_dir)
-    research_path = save_walk_forward_research_summary(args, summary_rows, output_dir, summary_path)
+    summary_path = save_walk_forward_summary(summary_rows, setup.output_dir)
+    research_path = save_walk_forward_research_summary(args, summary_rows, setup.output_dir, summary_path)
     print(f"Walk-forward sweep complete: {len(summary_rows)} windows")
     print(f"summary: {summary_path}")
     print(f"research: {research_path}")
@@ -221,24 +218,17 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     if not args.train_end or not args.test_start:
         raise ValueError("--train-end and --test-start must be provided together.")
 
-    base_payload = load_strategy_payload(args.strategy)
-    param_sweeps = parse_param_sweeps(args.param)
-    variants = build_sweep_variants(base_payload, param_sweeps)
-    data = pd.read_csv(args.data)
-    train_data, test_data = split_train_test_data(data, args.train_end, args.test_start)
-    output_dir = Path(args.out)
-    train_dir = output_dir / "train_sweep"
-    test_dir = output_dir / "test_selected"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    note = load_research_note(args)
-    research_note_path = save_research_note(note, output_dir) if note is not None else None
+    setup = prepare_sweep_setup(args)
+    train_data, test_data = split_train_test_data(setup.data, args.train_end, args.test_start)
+    train_dir = setup.output_dir / "train_sweep"
+    test_dir = setup.output_dir / "test_selected"
 
     train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
     train_data_quality = build_data_quality_report(train_data)
     train_rows: list[SweepSummaryRow] = []
     variants_by_run_id: dict[str, dict] = {}
 
-    for index, variant in enumerate(variants, start=1):
+    for index, variant in enumerate(setup.variants, start=1):
         run_id = f"run_{index:03d}"
         variants_by_run_id[run_id] = variant
         strategy_payload = variant["payload"]
@@ -266,7 +256,7 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
                 parameters=params,
                 run_type="train_sweep_run",
                 run_id=run_id,
-                research_note_path=research_note_path,
+                research_note_path=setup.research_note_path,
             )
         )
 
@@ -301,14 +291,14 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
         parameters=test_params,
         run_type="test_selected_run",
         run_id="test_selected",
-        research_note_path=research_note_path,
+        research_note_path=setup.research_note_path,
     )
-    test_summary_path = save_sweep_summary([test_row], output_dir / "test_summary")
+    test_summary_path = save_sweep_summary([test_row], setup.output_dir / "test_summary")
     research_path = save_train_test_research_summary(
         args=args,
         train_rows=train_rows,
         test_row=test_row,
-        output_dir=output_dir,
+        output_dir=setup.output_dir,
         train_summary_path=train_summary_path,
         test_summary_path=test_summary_path,
     )
@@ -321,6 +311,23 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     print(f"selected_train_{args.select_by}: {_selection_value(best_train, args.select_by):.4f}")
     print(f"test_total_return: {float(test_row['total_return']):.2%}")
     return 0
+
+
+def prepare_sweep_setup(args: argparse.Namespace) -> SweepSetup:
+    base_payload = load_strategy_payload(args.strategy)
+    param_sweeps = parse_param_sweeps(args.param)
+    variants = build_sweep_variants(base_payload, param_sweeps)
+    data = pd.read_csv(args.data)
+    output_dir = Path(args.out)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    note = load_research_note(args)
+    research_note_path = save_research_note(note, output_dir) if note is not None else None
+    return SweepSetup(
+        variants=variants,
+        data=data,
+        output_dir=output_dir,
+        research_note_path=research_note_path,
+    )
 
 
 def split_train_test_data(data: pd.DataFrame, train_end: str, test_start: str) -> tuple[pd.DataFrame, pd.DataFrame]:
