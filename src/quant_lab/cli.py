@@ -8,8 +8,8 @@ from typing import Sequence
 
 import pandas as pd
 
+from .cli_data import fetch_command, list_strategy_templates_command, new_strategy_command
 from .costs import COST_PRESETS, CostAssumptions, resolve_cost_assumptions
-from .data_fetch import fetch_market_data, write_market_data_csv, write_market_data_provenance
 from .data_quality import build_data_quality_report
 from .cli_experiments import (
     decide_experiment_command,
@@ -34,11 +34,7 @@ from .run_config import RunExecutionConfig
 from .run_notes import load_research_note, save_research_note
 from .run_metadata import command_tokens
 from .strategy_schema import load_strategy
-from .strategy_templates import (
-    available_strategy_templates,
-    build_strategy_template,
-    write_strategy_template,
-)
+from .strategy_templates import available_strategy_templates
 from .sweep_workflows import (
     build_sweep_variants,
     parse_param_sweeps,
@@ -547,55 +543,6 @@ def run_command(args: argparse.Namespace) -> int:
     print(f"commission_fixed: {config.cost_assumptions.commission_fixed}")
     print(f"commission_rate: {config.cost_assumptions.commission_rate}")
     print(f"slippage_bps: {config.cost_assumptions.slippage_bps}")
-    return 0
-
-
-def fetch_command(args: argparse.Namespace) -> int:
-    data = fetch_market_data(
-        symbol=args.symbol,
-        start=args.start,
-        end=args.end,
-        interval=args.interval,
-    )
-    csv_path = write_market_data_csv(
-        data=data,
-        symbol=args.symbol,
-        start=args.start,
-        end=args.end,
-        output_dir=args.out,
-    )
-    provenance_path = write_market_data_provenance(
-        csv_path=csv_path,
-        data=data,
-        symbol=args.symbol,
-        requested_start=args.start,
-        requested_end=args.end,
-        interval=args.interval,
-    )
-    print(f"Fetched {len(data)} rows for {args.symbol.upper()}")
-    print(f"data: {csv_path}")
-    print(f"provenance: {provenance_path}")
-    return 0
-
-
-def list_strategy_templates_command(args: argparse.Namespace) -> int:
-    for template_name in available_strategy_templates():
-        print(template_name)
-    return 0
-
-
-def new_strategy_command(args: argparse.Namespace) -> int:
-    payload = build_strategy_template(
-        args.template,
-        symbol=args.symbol,
-        strategy_id=args.strategy_id,
-        name=args.name,
-    )
-    output_path = write_strategy_template(payload, args.out, force=args.force)
-    print(f"Strategy template written: {output_path}")
-    print(f"template: {args.template}")
-    print(f"strategy_id: {payload['strategy_id']}")
-    print(f"symbol: {payload['market']['symbol']}")
     return 0
 
 

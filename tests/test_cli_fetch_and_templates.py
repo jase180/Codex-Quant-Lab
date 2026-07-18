@@ -34,7 +34,7 @@ class CliFetchAndTemplateTests(unittest.TestCase):
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            with patch("quant_lab.cli.fetch_market_data", return_value=fetched_data):
+            with patch("quant_lab.cli_data.fetch_market_data", return_value=fetched_data):
                 with contextlib.redirect_stdout(io.StringIO()) as stdout:
                     exit_code = main(
                         [
