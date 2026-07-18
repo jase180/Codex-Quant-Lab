@@ -216,6 +216,16 @@ artifacts/research/qqq_sma_trust/research_plan.md
 It also creates or references an experiment id and prints the next copyable
 baseline `quant-lab run` command. It does not run the baseline automatically.
 
+After you run the recommended command, ask for the next step:
+
+```bash
+quant-lab research-plan next \
+  --plan artifacts/research/qqq_sma_trust/research_plan.json
+```
+
+The first version checks the linked experiment's run index rows and recommends
+baseline, sweep, train/test validation, evidence summary, or done.
+
 ### Run One Backtest
 
 ```bash

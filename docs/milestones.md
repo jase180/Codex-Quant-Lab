@@ -153,7 +153,7 @@ Exit criteria:
 
 ## Milestone 7: Guided Research Workflow
 
-Status: planned.
+Status: complete.
 
 Goal: turn the existing research primitives into a guided workflow for one
 research question.
@@ -162,6 +162,8 @@ Detailed plan:
 [milestone-7-guided-research-workflow.md](milestone-7-guided-research-workflow.md)
 
 Likely work:
+
+Delivered:
 
 - local `research_plan.json` and `research_plan.md` files,
 - `quant-lab research-plan init`,
@@ -220,9 +222,9 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 7, starting with `research-plan init`.
+Start Milestone 8 planning with a narrow multi-asset design spike.
 
-Reason: the lab now has enough pieces for a full skeptical research loop, but a
-new user still has to know which commands to run and in what order. A guided
-workflow can turn the existing primitives into a more helpful product surface
-without weakening the transparent artifact model.
+Reason: the guided single-symbol research loop is now in place. Before adding
+portfolio code, the project should define the smallest multi-symbol data model,
+portfolio accounting rules, and artifact format that still preserve the current
+audit trail.

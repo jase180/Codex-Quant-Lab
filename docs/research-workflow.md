@@ -51,6 +51,18 @@ It also creates or references an experiment id and prints the next baseline
 baseline. The guided plan organizes the workflow, but it does not hide or
 auto-run the underlying commands.
 
+After each major step, ask the plan for the next recommended command:
+
+```bash
+quant-lab research-plan next \
+  --plan artifacts/research/sma_qqq_2015_2025/research_plan.json
+```
+
+The recommendation is intentionally conservative. It looks at linked run index
+rows and moves from baseline to sweep, then train/test validation, then evidence
+summary. It prints placeholders for sweep parameters and split dates when those
+still require human judgment.
+
 Manual alternative: create an experiment record directly for the hypothesis:
 
 ```bash

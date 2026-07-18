@@ -141,7 +141,7 @@ Acceptance criteria:
 
 ## Deliverable 3: Next-Step Recommendation
 
-Status: planned.
+Status: delivered.
 
 Goal: inspect a plan and tell the user what to do next.
 
@@ -161,7 +161,7 @@ Acceptance criteria:
 
 ## Deliverable 4: Documentation
 
-Status: in progress.
+Status: delivered.
 
 Goal: make the guided workflow easy to learn.
 

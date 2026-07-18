@@ -40,6 +40,15 @@ class ResearchPlan:
     experiments_path: str
     index_path: str
     output_dir: str
+    initial_cash: float = 100_000.0
+    quantity: float = 1.0
+    sizing: str = "percent-equity"
+    allocation: float = 1.0
+    benchmark: str = "buy-and-hold"
+    cost_preset: str = "none"
+    commission_fixed: float | None = None
+    commission_rate: float | None = None
+    slippage_bps: float | None = None
     recommended_steps: list[str] = field(default_factory=lambda: list(DEFAULT_RECOMMENDED_STEPS))
     tags: list[str] = field(default_factory=list)
     created_at_utc: str = field(default_factory=lambda: datetime.now(UTC).isoformat().replace("+00:00", "Z"))
@@ -59,6 +68,15 @@ def create_research_plan(
     output_dir: str | Path,
     experiments_path: str | Path = "artifacts/experiments.jsonl",
     index_path: str | Path = "artifacts/research_index.jsonl",
+    initial_cash: float = 100_000.0,
+    quantity: float = 1.0,
+    sizing: str = "percent-equity",
+    allocation: float = 1.0,
+    benchmark: str = "buy-and-hold",
+    cost_preset: str = "none",
+    commission_fixed: float | None = None,
+    commission_rate: float | None = None,
+    slippage_bps: float | None = None,
     tags: Iterable[str] | None = None,
     recommended_steps: Iterable[str] = DEFAULT_RECOMMENDED_STEPS,
     created_at_utc: str | None = None,
@@ -74,6 +92,15 @@ def create_research_plan(
         experiments_path=str(experiments_path),
         index_path=str(index_path),
         output_dir=str(output_dir),
+        initial_cash=float(initial_cash),
+        quantity=float(quantity),
+        sizing=sizing,
+        allocation=float(allocation),
+        benchmark=benchmark,
+        cost_preset=cost_preset,
+        commission_fixed=float(commission_fixed) if commission_fixed is not None else None,
+        commission_rate=float(commission_rate) if commission_rate is not None else None,
+        slippage_bps=float(slippage_bps) if slippage_bps is not None else None,
         recommended_steps=[str(step).strip() for step in recommended_steps if str(step).strip()],
         tags=normalize_plan_tags(tags or []),
         created_at_utc=created_at_utc or datetime.now(UTC).isoformat().replace("+00:00", "Z"),
@@ -151,6 +178,15 @@ def load_research_plan(plan_path: str | Path) -> ResearchPlan:
         experiments_path=str(payload.get("experiments_path", "")),
         index_path=str(payload.get("index_path", "")),
         output_dir=str(payload.get("output_dir", "")),
+        initial_cash=float(payload.get("initial_cash", 100_000.0)),
+        quantity=float(payload.get("quantity", 1.0)),
+        sizing=str(payload.get("sizing", "percent-equity")),
+        allocation=float(payload.get("allocation", 1.0)),
+        benchmark=str(payload.get("benchmark", "buy-and-hold")),
+        cost_preset=str(payload.get("cost_preset", "none")),
+        commission_fixed=_optional_float(payload.get("commission_fixed")),
+        commission_rate=_optional_float(payload.get("commission_rate")),
+        slippage_bps=_optional_float(payload.get("slippage_bps")),
         recommended_steps=[str(step) for step in payload.get("recommended_steps", [])],
         tags=[str(tag) for tag in payload.get("tags", [])],
         created_at_utc=str(payload.get("created_at_utc", "")),
@@ -179,6 +215,18 @@ def render_research_plan_markdown(plan: ResearchPlan) -> str:
 - Output directory: `{plan.output_dir}`
 - Created at UTC: `{plan.created_at_utc}`
 
+## Run Defaults
+
+- Initial cash: `{plan.initial_cash}`
+- Quantity: `{plan.quantity}`
+- Sizing: `{plan.sizing}`
+- Allocation: `{plan.allocation}`
+- Benchmark: `{plan.benchmark}`
+- Cost preset: `{plan.cost_preset}`
+- Commission fixed: `{plan.commission_fixed}`
+- Commission rate: `{plan.commission_rate}`
+- Slippage bps: `{plan.slippage_bps}`
+
 ## Tags
 
 {tag_lines}
@@ -193,3 +241,9 @@ This plan organizes research. It does not prove a trading edge. Treat every
 result as local evidence tied to the selected data, strategy, costs, benchmark,
 and date range.
 """
+
+
+def _optional_float(value: object) -> float | None:
+    if value is None:
+        return None
+    return float(value)

@@ -20,7 +20,7 @@ from .cli_experiments import (
     update_experiment_command,
 )
 from .cli_run_inspection import compare_runs_command, show_run_command, verify_run_command
-from .cli_research_plan import research_plan_init_command
+from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
     EXPERIMENT_STATUSES,
@@ -425,6 +425,13 @@ def register_research_plan_commands(subparsers) -> None:
     add_experiment_registry_argument(init_parser)
     add_index_argument(init_parser)
     init_parser.set_defaults(func=research_plan_init_command)
+
+    next_parser = research_plan_subparsers.add_parser(
+        "next",
+        help="Recommend the next command for an existing research plan.",
+    )
+    next_parser.add_argument("--plan", required=True, help="Path to research_plan.json.")
+    next_parser.set_defaults(func=research_plan_next_command)
 
 
 def register_sweep_commands(subparsers) -> None:
