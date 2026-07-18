@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+Complete.
 
 ## Goal
 
@@ -37,13 +37,12 @@ Working capabilities:
 
 Main gaps:
 
-- Evidence summaries are useful but still too metric-table heavy.
-- There is no explicit evidence label such as `weak`, `mixed`, or `promising`.
-- Train/test and walk-forward records are not interpreted as separate evidence
-  classes in plain language.
-- Decision drafts do not yet ask what would change the user's mind.
-- Strategy and portfolio evidence summaries do not share enough interpretive
-  vocabulary.
+- Delivered in this milestone: evidence summaries now include conservative
+  labels and supporting/contradicting evidence sections.
+- Delivered in this milestone: decision drafts now include uncertainty and
+  "what would change my mind?" prompts.
+- Delivered in this milestone: strategy and portfolio evidence summaries now
+  share the same skeptical interpretation vocabulary.
 
 ## Non-Goals
 
@@ -205,3 +204,23 @@ Milestone 13 is done when a user can turn linked strategy or portfolio runs into
 an honest evidence summary, see why the lab considers the evidence weak, mixed,
 promising, or rejected, and draft a decision that includes uncertainty plus the
 next test that would actually change the conclusion.
+
+## Closeout
+
+Milestone 13 is complete.
+
+What shipped:
+
+- Strategy evidence labels with readable reasons.
+- Richer strategy evidence summaries with supporting and contradicting evidence.
+- Decision drafts that include evidence labels, uncertainty, and "what would
+  change my mind?" prompts.
+- Portfolio evidence labels and skeptical portfolio notes.
+- Guided plan integration that saves strategy evidence summaries before
+  decision drafting and keeps portfolio summaries before comparison.
+
+Remaining intentional limits:
+
+- Labels are heuristics, not statistical proof.
+- Portfolio labels do not optimize allocations or choose a winner.
+- Decisions still require the user to run `decide-experiment` explicitly.
