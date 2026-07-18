@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .evidence_labels import label_strategy_evidence
 from .research_registry import ExperimentRecord, format_experiment_detail
 
 VALIDATION_RUN_TYPES = {"test_selected_run", "walk_forward_test_run"}
@@ -16,6 +17,7 @@ def format_experiment_evidence_summary(
     linked_records = _linked_index_records(experiment, index_records)
     linked_records.sort(key=lambda record: str(record.get("created_at_utc", "")), reverse=True)
     missing_linked_paths = _missing_linked_paths(experiment, linked_records)
+    evidence_label = label_strategy_evidence(linked_records)
 
     lines = [
         "Experiment Evidence Summary",
@@ -27,6 +29,11 @@ def format_experiment_evidence_summary(
         f"  Registry linked metadata paths: {len(experiment.linked_runs)}",
         f"  Linked index rows: {len(linked_records)}",
         f"  Linked paths missing from index: {len(missing_linked_paths)}",
+        "",
+        "Evidence Label",
+        f"  Label: {evidence_label.label}",
+        "  Reasons:",
+        *_indented_lines(evidence_label.reasons),
     ]
 
     if not linked_records:
@@ -35,6 +42,12 @@ def format_experiment_evidence_summary(
                 "  Most recent run: -",
                 "  Best total return: -",
                 "  Best excess return: -",
+                "",
+                "Supporting Evidence",
+                "  None",
+                "",
+                "Contradicting Evidence",
+                "  None",
                 "",
                 "Recent Runs",
                 "  No linked runs found in the research index.",
@@ -70,6 +83,12 @@ def format_experiment_evidence_summary(
                 "  Worst drawdown: "
                 f"{_run_label(worst_drawdown)} ({_format_percent(worst_drawdown.get('max_drawdown'))})"
             ),
+            "",
+            "Supporting Evidence",
+            *_evidence_lines(_supporting_evidence_records(linked_records)),
+            "",
+            "Contradicting Evidence",
+            *_evidence_lines(_contradicting_evidence_records(linked_records)),
             "",
             "Run Type Breakdown",
             _format_run_type_breakdown(linked_records),
@@ -243,6 +262,51 @@ def _linked_index_records(experiment: ExperimentRecord, index_records: list[dict
 def _missing_linked_paths(experiment: ExperimentRecord, linked_records: list[dict]) -> list[str]:
     indexed_paths = {str(record.get("metadata_path")) for record in linked_records if record.get("metadata_path")}
     return [metadata_path for metadata_path in experiment.linked_runs if metadata_path not in indexed_paths]
+
+
+def _supporting_evidence_records(records: list[dict]) -> list[dict]:
+    positive_records = [
+        record for record in records if _numeric(record.get("excess_total_return")) > 0
+    ]
+    validation_records = [
+        record for record in positive_records if record.get("run_type") in VALIDATION_RUN_TYPES
+    ]
+    source = validation_records or positive_records
+    return _sort_by_numeric(source, "excess_total_return", reverse=True)[:3]
+
+
+def _contradicting_evidence_records(records: list[dict]) -> list[dict]:
+    negative_records = [
+        record for record in records if _numeric(record.get("excess_total_return")) <= 0
+    ]
+    validation_records = [
+        record for record in records if record.get("run_type") in VALIDATION_RUN_TYPES
+    ]
+    negative_validation = [
+        record for record in validation_records if _numeric(record.get("excess_total_return")) <= 0
+    ]
+    source = negative_validation or negative_records
+    return _sort_by_numeric(source, "excess_total_return", reverse=False)[:3]
+
+
+def _evidence_lines(records: list[dict]) -> list[str]:
+    if not records:
+        return ["  None"]
+    return [
+        (
+            f"  - {_run_label(record)}: excess {_format_percent(record.get('excess_total_return'))}, "
+            f"return {_format_percent(record.get('total_return'))}, "
+            f"trades {record.get('trade_count', '-')}, "
+            f"metadata {_evidence_reference(record)}"
+        )
+        for record in records
+    ]
+
+
+def _indented_lines(lines: list[str]) -> list[str]:
+    if not lines:
+        return ["    - None"]
+    return [f"    - {line}" for line in lines]
 
 
 def _format_run_type_breakdown(records: list[dict]) -> str:

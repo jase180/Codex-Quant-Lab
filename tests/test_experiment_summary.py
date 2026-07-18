@@ -65,6 +65,13 @@ class ExperimentSummaryTests(unittest.TestCase):
         self.assertIn("Registry linked metadata paths: 2", summary)
         self.assertIn("Linked index rows: 2", summary)
         self.assertIn("Linked paths missing from index: 0", summary)
+        self.assertIn("Evidence Label", summary)
+        self.assertIn("Label: weak", summary)
+        self.assertIn("No train/test or walk-forward validation run is linked yet.", summary)
+        self.assertIn("Supporting Evidence", summary)
+        self.assertIn("Contradicting Evidence", summary)
+        self.assertIn("sweep_run/run_001: excess 4.00%", summary)
+        self.assertIn("run/-: excess -12.00%", summary)
         self.assertIn("Run Type Breakdown", summary)
         self.assertIn("Top Evidence By Excess Return", summary)
         self.assertIn("Weakest Evidence By Excess Return", summary)
@@ -88,7 +95,47 @@ class ExperimentSummaryTests(unittest.TestCase):
         summary = format_experiment_evidence_summary(experiment, [])
 
         self.assertIn("Linked index rows: 0", summary)
+        self.assertIn("Label: no_evidence", summary)
+        self.assertIn("No linked run evidence exists yet.", summary)
+        self.assertIn("Supporting Evidence", summary)
+        self.assertIn("Contradicting Evidence", summary)
         self.assertIn("No linked runs found", summary)
+
+    def test_formats_experiment_with_promising_validation_label(self) -> None:
+        experiment = create_experiment_record(
+            experiment_id="EXP-001",
+            title="QQQ idea",
+            hypothesis="A valid hypothesis.",
+            created_at_utc="2026-01-01T00:00:00Z",
+        )
+        records = [
+            {
+                "experiment_id": "EXP-001",
+                "created_at_utc": "2026-01-02T00:00:00Z",
+                "run_type": "sweep_run",
+                "run_id": "run_004",
+                "metadata_path": "artifacts/sweep/run_004/run_metadata.json",
+                "total_return": 0.1,
+                "excess_total_return": 0.08,
+                "trade_count": 8,
+            },
+            {
+                "experiment_id": "EXP-001",
+                "created_at_utc": "2026-01-03T00:00:00Z",
+                "run_type": "walk_forward_test_run",
+                "run_id": "window_001_test_selected",
+                "metadata_path": "artifacts/walk_forward/window_001/test_selected/run_metadata.json",
+                "total_return": 0.06,
+                "excess_total_return": 0.04,
+                "trade_count": 7,
+            },
+        ]
+
+        summary = format_experiment_evidence_summary(experiment, records)
+
+        self.assertIn("Label: promising", summary)
+        self.assertIn("Validation evidence beat the benchmark.", summary)
+        self.assertIn("walk_forward_test_run/window_001_test_selected: excess 4.00%", summary)
 
     def test_drafts_continue_decision_without_validation_evidence(self) -> None:
         experiment = create_experiment_record(

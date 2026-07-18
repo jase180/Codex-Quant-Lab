@@ -88,7 +88,7 @@ Acceptance criteria:
 
 ### 2. Richer Strategy Evidence Summary
 
-Status: planned.
+Status: delivered.
 
 Upgrade `summarize-experiment` so it reads less like a leaderboard and more like
 a research review.
