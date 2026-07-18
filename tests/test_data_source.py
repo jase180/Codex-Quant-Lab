@@ -12,7 +12,12 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from quant_lab.data_fetch import write_market_data_csv, write_market_data_provenance  # noqa: E402
-from quant_lab.data_source import format_data_source_inspection, inspect_data_source  # noqa: E402
+from quant_lab.data_source import (  # noqa: E402
+    format_data_cache_inventory,
+    format_data_source_inspection,
+    inspect_data_source,
+    list_data_cache,
+)
 
 
 def _sample_data() -> pd.DataFrame:
@@ -108,6 +113,49 @@ class DataSourceTests(unittest.TestCase):
         self.assertIn("provider: yfinance", rendered)
         self.assertIn("warnings: none", rendered)
         self.assertIn(provenance_payload["file_sha256"][:12], rendered)
+
+    def test_list_data_cache_summarizes_csv_files(self) -> None:
+        data = _sample_data()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            qqq_path = Path(write_market_data_csv(data, "QQQ", "2026-01-01", "2026-01-31", temp_dir))
+            spy_path = Path(write_market_data_csv(data, "SPY", "2026-01-01", "2026-01-31", temp_dir))
+            write_market_data_provenance(
+                csv_path=qqq_path,
+                data=data,
+                symbol="QQQ",
+                requested_start="2026-01-01",
+                requested_end="2026-01-31",
+                interval="1d",
+            )
+
+            inventory = list_data_cache(temp_dir)
+            rendered = format_data_cache_inventory(inventory)
+
+        self.assertEqual(len(inventory.entries), 2)
+        self.assertIn("QQQ", rendered)
+        self.assertIn("SPY", rendered)
+        self.assertIn("2026-01-02 to 2026-01-05", rendered)
+        self.assertIn("provenance", rendered)
+        self.assertIn(f"{spy_path.name}: missing provenance sidecar", rendered)
+
+    def test_list_data_cache_flags_duplicate_symbol_date_ranges(self) -> None:
+        data = _sample_data()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            first = Path(write_market_data_csv(data, "QQQ", "2026-01-01", "2026-01-31", temp_dir))
+            second = Path(temp_dir) / "QQQ_duplicate.csv"
+            second.write_text(first.read_text(encoding="utf-8"), encoding="utf-8")
+
+            inventory = list_data_cache(temp_dir)
+
+        self.assertEqual(len(inventory.entries), 2)
+        self.assertEqual(len(inventory.warnings), 1)
+        self.assertIn("duplicate-looking cache files for QQQ", inventory.warnings[0])
+
+    def test_list_data_cache_rejects_missing_directory(self) -> None:
+        with self.assertRaises(FileNotFoundError):
+            list_data_cache("missing-cache-dir")
 
 
 if __name__ == "__main__":

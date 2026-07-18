@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import argparse
 
-from .data_source import format_data_source_inspection, inspect_data_source
+from .data_source import (
+    format_data_cache_inventory,
+    format_data_source_inspection,
+    inspect_data_source,
+    list_data_cache,
+)
 from .data_fetch import fetch_market_data, write_market_data_csv, write_market_data_provenance
 from .strategy_templates import available_strategy_templates, build_strategy_template, write_strategy_template
 
@@ -40,6 +45,12 @@ def fetch_command(args: argparse.Namespace) -> int:
 def show_data_source_command(args: argparse.Namespace) -> int:
     inspection = inspect_data_source(args.data)
     print(format_data_source_inspection(inspection))
+    return 0
+
+
+def list_data_cache_command(args: argparse.Namespace) -> int:
+    inventory = list_data_cache(args.data_dir)
+    print(format_data_cache_inventory(inventory))
     return 0
 
 

@@ -283,7 +283,7 @@ Exit criteria:
 
 ## Milestone 12: Data Source Trust
 
-Status: planned.
+Status: complete.
 
 Goal: make data provenance, fingerprints, and quality warnings easy to inspect
 before trusting strategy or portfolio results.
@@ -297,7 +297,7 @@ Planned work:
 - Single-run trust reports from `run_metadata.json`.
 - Portfolio data trust reports from `portfolio_metadata.json`.
 - Guided workflow recommendations for trust checks. Delivered.
-- Data cache inventory and duplicate/missing-provenance warnings.
+- Data cache inventory and duplicate/missing-provenance warnings. Delivered.
 
 Exit criteria:
 

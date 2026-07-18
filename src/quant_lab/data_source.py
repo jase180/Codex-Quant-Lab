@@ -29,6 +29,26 @@ class DataSourceInspection:
     warnings: list[str]
 
 
+@dataclass(frozen=True)
+class DataCacheEntry:
+    csv_path: str
+    symbol: str
+    row_count: int | None
+    data_start: str | None
+    data_end: str | None
+    file_sha256_prefix: str | None
+    provenance_found: bool
+    warnings: list[str]
+    error: str | None = None
+
+
+@dataclass(frozen=True)
+class DataCacheInventory:
+    data_dir: str
+    entries: list[DataCacheEntry]
+    warnings: list[str]
+
+
 def inspect_data_source(csv_path: str | Path) -> DataSourceInspection:
     """Summarize one local OHLCV CSV and its optional provenance JSON.
 
@@ -73,6 +93,54 @@ def inspect_data_source(csv_path: str | Path) -> DataSourceInspection:
     )
 
 
+def list_data_cache(data_dir: str | Path) -> DataCacheInventory:
+    cache_dir = Path(data_dir)
+    if not cache_dir.exists():
+        raise FileNotFoundError(f"data cache directory not found: {cache_dir}")
+    if not cache_dir.is_dir():
+        raise ValueError(f"data cache path is not a directory: {cache_dir}")
+
+    entries = [_cache_entry(path) for path in sorted(cache_dir.glob("*.csv"))]
+    warnings = _duplicate_cache_warnings(entries)
+    return DataCacheInventory(data_dir=str(cache_dir), entries=entries, warnings=warnings)
+
+
+def format_data_cache_inventory(inventory: DataCacheInventory) -> str:
+    lines = [
+        f"data_dir: {inventory.data_dir}",
+        f"csv_files: {len(inventory.entries)}",
+        "",
+        "symbol  rows  date_range                 sha           provenance  path",
+        "------  ----  -------------------------  ------------  ----------  ----",
+    ]
+    for entry in inventory.entries:
+        rows = str(entry.row_count) if entry.row_count is not None else "-"
+        date_range = (
+            f"{entry.data_start} to {entry.data_end}"
+            if entry.data_start and entry.data_end
+            else "-"
+        )
+        sha = entry.file_sha256_prefix or "-"
+        provenance = "yes" if entry.provenance_found else "no"
+        lines.append(
+            f"{entry.symbol:<6}  {rows:<4}  {date_range:<25}  {sha:<12}  {provenance:<10}  {entry.csv_path}"
+        )
+
+    entry_warnings = [
+        f"{Path(entry.csv_path).name}: {warning}"
+        for entry in inventory.entries
+        for warning in entry.warnings
+    ]
+    all_warnings = [*inventory.warnings, *entry_warnings]
+    lines.append("")
+    if all_warnings:
+        lines.append("warnings:")
+        lines.extend(f"- {warning}" for warning in all_warnings)
+    else:
+        lines.append("warnings: none")
+    return "\n".join(lines)
+
+
 def format_data_source_inspection(inspection: DataSourceInspection) -> str:
     lines = [
         f"data: {inspection.csv_path}",
@@ -109,3 +177,56 @@ def format_data_source_inspection(inspection: DataSourceInspection) -> str:
         lines.append("warnings: none")
 
     return "\n".join(lines)
+
+
+def _cache_entry(path: Path) -> DataCacheEntry:
+    try:
+        inspection = inspect_data_source(path)
+    except Exception as exc:
+        return DataCacheEntry(
+            csv_path=str(path),
+            symbol=_symbol_from_filename(path),
+            row_count=None,
+            data_start=None,
+            data_end=None,
+            file_sha256_prefix=None,
+            provenance_found=path.with_suffix(".provenance.json").exists(),
+            warnings=["unreadable CSV"],
+            error=str(exc),
+        )
+
+    symbol = str(inspection.provenance.get("symbol") or _symbol_from_filename(path)).upper()
+    return DataCacheEntry(
+        csv_path=inspection.csv_path,
+        symbol=symbol,
+        row_count=inspection.row_count,
+        data_start=inspection.data_start,
+        data_end=inspection.data_end,
+        file_sha256_prefix=inspection.file_sha256[:12],
+        provenance_found=inspection.provenance_found,
+        warnings=[*inspection.warnings],
+    )
+
+
+def _duplicate_cache_warnings(entries: list[DataCacheEntry]) -> list[str]:
+    groups: dict[tuple[str, str | None, str | None], list[DataCacheEntry]] = {}
+    for entry in entries:
+        if entry.error is not None:
+            continue
+        key = (entry.symbol, entry.data_start, entry.data_end)
+        groups.setdefault(key, []).append(entry)
+
+    warnings: list[str] = []
+    for (symbol, start, end), grouped_entries in sorted(groups.items()):
+        if len(grouped_entries) < 2:
+            continue
+        paths = ", ".join(Path(entry.csv_path).name for entry in grouped_entries)
+        warnings.append(f"duplicate-looking cache files for {symbol} {start} to {end}: {paths}")
+    return warnings
+
+
+def _symbol_from_filename(path: Path) -> str:
+    name = path.stem
+    if "_" not in name:
+        return name.upper()
+    return name.split("_", 1)[0].upper()

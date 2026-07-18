@@ -8,6 +8,7 @@ from typing import Sequence
 
 from .cli_data import (
     fetch_command,
+    list_data_cache_command,
     list_strategy_templates_command,
     new_strategy_command,
     show_data_source_command,
@@ -415,6 +416,17 @@ def register_data_commands(subparsers) -> None:
     )
     show_data_source_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
     show_data_source_parser.set_defaults(func=show_data_source_command)
+
+    list_data_cache_parser = subparsers.add_parser(
+        "list-data-cache",
+        help="List cached OHLCV CSV files and provenance status.",
+    )
+    list_data_cache_parser.add_argument(
+        "--data-dir",
+        default="data/cache",
+        help="Directory containing cached OHLCV CSV files. Defaults to data/cache.",
+    )
+    list_data_cache_parser.set_defaults(func=list_data_cache_command)
 
     template_list_parser = subparsers.add_parser(
         "list-strategy-templates",

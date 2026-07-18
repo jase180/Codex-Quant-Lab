@@ -216,6 +216,15 @@ quant-lab show-data-source \
 This prints row count, actual date range, file fingerprint, provider, requested
 range, fetched timestamp, and warnings such as missing provenance.
 
+List cached CSV files without fetching new data:
+
+```bash
+quant-lab list-data-cache --data-dir data/cache
+```
+
+The inventory shows each cached CSV's symbol, row count, date range, fingerprint
+prefix, provenance status, and duplicate-looking symbol/date ranges.
+
 ### Summarize Run Data Trust
 
 After a run exists, write a Markdown trust report from its metadata:

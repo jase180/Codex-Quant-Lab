@@ -119,6 +119,12 @@ Inspect one cached CSV and its provenance sidecar:
 quant-lab show-data-source --data data/cache/QQQ_2015-01-01_2025-12-31.csv
 ```
 
+List cached CSV files and provenance status:
+
+```bash
+quant-lab list-data-cache --data-dir data/cache
+```
+
 Write a trust report for a saved strategy run:
 
 ```bash

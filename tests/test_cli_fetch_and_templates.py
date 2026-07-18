@@ -115,6 +115,33 @@ class CliFetchAndTemplateTests(unittest.TestCase):
         self.assertIn("provider: fixture", output)
         self.assertIn("warnings: none", output)
 
+    def test_list_data_cache_command_prints_inventory(self) -> None:
+        data = pd.DataFrame(
+            [
+                {
+                    "date": "2026-01-02",
+                    "open": 100,
+                    "high": 102,
+                    "low": 99,
+                    "close": 101,
+                    "volume": 1000,
+                }
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_path = Path(temp_dir) / "SPY_2026-01-01_2026-01-31.csv"
+            data.to_csv(csv_path, index=False)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["list-data-cache", "--data-dir", temp_dir])
+
+        output = stdout.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertIn("csv_files: 1", output)
+        self.assertIn("SPY", output)
+        self.assertIn("missing provenance sidecar", output)
+
     def test_new_strategy_command_writes_valid_template(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_path = Path(temp_dir) / "qqq_sma.json"

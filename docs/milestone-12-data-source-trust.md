@@ -146,7 +146,7 @@ Acceptance criteria:
 
 ### 5. Data Cache Inventory
 
-Status: planned.
+Status: delivered.
 
 Add a small local inventory command for cached market-data files.
 
@@ -189,7 +189,7 @@ Acceptance criteria:
 
 ## Exit Criteria
 
-Milestone 12 is done when a user can inspect cached data, generate trust reports
-for strategy and portfolio runs, and see data-trust checks appear naturally in
-the guided research workflow. The lab still will not prove market data is
-perfect, but it should make stale, missing, changed, or weak data hard to ignore.
+Milestone 12 is done. A user can inspect cached data, generate trust reports for
+strategy and portfolio runs, and see data-trust checks appear naturally in the
+guided research workflow. The lab still will not prove market data is perfect,
+but it now makes stale, missing, changed, or weak data harder to ignore.
