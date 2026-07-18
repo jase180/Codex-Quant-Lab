@@ -61,7 +61,7 @@ This milestone should stay deterministic, local, and humble.
 
 ### 1. Evidence Label Heuristics
 
-Status: planned.
+Status: delivered for internal strategy evidence labeling.
 
 Add deterministic labels that summarize the shape of evidence without pretending
 to prove anything.

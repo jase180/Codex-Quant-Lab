@@ -39,6 +39,8 @@ It owns:
   portfolio runs.
 - `portfolio_batch.py`: writes dry-run manifests for batches of portfolio specs.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
+- `evidence_labels.py`: labels linked strategy evidence with conservative,
+  explainable heuristics.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `run_trust.py`: writes Markdown data-trust reports for saved strategy runs.
 - `trust_common.py`: shared warning/check helpers for trust-report commands.
