@@ -198,6 +198,13 @@ def register_portfolio_commands(subparsers) -> None:
         help="Variant weights in SYMBOL=weight,SYMBOL=weight form. May be repeated.",
     )
     variants_parser.add_argument(
+        "--rebalance",
+        action="append",
+        choices=["none", "monthly", "quarterly", "annually"],
+        default=None,
+        help="Rebalance frequency to generate. May be repeated. Defaults to the base spec frequency.",
+    )
+    variants_parser.add_argument(
         "--out",
         required=True,
         help="Directory where generated portfolio JSON files are written.",

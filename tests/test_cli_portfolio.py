@@ -100,20 +100,25 @@ class CliPortfolioTests(unittest.TestCase):
                         "QQQ=0.5,SPY=0.5",
                         "--weights",
                         "QQQ=0.7,SPY=0.3",
+                        "--rebalance",
+                        "none",
+                        "--rebalance",
+                        "quarterly",
                         "--out",
                         str(output_dir),
                     ]
                 )
 
-            first_path = output_dir / "qqq_spy_static_60_40_qqq_5000bp_spy_5000bp.json"
-            second_path = output_dir / "qqq_spy_static_60_40_qqq_7000bp_spy_3000bp.json"
+            first_path = output_dir / "qqq_spy_static_60_40_qqq_5000bp_spy_5000bp_rebalance_none.json"
+            second_path = output_dir / "qqq_spy_static_60_40_qqq_7000bp_spy_3000bp_rebalance_quarterly.json"
             first_payload = json.loads(first_path.read_text(encoding="utf-8"))
             self.assertEqual(exit_code, 0)
             self.assertTrue(first_path.exists())
             self.assertTrue(second_path.exists())
-            self.assertIn("Portfolio variants written: 2", stdout.getvalue())
+            self.assertIn("Portfolio variants written: 4", stdout.getvalue())
             self.assertEqual(first_payload["symbols"][0]["target_weight"], 0.5)
             self.assertEqual(first_payload["symbols"][1]["target_weight"], 0.5)
+            self.assertEqual(first_payload["rebalance"]["frequency"], "none")
 
     def test_portfolio_run_writes_artifacts_index_and_experiment_link(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

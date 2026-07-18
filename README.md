@@ -336,11 +336,14 @@ quant-lab portfolio-variants \
   --portfolio data/portfolios/qqq_spy_static_60_40.json \
   --weights QQQ=0.50,SPY=0.50 \
   --weights QQQ=0.70,SPY=0.30 \
+  --rebalance none \
+  --rebalance quarterly \
   --out data/portfolios/variants/qqq_spy
 ```
 
 The generated files are normal `portfolio_plan.v1` JSON specs, so each one can
-be reviewed, committed, or passed to `portfolio-run`.
+be reviewed, committed, or passed to `portfolio-run`. If `--rebalance` is
+omitted, the command keeps the base portfolio spec's rebalance frequency.
 
 ```bash
 quant-lab portfolio-run \

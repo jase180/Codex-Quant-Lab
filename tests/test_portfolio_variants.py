@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from quant_lab.portfolio_spec import parse_portfolio_spec  # noqa: E402
 from quant_lab.portfolio_variants import (  # noqa: E402
+    normalize_rebalance_frequencies,
     parse_weight_set,
     write_portfolio_variants,
 )
@@ -31,6 +32,15 @@ class PortfolioVariantTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown symbol"):
             parse_weight_set("QQQ=0.6,TLT=0.4", ["QQQ", "SPY"])
 
+    def test_normalize_rebalance_frequencies_deduplicates_and_validates(self) -> None:
+        self.assertEqual(
+            normalize_rebalance_frequencies(["monthly", " quarterly ", "monthly"]),
+            ["monthly", "quarterly"],
+        )
+
+        with self.assertRaisesRegex(ValueError, "Unsupported rebalance"):
+            normalize_rebalance_frequencies(["weekly"])
+
     def test_write_portfolio_variants_creates_valid_specs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
@@ -47,11 +57,39 @@ class PortfolioVariantTests(unittest.TestCase):
             self.assertEqual(len(results), 2)
             first_payload = json.loads(Path(results[0].path).read_text(encoding="utf-8"))
             first_spec = parse_portfolio_spec(first_payload)
-            self.assertEqual(first_spec.portfolio_id, "qqq_spy_static_60_40_qqq_5000bp_spy_5000bp")
+            self.assertEqual(
+                first_spec.portfolio_id,
+                "qqq_spy_static_60_40_qqq_5000bp_spy_5000bp_rebalance_monthly",
+            )
             self.assertEqual([symbol.target_weight for symbol in first_spec.symbols], [0.5, 0.5])
             self.assertEqual(first_spec.rebalance.frequency, "monthly")
             self.assertEqual(first_spec.benchmark.symbol, "SPY")
             self.assertTrue(Path(results[0].path).read_text(encoding="utf-8").endswith("\n"))
+
+    def test_write_portfolio_variants_creates_weight_and_rebalance_cross_product(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            base_path = workspace / "base.json"
+            output_dir = workspace / "variants"
+            _write_base_portfolio(base_path)
+
+            results = write_portfolio_variants(
+                portfolio_path=base_path,
+                raw_weight_sets=["QQQ=0.5,SPY=0.5", "QQQ=0.7,SPY=0.3"],
+                rebalance_frequencies=["none", "quarterly"],
+                output_dir=output_dir,
+            )
+
+            self.assertEqual(len(results), 4)
+            portfolio_ids = [result.portfolio_id for result in results]
+            self.assertIn("qqq_spy_static_60_40_qqq_5000bp_spy_5000bp_rebalance_none", portfolio_ids)
+            self.assertIn("qqq_spy_static_60_40_qqq_7000bp_spy_3000bp_rebalance_quarterly", portfolio_ids)
+            quarterly_payload = json.loads(
+                (output_dir / "qqq_spy_static_60_40_qqq_7000bp_spy_3000bp_rebalance_quarterly.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(quarterly_payload["rebalance"]["frequency"], "quarterly")
 
     def test_write_portfolio_variants_refuses_overwrite_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

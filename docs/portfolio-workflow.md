@@ -83,13 +83,18 @@ quant-lab portfolio-variants \
   --weights QQQ=0.50,SPY=0.50 \
   --weights QQQ=0.60,SPY=0.40 \
   --weights QQQ=0.70,SPY=0.30 \
+  --rebalance none \
+  --rebalance monthly \
+  --rebalance quarterly \
   --out data/portfolios/variants/qqq_spy
 ```
 
 Each generated file is a normal `portfolio_plan.v1` JSON file. The command
-keeps the base spec's data paths, benchmark, and rebalance rule, then validates
-each generated spec before writing it. It refuses to overwrite generated files
-unless `--force` is provided.
+keeps the base spec's data paths and benchmark, then validates each generated
+spec before writing it. Repeated `--weights` and repeated `--rebalance` values
+produce every requested combination. If `--rebalance` is omitted, the command
+keeps the base spec's rebalance frequency. It refuses to overwrite generated
+files unless `--force` is provided.
 
 Run generated variants by passing one generated JSON file to `portfolio-run`.
 

@@ -85,7 +85,7 @@ Delivered implementation:
 
 ### 2. Rebalance Frequency Variants
 
-Status: not started.
+Status: delivered.
 
 Extend variant generation to create specs across rebalance frequencies.
 
@@ -107,6 +107,16 @@ Acceptance criteria:
 - Produces stable filenames that include weights and rebalance frequency.
 - Validates every generated spec with the strict parser.
 - Documents how to run the generated variants.
+
+Delivered implementation:
+
+- `quant-lab portfolio-variants --rebalance ...`.
+- Repeated `--weights` and repeated `--rebalance` values generate every
+  requested weight/frequency combination.
+- Generated portfolio ids and filenames include both basis-point weights and
+  rebalance frequency.
+- Tests cover rebalance validation, deduplication, generated cross-product
+  files, and CLI output.
 
 ### 3. Portfolio Experiment Summary
 

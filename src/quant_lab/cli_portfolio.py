@@ -46,6 +46,7 @@ def portfolio_variants_command(args: argparse.Namespace) -> int:
         portfolio_path=args.portfolio,
         raw_weight_sets=args.weights,
         output_dir=args.out,
+        rebalance_frequencies=args.rebalance,
         force=args.force,
     )
     print(f"Portfolio variants written: {len(results)}")
