@@ -85,7 +85,7 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
             self.assertIn("No portfolio run", output)
             self.assertIn("quant-lab portfolio-run", output)
 
-    def test_portfolio_plan_next_recommends_inspect_after_one_run(self) -> None:
+    def test_portfolio_plan_next_recommends_data_trust_after_one_run(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
             self._write_index_records(
@@ -106,28 +106,43 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
 
             output = stdout.getvalue()
             self.assertEqual(exit_code, 0)
-            self.assertIn("recommended_step: inspect", output)
-            self.assertIn("quant-lab show-portfolio-run", output)
+            self.assertIn("recommended_step: data_trust", output)
+            self.assertIn("quant-lab summarize-portfolio-data-trust", output)
             self.assertIn("--metadata baseline/portfolio_metadata.json", output)
 
-    def test_portfolio_plan_next_recommends_summary_after_two_runs(self) -> None:
+    def test_portfolio_plan_next_recommends_inspect_after_data_trust_exists(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            baseline_dir = output_dir / "baseline"
+            baseline_dir.mkdir()
+            metadata_path = baseline_dir / "portfolio_metadata.json"
+            metadata_path.write_text("{}\n", encoding="utf-8")
+            (baseline_dir / "portfolio_data_trust_report.md").write_text("# Trust\n", encoding="utf-8")
             self._write_index_records(
                 index_path,
                 [
                     {
                         "run_type": "portfolio_run",
                         "experiment_id": "EXP-001",
-                        "metadata_path": "baseline/portfolio_metadata.json",
-                    },
-                    {
-                        "run_type": "portfolio_run",
-                        "experiment_id": "EXP-001",
-                        "metadata_path": "variant/portfolio_metadata.json",
-                    },
+                        "metadata_path": str(metadata_path),
+                    }
                 ],
             )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    ["portfolio-plan", "next", "--plan", str(output_dir / "portfolio_research_plan.json")]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: inspect", output)
+            self.assertIn("quant-lab show-portfolio-run", output)
+
+    def test_portfolio_plan_next_recommends_summary_after_two_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            self._write_two_portfolio_run_records(index_path, output_dir, trust_report_exists=True)
 
             with contextlib.redirect_stdout(io.StringIO()) as stdout:
                 exit_code = main(
@@ -145,21 +160,7 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
             (output_dir / "portfolio_summary.md").write_text("# Summary\n", encoding="utf-8")
-            self._write_index_records(
-                index_path,
-                [
-                    {
-                        "run_type": "portfolio_run",
-                        "experiment_id": "EXP-001",
-                        "metadata_path": "baseline/portfolio_metadata.json",
-                    },
-                    {
-                        "run_type": "portfolio_run",
-                        "experiment_id": "EXP-001",
-                        "metadata_path": "variant/portfolio_metadata.json",
-                    },
-                ],
-            )
+            self._write_two_portfolio_run_records(index_path, output_dir, trust_report_exists=True)
 
             with contextlib.redirect_stdout(io.StringIO()) as stdout:
                 exit_code = main(
@@ -265,22 +266,39 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
     def _create_plan_ready_for_batch(self, temp_path: Path) -> tuple[Path, Path, Path]:
         output_dir, experiments_path, index_path = self._create_plan_fixture(temp_path)
         (output_dir / "portfolio_summary.md").write_text("# Summary\n", encoding="utf-8")
+        self._write_two_portfolio_run_records(index_path, output_dir, trust_report_exists=True)
+        return output_dir, experiments_path, index_path
+
+    def _write_two_portfolio_run_records(
+        self,
+        index_path: Path,
+        output_dir: Path,
+        *,
+        trust_report_exists: bool,
+    ) -> None:
+        baseline_metadata = output_dir / "baseline" / "portfolio_metadata.json"
+        variant_metadata = output_dir / "variant" / "portfolio_metadata.json"
+        baseline_metadata.parent.mkdir()
+        variant_metadata.parent.mkdir()
+        baseline_metadata.write_text("{}\n", encoding="utf-8")
+        variant_metadata.write_text("{}\n", encoding="utf-8")
+        if trust_report_exists:
+            (baseline_metadata.parent / "portfolio_data_trust_report.md").write_text("# Trust\n", encoding="utf-8")
         self._write_index_records(
             index_path,
             [
                 {
                     "run_type": "portfolio_run",
                     "experiment_id": "EXP-001",
-                    "metadata_path": "baseline/portfolio_metadata.json",
+                    "metadata_path": str(baseline_metadata),
                 },
                 {
                     "run_type": "portfolio_run",
                     "experiment_id": "EXP-001",
-                    "metadata_path": "variant/portfolio_metadata.json",
+                    "metadata_path": str(variant_metadata),
                 },
             ],
         )
-        return output_dir, experiments_path, index_path
 
     def _write_index_records(self, index_path: Path, records: list[dict]) -> None:
         index_path.write_text(

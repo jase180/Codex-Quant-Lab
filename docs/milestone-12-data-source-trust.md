@@ -129,7 +129,7 @@ Acceptance criteria:
 
 ### 4. Research Workflow Integration
 
-Status: planned.
+Status: delivered.
 
 Make data trust a visible next step in the guided workflow docs and plan
 recommendations.

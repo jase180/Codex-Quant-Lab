@@ -79,6 +79,7 @@ def portfolio_plan_next_command(args: argparse.Namespace) -> int:
         batch_manifest_exists=_portfolio_batch_manifest_exists(plan.output_dir),
         batch_result_exists=_portfolio_batch_result_exists(plan.output_dir),
         batch_summary_exists=_portfolio_batch_summary_exists(plan.output_dir),
+        data_trust_report_exists=_portfolio_data_trust_report_exists(records),
     )
 
     print(f"Portfolio research plan: {args.plan}")
@@ -98,6 +99,16 @@ def _portfolio_variants_exist(output_dir: str) -> bool:
 
 def _portfolio_summary_exists(output_dir: str) -> bool:
     return (Path(output_dir) / "portfolio_summary.md").exists()
+
+
+def _portfolio_data_trust_report_exists(index_records: list[dict]) -> bool:
+    for record in index_records:
+        if str(record.get("run_type")) != "portfolio_run":
+            continue
+        metadata_path = str(record.get("metadata_path", "")).strip()
+        if metadata_path:
+            return (Path(metadata_path).parent / "portfolio_data_trust_report.md").exists()
+    return False
 
 
 def _portfolio_candidate_specs_exist(output_dir: str) -> bool:

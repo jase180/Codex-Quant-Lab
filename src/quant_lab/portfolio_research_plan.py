@@ -217,6 +217,7 @@ def recommend_portfolio_next_step(
     batch_manifest_exists: bool = False,
     batch_result_exists: bool = False,
     batch_summary_exists: bool = False,
+    data_trust_report_exists: bool = False,
 ) -> PortfolioPlanRecommendation:
     if experiment_has_decision:
         return PortfolioPlanRecommendation(
@@ -237,6 +238,12 @@ def recommend_portfolio_next_step(
             step="baseline",
             reason="No portfolio run is linked to this experiment yet.",
             command=build_portfolio_baseline_command_from_plan(plan),
+        )
+    if metadata_paths and not data_trust_report_exists:
+        return PortfolioPlanRecommendation(
+            step="data_trust",
+            reason="A portfolio run exists; write a per-symbol data trust report before interpreting results.",
+            command=build_portfolio_data_trust_command(metadata_paths[0]),
         )
     if len(metadata_paths) == 1:
         return PortfolioPlanRecommendation(
@@ -306,6 +313,10 @@ def build_portfolio_baseline_command_from_plan(plan: PortfolioResearchPlan) -> s
 
 def build_show_portfolio_run_command(metadata_path: str) -> str:
     return shlex.join(["quant-lab", "show-portfolio-run", "--metadata", metadata_path])
+
+
+def build_portfolio_data_trust_command(metadata_path: str) -> str:
+    return shlex.join(["quant-lab", "summarize-portfolio-data-trust", "--metadata", metadata_path])
 
 
 def build_compare_portfolio_runs_command(metadata_paths: list[str]) -> str:

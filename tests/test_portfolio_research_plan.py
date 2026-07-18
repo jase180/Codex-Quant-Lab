@@ -12,6 +12,7 @@ from quant_lab.portfolio_research_plan import (  # noqa: E402
     DEFAULT_PORTFOLIO_RECOMMENDED_STEPS,
     PORTFOLIO_RESEARCH_PLAN_SCHEMA_VERSION,
     build_compare_portfolio_runs_command,
+    build_portfolio_data_trust_command,
     build_portfolio_batch_plan_command_from_plan,
     build_portfolio_baseline_command_from_plan,
     build_portfolio_summarize_command_from_plan,
@@ -99,6 +100,11 @@ class PortfolioResearchPlanTests(unittest.TestCase):
         inspect = recommend_portfolio_next_step(
             plan,
             [{"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"}],
+            data_trust_report_exists=True,
+        )
+        data_trust = recommend_portfolio_next_step(
+            plan,
+            [{"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"}],
         )
         summarize = recommend_portfolio_next_step(
             plan,
@@ -106,6 +112,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
                 {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
                 {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
             ],
+            data_trust_report_exists=True,
         )
         variants = recommend_portfolio_next_step(
             plan,
@@ -114,6 +121,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
                 {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
             ],
             summary_exists=True,
+            data_trust_report_exists=True,
         )
         compare = recommend_portfolio_next_step(
             plan,
@@ -123,6 +131,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
             ],
             summary_exists=True,
             variants_exist=True,
+            data_trust_report_exists=True,
         )
         batch_plan = recommend_portfolio_next_step(
             plan,
@@ -133,6 +142,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
             summary_exists=True,
             variants_exist=True,
             candidate_specs_exist=True,
+            data_trust_report_exists=True,
         )
         batch_run = recommend_portfolio_next_step(
             plan,
@@ -144,6 +154,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
             variants_exist=True,
             candidate_specs_exist=True,
             batch_manifest_exists=True,
+            data_trust_report_exists=True,
         )
         batch_summarize = recommend_portfolio_next_step(
             plan,
@@ -156,6 +167,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
             candidate_specs_exist=True,
             batch_manifest_exists=True,
             batch_result_exists=True,
+            data_trust_report_exists=True,
         )
         done = recommend_portfolio_next_step(plan, [], experiment_has_decision=True)
 
@@ -163,6 +175,8 @@ class PortfolioResearchPlanTests(unittest.TestCase):
         self.assertIn("quant-lab portfolio-run", baseline.command or "")
         self.assertEqual(inspect.step, "inspect")
         self.assertIn("show-portfolio-run", inspect.command or "")
+        self.assertEqual(data_trust.step, "data_trust")
+        self.assertIn("summarize-portfolio-data-trust", data_trust.command or "")
         self.assertEqual(summarize.step, "summarize")
         self.assertIn("summarize-portfolio-experiment", summarize.command or "")
         self.assertEqual(variants.step, "variants")
@@ -190,12 +204,14 @@ class PortfolioResearchPlanTests(unittest.TestCase):
 
         baseline_command = build_portfolio_baseline_command_from_plan(plan)
         compare_command = build_compare_portfolio_runs_command(["first path/metadata.json", "second/metadata.json"])
+        data_trust_command = build_portfolio_data_trust_command("first path/portfolio_metadata.json")
         summarize_command = build_portfolio_summarize_command_from_plan(plan)
         variants_command = build_portfolio_variants_command_from_plan(plan)
         batch_plan_command = build_portfolio_batch_plan_command_from_plan(plan)
 
         self.assertIn("'artifacts/research/qqq spy/baseline'", baseline_command)
         self.assertIn("'first path/metadata.json'", compare_command)
+        self.assertIn("'first path/portfolio_metadata.json'", data_trust_command)
         self.assertIn("'artifacts/research/qqq spy/portfolio_summary.md'", summarize_command)
         self.assertIn("portfolio-variants", variants_command)
         self.assertIn("'artifacts/research/qqq spy/portfolio_batch'", batch_plan_command)

@@ -843,10 +843,11 @@ Short version:
 1. State the research question.
 2. Fetch or choose the data.
 3. Run a baseline.
-4. Run one controlled variation or sweep.
-5. Compare against a benchmark.
-6. Inspect trades and drawdowns.
-7. Decide the next experiment.
+4. Write a data trust report for the baseline.
+5. Run one controlled variation or sweep.
+6. Compare against a benchmark.
+7. Inspect trades and drawdowns.
+8. Decide the next experiment.
 
 Avoid treating a good-looking backtest as proof. Use it as evidence to decide
 what to test next.

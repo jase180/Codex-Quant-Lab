@@ -162,6 +162,61 @@ class CliResearchPlanTests(unittest.TestCase):
             self.assertIn("--param indicator_id.inputs.length=VALUE1,VALUE2", output)
             self.assertIn(str(output_dir / "sweep_001"), output)
 
+    def test_research_plan_next_recommends_run_trust_after_baseline_with_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            output_dir, _, index_path = self._create_plan_fixture(temp_path)
+            metadata_path = output_dir / "baseline" / "run_metadata.json"
+            metadata_path.parent.mkdir()
+            metadata_path.write_text("{}\n", encoding="utf-8")
+            self._write_index_records(
+                index_path,
+                [
+                    {
+                        "run_type": "run",
+                        "experiment_id": "EXP-001",
+                        "metadata_path": str(metadata_path),
+                    }
+                ],
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: run_trust", output)
+            self.assertIn("quant-lab summarize-run-trust", output)
+            self.assertIn("--metadata", output)
+            self.assertIn(str(metadata_path), output)
+
+    def test_research_plan_next_recommends_sweep_after_run_trust_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            output_dir, _, index_path = self._create_plan_fixture(temp_path)
+            metadata_path = output_dir / "baseline" / "run_metadata.json"
+            metadata_path.parent.mkdir()
+            metadata_path.write_text("{}\n", encoding="utf-8")
+            (metadata_path.parent / "run_trust_report.md").write_text("# Trust\n", encoding="utf-8")
+            self._write_index_records(
+                index_path,
+                [
+                    {
+                        "run_type": "run",
+                        "experiment_id": "EXP-001",
+                        "metadata_path": str(metadata_path),
+                    }
+                ],
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: sweep", output)
+            self.assertIn("quant-lab sweep", output)
+
     def test_research_plan_next_recommends_train_test_after_sweep(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))

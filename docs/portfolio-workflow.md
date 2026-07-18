@@ -165,6 +165,17 @@ Then inspect:
 - `portfolio_allocation_drift.csv` for target-versus-actual weight drift.
 - `portfolio_benchmark_metrics.json` for the buy-and-hold benchmark result.
 
+Before comparing variants, write a per-symbol data trust report:
+
+```bash
+quant-lab summarize-portfolio-data-trust \
+  --metadata artifacts/research/qqq_spy_static_60_40/baseline/portfolio_metadata.json
+```
+
+The report verifies every symbol CSV and benchmark input against saved
+fingerprints, then summarizes quality severity, aligned rows, dropped rows, and
+provenance status.
+
 ## 7. Compare Portfolio Runs
 
 After you have two saved portfolio runs, compare them from metadata:
@@ -230,7 +241,10 @@ quant-lab portfolio-plan next \
 The first version recommends:
 
 - `portfolio-run` when no linked portfolio run exists.
-- `show-portfolio-run` when one linked portfolio run exists.
+- `summarize-portfolio-data-trust` when a linked portfolio run exists but its
+  data trust report has not been written.
+- `show-portfolio-run` when one linked portfolio run exists and data trust has
+  already been checked.
 - `summarize-portfolio-experiment` when multiple linked portfolio runs exist
   and `portfolio_summary.md` is not present.
 - `portfolio-variants` when a summary exists but no generated variants are known

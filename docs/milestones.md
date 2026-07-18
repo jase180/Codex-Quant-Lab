@@ -296,7 +296,7 @@ Planned work:
 - Data provenance inspection for cached CSV files.
 - Single-run trust reports from `run_metadata.json`.
 - Portfolio data trust reports from `portfolio_metadata.json`.
-- Guided workflow recommendations for trust checks.
+- Guided workflow recommendations for trust checks. Delivered.
 - Data cache inventory and duplicate/missing-provenance warnings.
 
 Exit criteria:

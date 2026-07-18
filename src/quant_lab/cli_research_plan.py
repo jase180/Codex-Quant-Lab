@@ -80,7 +80,12 @@ def research_plan_next_command(args: argparse.Namespace) -> int:
     records = filter_index_records(load_research_index(plan.index_path), experiment_id=plan.experiment_id)
     experiments = load_experiments(plan.experiments_path)
     experiment = next((record for record in experiments if record.experiment_id == plan.experiment_id), None)
-    recommendation = recommend_next_step(plan, records, experiment_has_decision=experiment_has_decision(experiment))
+    recommendation = recommend_next_step(
+        plan,
+        records,
+        experiment_has_decision=experiment_has_decision(experiment),
+        run_trust_report_exists=_run_trust_report_exists(records),
+    )
 
     print(f"Research plan: {args.plan}")
     print(f"experiment_id: {plan.experiment_id}")
@@ -97,13 +102,21 @@ def recommend_next_step(
     index_records: list[dict],
     *,
     experiment_has_decision: bool = False,
+    run_trust_report_exists: bool = False,
 ) -> ResearchPlanRecommendation:
     run_types = {str(record.get("run_type")) for record in index_records}
+    baseline_metadata_path = _first_metadata_path(index_records, run_type="run")
     if "run" not in run_types:
         return ResearchPlanRecommendation(
             step="baseline",
             reason="No baseline run is linked to this experiment yet.",
             command=build_baseline_run_command_from_plan(plan),
+        )
+    if baseline_metadata_path and not run_trust_report_exists:
+        return ResearchPlanRecommendation(
+            step="run_trust",
+            reason="A baseline exists; write a data trust report before widening the research branch.",
+            command=build_run_trust_command(baseline_metadata_path),
         )
     if "sweep_run" not in run_types:
         return ResearchPlanRecommendation(
@@ -132,6 +145,13 @@ def recommend_next_step(
 
 def experiment_has_decision(experiment) -> bool:
     return experiment is not None and experiment.decision_record is not None
+
+
+def _run_trust_report_exists(index_records: list[dict]) -> bool:
+    metadata_path = _first_metadata_path(index_records, run_type="run")
+    if not metadata_path:
+        return False
+    return (Path(metadata_path).parent / "run_trust_report.md").exists()
 
 
 def build_baseline_run_command(args: argparse.Namespace, experiment_id: str) -> str:
@@ -291,3 +311,17 @@ def build_summarize_command_from_plan(plan: ResearchPlan) -> str:
             plan.index_path,
         ]
     )
+
+
+def build_run_trust_command(metadata_path: str) -> str:
+    return shlex.join(["quant-lab", "summarize-run-trust", "--metadata", metadata_path])
+
+
+def _first_metadata_path(index_records: list[dict], *, run_type: str) -> str | None:
+    for record in index_records:
+        if str(record.get("run_type")) != run_type:
+            continue
+        metadata_path = str(record.get("metadata_path", "")).strip()
+        if metadata_path:
+            return metadata_path
+    return None

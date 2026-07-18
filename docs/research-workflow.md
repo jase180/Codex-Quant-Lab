@@ -141,6 +141,18 @@ artifacts/research_index.jsonl
 It also appends the generated `run_metadata.json` path to the experiment's
 `linked_runs` when `--experiment-id` is provided.
 
+Before widening the research branch, write a data trust report:
+
+```bash
+quant-lab summarize-run-trust \
+  --metadata artifacts/research/sma_qqq_2015_2025/baseline/run_metadata.json
+```
+
+The trust report checks whether the current local CSV still matches the saved
+fingerprint and summarizes source/provenance plus data-quality warnings. This
+does not prove the strategy works; it only makes the input data easier to
+explain before more runs depend on it.
+
 ## 4. Run A Controlled Sweep
 
 Change a small set of parameters, and keep the data, sizing, commission, and
