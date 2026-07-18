@@ -39,6 +39,16 @@ class SweepSetup:
     research_note_path: str | None
 
 
+@dataclass(frozen=True)
+class TrainSweepResult:
+    """Selected train-sweep evidence used before an out-of-sample test run."""
+
+    rows: list[SweepSummaryRow]
+    summary_path: str
+    best_row: SweepSummaryRow
+    best_variant: dict
+
+
 def sweep_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cost_assumptions(
         cost_preset=args.cost_preset,
@@ -116,16 +126,15 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
         train_dir = window_dir / "train_sweep"
         test_dir = window_dir / "test_selected"
 
-        train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
-        train_data_quality = build_data_quality_report(train_data)
-        train_rows: list[SweepSummaryRow] = []
-        variants_by_run_id: dict[str, dict] = {}
-        for variant_index, variant in enumerate(setup.variants, start=1):
-            run_id = f"run_{variant_index:03d}"
-            variants_by_run_id[run_id] = variant
-            strategy_payload = variant["payload"]
-            params = {
-                **variant["params"],
+        train_result = run_train_sweep_variants(
+            args=args,
+            variants=setup.variants,
+            train_data=train_data,
+            train_dir=train_dir,
+            run_type="walk_forward_train_run",
+            run_id_prefix=f"{window_id}_",
+            run_name_context=window_id,
+            extra_params={
                 "_workflow": "walk_forward",
                 "_split_phase": "train",
                 "_window_id": window_id,
@@ -134,33 +143,11 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
                 "_test_start": window["test_start"],
                 "_test_end": window["test_end"],
                 "_select_by": args.select_by,
-            }
-            strategy_spec = parse_strategy(strategy_payload)
-            run_name_prefix = args.run_name or strategy_spec.name
-            train_rows.append(
-                run_sweep_variant(
-                    args=args,
-                    data=train_data,
-                    benchmark_curve=train_benchmark.curve,
-                    benchmark_metrics=train_benchmark.metrics,
-                    benchmark_display_name=train_benchmark.display_name,
-                    data_quality=train_data_quality,
-                    strategy_spec=strategy_spec,
-                    strategy_payload=strategy_payload,
-                    run_dir=train_dir / run_id,
-                    run_name=f"{run_name_prefix} {window_id} train {run_id}",
-                    parameters=params,
-                    run_type="walk_forward_train_run",
-                    run_id=f"{window_id}_{run_id}",
-                    research_note_path=setup.research_note_path,
-                )
-            )
-
-        train_rows.sort(key=lambda row: _selection_value(row, args.select_by), reverse=True)
-        train_summary_path = save_sweep_summary(train_rows, train_dir)
-        best_train = train_rows[0]
-        selected_train_run_id = str(best_train["run_id"]).removeprefix(f"{window_id}_")
-        best_variant = variants_by_run_id[selected_train_run_id]
+            },
+            research_note_path=setup.research_note_path,
+        )
+        best_train = train_result.best_row
+        best_variant = train_result.best_variant
 
         test_benchmark = build_benchmark(test_data, args.initial_cash, args.benchmark)
         test_data_quality = build_data_quality_report(test_data)
@@ -201,7 +188,7 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
                 window=window,
                 best_train=best_train,
                 test_row=test_row,
-                train_summary_path=train_summary_path,
+                train_summary_path=train_result.summary_path,
                 test_summary_path=test_summary_path,
             )
         )
@@ -223,47 +210,24 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     train_dir = setup.output_dir / "train_sweep"
     test_dir = setup.output_dir / "test_selected"
 
-    train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
-    train_data_quality = build_data_quality_report(train_data)
-    train_rows: list[SweepSummaryRow] = []
-    variants_by_run_id: dict[str, dict] = {}
-
-    for index, variant in enumerate(setup.variants, start=1):
-        run_id = f"run_{index:03d}"
-        variants_by_run_id[run_id] = variant
-        strategy_payload = variant["payload"]
-        params = {
-            **variant["params"],
+    train_result = run_train_sweep_variants(
+        args=args,
+        variants=setup.variants,
+        train_data=train_data,
+        train_dir=train_dir,
+        run_type="train_sweep_run",
+        run_id_prefix="",
+        run_name_context="",
+        extra_params={
             "_split_phase": "train",
             "_train_end": args.train_end,
             "_test_start": args.test_start,
             "_select_by": args.select_by,
-        }
-        strategy_spec = parse_strategy(strategy_payload)
-        run_name_prefix = args.run_name or strategy_spec.name
-        train_rows.append(
-            run_sweep_variant(
-                args=args,
-                data=train_data,
-                benchmark_curve=train_benchmark.curve,
-                benchmark_metrics=train_benchmark.metrics,
-                benchmark_display_name=train_benchmark.display_name,
-                data_quality=train_data_quality,
-                strategy_spec=strategy_spec,
-                strategy_payload=strategy_payload,
-                run_dir=train_dir / run_id,
-                run_name=f"{run_name_prefix} train {run_id}",
-                parameters=params,
-                run_type="train_sweep_run",
-                run_id=run_id,
-                research_note_path=setup.research_note_path,
-            )
-        )
-
-    train_rows.sort(key=lambda row: _selection_value(row, args.select_by), reverse=True)
-    train_summary_path = save_sweep_summary(train_rows, train_dir)
-    best_train = train_rows[0]
-    best_variant = variants_by_run_id[str(best_train["run_id"])]
+        },
+        research_note_path=setup.research_note_path,
+    )
+    best_train = train_result.best_row
+    best_variant = train_result.best_variant
 
     test_benchmark = build_benchmark(test_data, args.initial_cash, args.benchmark)
     test_data_quality = build_data_quality_report(test_data)
@@ -296,21 +260,84 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     test_summary_path = save_sweep_summary([test_row], setup.output_dir / "test_summary")
     research_path = save_train_test_research_summary(
         args=args,
-        train_rows=train_rows,
+        train_rows=train_result.rows,
         test_row=test_row,
         output_dir=setup.output_dir,
-        train_summary_path=train_summary_path,
+        train_summary_path=train_result.summary_path,
         test_summary_path=test_summary_path,
     )
 
-    print(f"Train/test sweep complete: {len(train_rows)} train runs")
-    print(f"train_summary: {train_summary_path}")
+    print(f"Train/test sweep complete: {len(train_result.rows)} train runs")
+    print(f"train_summary: {train_result.summary_path}")
     print(f"test_summary: {test_summary_path}")
     print(f"research: {research_path}")
     print(f"selected_train_run: {best_train['run_id']}")
     print(f"selected_train_{args.select_by}: {_selection_value(best_train, args.select_by):.4f}")
     print(f"test_total_return: {float(test_row['total_return']):.2%}")
     return 0
+
+
+def run_train_sweep_variants(
+    *,
+    args: argparse.Namespace,
+    variants: Sequence[dict],
+    train_data: pd.DataFrame,
+    train_dir: Path,
+    run_type: str,
+    run_id_prefix: str,
+    run_name_context: str,
+    extra_params: dict,
+    research_note_path: str | None,
+) -> TrainSweepResult:
+    train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
+    train_data_quality = build_data_quality_report(train_data)
+    train_rows: list[SweepSummaryRow] = []
+    variants_by_run_id: dict[str, dict] = {}
+
+    for index, variant in enumerate(variants, start=1):
+        local_run_id = f"run_{index:03d}"
+        persisted_run_id = f"{run_id_prefix}{local_run_id}"
+        variants_by_run_id[persisted_run_id] = variant
+        strategy_payload = variant["payload"]
+        params = {
+            **variant["params"],
+            **extra_params,
+        }
+        strategy_spec = parse_strategy(strategy_payload)
+        run_name_prefix = args.run_name or strategy_spec.name
+        run_name_parts = [run_name_prefix]
+        if run_name_context:
+            run_name_parts.append(run_name_context)
+        run_name_parts.extend(["train", local_run_id])
+        train_rows.append(
+            run_sweep_variant(
+                args=args,
+                data=train_data,
+                benchmark_curve=train_benchmark.curve,
+                benchmark_metrics=train_benchmark.metrics,
+                benchmark_display_name=train_benchmark.display_name,
+                data_quality=train_data_quality,
+                strategy_spec=strategy_spec,
+                strategy_payload=strategy_payload,
+                run_dir=train_dir / local_run_id,
+                run_name=" ".join(run_name_parts),
+                parameters=params,
+                run_type=run_type,
+                run_id=persisted_run_id,
+                research_note_path=research_note_path,
+            )
+        )
+
+    train_rows.sort(key=lambda row: _selection_value(row, args.select_by), reverse=True)
+    summary_path = save_sweep_summary(train_rows, train_dir)
+    best_row = train_rows[0]
+    best_variant = variants_by_run_id[str(best_row["run_id"])]
+    return TrainSweepResult(
+        rows=train_rows,
+        summary_path=summary_path,
+        best_row=best_row,
+        best_variant=best_variant,
+    )
 
 
 def prepare_sweep_setup(args: argparse.Namespace) -> SweepSetup:
