@@ -219,7 +219,8 @@ Planned work:
 
 - `quant-lab show-portfolio-run`.
 - `quant-lab compare-portfolio-runs`.
-- Portfolio templates.
+- Portfolio templates with `quant-lab list-portfolio-templates` and
+  `quant-lab new-portfolio`.
 - Guided portfolio research plans.
 - README and workflow updates for the portfolio research loop.
 
@@ -253,8 +254,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 9 deliverable 3: portfolio templates.
+Build Milestone 9 deliverable 4: guided portfolio research plans.
 
-Reason: portfolio runs can now be inspected and compared from the CLI. The next
-usability gap is making it easy to create a valid starter portfolio spec without
-hand-editing JSON from scratch.
+Reason: portfolio specs can now be created, run, inspected, and compared from
+the CLI. The next usability gap is a durable portfolio-specific research plan
+that recommends the next command and keeps the hypothesis tied to its runs.

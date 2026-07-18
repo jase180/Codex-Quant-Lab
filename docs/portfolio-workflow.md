@@ -40,7 +40,25 @@ data/cache/QQQ_2015-01-01_2025-12-31.csv
 data/cache/SPY_2015-01-01_2025-12-31.csv
 ```
 
-## 2. Review The Portfolio Spec
+## 2. Create Or Review The Portfolio Spec
+
+List the built-in starter templates:
+
+```bash
+quant-lab list-portfolio-templates
+```
+
+Write the QQQ/SPY 60/40 starter spec:
+
+```bash
+quant-lab new-portfolio \
+  --template qqq-spy-60-40 \
+  --out data/portfolios/qqq_spy_static_60_40.json
+```
+
+`new-portfolio` validates the generated JSON with the strict portfolio parser
+before writing it. It refuses to overwrite an existing file unless `--force` is
+provided.
 
 Start with:
 

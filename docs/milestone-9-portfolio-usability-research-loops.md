@@ -104,7 +104,7 @@ Delivered implementation:
 
 ### 3. Portfolio Templates
 
-Status: not started.
+Status: delivered.
 
 Add starter portfolio JSON generation:
 
@@ -122,6 +122,15 @@ Acceptance criteria:
 - Refuses to overwrite unless `--force` is provided.
 - Validates generated JSON with the strict portfolio parser before writing.
 - README links the portfolio template workflow.
+
+Delivered implementation:
+
+- `quant-lab list-portfolio-templates`.
+- `quant-lab new-portfolio --template qqq-spy-60-40 --out ...`.
+- `quant_lab.portfolio_templates` validates generated payloads with
+  `parse_portfolio_spec` before writing.
+- Tests cover template listing, generated schema validity, CLI output, and
+  overwrite protection.
 
 ### 4. Guided Portfolio Research Plan
 

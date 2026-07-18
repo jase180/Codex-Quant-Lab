@@ -44,6 +44,45 @@ def write_portfolio(path: Path) -> None:
 
 
 class CliPortfolioTests(unittest.TestCase):
+    def test_list_portfolio_templates_command_prints_templates(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            exit_code = main(["list-portfolio-templates"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("qqq-spy-60-40", stdout.getvalue())
+
+    def test_new_portfolio_command_writes_valid_template(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "qqq_spy_static_60_40.json"
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "new-portfolio",
+                        "--template",
+                        "qqq-spy-60-40",
+                        "--out",
+                        str(output_path),
+                    ]
+                )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Portfolio template written", stdout.getvalue())
+            self.assertEqual(payload["portfolio_id"], "qqq_spy_static_60_40")
+            self.assertEqual([symbol["symbol"] for symbol in payload["symbols"]], ["QQQ", "SPY"])
+
+            with self.assertRaises(FileExistsError):
+                main(
+                    [
+                        "new-portfolio",
+                        "--template",
+                        "qqq-spy-60-40",
+                        "--out",
+                        str(output_path),
+                    ]
+                )
+
     def test_portfolio_run_writes_artifacts_index_and_experiment_link(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)

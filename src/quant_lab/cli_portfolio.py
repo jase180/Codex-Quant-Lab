@@ -15,8 +15,29 @@ from .portfolio_benchmarks import build_portfolio_benchmark_comparison
 from .portfolio_data import load_multi_asset_dataset
 from .portfolio_metadata import PortfolioMetadata
 from .portfolio_spec import load_portfolio_spec
+from .portfolio_templates import (
+    available_portfolio_templates,
+    build_portfolio_template,
+    write_portfolio_template,
+)
 from .research_index import RunIndexRecord, append_research_index_record
 from .research_registry import link_run_metadata_path, require_experiment
+
+
+def list_portfolio_templates_command(args: argparse.Namespace) -> int:
+    for template_name in available_portfolio_templates():
+        print(template_name)
+    return 0
+
+
+def new_portfolio_command(args: argparse.Namespace) -> int:
+    payload = build_portfolio_template(args.template)
+    output_path = write_portfolio_template(payload, args.out, force=args.force)
+    print(f"Portfolio template written: {output_path}")
+    print(f"template: {args.template}")
+    print(f"portfolio_id: {payload['portfolio_id']}")
+    print(f"symbols: {', '.join(symbol['symbol'] for symbol in payload['symbols'])}")
+    return 0
 
 
 def portfolio_run_command(args: argparse.Namespace) -> int:

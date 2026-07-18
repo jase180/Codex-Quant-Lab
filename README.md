@@ -13,6 +13,7 @@ tool that makes backtest assumptions visible.
 - Cache normalized OHLCV CSV files locally.
 - Define rule-based strategies in strict JSON.
 - Create valid starter strategy JSON from built-in templates.
+- Create valid starter portfolio JSON from built-in templates.
 - Execute SMA, EMA, RSI, rolling-high, and rolling-low based long-only strategies.
 - Run one backtest from the CLI.
 - Run parameter sweeps from the CLI.
@@ -308,6 +309,23 @@ experiment's `linked_runs`. Use `--experiments-path` too when the experiment
 registry is not the default `artifacts/experiments.jsonl`.
 
 ### Run A Static-Weight Portfolio
+
+List the built-in starter portfolio templates:
+
+```bash
+quant-lab list-portfolio-templates
+```
+
+Create a valid `portfolio_plan.v1` JSON file:
+
+```bash
+quant-lab new-portfolio \
+  --template qqq-spy-60-40 \
+  --out data/portfolios/qqq_spy_static_60_40.json
+```
+
+The command validates the generated JSON before writing it and refuses to
+overwrite an existing file unless `--force` is provided.
 
 ```bash
 quant-lab portfolio-run \

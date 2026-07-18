@@ -26,7 +26,11 @@ from .cli_run_inspection import (
     show_run_command,
     verify_run_command,
 )
-from .cli_portfolio import portfolio_run_command
+from .cli_portfolio import (
+    list_portfolio_templates_command,
+    new_portfolio_command,
+    portfolio_run_command,
+)
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -34,6 +38,7 @@ from .research_registry import (
 )
 from .run_metadata import command_tokens
 from .strategy_templates import available_strategy_templates
+from .portfolio_templates import available_portfolio_templates
 from .sweep_workflows import (
     build_sweep_variants,
     parse_param_sweeps,
@@ -154,6 +159,26 @@ def register_run_commands(subparsers) -> None:
 
 
 def register_portfolio_commands(subparsers) -> None:
+    template_list_parser = subparsers.add_parser(
+        "list-portfolio-templates",
+        help="List built-in portfolio templates.",
+    )
+    template_list_parser.set_defaults(func=list_portfolio_templates_command)
+
+    new_portfolio_parser = subparsers.add_parser(
+        "new-portfolio",
+        help="Create a valid portfolio_plan.v1 JSON file from a built-in template.",
+    )
+    new_portfolio_parser.add_argument(
+        "--template",
+        required=True,
+        choices=available_portfolio_templates(),
+        help="Template name.",
+    )
+    new_portfolio_parser.add_argument("--out", required=True, help="Path where the portfolio JSON is written.")
+    new_portfolio_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
+    new_portfolio_parser.set_defaults(func=new_portfolio_command)
+
     portfolio_parser = subparsers.add_parser(
         "portfolio-run",
         help="Run one static-weight portfolio spec against aligned OHLCV CSV inputs.",
