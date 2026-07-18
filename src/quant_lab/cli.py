@@ -6,7 +6,12 @@ import argparse
 import sys
 from typing import Sequence
 
-from .cli_data import fetch_command, list_strategy_templates_command, new_strategy_command
+from .cli_data import (
+    fetch_command,
+    list_strategy_templates_command,
+    new_strategy_command,
+    show_data_source_command,
+)
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .cli_experiments import (
@@ -401,6 +406,13 @@ def register_data_commands(subparsers) -> None:
         help="Market data interval. Only 1d is supported for now.",
     )
     fetch_parser.set_defaults(func=fetch_command)
+
+    show_data_source_parser = subparsers.add_parser(
+        "show-data-source",
+        help="Inspect one cached OHLCV CSV and its provenance sidecar.",
+    )
+    show_data_source_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
+    show_data_source_parser.set_defaults(func=show_data_source_command)
 
     template_list_parser = subparsers.add_parser(
         "list-strategy-templates",

@@ -17,6 +17,7 @@ It owns:
 - `rule_based_strategy.py`: turns a validated strategy spec into an executable strategy.
 - `benchmarks.py`: builds benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
+- `data_source.py`: inspects cached CSV data and fetch provenance sidecars.
 - `data_quality.py`: summarizes suspicious input-data conditions for artifacts.
 - `portfolio_spec.py`: validates explicit `portfolio_plan.v1` multi-symbol
   allocation JSON.
@@ -107,6 +108,12 @@ Fetch data:
 
 ```bash
 quant-lab fetch --symbol QQQ --start 2015-01-01 --end 2025-12-31 --out data/cache
+```
+
+Inspect one cached CSV and its provenance sidecar:
+
+```bash
+quant-lab show-data-source --data data/cache/QQQ_2015-01-01_2025-12-31.csv
 ```
 
 Run one strategy:

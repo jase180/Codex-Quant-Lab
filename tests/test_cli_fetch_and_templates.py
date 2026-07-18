@@ -70,6 +70,51 @@ class CliFetchAndTemplateTests(unittest.TestCase):
         self.assertIn("sma-crossover", stdout.getvalue())
         self.assertIn("rsi-reversion", stdout.getvalue())
 
+    def test_show_data_source_command_prints_csv_and_provenance_summary(self) -> None:
+        data = pd.DataFrame(
+            [
+                {
+                    "date": "2026-01-02",
+                    "open": 100,
+                    "high": 102,
+                    "low": 99,
+                    "close": 101,
+                    "volume": 1000,
+                }
+            ]
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_path = Path(temp_dir) / "SPY_2026-01-01_2026-01-31.csv"
+            data.to_csv(csv_path, index=False)
+            provenance_path = csv_path.with_suffix(".provenance.json")
+            provenance_path.write_text(
+                json.dumps(
+                    {
+                        "provenance_schema_version": "market_data_provenance.v1",
+                        "provider": "fixture",
+                        "symbol": "SPY",
+                        "requested_start": "2026-01-01",
+                        "requested_end": "2026-01-31",
+                        "data_start": "2026-01-02",
+                        "data_end": "2026-01-02",
+                        "fetched_at_utc": "2026-02-01T00:00:00Z",
+                        "row_count": 1,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["show-data-source", "--data", str(csv_path)])
+
+        output = stdout.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertIn(f"data: {csv_path}", output)
+        self.assertIn("rows: 1", output)
+        self.assertIn("provider: fixture", output)
+        self.assertIn("warnings: none", output)
+
     def test_new_strategy_command_writes_valid_template(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_path = Path(temp_dir) / "qqq_sma.json"

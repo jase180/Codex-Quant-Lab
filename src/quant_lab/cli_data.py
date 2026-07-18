@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 
+from .data_source import format_data_source_inspection, inspect_data_source
 from .data_fetch import fetch_market_data, write_market_data_csv, write_market_data_provenance
 from .strategy_templates import available_strategy_templates, build_strategy_template, write_strategy_template
 
@@ -33,6 +34,12 @@ def fetch_command(args: argparse.Namespace) -> int:
     print(f"Fetched {len(data)} rows for {args.symbol.upper()}")
     print(f"data: {csv_path}")
     print(f"provenance: {provenance_path}")
+    return 0
+
+
+def show_data_source_command(args: argparse.Namespace) -> int:
+    inspection = inspect_data_source(args.data)
+    print(format_data_source_inspection(inspection))
     return 0
 
 

@@ -59,7 +59,7 @@ This milestone stays local, explicit, and inspectable.
 
 ### 1. Data Provenance Inspection
 
-Status: planned.
+Status: delivered.
 
 Add a command that prints a concise summary for a cached data CSV and its
 optional provenance file.

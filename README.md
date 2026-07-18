@@ -206,6 +206,16 @@ treat cached data as research input that may need verification. The provenance
 JSON records the provider, requested range, fetched timestamp, row count, actual
 data range, and CSV fingerprint.
 
+Inspect a cached CSV and its provenance sidecar:
+
+```bash
+quant-lab show-data-source \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv
+```
+
+This prints row count, actual date range, file fingerprint, provider, requested
+range, fetched timestamp, and warnings such as missing provenance.
+
 ### Start A Guided Research Plan
 
 Use `research-plan init` when you have a hypothesis and want the lab to create a
