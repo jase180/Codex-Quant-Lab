@@ -307,7 +307,7 @@ Exit criteria:
 
 ## Milestone 13: Evidence And Decision Quality
 
-Status: proposed.
+Status: complete.
 
 Goal: make it harder to overread a good-looking run, sweep, or batch.
 
@@ -316,12 +316,33 @@ Detailed plan:
 
 Planned work:
 
-- Unified strategy evidence summaries.
-- Better train/test and walk-forward interpretation.
+- Unified strategy evidence summaries. Delivered.
+- Better train/test and walk-forward interpretation. Delivered.
 - Decision prompts that separate evidence, uncertainty, and next tests.
+  Delivered.
 - Conservative result labels such as weak, mixed, promising, and rejected.
+  Delivered.
 
-## Milestone 14: Reproducible Research Sessions
+## Milestone 14: Backtest Realism And Robustness
+
+Status: proposed.
+
+Goal: challenge promising ideas with controlled perturbations before calling
+them sturdy.
+
+Detailed plan:
+[milestone-14-backtest-realism-robustness.md](milestone-14-backtest-realism-robustness.md)
+
+Planned work:
+
+- Strategy cost sensitivity.
+- Strategy date-range sensitivity.
+- Benchmark substitution checks.
+- Parameter-neighborhood robustness.
+- Portfolio robustness notes.
+- Guided workflow integration for robustness checks.
+
+## Milestone 15: Reproducible Research Sessions
 
 Status: proposed.
 
@@ -334,7 +355,7 @@ Planned work:
 - Stronger links between plans, experiments, indexes, and artifacts.
 - Missing/orphaned artifact checks.
 
-## Milestone 15: Strategy Language V2
+## Milestone 16: Strategy Language V2
 
 Status: proposed.
 
@@ -348,7 +369,7 @@ Planned work:
 - Stops, exits, holding-period rules, and cooldowns.
 - Migration docs from v1 to v2.
 
-## Milestone 16: Portfolio Realism
+## Milestone 17: Portfolio Realism
 
 Status: proposed.
 
@@ -360,19 +381,6 @@ Planned work:
 - Allocation constraints.
 - Simple volatility-aware allocation options.
 - Better blended portfolio benchmarks.
-
-## Milestone 17: Robustness And Sensitivity
-
-Status: proposed.
-
-Goal: challenge promising ideas with controlled perturbations.
-
-Planned work:
-
-- Date-range sensitivity.
-- Cost sensitivity.
-- Parameter-neighborhood reports.
-- Symbol and benchmark substitution checks.
 
 ## Milestone 18: CLI UX And Configuration Polish
 
@@ -438,12 +446,12 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 13 with evidence label heuristics.
+Start Milestone 14 with strategy cost sensitivity.
 
-Reason: the lab can now create and automate realistic local research loops with
-data trust checks. The next highest-risk gap is interpretation: a user needs
-help seeing when evidence is weak, mixed, promising, or contradicted.
+Reason: Milestone 13 made interpretation more honest. The next highest-risk gap
+is robustness: a promising result needs to survive stricter costs and controlled
+reruns before it deserves more confidence.
 
-After Milestone 12, follow the readiness roadmap: improve interpretation,
-session reproducibility, strategy expressiveness, portfolio realism, robustness,
-CLI polish, example workflows, and maintenance hardening.
+From here, follow the readiness roadmap: improve robustness, session
+reproducibility, strategy expressiveness, portfolio realism, CLI polish, example
+workflows, and maintenance hardening.

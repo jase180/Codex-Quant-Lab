@@ -47,7 +47,8 @@ docs/
   milestone-10-portfolio-research-depth.md  Completed portfolio research depth.
   milestone-11-research-automation-guardrails.md  Completed automation guardrails.
   milestone-12-data-source-trust.md  Completed data/source trust workflow.
-  milestone-13-evidence-decision-quality.md  Planned evidence interpretation.
+  milestone-13-evidence-decision-quality.md  Completed evidence interpretation.
+  milestone-14-backtest-realism-robustness.md  Planned robustness checks.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
   roadmap-to-ready.md         Long-range roadmap to a more mature lab.
@@ -75,6 +76,7 @@ More detailed module notes:
 - [docs/milestone-11-research-automation-guardrails.md](docs/milestone-11-research-automation-guardrails.md)
 - [docs/milestone-12-data-source-trust.md](docs/milestone-12-data-source-trust.md)
 - [docs/milestone-13-evidence-decision-quality.md](docs/milestone-13-evidence-decision-quality.md)
+- [docs/milestone-14-backtest-realism-robustness.md](docs/milestone-14-backtest-realism-robustness.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
 - [docs/roadmap-to-ready.md](docs/roadmap-to-ready.md)
@@ -879,6 +881,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Start Milestone 13 with deterministic evidence labels.
-2. Upgrade strategy evidence summaries with supporting and contradicting evidence.
-3. Improve decision drafts with uncertainty and next-test prompts.
+1. Start Milestone 14 with strategy cost sensitivity.
+2. Add date-range and benchmark sensitivity checks.
+3. Feed robustness artifacts back into evidence summaries and guided plans.

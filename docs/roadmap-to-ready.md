@@ -72,17 +72,18 @@ Why this comes first:
 
 ### Milestone 13: Evidence And Decision Quality
 
-Status: proposed.
+Status: complete.
 
 Purpose: make it harder to overread a good-looking run or sweep.
 
 Deliverables:
 
-- A unified `summarize-evidence` command for strategy experiments.
-- Better drawdown/trade/regime notes in research summaries.
-- Side-by-side train/test/walk-forward interpretation.
-- Explicit "what would change my mind?" decision prompts.
-- Better result labels: exploratory, weak, mixed, promising, rejected.
+- Strategy and portfolio evidence labels. Delivered.
+- Supporting and contradicting evidence sections. Delivered.
+- Side-by-side train/test/walk-forward interpretation. Delivered.
+- Explicit "what would change my mind?" decision prompts. Delivered.
+- Better result labels: weak, mixed, promising, rejected, and no evidence.
+  Delivered.
 
 Exit criteria:
 
@@ -94,7 +95,36 @@ Why this follows data trust:
 - Once inputs are inspectable, the next highest risk is interpretation. The lab
   should teach skepticism as part of the workflow.
 
-### Milestone 14: Reproducible Research Sessions
+### Milestone 14: Backtest Realism And Robustness
+
+Status: proposed.
+
+Purpose: challenge promising ideas with controlled perturbations before calling
+them sturdy.
+
+Deliverables:
+
+- Strategy cost sensitivity.
+- Strategy date-range sensitivity.
+- Benchmark substitution checks.
+- Parameter-neighborhood robustness.
+- Portfolio robustness notes.
+- Guided workflow integration for robustness checks.
+
+Exit criteria:
+
+- A user can take a promising idea, run a small set of robustness checks, and
+  see where it survived or failed.
+
+Why this matters:
+
+- Milestone 13 made interpretation more honest. The next confidence gap is
+  whether that interpretation survives stricter costs, different dates, and
+  benchmark changes.
+
+## Phase 3: Improve Research Breadth Without Black Boxes
+
+### Milestone 15: Reproducible Research Sessions
 
 Status: proposed.
 
@@ -116,14 +146,12 @@ Exit criteria:
 - A user can stop for a week, come back, run one status command, and understand
   what the research question was, what evidence exists, and what remains.
 
-Why this matters:
+Why this waits:
 
-- Right now the project can produce many useful files. The next maturity step is
-  making those files feel like one coherent research notebook.
+- The project can already produce many useful files. Session work should happen
+  after robustness checks define which files belong in a mature research pass.
 
-## Phase 3: Improve Research Breadth Without Black Boxes
-
-### Milestone 15: Strategy Language V2
+### Milestone 16: Strategy Language V2
 
 Status: proposed.
 
@@ -148,9 +176,9 @@ Exit criteria:
 Why this waits:
 
 - More expressive strategies are useful, but they become dangerous if the lab
-  does not first improve trust and interpretation.
+  does not first improve trust, interpretation, and robustness.
 
-### Milestone 16: Portfolio Realism
+### Milestone 17: Portfolio Realism
 
 Status: proposed.
 
@@ -174,30 +202,6 @@ Why this comes after strategy language:
 
 - Strategy and portfolio logic should mature together, but portfolio realism can
   stay simpler until the evidence workflow is stronger.
-
-### Milestone 17: Robustness And Sensitivity
-
-Status: proposed.
-
-Purpose: answer "does this idea survive small changes?" more directly.
-
-Deliverables:
-
-- Start/end date sensitivity checks.
-- Cost sensitivity checks.
-- Parameter neighborhood summaries across multiple metrics.
-- Symbol substitution or benchmark substitution checks.
-- Robustness reports that emphasize failure modes, not just winners.
-
-Exit criteria:
-
-- A promising strategy or portfolio can be challenged with controlled
-  perturbations before being called promising.
-
-Why this matters:
-
-- This is the milestone where the lab starts feeling like a research assistant
-  instead of a backtest runner.
 
 ## Phase 4: Make It Comfortable To Use
 
@@ -296,14 +300,14 @@ a proof of concept. It is a small, honest, local research environment.
 
 ## Recommended Build Sequence
 
-1. Finish Milestone 12.
-2. Do a short refactor/maintenance pass if trust-report code creates repeated
+1. Build Milestone 14.
+2. Do a short refactor/maintenance pass if robustness code creates repeated
    artifact plumbing.
-3. Build Milestone 13.
-4. Build Milestone 14.
-5. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
-6. Build Milestones 15 through 17.
-7. Polish setup, examples, and maintenance through Milestones 18 through 20.
+3. Build Milestone 15.
+4. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
+5. Build Milestones 16 and 17.
+6. Polish setup, examples, and maintenance through Milestones 18 through 20.
 
 This order keeps the project honest: first trust inputs, then trust
-interpretation, then broaden the research surface, then polish.
+interpretation, then challenge robustness, then broaden the research surface,
+then polish.
