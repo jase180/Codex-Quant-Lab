@@ -269,7 +269,7 @@ Planned work:
 - Portfolio batch run manifests. Delivered.
 - Sequential portfolio batch execution. Delivered.
 - Batch guardrail summaries. Delivered.
-- Guided portfolio plan integration for batches.
+- Guided portfolio plan integration for batches. Delivered.
 - Strategy sweep guardrail reports.
 
 Exit criteria:
@@ -303,12 +303,13 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 11 deliverable 4: guided portfolio plan integration for batches.
+Build Milestone 11 deliverable 5: strategy sweep guardrail reports.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
 static-weight portfolio ideas, and it can now generate allocation plus rebalance
 variants, summarize linked portfolio runs, guide those steps, and generate
 capped candidate specs, write dry-run batch manifests, execute those saved
-manifests sequentially, and summarize batch counts plus guardrail warnings. The
-next useful gap is teaching `portfolio-plan next` when to recommend batch plan,
-run, and summarize steps.
+manifests sequentially, summarize batch counts plus guardrail warnings, and let
+`portfolio-plan next` recommend the batch plan, run, and summarize steps. The
+next useful gap is adding lightweight guardrail reports for existing strategy
+sweep summaries.

@@ -217,6 +217,10 @@ The summary command writes `portfolio_batch_summary.md` with batch counts and
 guardrail warnings. It can summarize a dry-run manifest before execution, but
 will warn that no performance evidence exists yet.
 
+`portfolio-plan next` can recommend the same batch sequence when a guided
+portfolio research directory contains candidate specs, a batch manifest, or a
+batch result that still needs a guardrail summary.
+
 Run walk-forward windows:
 
 ```bash

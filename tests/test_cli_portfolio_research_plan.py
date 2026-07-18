@@ -173,6 +173,68 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
             self.assertIn("--weights QQQ=0.6,SPY=0.4", output)
             self.assertIn(str(output_dir / "portfolio_variants"), output)
 
+    def test_portfolio_plan_next_recommends_batch_plan_when_candidates_exist(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_ready_for_batch(Path(temp_dir))
+            variants_dir = output_dir / "portfolio_variants"
+            variants_dir.mkdir()
+            (variants_dir / "candidate.json").write_text('{"schema_version": "portfolio_plan.v1"}\n', encoding="utf-8")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    ["portfolio-plan", "next", "--plan", str(output_dir / "portfolio_research_plan.json")]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: batch_plan", output)
+            self.assertIn("quant-lab portfolio-batch plan", output)
+            self.assertIn(str(output_dir / "portfolio_variants"), output)
+            self.assertIn(str(output_dir / "portfolio_batch"), output)
+            self.assertTrue(index_path.exists())
+
+    def test_portfolio_plan_next_recommends_batch_run_when_manifest_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, _ = self._create_plan_ready_for_batch(Path(temp_dir))
+            variants_dir = output_dir / "portfolio_variants"
+            batch_dir = output_dir / "portfolio_batch"
+            variants_dir.mkdir()
+            batch_dir.mkdir()
+            (variants_dir / "candidate.json").write_text('{"schema_version": "portfolio_plan.v1"}\n', encoding="utf-8")
+            (batch_dir / "portfolio_batch_manifest.json").write_text("{}\n", encoding="utf-8")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    ["portfolio-plan", "next", "--plan", str(output_dir / "portfolio_research_plan.json")]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: batch_run", output)
+            self.assertIn("quant-lab portfolio-batch run", output)
+            self.assertIn("--experiment-id EXP-001", output)
+
+    def test_portfolio_plan_next_recommends_batch_summarize_when_result_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, _ = self._create_plan_ready_for_batch(Path(temp_dir))
+            variants_dir = output_dir / "portfolio_variants"
+            batch_dir = output_dir / "portfolio_batch"
+            variants_dir.mkdir()
+            batch_dir.mkdir()
+            (variants_dir / "candidate.json").write_text('{"schema_version": "portfolio_plan.v1"}\n', encoding="utf-8")
+            (batch_dir / "portfolio_batch_manifest.json").write_text("{}\n", encoding="utf-8")
+            (batch_dir / "portfolio_batch_result.json").write_text("{}\n", encoding="utf-8")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    ["portfolio-plan", "next", "--plan", str(output_dir / "portfolio_research_plan.json")]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: batch_summarize", output)
+            self.assertIn("quant-lab portfolio-batch summarize", output)
+
     def _create_plan_fixture(self, temp_path: Path) -> tuple[Path, Path, Path]:
         output_dir = temp_path / "research" / "qqq_spy"
         experiments_path = temp_path / "experiments.jsonl"
@@ -198,6 +260,26 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
                     "retail-liquid",
                 ]
             )
+        return output_dir, experiments_path, index_path
+
+    def _create_plan_ready_for_batch(self, temp_path: Path) -> tuple[Path, Path, Path]:
+        output_dir, experiments_path, index_path = self._create_plan_fixture(temp_path)
+        (output_dir / "portfolio_summary.md").write_text("# Summary\n", encoding="utf-8")
+        self._write_index_records(
+            index_path,
+            [
+                {
+                    "run_type": "portfolio_run",
+                    "experiment_id": "EXP-001",
+                    "metadata_path": "baseline/portfolio_metadata.json",
+                },
+                {
+                    "run_type": "portfolio_run",
+                    "experiment_id": "EXP-001",
+                    "metadata_path": "variant/portfolio_metadata.json",
+                },
+            ],
+        )
         return output_dir, experiments_path, index_path
 
     def _write_index_records(self, index_path: Path, records: list[dict]) -> None:

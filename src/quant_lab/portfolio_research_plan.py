@@ -213,6 +213,10 @@ def recommend_portfolio_next_step(
     experiment_has_decision: bool = False,
     variants_exist: bool = False,
     summary_exists: bool = False,
+    candidate_specs_exist: bool = False,
+    batch_manifest_exists: bool = False,
+    batch_result_exists: bool = False,
+    batch_summary_exists: bool = False,
 ) -> PortfolioPlanRecommendation:
     if experiment_has_decision:
         return PortfolioPlanRecommendation(
@@ -251,6 +255,24 @@ def recommend_portfolio_next_step(
             step="variants",
             reason="Portfolio evidence exists; generate auditable variants before widening the research branch.",
             command=build_portfolio_variants_command_from_plan(plan),
+        )
+    if candidate_specs_exist and not batch_manifest_exists:
+        return PortfolioPlanRecommendation(
+            step="batch_plan",
+            reason="Portfolio candidate specs exist; write a dry-run batch manifest before executing them.",
+            command=build_portfolio_batch_plan_command_from_plan(plan),
+        )
+    if batch_manifest_exists and not batch_result_exists:
+        return PortfolioPlanRecommendation(
+            step="batch_run",
+            reason="A portfolio batch manifest exists; run it sequentially so each candidate records normal artifacts.",
+            command=build_portfolio_batch_run_command_from_plan(plan),
+        )
+    if batch_result_exists and not batch_summary_exists:
+        return PortfolioPlanRecommendation(
+            step="batch_summarize",
+            reason="A portfolio batch result exists; write the batch guardrail summary before comparing winners.",
+            command=build_portfolio_batch_summarize_command_from_plan(plan),
         )
     return PortfolioPlanRecommendation(
         step="compare",
@@ -332,6 +354,69 @@ def build_portfolio_variants_command_from_plan(plan: PortfolioResearchPlan) -> s
         _display_path(Path(plan.output_dir) / "portfolio_variants"),
     ]
     return shlex.join(command)
+
+
+def build_portfolio_batch_plan_command_from_plan(plan: PortfolioResearchPlan) -> str:
+    command = [
+        "quant-lab",
+        "portfolio-batch",
+        "plan",
+        "--portfolios",
+        _display_path(_portfolio_batch_candidate_dir(plan)),
+        "--out",
+        _display_path(_portfolio_batch_dir(plan)),
+        "--initial-cash",
+        str(plan.initial_cash),
+        "--cost-preset",
+        plan.cost_preset,
+        "--experiments-path",
+        plan.experiments_path,
+        "--index-path",
+        plan.index_path,
+    ]
+    return shlex.join(command)
+
+
+def build_portfolio_batch_run_command_from_plan(plan: PortfolioResearchPlan) -> str:
+    return shlex.join(
+        [
+            "quant-lab",
+            "portfolio-batch",
+            "run",
+            "--manifest",
+            _display_path(_portfolio_batch_manifest_path(plan)),
+            "--experiment-id",
+            plan.experiment_id,
+        ]
+    )
+
+
+def build_portfolio_batch_summarize_command_from_plan(plan: PortfolioResearchPlan) -> str:
+    return shlex.join(
+        [
+            "quant-lab",
+            "portfolio-batch",
+            "summarize",
+            "--manifest",
+            _display_path(_portfolio_batch_manifest_path(plan)),
+        ]
+    )
+
+
+def _portfolio_batch_candidate_dir(plan: PortfolioResearchPlan) -> Path:
+    output_dir = Path(plan.output_dir)
+    variants_dir = output_dir / "portfolio_variants"
+    if variants_dir.exists():
+        return variants_dir
+    return output_dir / "portfolio_candidates"
+
+
+def _portfolio_batch_dir(plan: PortfolioResearchPlan) -> Path:
+    return Path(plan.output_dir) / "portfolio_batch"
+
+
+def _portfolio_batch_manifest_path(plan: PortfolioResearchPlan) -> Path:
+    return _portfolio_batch_dir(plan) / "portfolio_batch_manifest.json"
 
 
 def _display_path(path: str | Path) -> str:

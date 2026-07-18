@@ -119,6 +119,8 @@ Acceptance criteria:
 
 ### 4. Guided Plan Integration For Batches
 
+Status: delivered.
+
 Teach `portfolio-plan next` to recommend batch planning, batch running, and
 batch summaries when candidate specs exist.
 

@@ -448,6 +448,10 @@ quant-lab portfolio-plan next \
   --plan artifacts/research/qqq_spy_static_60_40/portfolio_research_plan.json
 ```
 
+The guided portfolio plan can now recommend portfolio batch steps too: planning
+a batch when candidate specs exist, running a saved manifest, and summarizing a
+batch result before comparing winners.
+
 Summarize linked portfolio runs for one experiment:
 
 ```bash

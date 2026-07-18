@@ -75,6 +75,10 @@ def portfolio_plan_next_command(args: argparse.Namespace) -> int:
         experiment_has_decision=experiment is not None and experiment.decision_record is not None,
         variants_exist=_portfolio_variants_exist(plan.output_dir),
         summary_exists=_portfolio_summary_exists(plan.output_dir),
+        candidate_specs_exist=_portfolio_candidate_specs_exist(plan.output_dir),
+        batch_manifest_exists=_portfolio_batch_manifest_exists(plan.output_dir),
+        batch_result_exists=_portfolio_batch_result_exists(plan.output_dir),
+        batch_summary_exists=_portfolio_batch_summary_exists(plan.output_dir),
     )
 
     print(f"Portfolio research plan: {args.plan}")
@@ -94,3 +98,27 @@ def _portfolio_variants_exist(output_dir: str) -> bool:
 
 def _portfolio_summary_exists(output_dir: str) -> bool:
     return (Path(output_dir) / "portfolio_summary.md").exists()
+
+
+def _portfolio_candidate_specs_exist(output_dir: str) -> bool:
+    for candidate_dir in _portfolio_candidate_dirs(output_dir):
+        if candidate_dir.exists() and any(candidate_dir.glob("*.json")):
+            return True
+    return False
+
+
+def _portfolio_batch_manifest_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "portfolio_batch" / "portfolio_batch_manifest.json").exists()
+
+
+def _portfolio_batch_result_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "portfolio_batch" / "portfolio_batch_result.json").exists()
+
+
+def _portfolio_batch_summary_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "portfolio_batch" / "portfolio_batch_summary.md").exists()
+
+
+def _portfolio_candidate_dirs(output_dir: str) -> list[Path]:
+    base = Path(output_dir)
+    return [base / "portfolio_variants", base / "portfolio_candidates"]
