@@ -149,34 +149,23 @@ def walk_forward_sweep_command(args: argparse.Namespace) -> int:
         best_train = train_result.best_row
         best_variant = train_result.best_variant
 
-        test_benchmark = build_benchmark(test_data, args.initial_cash, args.benchmark)
-        test_data_quality = build_data_quality_report(test_data)
-        test_strategy_payload = best_variant["payload"]
-        test_strategy_spec = parse_strategy(test_strategy_payload)
-        test_params = {
-            **best_variant["params"],
-            "_workflow": "walk_forward",
-            "_split_phase": "test",
-            "_window_id": window_id,
-            "_selected_train_run_id": best_train["run_id"],
-            "_train_start": window["train_start"],
-            "_train_end": window["train_end"],
-            "_test_start": window["test_start"],
-            "_test_end": window["test_end"],
-            "_select_by": args.select_by,
-        }
-        test_row = run_sweep_variant(
+        test_row = run_selected_test_variant(
             args=args,
             data=test_data,
-            benchmark_curve=test_benchmark.curve,
-            benchmark_metrics=test_benchmark.metrics,
-            benchmark_display_name=test_benchmark.display_name,
-            data_quality=test_data_quality,
-            strategy_spec=test_strategy_spec,
-            strategy_payload=test_strategy_payload,
+            variant=best_variant,
             run_dir=test_dir,
-            run_name=f"{args.run_name or test_strategy_spec.name} {window_id} test selected",
-            parameters=test_params,
+            run_name_context=window_id,
+            extra_params={
+                "_workflow": "walk_forward",
+                "_split_phase": "test",
+                "_window_id": window_id,
+                "_selected_train_run_id": best_train["run_id"],
+                "_train_start": window["train_start"],
+                "_train_end": window["train_end"],
+                "_test_start": window["test_start"],
+                "_test_end": window["test_end"],
+                "_select_by": args.select_by,
+            },
             run_type="walk_forward_test_run",
             run_id=f"{window_id}_test_selected",
             research_note_path=setup.research_note_path,
@@ -229,30 +218,19 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     best_train = train_result.best_row
     best_variant = train_result.best_variant
 
-    test_benchmark = build_benchmark(test_data, args.initial_cash, args.benchmark)
-    test_data_quality = build_data_quality_report(test_data)
-    test_strategy_payload = best_variant["payload"]
-    test_strategy_spec = parse_strategy(test_strategy_payload)
-    test_params = {
-        **best_variant["params"],
-        "_split_phase": "test",
-        "_selected_train_run_id": best_train["run_id"],
-        "_train_end": args.train_end,
-        "_test_start": args.test_start,
-        "_select_by": args.select_by,
-    }
-    test_row = run_sweep_variant(
+    test_row = run_selected_test_variant(
         args=args,
         data=test_data,
-        benchmark_curve=test_benchmark.curve,
-        benchmark_metrics=test_benchmark.metrics,
-        benchmark_display_name=test_benchmark.display_name,
-        data_quality=test_data_quality,
-        strategy_spec=test_strategy_spec,
-        strategy_payload=test_strategy_payload,
+        variant=best_variant,
         run_dir=test_dir,
-        run_name=f"{args.run_name or test_strategy_spec.name} test selected",
-        parameters=test_params,
+        run_name_context="",
+        extra_params={
+            "_split_phase": "test",
+            "_selected_train_run_id": best_train["run_id"],
+            "_train_end": args.train_end,
+            "_test_start": args.test_start,
+            "_select_by": args.select_by,
+        },
         run_type="test_selected_run",
         run_id="test_selected",
         research_note_path=setup.research_note_path,
@@ -275,6 +253,48 @@ def train_test_sweep_command(args: argparse.Namespace) -> int:
     print(f"selected_train_{args.select_by}: {_selection_value(best_train, args.select_by):.4f}")
     print(f"test_total_return: {float(test_row['total_return']):.2%}")
     return 0
+
+
+def run_selected_test_variant(
+    *,
+    args: argparse.Namespace,
+    data: pd.DataFrame,
+    variant: dict,
+    run_dir: Path,
+    run_name_context: str,
+    extra_params: dict,
+    run_type: str,
+    run_id: str,
+    research_note_path: str | None,
+) -> SweepSummaryRow:
+    test_benchmark = build_benchmark(data, args.initial_cash, args.benchmark)
+    test_data_quality = build_data_quality_report(data)
+    strategy_payload = variant["payload"]
+    strategy_spec = parse_strategy(strategy_payload)
+    params = {
+        **variant["params"],
+        **extra_params,
+    }
+    run_name_parts = [args.run_name or strategy_spec.name]
+    if run_name_context:
+        run_name_parts.append(run_name_context)
+    run_name_parts.extend(["test", "selected"])
+    return run_sweep_variant(
+        args=args,
+        data=data,
+        benchmark_curve=test_benchmark.curve,
+        benchmark_metrics=test_benchmark.metrics,
+        benchmark_display_name=test_benchmark.display_name,
+        data_quality=test_data_quality,
+        strategy_spec=strategy_spec,
+        strategy_payload=strategy_payload,
+        run_dir=run_dir,
+        run_name=" ".join(run_name_parts),
+        parameters=params,
+        run_type=run_type,
+        run_id=run_id,
+        research_note_path=research_note_path,
+    )
 
 
 def run_train_sweep_variants(
