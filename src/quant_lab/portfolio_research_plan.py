@@ -23,8 +23,8 @@ PORTFOLIO_RESEARCH_PLAN_SCHEMA_VERSION = "portfolio_research_plan.v1"
 DEFAULT_PORTFOLIO_RECOMMENDED_STEPS = (
     "baseline",
     "inspect",
-    "compare",
     "summarize",
+    "compare",
     "decide",
 )
 
@@ -283,7 +283,7 @@ def recommend_portfolio_next_step(
         )
     return PortfolioPlanRecommendation(
         step="compare",
-        reason="Portfolio variants and a summary exist; compare source runs when you need a terminal table.",
+        reason="Portfolio variants and a richer evidence summary exist; compare source runs when you need a terminal table.",
         command=build_compare_portfolio_runs_command(metadata_paths),
     )
 

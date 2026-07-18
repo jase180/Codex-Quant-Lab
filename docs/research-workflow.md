@@ -344,13 +344,16 @@ summarize the whole evidence set:
 ```bash
 quant-lab summarize-experiment \
   --experiment-id EXP-001 \
-  --index-path artifacts/research_index.jsonl
+  --index-path artifacts/research_index.jsonl \
+  --out artifacts/research/sma_qqq_2015_2025/evidence_summary.md
 ```
 
 Read the strongest and weakest excess-return lines together. A good research
 decision should explain both, not only the best run. Also check the run type
 breakdown so you can tell whether the support came from one broad sweep, a
-train/test validation, or repeated walk-forward tests.
+train/test validation, or repeated walk-forward tests. The saved evidence
+summary also includes a conservative evidence label and the reasons for that
+label.
 
 Draft a decision before writing one:
 

@@ -285,8 +285,9 @@ quant-lab research-plan next \
   --plan artifacts/research/qqq_sma_trust/research_plan.json
 ```
 
-The first version checks the linked experiment's run index rows and recommends
-baseline, sweep, train/test validation, evidence summary, or done.
+The guided plan checks the linked experiment's run index rows and recommends
+baseline, run-trust review, sweep, train/test validation, saved evidence
+summary, draft decision, or done.
 
 ### Run One Backtest
 
@@ -603,15 +604,16 @@ Summarize an experiment with linked run evidence from the research index:
 ```bash
 quant-lab summarize-experiment \
   --experiment-id EXP-001 \
-  --index-path artifacts/research_index.jsonl
+  --index-path artifacts/research_index.jsonl \
+  --out artifacts/research/qqq_sma_trust/evidence_summary.md
 ```
 
 The summary reconciles two links: metadata paths stored on the experiment
 record and rows in the research index with the same experiment id. It highlights
 the strongest and weakest excess-return evidence, groups evidence by run type,
-and shows recent linked runs. This is meant to help you decide whether an
-experiment should keep running, be rejected, or move to a stricter validation
-step.
+prints a conservative evidence label, and shows recent linked runs. This is
+meant to happen before `draft-decision`, so the decision starts from a saved
+research note instead of a half-remembered terminal table.
 
 Draft a conservative decision without writing to the registry:
 

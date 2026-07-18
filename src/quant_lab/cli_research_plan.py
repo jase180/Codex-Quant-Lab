@@ -85,6 +85,7 @@ def research_plan_next_command(args: argparse.Namespace) -> int:
         records,
         experiment_has_decision=experiment_has_decision(experiment),
         run_trust_report_exists=_run_trust_report_exists(records),
+        evidence_summary_exists=_evidence_summary_exists(plan.output_dir),
     )
 
     print(f"Research plan: {args.plan}")
@@ -103,7 +104,15 @@ def recommend_next_step(
     *,
     experiment_has_decision: bool = False,
     run_trust_report_exists: bool = False,
+    evidence_summary_exists: bool = False,
 ) -> ResearchPlanRecommendation:
+    if experiment_has_decision:
+        return ResearchPlanRecommendation(
+            step="done",
+            reason="The experiment already has a recorded decision.",
+            command=None,
+        )
+
     run_types = {str(record.get("run_type")) for record in index_records}
     baseline_metadata_path = _first_metadata_path(index_records, run_type="run")
     if "run" not in run_types:
@@ -130,16 +139,16 @@ def recommend_next_step(
             reason="A sweep exists, but no validation test run is linked yet.",
             command=build_train_test_command_from_plan(plan),
         )
-    if not experiment_has_decision:
+    if not evidence_summary_exists:
         return ResearchPlanRecommendation(
             step="summarize",
-            reason="Validation evidence exists; summarize the linked evidence before deciding.",
+            reason="Validation evidence exists; write the evidence summary before drafting a decision.",
             command=build_summarize_command_from_plan(plan),
         )
     return ResearchPlanRecommendation(
-        step="done",
-        reason="The experiment already has a recorded decision.",
-        command=None,
+        step="draft_decision",
+        reason="The evidence summary exists; draft a conservative decision before writing it to the registry.",
+        command=build_draft_decision_command_from_plan(plan),
     )
 
 
@@ -152,6 +161,10 @@ def _run_trust_report_exists(index_records: list[dict]) -> bool:
     if not metadata_path:
         return False
     return (Path(metadata_path).parent / "run_trust_report.md").exists()
+
+
+def _evidence_summary_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "evidence_summary.md").exists()
 
 
 def build_baseline_run_command(args: argparse.Namespace, experiment_id: str) -> str:
@@ -309,6 +322,23 @@ def build_summarize_command_from_plan(plan: ResearchPlan) -> str:
             plan.experiments_path,
             "--index-path",
             plan.index_path,
+            "--out",
+            _display_path(Path(plan.output_dir) / "evidence_summary.md"),
+        ]
+    )
+
+
+def build_draft_decision_command_from_plan(plan: ResearchPlan) -> str:
+    return shlex.join(
+        [
+            "quant-lab",
+            "draft-decision",
+            "--experiment-id",
+            plan.experiment_id,
+            "--experiments-path",
+            plan.experiments_path,
+            "--index-path",
+            plan.index_path,
         ]
     )
 
@@ -325,3 +355,10 @@ def _first_metadata_path(index_records: list[dict], *, run_type: str) -> str | N
         if metadata_path:
             return metadata_path
     return None
+
+
+def _display_path(path: str | Path) -> str:
+    path_string = str(path)
+    if Path(path).is_absolute():
+        return path_string
+    return path_string.replace("\\", "/")

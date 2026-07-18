@@ -155,7 +155,7 @@ Delivered behavior:
 
 ### 5. Guided Workflow Integration
 
-Status: planned.
+Status: delivered.
 
 Teach guided plans to recommend evidence interpretation at the right time.
 
@@ -168,6 +168,16 @@ Acceptance criteria:
 - README and workflow docs show the improved interpretation step.
 - Recommendations remain conservative: summarize before deciding, and validate
   before accepting.
+
+Delivered behavior:
+
+- `research-plan next` now recommends writing `evidence_summary.md` after
+  validation evidence exists and before drafting a decision.
+- `research-plan next` recommends `draft-decision` after the evidence summary
+  artifact exists and before the experiment has a recorded decision.
+- `portfolio-plan next` keeps the portfolio evidence summary before compare,
+  and the saved portfolio plan step order now reflects that workflow.
+- README and workflow docs describe the richer interpretation step.
 
 ## Build Order
 

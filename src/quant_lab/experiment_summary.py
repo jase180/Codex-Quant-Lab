@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from .evidence_labels import label_strategy_evidence
 from .research_registry import ExperimentRecord, format_experiment_detail
 
@@ -155,6 +157,13 @@ def format_experiment_decision_draft(
             command,
         ]
     )
+
+
+def save_experiment_evidence_summary(markdown: str, output_path: str | Path) -> str:
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(markdown + "\n", encoding="utf-8")
+    return str(path)
 
 
 def _decision_uncertainty_lines(label: str, records: list[dict]) -> list[str]:

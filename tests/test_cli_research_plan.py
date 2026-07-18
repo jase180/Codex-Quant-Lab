@@ -238,6 +238,93 @@ class CliResearchPlanTests(unittest.TestCase):
             self.assertIn("--test-start YYYY-MM-DD", output)
             self.assertIn("--select-by sharpe_ratio", output)
 
+    def test_research_plan_next_recommends_summary_after_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            self._write_validated_index_records(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: summarize", output)
+            self.assertIn("write the evidence summary before drafting a decision", output)
+            self.assertIn("quant-lab summarize-experiment", output)
+            self.assertIn("--out", output)
+            self.assertIn(str(output_dir / "evidence_summary.md"), output)
+
+    def test_research_plan_next_recommends_draft_decision_after_summary_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
+            self._write_validated_index_records(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: draft_decision", output)
+            self.assertIn("draft a conservative decision", output)
+            self.assertIn("quant-lab draft-decision", output)
+            self.assertIn("--experiment-id EXP-001", output)
+
+    def test_research_plan_next_stays_done_after_recorded_decision(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, experiments_path, index_path = self._create_plan_fixture(Path(temp_dir))
+            self._write_validated_index_records(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "decide-experiment",
+                        "--experiment-id",
+                        "EXP-001",
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--outcome",
+                        "continue",
+                        "--rationale",
+                        "Keep testing.",
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: done", output)
+            self.assertNotIn("quant-lab summarize-experiment", output)
+
+    def test_summarize_experiment_command_can_write_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            output_dir, experiments_path, index_path = self._create_plan_fixture(temp_path)
+            summary_path = output_dir / "evidence_summary.md"
+            self._write_validated_index_records(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "summarize-experiment",
+                        "--experiment-id",
+                        "EXP-001",
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--index-path",
+                        str(index_path),
+                        "--out",
+                        str(summary_path),
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(summary_path.exists())
+            self.assertIn("Experiment Evidence Summary", summary_path.read_text(encoding="utf-8"))
+            self.assertIn("Experiment evidence summary written:", stdout.getvalue())
+
     def _create_plan_fixture(self, temp_path: Path) -> tuple[Path, Path, Path]:
         output_dir = temp_path / "research" / "qqq_sma"
         experiments_path = temp_path / "experiments.jsonl"
@@ -273,6 +360,16 @@ class CliResearchPlanTests(unittest.TestCase):
         index_path.write_text(
             "\n".join(json.dumps(record) for record in records) + "\n",
             encoding="utf-8",
+        )
+
+    def _write_validated_index_records(self, index_path: Path) -> None:
+        self._write_index_records(
+            index_path,
+            [
+                {"run_type": "run", "experiment_id": "EXP-001"},
+                {"run_type": "sweep_run", "experiment_id": "EXP-001"},
+                {"run_type": "test_selected_run", "experiment_id": "EXP-001"},
+            ],
         )
 
 

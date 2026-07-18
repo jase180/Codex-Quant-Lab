@@ -5,7 +5,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .experiment_summary import format_experiment_decision_draft, format_experiment_evidence_summary
+from .experiment_summary import (
+    format_experiment_decision_draft,
+    format_experiment_evidence_summary,
+    save_experiment_evidence_summary,
+)
 from .portfolio_experiment_summary import (
     format_portfolio_experiment_summary,
     save_portfolio_experiment_summary,
@@ -148,13 +152,16 @@ def summarize_experiment_command(args: argparse.Namespace) -> int:
     records = load_experiments(args.experiments_path)
     experiment = find_experiment(records, args.experiment_id)
     index_records = load_research_index(args.index_path)
-    print(
-        format_experiment_evidence_summary(
-            experiment,
-            index_records,
-            recent_limit=args.recent_limit,
-        )
+    summary = format_experiment_evidence_summary(
+        experiment,
+        index_records,
+        recent_limit=args.recent_limit,
     )
+    if args.out is not None:
+        output_path = save_experiment_evidence_summary(summary, args.out)
+        print(f"Experiment evidence summary written: {output_path}")
+    else:
+        print(summary)
     return 0
 
 

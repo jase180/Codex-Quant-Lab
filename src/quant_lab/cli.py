@@ -667,6 +667,11 @@ def register_experiment_commands(subparsers) -> None:
         default=5,
         help="Maximum recent linked runs to show. Defaults to 5.",
     )
+    summarize_experiment_parser.add_argument(
+        "--out",
+        default=None,
+        help="Optional markdown path to write. Defaults to printing to stdout.",
+    )
     summarize_experiment_parser.set_defaults(func=summarize_experiment_command)
 
     summarize_portfolio_experiment_parser = subparsers.add_parser(
