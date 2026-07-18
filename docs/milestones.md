@@ -161,8 +161,6 @@ research question.
 Detailed plan:
 [milestone-7-guided-research-workflow.md](milestone-7-guided-research-workflow.md)
 
-Likely work:
-
 Delivered:
 
 - local `research_plan.json` and `research_plan.md` files,
@@ -181,21 +179,29 @@ Exit criteria:
 
 ## Milestone 8: Portfolio And Multi-Asset Research
 
-Status: later.
+Status: planned.
 
 Goal: move from single-symbol strategy checks toward portfolio-level research.
 
-Likely work:
+Detailed plan:
+[milestone-8-portfolio-multi-asset-research.md](milestone-8-portfolio-multi-asset-research.md)
+
+Planned work:
 
 - Multi-symbol data loading.
-- Portfolio allocation rules.
-- Rebalancing logic.
-- Per-symbol trade ledgers.
-- Portfolio benchmark comparisons.
+- Strict portfolio spec parsing and validation.
+- Static-weight allocation rules.
+- Periodic rebalancing logic.
+- Per-symbol holdings, trades, and allocation drift artifacts.
+- Portfolio metadata with per-symbol data fingerprints.
+- Portfolio benchmark comparisons on the same aligned date range.
 
 Exit criteria:
 
-- The lab can test simple allocation strategies across more than one symbol.
+- The lab can run and inspect a simple static-weight portfolio across multiple
+  symbols, with local metadata that makes every data input, allocation
+  assumption, rebalance rule, cost model, benchmark comparison, and output
+  artifact clear.
 
 ## Maintenance: CLI And Workflow Organization
 
@@ -222,9 +228,9 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 8 planning with a narrow multi-asset design spike.
+Build Milestone 8 deliverable 1: portfolio spec parsing and multi-symbol data
+loading.
 
-Reason: the guided single-symbol research loop is now in place. Before adding
-portfolio code, the project should define the smallest multi-symbol data model,
-portfolio accounting rules, and artifact format that still preserve the current
-audit trail.
+Reason: the guided single-symbol research loop is now in place, and the
+portfolio milestone has a narrow plan. The next durable step is to validate the
+portfolio input model before adding portfolio accounting.
