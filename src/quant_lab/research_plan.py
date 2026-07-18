@@ -4,9 +4,16 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Iterable
+
+from .research_plan_common import (
+    normalize_recommended_steps,
+    optional_float,
+    utc_now_iso,
+    validate_required_text_fields,
+    write_json_payload,
+)
 
 
 RESEARCH_PLAN_SCHEMA_VERSION = "research_plan.v1"
@@ -51,7 +58,7 @@ class ResearchPlan:
     slippage_bps: float | None = None
     recommended_steps: list[str] = field(default_factory=lambda: list(DEFAULT_RECOMMENDED_STEPS))
     tags: list[str] = field(default_factory=list)
-    created_at_utc: str = field(default_factory=lambda: datetime.now(UTC).isoformat().replace("+00:00", "Z"))
+    created_at_utc: str = field(default_factory=utc_now_iso)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -101,9 +108,9 @@ def create_research_plan(
         commission_fixed=float(commission_fixed) if commission_fixed is not None else None,
         commission_rate=float(commission_rate) if commission_rate is not None else None,
         slippage_bps=float(slippage_bps) if slippage_bps is not None else None,
-        recommended_steps=[str(step).strip() for step in recommended_steps if str(step).strip()],
+        recommended_steps=normalize_recommended_steps(recommended_steps),
         tags=normalize_plan_tags(tags or []),
-        created_at_utc=created_at_utc or datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        created_at_utc=created_at_utc or utc_now_iso(),
     )
     validate_research_plan(plan)
     return plan
@@ -133,9 +140,7 @@ def validate_research_plan(plan: ResearchPlan) -> None:
         "output_dir": plan.output_dir,
         "created_at_utc": plan.created_at_utc,
     }
-    for field_name, value in required_fields.items():
-        if not str(value).strip():
-            raise ValueError(f"research plan {field_name} must not be empty")
+    validate_required_text_fields(required_fields, context="research plan")
     if plan.schema_version != RESEARCH_PLAN_SCHEMA_VERSION:
         raise ValueError(f"unsupported research plan schema: {plan.schema_version}")
     if not plan.recommended_steps:
@@ -155,10 +160,7 @@ def save_research_plan(plan: ResearchPlan) -> tuple[str, str]:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     json_path = research_plan_json_path(output_dir)
-    json_path.write_text(
-        json.dumps(plan.to_dict(), indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    write_json_payload(json_path, plan.to_dict())
 
     markdown_path = research_plan_markdown_path(output_dir)
     markdown_path.write_text(render_research_plan_markdown(plan), encoding="utf-8")
@@ -184,9 +186,9 @@ def load_research_plan(plan_path: str | Path) -> ResearchPlan:
         allocation=float(payload.get("allocation", 1.0)),
         benchmark=str(payload.get("benchmark", "buy-and-hold")),
         cost_preset=str(payload.get("cost_preset", "none")),
-        commission_fixed=_optional_float(payload.get("commission_fixed")),
-        commission_rate=_optional_float(payload.get("commission_rate")),
-        slippage_bps=_optional_float(payload.get("slippage_bps")),
+        commission_fixed=optional_float(payload.get("commission_fixed")),
+        commission_rate=optional_float(payload.get("commission_rate")),
+        slippage_bps=optional_float(payload.get("slippage_bps")),
         recommended_steps=[str(step) for step in payload.get("recommended_steps", [])],
         tags=[str(tag) for tag in payload.get("tags", [])],
         created_at_utc=str(payload.get("created_at_utc", "")),
@@ -241,9 +243,3 @@ This plan organizes research. It does not prove a trading edge. Treat every
 result as local evidence tied to the selected data, strategy, costs, benchmark,
 and date range.
 """
-
-
-def _optional_float(value: object) -> float | None:
-    if value is None:
-        return None
-    return float(value)

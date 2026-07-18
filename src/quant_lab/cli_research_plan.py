@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .research_index import filter_index_records, load_research_index
 from .research_plan import ResearchPlan, create_research_plan, load_research_plan, save_research_plan
+from .research_plan_common import add_optional_cost_overrides
 from .research_registry import (
     append_experiment_record,
     create_experiment_record,
@@ -290,17 +291,3 @@ def build_summarize_command_from_plan(plan: ResearchPlan) -> str:
             plan.index_path,
         ]
     )
-
-
-def add_optional_cost_overrides(
-    command: list[str],
-    commission_fixed: float | None,
-    commission_rate: float | None,
-    slippage_bps: float | None,
-) -> None:
-    if commission_fixed is not None:
-        command.extend(["--commission-fixed", str(commission_fixed)])
-    if commission_rate is not None:
-        command.extend(["--commission-rate", str(commission_rate)])
-    if slippage_bps is not None:
-        command.extend(["--slippage-bps", str(slippage_bps)])
