@@ -179,14 +179,14 @@ Exit criteria:
 
 ## Milestone 8: Portfolio And Multi-Asset Research
 
-Status: planned.
+Status: complete.
 
 Goal: move from single-symbol strategy checks toward portfolio-level research.
 
 Detailed plan:
 [milestone-8-portfolio-multi-asset-research.md](milestone-8-portfolio-multi-asset-research.md)
 
-Planned work:
+Delivered:
 
 - Multi-symbol data loading.
 - Strict portfolio spec parsing and validation.
@@ -195,6 +195,8 @@ Planned work:
 - Per-symbol holdings, trades, and allocation drift artifacts.
 - Portfolio metadata with per-symbol data fingerprints.
 - Portfolio benchmark comparisons on the same aligned date range.
+- `quant-lab portfolio-run`.
+- [portfolio-workflow.md](portfolio-workflow.md).
 
 Exit criteria:
 
@@ -228,8 +230,9 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 8 deliverable 5: portfolio CLI wiring and example workflow.
+Start Milestone 9 planning around portfolio usability and research loops.
 
-Reason: the portfolio input model, static-weight engine, artifact persistence,
-and benchmark comparison are now in place. The next durable step is to expose
-that workflow through `quant-lab portfolio-run` and document a copyable example.
+Reason: the lab can now run single-symbol strategies and simple static-weight
+portfolios. The next useful step is deciding whether to deepen portfolio
+research with inspection commands, portfolio templates, or guided portfolio
+plans.

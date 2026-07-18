@@ -155,7 +155,11 @@ def filter_index_records(
     filtered = list(records)
     if symbol is not None:
         requested_symbol = symbol.upper()
-        filtered = [record for record in filtered if str(record.get("symbol", "")).upper() == requested_symbol]
+        filtered = [
+            record
+            for record in filtered
+            if requested_symbol in _record_symbols(record)
+        ]
     if strategy_id is not None:
         filtered = [record for record in filtered if record.get("strategy_id") == strategy_id]
     if run_type is not None:
@@ -163,6 +167,11 @@ def filter_index_records(
     if experiment_id is not None:
         filtered = [record for record in filtered if record.get("experiment_id") == experiment_id]
     return filtered
+
+
+def _record_symbols(record: dict) -> set[str]:
+    raw_symbol = str(record.get("symbol", ""))
+    return {symbol.strip().upper() for symbol in raw_symbol.split(",") if symbol.strip()}
 
 
 def sort_index_records(records: Iterable[dict], sort_key: str, descending: bool = True) -> list[dict]:

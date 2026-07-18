@@ -20,6 +20,7 @@ tool that makes backtest assumptions visible.
 - Run a train/test parameter sweep that selects on the train period and reruns
   only the selected variant on the later test period.
 - Run explicit walk-forward windows for repeated train/test checks.
+- Run simple static-weight multi-symbol portfolio backtests.
 - Track research hypotheses in a local experiment registry.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
 - Save optional research notes beside run and sweep artifacts.
@@ -41,6 +42,7 @@ docs/
   milestone-7-guided-research-workflow.md  Planned guided workflow.
   milestone-8-portfolio-multi-asset-research.md  Planned portfolio workflow.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
+  portfolio-workflow.md       End-to-end portfolio workflow.
   milestones.md                  Project milestone plan.
   research-workflow.md           End-to-end research workflow.
   strategy-schema.md            Strategy schema notes.
@@ -61,6 +63,7 @@ More detailed module notes:
 - [docs/milestone-7-guided-research-workflow.md](docs/milestone-7-guided-research-workflow.md)
 - [docs/milestone-8-portfolio-multi-asset-research.md](docs/milestone-8-portfolio-multi-asset-research.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
+- [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
 - [docs/research-workflow.md](docs/research-workflow.md)
 - [src/backtester_core/README.md](src/backtester_core/README.md)
 - [src/quant_lab/README.md](src/quant_lab/README.md)
@@ -301,6 +304,22 @@ default. Use `--index-path` to write the registry somewhere else. Pass
 rows, and to automatically append the generated `run_metadata.json` path to the
 experiment's `linked_runs`. Use `--experiments-path` too when the experiment
 registry is not the default `artifacts/experiments.jsonl`.
+
+### Run A Static-Weight Portfolio
+
+```bash
+quant-lab portfolio-run \
+  --portfolio data/portfolios/qqq_spy_static_60_40.json \
+  --initial-cash 100000 \
+  --cost-preset retail-liquid \
+  --out artifacts/research/qqq_spy_static_60_40/baseline
+```
+
+The portfolio command loads every symbol CSV from the portfolio spec, aligns
+dates by intersection, rebalances static target weights, compares against the
+configured buy-and-hold benchmark, writes portfolio artifacts, and appends a
+`portfolio_run` row to the research index. See
+[docs/portfolio-workflow.md](docs/portfolio-workflow.md).
 
 ### List Previous Runs
 

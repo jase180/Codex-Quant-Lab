@@ -2,7 +2,7 @@
 
 ## Status
 
-In progress.
+Complete.
 
 ## Goal
 
@@ -259,7 +259,7 @@ Delivered implementation:
 
 ### 5. Example Workflow And Docs
 
-Status: not started.
+Status: delivered.
 
 Add one copyable example portfolio workflow.
 
@@ -268,6 +268,16 @@ Acceptance criteria:
 - README links the portfolio workflow.
 - The example shows fetch, portfolio spec, run, inspect, and compare steps.
 - The docs explain what this version can and cannot tell the user.
+
+Delivered implementation:
+
+- `quant-lab portfolio-run` executes the portfolio spec, saves artifacts,
+  appends a `portfolio_run` row to the research index, and links the metadata
+  path to an experiment when `--experiment-id` is provided.
+- [portfolio-workflow.md](portfolio-workflow.md) documents fetch, portfolio
+  spec review, run, output inspection, benchmark comparison, and assumptions.
+- README links the portfolio workflow and includes a copyable `portfolio-run`
+  command.
 
 ## Build Order
 
@@ -302,3 +312,5 @@ Milestone 8 is done when the lab can run and inspect a simple static-weight
 portfolio across multiple symbols, with local metadata that makes every data
 input, allocation assumption, rebalance rule, cost model, benchmark comparison,
 and output artifact clear.
+
+Status: achieved.

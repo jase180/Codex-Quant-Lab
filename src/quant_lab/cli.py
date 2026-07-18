@@ -20,6 +20,7 @@ from .cli_experiments import (
     update_experiment_command,
 )
 from .cli_run_inspection import compare_runs_command, show_run_command, verify_run_command
+from .cli_portfolio import portfolio_run_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -44,6 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     register_run_commands(subparsers)
+    register_portfolio_commands(subparsers)
     register_data_commands(subparsers)
     register_run_inspection_commands(subparsers)
     register_experiment_commands(subparsers)
@@ -111,6 +113,7 @@ def register_run_commands(subparsers) -> None:
             "test_selected_run",
             "walk_forward_train_run",
             "walk_forward_test_run",
+            "portfolio_run",
         ],
         default=None,
         help="Only show one run type.",
@@ -142,6 +145,34 @@ def register_run_commands(subparsers) -> None:
         help="Maximum rows to print. Defaults to 20.",
     )
     list_parser.set_defaults(func=list_runs_command)
+
+
+def register_portfolio_commands(subparsers) -> None:
+    portfolio_parser = subparsers.add_parser(
+        "portfolio-run",
+        help="Run one static-weight portfolio spec against aligned OHLCV CSV inputs.",
+    )
+    portfolio_parser.add_argument(
+        "--portfolio",
+        required=True,
+        help="Path to a portfolio_plan.v1 JSON file.",
+    )
+    portfolio_parser.add_argument(
+        "--out",
+        required=True,
+        help="Directory where portfolio artifacts are written.",
+    )
+    portfolio_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash. Defaults to 100000.",
+    )
+    add_cost_arguments(portfolio_parser)
+    add_experiment_registry_argument(portfolio_parser)
+    add_experiment_link_argument(portfolio_parser)
+    add_index_argument(portfolio_parser)
+    portfolio_parser.set_defaults(func=portfolio_run_command)
 
 
 def register_data_commands(subparsers) -> None:
