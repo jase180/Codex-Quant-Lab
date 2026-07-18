@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +10,14 @@ import pandas as pd
 
 from .data_source import inspect_data_source
 from .run_metadata import fingerprint_file
+from .trust_common import (
+    classify_trust_warnings,
+    metadata_date,
+    plain,
+    range_value,
+    read_json,
+    verification_check,
+)
 
 
 PORTFOLIO_DATA_TRUST_REPORT_FILENAME = "portfolio_data_trust_report.md"
@@ -33,7 +40,7 @@ def summarize_portfolio_data_trust(
     if not metadata_file.exists():
         raise FileNotFoundError(f"portfolio metadata file not found: {metadata_file}")
 
-    metadata = _read_json(metadata_file)
+    metadata = read_json(metadata_file)
     symbol_base_dir = _portfolio_symbol_base_dir(metadata)
     symbol_checks = [
         _portfolio_symbol_check(symbol, base_dir=symbol_base_dir)
@@ -41,7 +48,7 @@ def summarize_portfolio_data_trust(
     ]
     benchmark_check = _benchmark_check(metadata.get("benchmark"))
     warnings = _trust_warnings(symbol_checks=symbol_checks, benchmark_check=benchmark_check)
-    worst_warning = _worst_warning(warnings)
+    worst_warning = classify_trust_warnings(warnings)
     report_file = (
         Path(output_path)
         if output_path is not None
@@ -92,15 +99,15 @@ def _portfolio_symbol_check(symbol: dict[str, Any], *, base_dir: Path | None) ->
     fingerprint = fingerprint_file(path)
     data = pd.read_csv(path)
     dates = pd.to_datetime(data["date"]) if "date" in data.columns and not data.empty else None
-    actual_start = _date_value(dates.min()) if dates is not None else None
-    actual_end = _date_value(dates.max()) if dates is not None else None
+    actual_start = metadata_date(dates.min()) if dates is not None else None
+    actual_end = metadata_date(dates.max()) if dates is not None else None
     checks = {
-        "file_sha256": _check(symbol.get("file_sha256"), fingerprint["file_sha256"]),
-        "file_size_bytes": _check(symbol.get("file_size_bytes"), fingerprint["file_size_bytes"]),
-        "row_count": _check(symbol.get("row_count"), int(len(data))),
-        "date_range": _check(
-            _range_value(symbol.get("start"), symbol.get("end")),
-            _range_value(actual_start, actual_end),
+        "file_sha256": verification_check(symbol.get("file_sha256"), fingerprint["file_sha256"]),
+        "file_size_bytes": verification_check(symbol.get("file_size_bytes"), fingerprint["file_size_bytes"]),
+        "row_count": verification_check(symbol.get("row_count"), int(len(data))),
+        "date_range": verification_check(
+            range_value(symbol.get("start"), symbol.get("end")),
+            range_value(actual_start, actual_end),
         ),
     }
     check["checks"] = checks
@@ -133,8 +140,8 @@ def _benchmark_check(benchmark: dict[str, Any] | None) -> dict[str, Any] | None:
 
     fingerprint = fingerprint_file(path)
     checks = {
-        "file_sha256": _check(benchmark.get("file_sha256"), fingerprint["file_sha256"]),
-        "file_size_bytes": _check(benchmark.get("file_size_bytes"), fingerprint["file_size_bytes"]),
+        "file_sha256": verification_check(benchmark.get("file_sha256"), fingerprint["file_sha256"]),
+        "file_size_bytes": verification_check(benchmark.get("file_size_bytes"), fingerprint["file_size_bytes"]),
     }
     check["checks"] = checks
     if any(item["status"] != "match" for item in checks.values()):
@@ -158,10 +165,10 @@ def _render_portfolio_data_trust_report(
         "## Summary",
         "",
         f"- Metadata: `{metadata_file}`",
-        f"- Portfolio: {_plain(metadata.get('portfolio_id'))}",
-        f"- Name: {_plain(metadata.get('name'))}",
-        f"- Alignment policy: {_plain(metadata.get('alignment_policy'))}",
-        f"- Rebalance: {_plain(metadata.get('rebalance_frequency'))}",
+        f"- Portfolio: {plain(metadata.get('portfolio_id'))}",
+        f"- Name: {plain(metadata.get('name'))}",
+        f"- Alignment policy: {plain(metadata.get('alignment_policy'))}",
+        f"- Rebalance: {plain(metadata.get('rebalance_frequency'))}",
         f"- Worst warning: {worst_warning}",
         "",
         "## Symbol Inputs",
@@ -172,12 +179,12 @@ def _render_portfolio_data_trust_report(
     for check in symbol_checks:
         lines.append(
             "| {symbol} | {result} | {quality} | {aligned} | {dropped} | `{path}` |".format(
-                symbol=_plain(check.get("symbol")),
-                result=_plain(check.get("result")),
-                quality=_plain(check.get("quality_severity")),
-                aligned=_plain(check.get("aligned_row_count")),
-                dropped=_plain(check.get("dropped_rows")),
-                path=_plain(check.get("path")),
+                symbol=plain(check.get("symbol")),
+                result=plain(check.get("result")),
+                quality=plain(check.get("quality_severity")),
+                aligned=plain(check.get("aligned_row_count")),
+                dropped=plain(check.get("dropped_rows")),
+                path=plain(check.get("path")),
             )
         )
 
@@ -200,9 +207,9 @@ def _verification_section(check: dict[str, Any]) -> list[str]:
     lines = [
         f"### {label}",
         "",
-        f"- Path: `{_plain(check.get('path'))}`",
-        f"- Resolved path: `{_plain(check.get('resolved_path'))}`",
-        f"- Result: {_plain(check.get('result'))}",
+        f"- Path: `{plain(check.get('path'))}`",
+        f"- Resolved path: `{plain(check.get('resolved_path'))}`",
+        f"- Result: {plain(check.get('result'))}",
     ]
     data_source = check.get("data_source")
     if data_source is not None:
@@ -219,7 +226,7 @@ def _verification_section(check: dict[str, Any]) -> list[str]:
     lines.extend(["", "| Check | Status | Metadata | Current |", "| --- | --- | --- | --- |"])
     for check_name, item in check.get("checks", {}).items():
         lines.append(
-            f"| {check_name} | {item.get('status')} | {_plain(item.get('expected'))} | {_plain(item.get('actual'))} |"
+            f"| {check_name} | {item.get('status')} | {plain(item.get('expected'))} | {plain(item.get('actual'))} |"
         )
     if not check.get("checks"):
         lines.append("| - | - | - | - |")
@@ -253,22 +260,6 @@ def _append_check_warnings(warnings: list[str], label: str, check: dict[str, Any
         warnings.extend(f"{label}: {warning}" for warning in data_source.warnings)
 
 
-def _worst_warning(warnings: list[str]) -> str:
-    if not warnings:
-        return "none"
-    critical_fragments = [
-        "input file differs",
-        "data file missing",
-        "metadata missing data path",
-        "quality severity is critical",
-    ]
-    if any(any(fragment in warning for fragment in critical_fragments) for warning in warnings):
-        return "critical"
-    if any("warning" in warning or "missing" in warning for warning in warnings):
-        return "warning"
-    return "info"
-
-
 def _inspect_optional_data_source(path: Path):
     if not path.exists():
         return None
@@ -287,31 +278,3 @@ def _resolve_metadata_path(path: str, *, base_dir: Path | None) -> Path:
     if resolved.is_absolute() or base_dir is None:
         return resolved
     return base_dir / resolved
-
-
-def _check(expected: object, actual: object) -> dict[str, object]:
-    return {
-        "expected": expected,
-        "actual": actual,
-        "status": "match" if expected == actual else "mismatch",
-    }
-
-
-def _range_value(start: object, end: object) -> str:
-    return f"{start} to {end}"
-
-
-def _date_value(value: pd.Timestamp) -> str | None:
-    if pd.isna(value):
-        return None
-    return pd.Timestamp(value).date().isoformat()
-
-
-def _read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _plain(value: object) -> str:
-    if value is None:
-        return "-"
-    return str(value)

@@ -41,6 +41,7 @@ It owns:
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `run_trust.py`: writes Markdown data-trust reports for saved strategy runs.
+- `trust_common.py`: shared warning/check helpers for trust-report commands.
 - `sweep_guardrails.py`: reads sweep `summary.csv` files and writes skeptical
   markdown guardrail reports.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
