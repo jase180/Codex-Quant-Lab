@@ -151,7 +151,33 @@ Exit criteria:
 - A user can tell whether a result used the intended data, whether that data
   changed later, and whether the result is too weak to trust yet.
 
-## Milestone 7: Portfolio And Multi-Asset Research
+## Milestone 7: Guided Research Workflow
+
+Status: planned.
+
+Goal: turn the existing research primitives into a guided workflow for one
+research question.
+
+Detailed plan:
+[milestone-7-guided-research-workflow.md](milestone-7-guided-research-workflow.md)
+
+Likely work:
+
+- local `research_plan.json` and `research_plan.md` files,
+- `quant-lab research-plan init`,
+- baseline command recommendation,
+- `quant-lab research-plan next`,
+- simple next-step logic based on plan state, experiment records, and run index
+  rows,
+- docs for guided versus manual research workflows.
+
+Exit criteria:
+
+- A user can start from a hypothesis and get a durable local plan plus the next
+  recommended command without hiding the normal run, sweep, validation, summary,
+  and decision artifacts.
+
+## Milestone 8: Portfolio And Multi-Asset Research
 
 Status: later.
 
@@ -194,7 +220,7 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build the first guided research-question workflow.
+Build Milestone 7, starting with `research-plan init`.
 
 Reason: the lab now has enough pieces for a full skeptical research loop, but a
 new user still has to know which commands to run and in what order. A guided
