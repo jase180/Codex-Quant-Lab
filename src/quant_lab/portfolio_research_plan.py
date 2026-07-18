@@ -266,7 +266,7 @@ def build_portfolio_baseline_command_from_plan(plan: PortfolioResearchPlan) -> s
         "--portfolio",
         plan.portfolio_path,
         "--out",
-        str(Path(plan.output_dir) / "baseline"),
+        _display_path(Path(plan.output_dir) / "baseline"),
         "--initial-cash",
         str(plan.initial_cash),
         "--cost-preset",
@@ -305,7 +305,7 @@ def build_portfolio_summarize_command_from_plan(plan: PortfolioResearchPlan) -> 
             "--index-path",
             plan.index_path,
             "--out",
-            str(Path(plan.output_dir) / "portfolio_summary.md"),
+            _display_path(Path(plan.output_dir) / "portfolio_summary.md"),
         ]
     )
 
@@ -329,6 +329,22 @@ def build_portfolio_variants_command_from_plan(plan: PortfolioResearchPlan) -> s
         "--rebalance",
         "quarterly",
         "--out",
-        str(Path(plan.output_dir) / "portfolio_variants"),
+        _display_path(Path(plan.output_dir) / "portfolio_variants"),
     ]
     return shlex.join(command)
+
+
+def _display_path(path: str | Path) -> str:
+    """Return a stable command-string path without changing file IO behavior.
+
+    `Path(...)` renders relative paths with backslashes on Windows. These
+    helpers build copyable CLI recommendations, not paths we immediately open,
+    so forward slashes keep repo-relative commands stable across Windows and
+    Unix shells. Absolute paths keep the host platform's spelling because those
+    often come from temp directories or user-provided Windows paths.
+    """
+
+    path_string = str(path)
+    if Path(path).is_absolute():
+        return path_string
+    return path_string.replace("\\", "/")

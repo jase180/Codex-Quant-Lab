@@ -3,6 +3,7 @@ __pycache__/
 .codex/
 .agents/
 .venv/
+.venv-win/
 *.egg-info/
 artifacts/
 data/cache/
