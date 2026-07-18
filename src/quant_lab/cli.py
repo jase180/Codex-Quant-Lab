@@ -21,20 +21,13 @@ from .cli_experiments import (
     summarize_experiment_command,
     update_experiment_command,
 )
+from .cli_run_inspection import compare_runs_command, show_run_command, verify_run_command
 from .research_index import format_index_csv
 from .research_index import filter_index_records, format_index_table, load_research_index, sort_index_records
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
     EXPERIMENT_STATUSES,
     require_experiment,
-)
-from .run_inspection import (
-    format_run_comparison,
-    format_run_summary,
-    format_run_verification,
-    load_run_summaries,
-    load_run_summary,
-    verify_run_input_file,
 )
 from .run_artifacts import run_single_backtest
 from .run_config import RunExecutionConfig
@@ -629,24 +622,6 @@ def list_runs_command(args: argparse.Namespace) -> int:
         print(format_index_csv(records))
     else:
         print(format_index_table(records))
-    return 0
-
-
-def show_run_command(args: argparse.Namespace) -> int:
-    summary = load_run_summary(args.metadata)
-    print(format_run_summary(summary))
-    return 0
-
-
-def verify_run_command(args: argparse.Namespace) -> int:
-    verification = verify_run_input_file(args.metadata)
-    print(format_run_verification(verification))
-    return 0
-
-
-def compare_runs_command(args: argparse.Namespace) -> int:
-    summaries = load_run_summaries(args.metadata)
-    print(format_run_comparison(summaries))
     return 0
 
 
