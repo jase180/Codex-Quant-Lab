@@ -34,7 +34,7 @@ from .cli_portfolio import (
     portfolio_variants_command,
     portfolio_run_command,
 )
-from .cli_portfolio_batch import portfolio_batch_plan_command
+from .cli_portfolio_batch import portfolio_batch_plan_command, portfolio_batch_run_command
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
@@ -325,6 +325,27 @@ def register_portfolio_batch_commands(subparsers) -> None:
     add_index_argument(plan_parser)
     plan_parser.add_argument("--force", action="store_true", help="Overwrite an existing manifest.")
     plan_parser.set_defaults(func=portfolio_batch_plan_command)
+
+    run_parser = batch_subparsers.add_parser(
+        "run",
+        help="Execute a saved portfolio batch manifest sequentially.",
+    )
+    run_parser.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to portfolio_batch_manifest.json.",
+    )
+    run_parser.add_argument(
+        "--experiment-id",
+        required=True,
+        help="Experiment id to attach every completed portfolio run to.",
+    )
+    run_parser.add_argument(
+        "--continue-on-error",
+        action="store_true",
+        help="Continue after a failed item instead of stopping the batch.",
+    )
+    run_parser.set_defaults(func=portfolio_batch_run_command)
 
 
 def register_data_commands(subparsers) -> None:

@@ -73,6 +73,8 @@ Acceptance criteria:
 
 ### 2. Sequential Portfolio Batch Runner
 
+Status: delivered.
+
 Execute a saved manifest one portfolio run at a time.
 
 Possible command:

@@ -375,6 +375,18 @@ This writes `portfolio_batch_manifest.json` with one planned `portfolio-run`
 command per candidate. It validates every portfolio spec first and still does
 not run any backtests.
 
+Execute a saved batch manifest sequentially:
+
+```bash
+quant-lab portfolio-batch run \
+  --manifest artifacts/research/qqq_spy_tlt/batch_001/portfolio_batch_manifest.json \
+  --experiment-id EXP-001
+```
+
+This writes `portfolio_batch_result.json`, runs each planned portfolio through
+the same artifact path as `portfolio-run`, and stops on the first failure unless
+`--continue-on-error` is provided.
+
 ```bash
 quant-lab portfolio-run \
   --portfolio data/portfolios/qqq_spy_static_60_40.json \
@@ -787,6 +799,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Add portfolio batch execution from saved manifests.
-2. Add batch guardrail summaries before picking winners.
+1. Add batch guardrail summaries before picking winners.
+2. Teach `portfolio-plan next` to recommend batch steps.
 3. Add strategy sweep guardrail reports.

@@ -28,6 +28,8 @@ It owns:
   same aligned portfolio dates.
 - `portfolio_artifacts.py`: writes portfolio metrics, CSV outputs, reports, and
   metadata.
+- `portfolio_execution.py`: shared portfolio-run execution and research-index
+  persistence.
 - `portfolio_metadata.py`: defines and writes the stable
   `portfolio_metadata.json` shape.
 - `portfolio_report.py`: renders the portfolio markdown report.
@@ -191,6 +193,18 @@ quant-lab portfolio-batch plan \
 The batch planner validates each portfolio JSON file and writes
 `portfolio_batch_manifest.json`. It records planned `portfolio-run` command
 tokens but does not execute them.
+
+Run a saved portfolio batch manifest:
+
+```bash
+quant-lab portfolio-batch run \
+  --manifest artifacts/research/qqq_spy_tlt/batch_001/portfolio_batch_manifest.json \
+  --experiment-id EXP-001
+```
+
+The runner executes each manifest item sequentially through the same portfolio
+artifact path as `portfolio-run`. It writes `portfolio_batch_result.json` with
+completed, failed, and skipped item statuses.
 
 Run walk-forward windows:
 

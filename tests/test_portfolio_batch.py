@@ -8,9 +8,13 @@ from pathlib import Path
 from quant_lab.portfolio_batch import (
     PORTFOLIO_BATCH_MANIFEST_FILENAME,
     PORTFOLIO_BATCH_MANIFEST_SCHEMA_VERSION,
+    PORTFOLIO_BATCH_RESULT_FILENAME,
+    PORTFOLIO_BATCH_RESULT_SCHEMA_VERSION,
     plan_portfolio_batch,
     portfolio_batch_manifest_path,
+    run_portfolio_batch,
 )
+from quant_lab.research_registry import append_experiment_record, create_experiment_record
 
 
 class PortfolioBatchTests(unittest.TestCase):
@@ -88,8 +92,144 @@ class PortfolioBatchTests(unittest.TestCase):
             replacement = plan_portfolio_batch(portfolios_dir=portfolios_dir, output_dir=output_dir, force=True)
             self.assertEqual(replacement.item_count, 1)
 
+    def test_run_portfolio_batch_executes_manifest_and_writes_result(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            data_dir = workspace / "data"
+            portfolios_dir = workspace / "candidates"
+            output_dir = workspace / "batch"
+            experiments_path = workspace / "experiments.jsonl"
+            index_path = workspace / "research_index.jsonl"
+            data_dir.mkdir()
+            portfolios_dir.mkdir()
+            _write_ohlcv(data_dir / "QQQ.csv", [100, 110, 120])
+            _write_ohlcv(data_dir / "SPY.csv", [100, 100, 100])
+            _write_portfolio(
+                portfolios_dir / "candidate_a.json",
+                portfolio_id="candidate_a",
+                qqq_data=data_dir / "QQQ.csv",
+                spy_data=data_dir / "SPY.csv",
+            )
+            _write_experiment(experiments_path)
+            plan_portfolio_batch(
+                portfolios_dir=portfolios_dir,
+                output_dir=output_dir,
+                initial_cash=10_000,
+                experiments_path=experiments_path,
+                index_path=index_path,
+                created_at_utc="2026-07-18T00:00:00Z",
+            )
 
-def _write_portfolio(path: Path, *, portfolio_id: str) -> None:
+            result = run_portfolio_batch(
+                manifest_path=output_dir / PORTFOLIO_BATCH_MANIFEST_FILENAME,
+                experiment_id="EXP-001",
+                created_at_utc="2026-07-18T00:01:00Z",
+            )
+
+            result_path = output_dir / PORTFOLIO_BATCH_RESULT_FILENAME
+            payload = json.loads(result_path.read_text(encoding="utf-8"))
+            index_rows = _read_jsonl(index_path)
+            self.assertEqual(result.schema_version, PORTFOLIO_BATCH_RESULT_SCHEMA_VERSION)
+            self.assertEqual(payload["completed_count"], 1)
+            self.assertEqual(payload["failed_count"], 0)
+            self.assertEqual(payload["items"][0]["status"], "completed")
+            self.assertTrue(Path(payload["items"][0]["metadata_path"]).exists())
+            self.assertEqual(index_rows[0]["run_type"], "portfolio_run")
+            self.assertEqual(index_rows[0]["experiment_id"], "EXP-001")
+            self.assertTrue(result_path.read_text(encoding="utf-8").endswith("\n"))
+
+    def test_run_portfolio_batch_stops_after_failure_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            data_dir = workspace / "data"
+            portfolios_dir = workspace / "candidates"
+            output_dir = workspace / "batch"
+            experiments_path = workspace / "experiments.jsonl"
+            data_dir.mkdir()
+            portfolios_dir.mkdir()
+            _write_ohlcv(data_dir / "QQQ.csv", [100, 110, 120])
+            _write_ohlcv(data_dir / "SPY.csv", [100, 100, 100])
+            _write_portfolio(
+                portfolios_dir / "candidate_a.json",
+                portfolio_id="candidate_a",
+                qqq_data=data_dir / "MISSING.csv",
+                spy_data=data_dir / "SPY.csv",
+            )
+            _write_portfolio(
+                portfolios_dir / "candidate_b.json",
+                portfolio_id="candidate_b",
+                qqq_data=data_dir / "QQQ.csv",
+                spy_data=data_dir / "SPY.csv",
+            )
+            _write_experiment(experiments_path)
+            plan_portfolio_batch(
+                portfolios_dir=portfolios_dir,
+                output_dir=output_dir,
+                experiments_path=experiments_path,
+                index_path=workspace / "research_index.jsonl",
+            )
+
+            result = run_portfolio_batch(
+                manifest_path=output_dir / PORTFOLIO_BATCH_MANIFEST_FILENAME,
+                experiment_id="EXP-001",
+            )
+
+            self.assertEqual(result.completed_count, 0)
+            self.assertEqual(result.failed_count, 1)
+            self.assertEqual(result.skipped_count, 1)
+            self.assertEqual([item.status for item in result.items], ["failed", "skipped"])
+            self.assertIn("PortfolioDataError", result.items[0].error or "")
+
+    def test_run_portfolio_batch_can_continue_after_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            data_dir = workspace / "data"
+            portfolios_dir = workspace / "candidates"
+            output_dir = workspace / "batch"
+            experiments_path = workspace / "experiments.jsonl"
+            data_dir.mkdir()
+            portfolios_dir.mkdir()
+            _write_ohlcv(data_dir / "QQQ.csv", [100, 110, 120])
+            _write_ohlcv(data_dir / "SPY.csv", [100, 100, 100])
+            _write_portfolio(
+                portfolios_dir / "candidate_a.json",
+                portfolio_id="candidate_a",
+                qqq_data=data_dir / "MISSING.csv",
+                spy_data=data_dir / "SPY.csv",
+            )
+            _write_portfolio(
+                portfolios_dir / "candidate_b.json",
+                portfolio_id="candidate_b",
+                qqq_data=data_dir / "QQQ.csv",
+                spy_data=data_dir / "SPY.csv",
+            )
+            _write_experiment(experiments_path)
+            plan_portfolio_batch(
+                portfolios_dir=portfolios_dir,
+                output_dir=output_dir,
+                experiments_path=experiments_path,
+                index_path=workspace / "research_index.jsonl",
+            )
+
+            result = run_portfolio_batch(
+                manifest_path=output_dir / PORTFOLIO_BATCH_MANIFEST_FILENAME,
+                experiment_id="EXP-001",
+                continue_on_error=True,
+            )
+
+            self.assertEqual(result.completed_count, 1)
+            self.assertEqual(result.failed_count, 1)
+            self.assertEqual(result.skipped_count, 0)
+            self.assertEqual([item.status for item in result.items], ["failed", "completed"])
+
+
+def _write_portfolio(
+    path: Path,
+    *,
+    portfolio_id: str,
+    qqq_data: str | Path = "QQQ.csv",
+    spy_data: str | Path = "SPY.csv",
+) -> None:
     path.write_text(
         json.dumps(
             {
@@ -98,16 +238,39 @@ def _write_portfolio(path: Path, *, portfolio_id: str) -> None:
                 "name": portfolio_id.replace("_", " ").title(),
                 "description": "Static two-symbol candidate.",
                 "symbols": [
-                    {"symbol": "QQQ", "data": "QQQ.csv", "target_weight": 0.60},
-                    {"symbol": "SPY", "data": "SPY.csv", "target_weight": 0.40},
+                    {"symbol": "QQQ", "data": str(qqq_data), "target_weight": 0.60},
+                    {"symbol": "SPY", "data": str(spy_data), "target_weight": 0.40},
                 ],
                 "rebalance": {"frequency": "monthly"},
-                "benchmark": {"symbol": "SPY", "data": "SPY.csv"},
+                "benchmark": {"symbol": "SPY", "data": str(spy_data)},
             }
         )
         + "\n",
         encoding="utf-8",
     )
+
+
+def _write_ohlcv(path: Path, closes: list[float]) -> None:
+    lines = ["date,open,high,low,close,volume"]
+    for index, close in enumerate(closes, start=1):
+        lines.append(f"2026-01-0{index},{close},{close + 1},{close - 1},{close},1000")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_experiment(path: Path) -> None:
+    append_experiment_record(
+        create_experiment_record(
+            experiment_id="EXP-001",
+            title="Portfolio batch test",
+            hypothesis="Batch runner should link completed runs.",
+            created_at_utc="2026-07-18T00:00:00Z",
+        ),
+        path,
+    )
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 if __name__ == "__main__":

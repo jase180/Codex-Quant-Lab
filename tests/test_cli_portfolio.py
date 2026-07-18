@@ -191,6 +191,71 @@ class CliPortfolioTests(unittest.TestCase):
             self.assertIn("--initial-cash", payload["items"][0]["command"])
             self.assertIn("25000.0", payload["items"][0]["command"])
 
+    def test_portfolio_batch_run_command_executes_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            data_dir = workspace / "data"
+            portfolios_dir = workspace / "candidates"
+            output_dir = workspace / "batch"
+            index_path = workspace / "research_index.jsonl"
+            experiments_path = workspace / "experiments.jsonl"
+            data_dir.mkdir()
+            portfolios_dir.mkdir()
+            write_ohlcv(data_dir / "QQQ.csv", [("2026-01-01", 100), ("2026-01-02", 110), ("2026-01-05", 120)])
+            write_ohlcv(data_dir / "SPY.csv", [("2026-01-01", 100), ("2026-01-02", 100), ("2026-01-05", 100)])
+            _write_absolute_portfolio(
+                portfolios_dir / "candidate.json",
+                qqq_data=data_dir / "QQQ.csv",
+                spy_data=data_dir / "SPY.csv",
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                create_exit_code = main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--experiment-id",
+                        "EXP-001",
+                        "--title",
+                        "Portfolio batch smoke",
+                        "--hypothesis",
+                        "Batch runner should execute planned portfolio runs.",
+                    ]
+                )
+                plan_exit_code = main(
+                    [
+                        "portfolio-batch",
+                        "plan",
+                        "--portfolios",
+                        str(portfolios_dir),
+                        "--out",
+                        str(output_dir),
+                        "--index-path",
+                        str(index_path),
+                        "--experiments-path",
+                        str(experiments_path),
+                    ]
+                )
+                run_exit_code = main(
+                    [
+                        "portfolio-batch",
+                        "run",
+                        "--manifest",
+                        str(output_dir / "portfolio_batch_manifest.json"),
+                        "--experiment-id",
+                        "EXP-001",
+                    ]
+                )
+
+            result_payload = json.loads((output_dir / "portfolio_batch_result.json").read_text(encoding="utf-8"))
+            self.assertEqual(create_exit_code, 0)
+            self.assertEqual(plan_exit_code, 0)
+            self.assertEqual(run_exit_code, 0)
+            self.assertIn("Portfolio batch result written", stdout.getvalue())
+            self.assertEqual(result_payload["completed_count"], 1)
+            self.assertTrue((output_dir / "runs" / "candidate" / "portfolio_metadata.json").exists())
+
     def test_portfolio_run_writes_artifacts_index_and_experiment_link(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
@@ -323,3 +388,24 @@ class CliPortfolioTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _write_absolute_portfolio(path: Path, *, qqq_data: Path, spy_data: Path) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "portfolio_plan.v1",
+                "portfolio_id": "candidate",
+                "name": "Candidate",
+                "description": "Static two-symbol allocation.",
+                "symbols": [
+                    {"symbol": "QQQ", "data": str(qqq_data), "target_weight": 0.60},
+                    {"symbol": "SPY", "data": str(spy_data), "target_weight": 0.40},
+                ],
+                "rebalance": {"frequency": "monthly"},
+                "benchmark": {"symbol": "SPY", "data": str(spy_data)},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
