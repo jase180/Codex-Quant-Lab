@@ -35,6 +35,8 @@ It owns:
   `portfolio_metadata.json` shape.
 - `portfolio_report.py`: renders the portfolio markdown report.
 - `portfolio_inspection.py`: loads and formats saved portfolio run summaries.
+- `portfolio_trust.py`: writes per-symbol data-trust reports for saved
+  portfolio runs.
 - `portfolio_batch.py`: writes dry-run manifests for batches of portfolio specs.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
@@ -121,6 +123,12 @@ Write a trust report for a saved strategy run:
 
 ```bash
 quant-lab summarize-run-trust --metadata artifacts/research/qqq_sma/baseline/run_metadata.json
+```
+
+Write a data trust report for a saved portfolio run:
+
+```bash
+quant-lab summarize-portfolio-data-trust --metadata artifacts/research/qqq_spy/baseline/portfolio_metadata.json
 ```
 
 Run one strategy:

@@ -19,6 +19,7 @@ from .portfolio_inspection import (
     load_portfolio_run_summaries,
     load_portfolio_run_summary,
 )
+from .portfolio_trust import summarize_portfolio_data_trust
 
 
 def show_run_command(args: argparse.Namespace) -> int:
@@ -36,6 +37,13 @@ def show_portfolio_run_command(args: argparse.Namespace) -> int:
 def compare_portfolio_runs_command(args: argparse.Namespace) -> int:
     summaries = load_portfolio_run_summaries(args.metadata)
     print(format_portfolio_run_comparison(summaries))
+    return 0
+
+
+def summarize_portfolio_data_trust_command(args: argparse.Namespace) -> int:
+    report = summarize_portfolio_data_trust(args.metadata, output_path=args.out)
+    print(f"Portfolio data trust report written: {report.report_path}")
+    print(f"worst_warning: {report.worst_warning}")
     return 0
 
 

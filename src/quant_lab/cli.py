@@ -30,6 +30,7 @@ from .cli_run_inspection import (
     compare_runs_command,
     show_portfolio_run_command,
     show_run_command,
+    summarize_portfolio_data_trust_command,
     summarize_run_trust_command,
     verify_run_command,
 )
@@ -457,6 +458,18 @@ def register_run_inspection_commands(subparsers) -> None:
         help="Path to a portfolio_metadata.json file.",
     )
     show_portfolio_parser.set_defaults(func=show_portfolio_run_command)
+
+    portfolio_trust_parser = subparsers.add_parser(
+        "summarize-portfolio-data-trust",
+        help="Write a Markdown data trust report for one saved portfolio run.",
+    )
+    portfolio_trust_parser.add_argument("--metadata", required=True, help="Path to a portfolio_metadata.json file.")
+    portfolio_trust_parser.add_argument(
+        "--out",
+        default=None,
+        help="Optional output path. Defaults to portfolio_data_trust_report.md beside the metadata file.",
+    )
+    portfolio_trust_parser.set_defaults(func=summarize_portfolio_data_trust_command)
 
     verify_parser = subparsers.add_parser(
         "verify-run",

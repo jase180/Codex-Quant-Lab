@@ -105,7 +105,7 @@ Acceptance criteria:
 
 ### 3. Portfolio Data Trust Report
 
-Status: planned.
+Status: delivered.
 
 Add the same trust workflow for portfolio metadata, where one result can depend
 on several symbol CSVs plus benchmark data.

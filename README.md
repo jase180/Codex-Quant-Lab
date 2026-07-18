@@ -229,6 +229,16 @@ The report verifies whether the current local CSV still matches the saved
 fingerprint, includes source/provenance details, and summarizes data-quality
 findings.
 
+For portfolio runs, write the equivalent per-symbol data trust report:
+
+```bash
+quant-lab summarize-portfolio-data-trust \
+  --metadata artifacts/research/qqq_spy_tlt/baseline/portfolio_metadata.json
+```
+
+The portfolio report verifies every symbol input and benchmark data when saved
+benchmark metadata is available.
+
 ### Start A Guided Research Plan
 
 Use `research-plan init` when you have a hypothesis and want the lab to create a
