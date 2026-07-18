@@ -387,6 +387,17 @@ This writes `portfolio_batch_result.json`, runs each planned portfolio through
 the same artifact path as `portfolio-run`, and stops on the first failure unless
 `--continue-on-error` is provided.
 
+Summarize a planned or executed batch:
+
+```bash
+quant-lab portfolio-batch summarize \
+  --manifest artifacts/research/qqq_spy_tlt/batch_001/portfolio_batch_manifest.json
+```
+
+This writes `portfolio_batch_summary.md` with planned, completed, failed, and
+skipped counts plus guardrail warnings for broad batches, failed runs, skipped
+runs, missing result files, and thin evidence.
+
 ```bash
 quant-lab portfolio-run \
   --portfolio data/portfolios/qqq_spy_static_60_40.json \
@@ -799,6 +810,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Add batch guardrail summaries before picking winners.
-2. Teach `portfolio-plan next` to recommend batch steps.
-3. Add strategy sweep guardrail reports.
+1. Teach `portfolio-plan next` to recommend batch steps.
+2. Add strategy sweep guardrail reports.
+3. Add richer batch evidence summaries if real usage shows gaps.

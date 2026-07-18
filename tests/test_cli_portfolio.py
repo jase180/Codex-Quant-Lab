@@ -247,14 +247,25 @@ class CliPortfolioTests(unittest.TestCase):
                         "EXP-001",
                     ]
                 )
+                summarize_exit_code = main(
+                    [
+                        "portfolio-batch",
+                        "summarize",
+                        "--manifest",
+                        str(output_dir / "portfolio_batch_manifest.json"),
+                    ]
+                )
 
             result_payload = json.loads((output_dir / "portfolio_batch_result.json").read_text(encoding="utf-8"))
             self.assertEqual(create_exit_code, 0)
             self.assertEqual(plan_exit_code, 0)
             self.assertEqual(run_exit_code, 0)
+            self.assertEqual(summarize_exit_code, 0)
             self.assertIn("Portfolio batch result written", stdout.getvalue())
+            self.assertIn("Portfolio batch summary written", stdout.getvalue())
             self.assertEqual(result_payload["completed_count"], 1)
             self.assertTrue((output_dir / "runs" / "candidate" / "portfolio_metadata.json").exists())
+            self.assertTrue((output_dir / "portfolio_batch_summary.md").exists())
 
     def test_portfolio_run_writes_artifacts_index_and_experiment_link(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

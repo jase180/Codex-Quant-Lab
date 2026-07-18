@@ -16,6 +16,7 @@ PORTFOLIO_BATCH_MANIFEST_SCHEMA_VERSION = "portfolio_batch_manifest.v1"
 PORTFOLIO_BATCH_MANIFEST_FILENAME = "portfolio_batch_manifest.json"
 PORTFOLIO_BATCH_RESULT_SCHEMA_VERSION = "portfolio_batch_result.v1"
 PORTFOLIO_BATCH_RESULT_FILENAME = "portfolio_batch_result.json"
+PORTFOLIO_BATCH_SUMMARY_FILENAME = "portfolio_batch_summary.md"
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,21 @@ class PortfolioBatchRunResult:
         return payload
 
 
+@dataclass(frozen=True)
+class PortfolioBatchSummary:
+    """Guardrail summary for one planned or executed portfolio batch."""
+
+    manifest_path: str
+    result_path: str | None
+    summary_path: str
+    planned_count: int
+    completed_count: int
+    failed_count: int
+    skipped_count: int
+    warnings: list[str]
+    portfolio_summary_path: str | None = None
+
+
 def plan_portfolio_batch(
     *,
     portfolios_dir: str | Path,
@@ -144,6 +160,10 @@ def portfolio_batch_result_path(manifest_path: str | Path) -> Path:
     return Path(manifest_path).parent / PORTFOLIO_BATCH_RESULT_FILENAME
 
 
+def portfolio_batch_summary_path(manifest_path: str | Path) -> Path:
+    return Path(manifest_path).parent / PORTFOLIO_BATCH_SUMMARY_FILENAME
+
+
 def load_portfolio_batch_manifest(manifest_path: str | Path) -> PortfolioBatchManifest:
     payload = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
     if str(payload.get("schema_version", "")) != PORTFOLIO_BATCH_MANIFEST_SCHEMA_VERSION:
@@ -172,6 +192,41 @@ def load_portfolio_batch_manifest(manifest_path: str | Path) -> PortfolioBatchMa
     )
     _validate_loaded_manifest(manifest)
     return manifest
+
+
+def load_portfolio_batch_result(result_path: str | Path) -> PortfolioBatchRunResult:
+    payload = json.loads(Path(result_path).read_text(encoding="utf-8"))
+    if str(payload.get("schema_version", "")) != PORTFOLIO_BATCH_RESULT_SCHEMA_VERSION:
+        raise ValueError(f"unsupported portfolio batch result schema: {payload.get('schema_version')}")
+    raw_items = payload.get("items", [])
+    if not isinstance(raw_items, list):
+        raise ValueError("portfolio batch result items must be a list.")
+
+    items = [
+        PortfolioBatchRunItemResult(
+            portfolio_id=str(item.get("portfolio_id", "")),
+            portfolio_path=str(item.get("portfolio_path", "")),
+            output_dir=str(item.get("output_dir", "")),
+            status=str(item.get("status", "")),
+            command=[str(token) for token in item.get("command", [])],
+            metadata_path=_optional_str(item.get("metadata_path")),
+            error=_optional_str(item.get("error")),
+        )
+        for item in raw_items
+    ]
+    result = PortfolioBatchRunResult(
+        schema_version=str(payload.get("schema_version", "")),
+        created_at_utc=str(payload.get("created_at_utc", "")),
+        manifest_path=str(payload.get("manifest_path", "")),
+        experiment_id=str(payload.get("experiment_id", "")),
+        planned_count=int(payload.get("planned_count", len(items))),
+        completed_count=int(payload.get("completed_count", 0)),
+        failed_count=int(payload.get("failed_count", 0)),
+        skipped_count=int(payload.get("skipped_count", 0)),
+        items=items,
+    )
+    _validate_loaded_result(result)
+    return result
 
 
 def run_portfolio_batch(
@@ -252,6 +307,50 @@ def run_portfolio_batch(
     return result
 
 
+def summarize_portfolio_batch(
+    *,
+    manifest_path: str | Path,
+    output_path: str | Path | None = None,
+    max_planned_runs: int = 25,
+    min_completed_runs: int = 2,
+) -> PortfolioBatchSummary:
+    """Write a markdown guardrail summary for one portfolio batch."""
+
+    manifest_file = Path(manifest_path)
+    manifest = load_portfolio_batch_manifest(manifest_file)
+    result_file = portfolio_batch_result_path(manifest_file)
+    result = load_portfolio_batch_result(result_file) if result_file.exists() else None
+    planned_count = manifest.item_count
+    completed_count = result.completed_count if result is not None else 0
+    failed_count = result.failed_count if result is not None else 0
+    skipped_count = result.skipped_count if result is not None else 0
+    portfolio_summary = _existing_portfolio_summary_path(manifest_file)
+    warnings = _batch_guardrail_warnings(
+        planned_count=planned_count,
+        completed_count=completed_count,
+        failed_count=failed_count,
+        skipped_count=skipped_count,
+        result_exists=result is not None,
+        max_planned_runs=max_planned_runs,
+        min_completed_runs=min_completed_runs,
+    )
+    summary_file = Path(output_path) if output_path is not None else portfolio_batch_summary_path(manifest_file)
+    summary = PortfolioBatchSummary(
+        manifest_path=str(manifest_file),
+        result_path=str(result_file) if result is not None else None,
+        summary_path=str(summary_file),
+        planned_count=planned_count,
+        completed_count=completed_count,
+        failed_count=failed_count,
+        skipped_count=skipped_count,
+        warnings=warnings,
+        portfolio_summary_path=str(portfolio_summary) if portfolio_summary is not None else None,
+    )
+    summary_file.parent.mkdir(parents=True, exist_ok=True)
+    summary_file.write_text(_render_portfolio_batch_summary(summary, result), encoding="utf-8")
+    return summary
+
+
 def _build_manifest_item(
     *,
     portfolio_path: Path,
@@ -314,6 +413,13 @@ def _command_tokens(argv: Sequence[str]) -> list[str]:
     return ["quant-lab", *[str(token) for token in argv]]
 
 
+def _optional_str(value: object) -> str | None:
+    if value is None:
+        return None
+    value_string = str(value)
+    return value_string if value_string else None
+
+
 def _validate_loaded_manifest(manifest: PortfolioBatchManifest) -> None:
     if manifest.item_count != len(manifest.items):
         raise ValueError("portfolio batch manifest item_count does not match items.")
@@ -331,6 +437,20 @@ def _validate_loaded_manifest(manifest: PortfolioBatchManifest) -> None:
             raise ValueError("portfolio batch manifest item portfolio_path does not match its command.")
         if planned["out"] != item.output_dir:
             raise ValueError("portfolio batch manifest item output_dir does not match its command.")
+
+
+def _validate_loaded_result(result: PortfolioBatchRunResult) -> None:
+    if result.planned_count != len(result.items):
+        raise ValueError("portfolio batch result planned_count does not match items.")
+    completed_count = sum(1 for item in result.items if item.status == "completed")
+    failed_count = sum(1 for item in result.items if item.status == "failed")
+    skipped_count = sum(1 for item in result.items if item.status == "skipped")
+    if result.completed_count != completed_count:
+        raise ValueError("portfolio batch result completed_count does not match items.")
+    if result.failed_count != failed_count:
+        raise ValueError("portfolio batch result failed_count does not match items.")
+    if result.skipped_count != skipped_count:
+        raise ValueError("portfolio batch result skipped_count does not match items.")
 
 
 def _command_with_experiment_id(command: list[str], experiment_id: str) -> list[str]:
@@ -376,3 +496,80 @@ def _skipped_item_result(item: PortfolioBatchManifestItem, experiment_id: str) -
         command=_command_with_experiment_id(item.command, experiment_id),
         error="Skipped because an earlier batch item failed.",
     )
+
+
+def _batch_guardrail_warnings(
+    *,
+    planned_count: int,
+    completed_count: int,
+    failed_count: int,
+    skipped_count: int,
+    result_exists: bool,
+    max_planned_runs: int,
+    min_completed_runs: int,
+) -> list[str]:
+    warnings: list[str] = []
+    if planned_count > max_planned_runs:
+        warnings.append(
+            f"Large batch: {planned_count} planned runs exceeds the configured cap of {max_planned_runs}."
+        )
+    if not result_exists:
+        warnings.append("No batch result file exists yet; this is planning evidence only.")
+    if failed_count:
+        warnings.append(f"{failed_count} run(s) failed; inspect errors before interpreting winners.")
+    if skipped_count:
+        warnings.append(f"{skipped_count} run(s) were skipped; the batch evidence is incomplete.")
+    if completed_count == 0:
+        warnings.append("No completed runs; there is no performance evidence to interpret.")
+    elif completed_count < min_completed_runs:
+        warnings.append(
+            f"Only {completed_count} completed run(s); evidence is thin below {min_completed_runs} completed runs."
+        )
+    if result_exists and completed_count < planned_count:
+        warnings.append("Not all planned runs completed; avoid comparing this as a full candidate set.")
+    return warnings
+
+
+def _existing_portfolio_summary_path(manifest_path: Path) -> Path | None:
+    candidate = manifest_path.parent / "portfolio_summary.md"
+    return candidate if candidate.exists() else None
+
+
+def _render_portfolio_batch_summary(
+    summary: PortfolioBatchSummary,
+    result: PortfolioBatchRunResult | None,
+) -> str:
+    warnings = "\n".join(f"- {warning}" for warning in summary.warnings) if summary.warnings else "- none"
+    portfolio_summary = summary.portfolio_summary_path or "not found"
+    item_lines = "- no result file yet"
+    if result is not None:
+        item_lines = "\n".join(
+            f"- `{item.status}` `{item.portfolio_id}`"
+            + (f" -> `{item.metadata_path}`" if item.metadata_path else "")
+            + (f" ({item.error})" if item.error else "")
+            for item in result.items
+        )
+
+    return f"""# Portfolio Batch Summary
+
+## Batch
+
+- Manifest: `{summary.manifest_path}`
+- Result: `{summary.result_path or "not found"}`
+- Portfolio experiment summary: `{portfolio_summary}`
+
+## Counts
+
+- Planned: `{summary.planned_count}`
+- Completed: `{summary.completed_count}`
+- Failed: `{summary.failed_count}`
+- Skipped: `{summary.skipped_count}`
+
+## Guardrails
+
+{warnings}
+
+## Items
+
+{item_lines}
+"""

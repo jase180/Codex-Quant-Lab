@@ -34,7 +34,11 @@ from .cli_portfolio import (
     portfolio_variants_command,
     portfolio_run_command,
 )
-from .cli_portfolio_batch import portfolio_batch_plan_command, portfolio_batch_run_command
+from .cli_portfolio_batch import (
+    portfolio_batch_plan_command,
+    portfolio_batch_run_command,
+    portfolio_batch_summarize_command,
+)
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
@@ -346,6 +350,34 @@ def register_portfolio_batch_commands(subparsers) -> None:
         help="Continue after a failed item instead of stopping the batch.",
     )
     run_parser.set_defaults(func=portfolio_batch_run_command)
+
+    summarize_parser = batch_subparsers.add_parser(
+        "summarize",
+        help="Write a guardrail summary for a portfolio batch manifest.",
+    )
+    summarize_parser.add_argument(
+        "--manifest",
+        required=True,
+        help="Path to portfolio_batch_manifest.json.",
+    )
+    summarize_parser.add_argument(
+        "--out",
+        default=None,
+        help="Path for the markdown summary. Defaults beside the manifest.",
+    )
+    summarize_parser.add_argument(
+        "--max-planned-runs",
+        type=int,
+        default=25,
+        help="Warn when planned runs exceed this count. Defaults to 25.",
+    )
+    summarize_parser.add_argument(
+        "--min-completed-runs",
+        type=int,
+        default=2,
+        help="Warn when completed runs are below this count. Defaults to 2.",
+    )
+    summarize_parser.set_defaults(func=portfolio_batch_summarize_command)
 
 
 def register_data_commands(subparsers) -> None:

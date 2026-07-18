@@ -206,6 +206,17 @@ The runner executes each manifest item sequentially through the same portfolio
 artifact path as `portfolio-run`. It writes `portfolio_batch_result.json` with
 completed, failed, and skipped item statuses.
 
+Summarize a portfolio batch:
+
+```bash
+quant-lab portfolio-batch summarize \
+  --manifest artifacts/research/qqq_spy_tlt/batch_001/portfolio_batch_manifest.json
+```
+
+The summary command writes `portfolio_batch_summary.md` with batch counts and
+guardrail warnings. It can summarize a dry-run manifest before execution, but
+will warn that no performance evidence exists yet.
+
 Run walk-forward windows:
 
 ```bash

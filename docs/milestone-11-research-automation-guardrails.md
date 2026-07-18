@@ -96,6 +96,8 @@ Acceptance criteria:
 
 ### 3. Batch Guardrail Summary
 
+Status: delivered.
+
 Add a summary that explains batch breadth and evidence quality before a user
 tries to pick winners.
 

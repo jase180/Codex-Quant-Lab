@@ -10,9 +10,11 @@ from quant_lab.portfolio_batch import (
     PORTFOLIO_BATCH_MANIFEST_SCHEMA_VERSION,
     PORTFOLIO_BATCH_RESULT_FILENAME,
     PORTFOLIO_BATCH_RESULT_SCHEMA_VERSION,
+    PORTFOLIO_BATCH_SUMMARY_FILENAME,
     plan_portfolio_batch,
     portfolio_batch_manifest_path,
     run_portfolio_batch,
+    summarize_portfolio_batch,
 )
 from quant_lab.research_registry import append_experiment_record, create_experiment_record
 
@@ -221,6 +223,73 @@ class PortfolioBatchTests(unittest.TestCase):
             self.assertEqual(result.failed_count, 1)
             self.assertEqual(result.skipped_count, 0)
             self.assertEqual([item.status for item in result.items], ["failed", "completed"])
+
+    def test_summarize_portfolio_batch_warns_before_result_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            portfolios_dir = workspace / "candidates"
+            output_dir = workspace / "batch"
+            portfolios_dir.mkdir()
+            _write_portfolio(portfolios_dir / "candidate_a.json", portfolio_id="candidate_a")
+            _write_portfolio(portfolios_dir / "candidate_b.json", portfolio_id="candidate_b")
+            plan_portfolio_batch(portfolios_dir=portfolios_dir, output_dir=output_dir)
+
+            summary = summarize_portfolio_batch(
+                manifest_path=output_dir / PORTFOLIO_BATCH_MANIFEST_FILENAME,
+                max_planned_runs=1,
+            )
+
+            markdown = (output_dir / PORTFOLIO_BATCH_SUMMARY_FILENAME).read_text(encoding="utf-8")
+            self.assertEqual(summary.planned_count, 2)
+            self.assertEqual(summary.completed_count, 0)
+            self.assertIsNone(summary.result_path)
+            self.assertTrue(any("No batch result" in warning for warning in summary.warnings))
+            self.assertTrue(any("Large batch" in warning for warning in summary.warnings))
+            self.assertIn("# Portfolio Batch Summary", markdown)
+            self.assertIn("- Planned: `2`", markdown)
+            self.assertIn("- no result file yet", markdown)
+
+    def test_summarize_portfolio_batch_reports_result_counts_and_items(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            data_dir = workspace / "data"
+            portfolios_dir = workspace / "candidates"
+            output_dir = workspace / "batch"
+            experiments_path = workspace / "experiments.jsonl"
+            index_path = workspace / "research_index.jsonl"
+            data_dir.mkdir()
+            portfolios_dir.mkdir()
+            _write_ohlcv(data_dir / "QQQ.csv", [100, 110, 120])
+            _write_ohlcv(data_dir / "SPY.csv", [100, 100, 100])
+            _write_portfolio(
+                portfolios_dir / "candidate_a.json",
+                portfolio_id="candidate_a",
+                qqq_data=data_dir / "QQQ.csv",
+                spy_data=data_dir / "SPY.csv",
+            )
+            _write_experiment(experiments_path)
+            plan_portfolio_batch(
+                portfolios_dir=portfolios_dir,
+                output_dir=output_dir,
+                experiments_path=experiments_path,
+                index_path=index_path,
+            )
+            run_portfolio_batch(
+                manifest_path=output_dir / PORTFOLIO_BATCH_MANIFEST_FILENAME,
+                experiment_id="EXP-001",
+            )
+
+            summary = summarize_portfolio_batch(
+                manifest_path=output_dir / PORTFOLIO_BATCH_MANIFEST_FILENAME,
+                min_completed_runs=2,
+            )
+
+            markdown = Path(summary.summary_path).read_text(encoding="utf-8")
+            self.assertEqual(summary.completed_count, 1)
+            self.assertEqual(summary.failed_count, 0)
+            self.assertTrue(any("Only 1 completed" in warning for warning in summary.warnings))
+            self.assertIn("`completed` `candidate_a`", markdown)
+            self.assertIn("portfolio_metadata.json", markdown)
 
 
 def _write_portfolio(
