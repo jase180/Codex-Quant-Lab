@@ -205,6 +205,29 @@ Exit criteria:
   assumption, rebalance rule, cost model, benchmark comparison, and output
   artifact clear.
 
+## Milestone 9: Portfolio Usability And Research Loops
+
+Status: planned.
+
+Goal: make portfolio runs easier to inspect, compare, repeat, and fold into
+normal research decisions.
+
+Detailed plan:
+[milestone-9-portfolio-usability-research-loops.md](milestone-9-portfolio-usability-research-loops.md)
+
+Planned work:
+
+- `quant-lab show-portfolio-run`.
+- `quant-lab compare-portfolio-runs`.
+- Portfolio templates.
+- Guided portfolio research plans.
+- README and workflow updates for the portfolio research loop.
+
+Exit criteria:
+
+- A user can create, run, inspect, compare, and reuse a simple portfolio idea
+  from the CLI without needing to manually inspect every artifact file.
+
 ## Maintenance: CLI And Workflow Organization
 
 Status: complete.
@@ -230,9 +253,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 9 planning around portfolio usability and research loops.
+Build Milestone 9 deliverable 1: `quant-lab show-portfolio-run`.
 
-Reason: the lab can now run single-symbol strategies and simple static-weight
-portfolios. The next useful step is deciding whether to deepen portfolio
-research with inspection commands, portfolio templates, or guided portfolio
-plans.
+Reason: portfolio runs now save rich metadata, but the user still has to open
+several files to understand one saved result. A focused inspection command is
+the fastest way to make portfolio research feel usable.
