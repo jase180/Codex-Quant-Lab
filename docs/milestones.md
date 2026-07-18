@@ -278,6 +278,30 @@ Exit criteria:
   locally, with enough guardrails to see when the batch is too broad or the
   evidence is too weak to trust.
 
+## Milestone 12: Data Source Trust
+
+Status: planned.
+
+Goal: make data provenance, fingerprints, and quality warnings easy to inspect
+before trusting strategy or portfolio results.
+
+Detailed plan:
+[milestone-12-data-source-trust.md](milestone-12-data-source-trust.md)
+
+Planned work:
+
+- Data provenance inspection for cached CSV files.
+- Single-run trust reports from `run_metadata.json`.
+- Portfolio data trust reports from `portfolio_metadata.json`.
+- Guided workflow recommendations for trust checks.
+- Data cache inventory and duplicate/missing-provenance warnings.
+
+Exit criteria:
+
+- A user can inspect cached data, generate trust reports for strategy and
+  portfolio runs, and see data-trust checks appear naturally in guided research
+  workflows.
+
 ## Maintenance: CLI And Workflow Organization
 
 Status: complete.
@@ -303,15 +327,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Review Milestone 11 in real sample research, then plan Milestone 12.
+Start Milestone 12 with data provenance inspection.
 
-Reason: the lab can now create, run, inspect, compare, and guide simple
-static-weight portfolio ideas, and it can now generate allocation plus rebalance
-variants, summarize linked portfolio runs, guide those steps, and generate
-capped candidate specs, write dry-run batch manifests, execute those saved
-manifests sequentially, summarize batch counts plus guardrail warnings, let
-`portfolio-plan next` recommend the batch plan, run, and summarize steps, and
-write lightweight guardrail reports for existing strategy sweep summaries. The
-next useful step is to use these workflows on a small realistic sample and then
-choose whether Milestone 12 should focus on data/source quality or result
-comparison UX.
+Reason: the lab can now create and automate realistic local research loops. The
+next highest-risk gap is not running more ideas; it is making sure each result's
+input data is easy to explain, verify, and distrust when needed.

@@ -45,7 +45,8 @@ docs/
   milestone-8-portfolio-multi-asset-research.md  Completed portfolio workflow.
   milestone-9-portfolio-usability-research-loops.md  Completed portfolio usability.
   milestone-10-portfolio-research-depth.md  Completed portfolio research depth.
-  milestone-11-research-automation-guardrails.md  Planned automation guardrails.
+  milestone-11-research-automation-guardrails.md  Completed automation guardrails.
+  milestone-12-data-source-trust.md  Planned data/source trust workflow.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
   milestones.md                  Project milestone plan.
@@ -70,6 +71,7 @@ More detailed module notes:
 - [docs/milestone-9-portfolio-usability-research-loops.md](docs/milestone-9-portfolio-usability-research-loops.md)
 - [docs/milestone-10-portfolio-research-depth.md](docs/milestone-10-portfolio-research-depth.md)
 - [docs/milestone-11-research-automation-guardrails.md](docs/milestone-11-research-automation-guardrails.md)
+- [docs/milestone-12-data-source-trust.md](docs/milestone-12-data-source-trust.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
 - [docs/research-workflow.md](docs/research-workflow.md)
@@ -824,6 +826,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Use Milestone 11 on real sample research and tighten rough edges.
-2. Plan the next milestone around data/source quality or result comparison UX.
-3. Add richer batch evidence summaries if real usage shows gaps.
+1. Start Milestone 12 with cached data provenance inspection.
+2. Add run and portfolio trust reports that verify saved fingerprints.
+3. Fold data-trust checks into the guided research workflow.
