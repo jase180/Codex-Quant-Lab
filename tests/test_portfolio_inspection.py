@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from quant_lab.cli import main  # noqa: E402
 from quant_lab.portfolio_inspection import (  # noqa: E402
     format_portfolio_run_summary,
+    load_portfolio_run_summaries,
     load_portfolio_run_summary,
 )
 
@@ -46,6 +47,47 @@ class PortfolioInspectionTests(unittest.TestCase):
         self.assertIn("Portfolio Run Summary", stdout.getvalue())
         self.assertIn("QQQ SPY Static 60/40", stdout.getvalue())
 
+    def test_compare_portfolio_runs_command_prints_comparison_table(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            first_metadata = _write_portfolio_artifacts(
+                temp_path / "first",
+                portfolio_id="qqq_spy_static_60_40",
+                total_return=0.06,
+                benchmark_return=0.05,
+                excess_return=0.01,
+            )
+            second_metadata = _write_portfolio_artifacts(
+                temp_path / "second",
+                portfolio_id="qqq_spy_static_70_30",
+                total_return=0.08,
+                benchmark_return=0.05,
+                excess_return=0.03,
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "compare-portfolio-runs",
+                        "--metadata",
+                        str(first_metadata),
+                        "--metadata",
+                        str(second_metadata),
+                    ]
+                )
+
+        output = stdout.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertIn("portfolio", output)
+        self.assertIn("qqq_spy_static_60_40", output)
+        self.assertIn("qqq_spy_static_70_30", output)
+        self.assertIn("8.00%", output)
+        self.assertIn("3.00%", output)
+
+    def test_load_portfolio_run_summaries_requires_two_paths(self) -> None:
+        with self.assertRaises(ValueError):
+            load_portfolio_run_summaries(["one.json"])
+
     def test_load_portfolio_run_summary_rejects_missing_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             missing_path = Path(temp_dir) / "missing.json"
@@ -71,7 +113,15 @@ class PortfolioInspectionTests(unittest.TestCase):
                 load_portfolio_run_summary(metadata_path)
 
 
-def _write_portfolio_artifacts(temp_path: Path) -> Path:
+def _write_portfolio_artifacts(
+    temp_path: Path,
+    *,
+    portfolio_id: str = "qqq_spy_static_60_40",
+    total_return: float = 0.06,
+    benchmark_return: float = 0.05,
+    excess_return: float = 0.01,
+) -> Path:
+    temp_path.mkdir(parents=True, exist_ok=True)
     metrics_path = temp_path / "portfolio_metrics.json"
     metadata_path = temp_path / "portfolio_metadata.json"
     report_path = temp_path / "portfolio_report.md"
@@ -79,7 +129,7 @@ def _write_portfolio_artifacts(temp_path: Path) -> Path:
         json.dumps(
             {
                 "ending_equity": 1060.0,
-                "total_return": 0.06,
+                "total_return": total_return,
                 "cagr": 1.2,
                 "sharpe_ratio": 0.7,
                 "max_drawdown": -0.02,
@@ -94,7 +144,7 @@ def _write_portfolio_artifacts(temp_path: Path) -> Path:
                 "metadata_schema_version": "portfolio_metadata.v1",
                 "run_type": "portfolio_run",
                 "created_at_utc": "2026-01-01T00:00:00Z",
-                "portfolio_id": "qqq_spy_static_60_40",
+                "portfolio_id": portfolio_id,
                 "name": "QQQ SPY Static 60/40",
                 "alignment_policy": "intersection",
                 "rebalance_frequency": "monthly",
@@ -108,8 +158,8 @@ def _write_portfolio_artifacts(temp_path: Path) -> Path:
                 "environment": {"git_commit": "abc123"},
                 "benchmark": {
                     "symbol": "SPY",
-                    "total_return": 0.05,
-                    "excess_total_return": 0.01,
+                    "total_return": benchmark_return,
+                    "excess_total_return": excess_return,
                 },
                 "symbols": [
                     {

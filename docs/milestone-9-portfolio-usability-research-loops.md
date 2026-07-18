@@ -75,6 +75,8 @@ Delivered implementation:
 
 ### 2. Compare Portfolio Runs
 
+Status: delivered.
+
 Add:
 
 ```bash
@@ -92,7 +94,17 @@ Acceptance criteria:
 - Handles missing optional metrics gracefully.
 - Tests cover comparison output and validation.
 
+Delivered implementation:
+
+- `quant-lab compare-portfolio-runs --metadata ... --metadata ...`.
+- `quant_lab.portfolio_inspection` loads multiple portfolio run summaries and
+  formats a compact comparison table.
+- Tests cover CLI output and validation that at least two metadata paths are
+  required.
+
 ### 3. Portfolio Templates
+
+Status: not started.
 
 Add starter portfolio JSON generation:
 
@@ -112,6 +124,8 @@ Acceptance criteria:
 - README links the portfolio template workflow.
 
 ### 4. Guided Portfolio Research Plan
+
+Status: not started.
 
 Extend the guided research idea to portfolios only after inspection and
 comparison are in place.

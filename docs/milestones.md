@@ -253,8 +253,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 9 deliverable 2: `quant-lab compare-portfolio-runs`.
+Build Milestone 9 deliverable 3: portfolio templates.
 
-Reason: portfolio runs can now be inspected from the CLI. The next usability
-gap is comparing two saved portfolio ideas without opening multiple metadata
-and metrics files manually.
+Reason: portfolio runs can now be inspected and compared from the CLI. The next
+usability gap is making it easy to create a valid starter portfolio spec without
+hand-editing JSON from scratch.

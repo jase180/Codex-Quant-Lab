@@ -102,6 +102,20 @@ Then inspect:
 - `portfolio_allocation_drift.csv` for target-versus-actual weight drift.
 - `portfolio_benchmark_metrics.json` for the buy-and-hold benchmark result.
 
+## 5. Compare Portfolio Runs
+
+After you have two saved portfolio runs, compare them from metadata:
+
+```bash
+quant-lab compare-portfolio-runs \
+  --metadata artifacts/research/portfolio_a/portfolio_metadata.json \
+  --metadata artifacts/research/portfolio_b/portfolio_metadata.json
+```
+
+The comparison table shows portfolio id, symbols, rebalance frequency, total
+return, benchmark return, excess return, max drawdown, Sharpe ratio, cost
+preset, and output directory.
+
 ## Assumptions To Remember
 
 - Symbols are aligned by date intersection. Rows missing from any symbol are

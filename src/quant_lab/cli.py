@@ -20,6 +20,7 @@ from .cli_experiments import (
     update_experiment_command,
 )
 from .cli_run_inspection import (
+    compare_portfolio_runs_command,
     compare_runs_command,
     show_portfolio_run_command,
     show_run_command,
@@ -261,6 +262,18 @@ def register_run_inspection_commands(subparsers) -> None:
         help="Path to a run_metadata.json file. Provide at least two.",
     )
     compare_parser.set_defaults(func=compare_runs_command)
+
+    compare_portfolio_parser = subparsers.add_parser(
+        "compare-portfolio-runs",
+        help="Compare two or more saved portfolio runs from portfolio_metadata.json files.",
+    )
+    compare_portfolio_parser.add_argument(
+        "--metadata",
+        action="append",
+        required=True,
+        help="Path to a portfolio_metadata.json file. Provide at least two.",
+    )
+    compare_portfolio_parser.set_defaults(func=compare_portfolio_runs_command)
 
 
 def register_experiment_commands(subparsers) -> None:

@@ -13,7 +13,9 @@ from .run_inspection import (
     verify_run_input_file,
 )
 from .portfolio_inspection import (
+    format_portfolio_run_comparison,
     format_portfolio_run_summary,
+    load_portfolio_run_summaries,
     load_portfolio_run_summary,
 )
 
@@ -27,6 +29,12 @@ def show_run_command(args: argparse.Namespace) -> int:
 def show_portfolio_run_command(args: argparse.Namespace) -> int:
     summary = load_portfolio_run_summary(args.metadata)
     print(format_portfolio_run_summary(summary))
+    return 0
+
+
+def compare_portfolio_runs_command(args: argparse.Namespace) -> int:
+    summaries = load_portfolio_run_summaries(args.metadata)
+    print(format_portfolio_run_comparison(summaries))
     return 0
 
 

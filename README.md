@@ -330,6 +330,14 @@ quant-lab show-portfolio-run \
   --metadata artifacts/research/qqq_spy_static_60_40/baseline/portfolio_metadata.json
 ```
 
+Compare saved portfolio runs:
+
+```bash
+quant-lab compare-portfolio-runs \
+  --metadata artifacts/research/portfolio_a/portfolio_metadata.json \
+  --metadata artifacts/research/portfolio_b/portfolio_metadata.json
+```
+
 ### List Previous Runs
 
 ```bash

@@ -86,6 +86,44 @@ def format_portfolio_run_summary(summary: dict) -> str:
     return "\n".join(lines)
 
 
+def load_portfolio_run_summaries(metadata_paths: list[str | Path]) -> list[dict]:
+    if len(metadata_paths) < 2:
+        raise ValueError("compare-portfolio-runs requires at least two --metadata paths")
+    return [load_portfolio_run_summary(path) for path in metadata_paths]
+
+
+def format_portfolio_run_comparison(summaries: list[dict]) -> str:
+    rows = [_comparison_row(summary) for summary in summaries]
+    columns = [
+        ("portfolio", "portfolio_id"),
+        ("symbols", "symbols"),
+        ("rebalance", "rebalance_frequency"),
+        ("return", "total_return"),
+        ("bench", "benchmark_total_return"),
+        ("excess", "excess_total_return"),
+        ("dd", "max_drawdown"),
+        ("sharpe", "sharpe_ratio"),
+        ("cost", "cost_preset"),
+        ("out", "output_dir"),
+    ]
+    table_rows = [
+        [_format_comparison_value(row.get(field), field) for _, field in columns]
+        for row in rows
+    ]
+    header = [label for label, _ in columns]
+    widths = [
+        max(len(header[index]), *[len(row[index]) for row in table_rows])
+        for index in range(len(header))
+    ]
+    lines = [
+        "  ".join(header[index].ljust(widths[index]) for index in range(len(header))),
+        "  ".join("-" * widths[index] for index in range(len(header))),
+    ]
+    for row in table_rows:
+        lines.append("  ".join(row[index].ljust(widths[index]) for index in range(len(row))))
+    return "\n".join(lines)
+
+
 def _symbol_lines(symbols: list[dict]) -> list[str]:
     if not symbols:
         return ["  None"]
@@ -116,6 +154,25 @@ def _benchmark_label(benchmark: dict) -> str:
     return f"buy-and-hold {symbol}"
 
 
+def _comparison_row(summary: dict) -> dict:
+    metadata = summary["metadata"]
+    metrics = summary["metrics"]
+    benchmark = metadata.get("benchmark") or {}
+    artifacts = metadata.get("artifacts") or {}
+    return {
+        "portfolio_id": metadata.get("portfolio_id"),
+        "symbols": ",".join(symbol.get("symbol", "-") for symbol in metadata.get("symbols", [])),
+        "rebalance_frequency": metadata.get("rebalance_frequency"),
+        "total_return": metrics.get("total_return"),
+        "benchmark_total_return": benchmark.get("total_return"),
+        "excess_total_return": benchmark.get("excess_total_return"),
+        "max_drawdown": metrics.get("max_drawdown"),
+        "sharpe_ratio": metrics.get("sharpe_ratio"),
+        "cost_preset": metadata.get("costs", {}).get("preset"),
+        "output_dir": Path(artifacts.get("metadata", summary["metadata_path"])).parent,
+    }
+
+
 def _read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -142,3 +199,13 @@ def _format_decimal(value: object) -> str:
     if value is None:
         return "-"
     return f"{float(value):.4f}"
+
+
+def _format_comparison_value(value: object, field: str) -> str:
+    if value is None:
+        return "-"
+    if field in {"total_return", "benchmark_total_return", "excess_total_return", "max_drawdown"}:
+        return _format_percent(value)
+    if field == "sharpe_ratio":
+        return _format_decimal(value)
+    return str(value)
