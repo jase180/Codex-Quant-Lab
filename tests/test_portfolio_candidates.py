@@ -13,6 +13,8 @@ from quant_lab.portfolio_candidates import (  # noqa: E402
     parse_candidate_symbols,
     write_portfolio_candidates,
 )
+from quant_lab.portfolio_data import load_multi_asset_dataset  # noqa: E402
+from quant_lab.portfolio_spec import load_portfolio_spec  # noqa: E402
 from quant_lab.portfolio_spec import parse_portfolio_spec  # noqa: E402
 
 
@@ -66,6 +68,10 @@ class PortfolioCandidateTests(unittest.TestCase):
             self.assertEqual(spec.rebalance.frequency, "quarterly")
             self.assertEqual(spec.benchmark.symbol, "SPY")
             self.assertEqual(len(spec.symbols), 3)
+            self.assertEqual(payload["symbols"][0]["data"], "../data/QQQ.csv")
+            loaded_spec = load_portfolio_spec(result.written[0].path)
+            dataset = load_multi_asset_dataset(loaded_spec)
+            self.assertEqual(set(dataset.symbols), {"QQQ", "SPY", "TLT"})
             self.assertTrue(Path(result.written[0].path).read_text(encoding="utf-8").endswith("\n"))
 
     def test_write_portfolio_candidates_rejects_ambiguous_data_files(self) -> None:

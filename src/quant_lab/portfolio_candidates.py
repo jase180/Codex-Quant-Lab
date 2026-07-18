@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -88,6 +89,7 @@ def write_portfolio_candidates(
             symbols=parsed_symbols,
             weights=weights,
             data_paths=data_paths,
+            output_dir=output_path,
             base_id=base_id,
             rebalance_frequency=rebalance,
             benchmark_symbol=benchmark,
@@ -112,24 +114,25 @@ def _positive_integer_partitions(*, total: int, parts: int) -> list[tuple[int, .
     return partitions
 
 
-def _resolve_symbol_data_path(data_dir: Path, symbol: str) -> str:
+def _resolve_symbol_data_path(data_dir: Path, symbol: str) -> Path:
     exact_path = data_dir / f"{symbol}.csv"
     if exact_path.exists():
-        return str(exact_path)
+        return exact_path
 
     matches = sorted(data_dir.glob(f"{symbol}_*.csv"))
     if not matches:
         raise FileNotFoundError(f"No CSV data file found for {symbol} in {data_dir}.")
     if len(matches) > 1:
         raise ValueError(f"Multiple CSV data files found for {symbol} in {data_dir}; use one exact {symbol}.csv file.")
-    return str(matches[0])
+    return matches[0]
 
 
 def _candidate_payload(
     *,
     symbols: list[str],
     weights: dict[str, float],
-    data_paths: dict[str, str],
+    data_paths: dict[str, Path],
+    output_dir: Path,
     base_id: str,
     rebalance_frequency: str,
     benchmark_symbol: str,
@@ -144,7 +147,7 @@ def _candidate_payload(
         "symbols": [
             {
                 "symbol": symbol,
-                "data": data_paths[symbol],
+                "data": _relative_data_path(data_paths[symbol], output_dir),
                 "target_weight": weights[symbol],
             }
             for symbol in symbols
@@ -152,8 +155,16 @@ def _candidate_payload(
         "rebalance": {"frequency": rebalance_frequency},
         "benchmark": {
             "symbol": benchmark_symbol,
-            "data": data_paths[benchmark_symbol],
+            "data": _relative_data_path(data_paths[benchmark_symbol], output_dir),
         },
     }
     parse_portfolio_spec(payload)
     return payload
+
+
+def _relative_data_path(data_path: Path, output_dir: Path) -> str:
+    # Portfolio data paths are resolved relative to the portfolio JSON file.
+    # Candidate specs are written in `output_dir`, so store a portable relative
+    # path from that directory instead of a path relative to the caller's shell.
+    relative_path = os.path.relpath(data_path.resolve(), start=output_dir.resolve())
+    return relative_path.replace("\\", "/")

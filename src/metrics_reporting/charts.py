@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import os
+import tempfile
 from pathlib import Path
 from typing import Sequence
+
+# Matplotlib tries to create its config/cache under the user's profile by
+# default. Some managed Windows shells block that path, so provide a writable
+# temp fallback unless the caller already chose `MPLCONFIGDIR`.
+os.environ.setdefault("MPLCONFIGDIR", str(Path(tempfile.gettempdir()) / "codex_quant_lab_matplotlib"))
 
 import matplotlib
 
