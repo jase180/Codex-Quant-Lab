@@ -37,6 +37,7 @@ data/
 docs/
   milestone-4-validation-realism.md  Detailed Milestone 4 plan.
   milestone-5-strategy-research-depth.md  Detailed Milestone 5 plan.
+  maintenance-cli-workflow-organization.md  Completed code organization pass.
   milestones.md                  Project milestone plan.
   research-workflow.md           End-to-end research workflow.
   strategy-schema.md            Strategy schema notes.
@@ -54,6 +55,7 @@ More detailed module notes:
 - [docs/milestones.md](docs/milestones.md)
 - [docs/milestone-4-validation-realism.md](docs/milestone-4-validation-realism.md)
 - [docs/milestone-5-strategy-research-depth.md](docs/milestone-5-strategy-research-depth.md)
+- [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/research-workflow.md](docs/research-workflow.md)
 - [src/backtester_core/README.md](src/backtester_core/README.md)
 - [src/quant_lab/README.md](src/quant_lab/README.md)

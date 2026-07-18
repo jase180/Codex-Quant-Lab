@@ -169,11 +169,34 @@ Exit criteria:
 
 - The lab can test simple allocation strategies across more than one symbol.
 
+## Maintenance: CLI And Workflow Organization
+
+Status: complete.
+
+Detailed note:
+[maintenance-cli-workflow-organization.md](maintenance-cli-workflow-organization.md)
+
+Goal: make the codebase easier to extend before starting larger product work.
+
+Delivered:
+
+- command-focused CLI handler modules,
+- grouped parser setup in `quant_lab.cli`,
+- shared sweep setup and sweep variant execution helpers,
+- shared train-sweep selection and selected test-run helpers,
+- shared run metadata, experiment linking, and research-index persistence,
+- shared backtest execution plus artifact-saving helper.
+
+Exit criteria:
+
+- Future product work can add commands, metadata fields, or sweep workflows
+  without copying core artifact plumbing.
+
 ## Near-Term Recommendation
 
-Do a CLI organization pass before starting Milestone 7.
+Build the first guided research-question workflow.
 
-Reason: the lab is now useful enough that the CLI module is carrying many
-responsibilities. A small refactor into command-focused modules will make
-portfolio and multi-asset work easier to add without turning `cli.py` into a
-catch-all file.
+Reason: the lab now has enough pieces for a full skeptical research loop, but a
+new user still has to know which commands to run and in what order. A guided
+workflow can turn the existing primitives into a more helpful product surface
+without weakening the transparent artifact model.
