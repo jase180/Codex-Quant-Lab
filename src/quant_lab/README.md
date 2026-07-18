@@ -28,6 +28,9 @@ It owns:
   same aligned portfolio dates.
 - `portfolio_artifacts.py`: writes portfolio metrics, CSV outputs, reports, and
   metadata.
+- `portfolio_metadata.py`: defines and writes the stable
+  `portfolio_metadata.json` shape.
+- `portfolio_report.py`: renders the portfolio markdown report.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,

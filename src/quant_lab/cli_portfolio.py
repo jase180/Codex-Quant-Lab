@@ -9,10 +9,11 @@ from backtester_core.execution import ExecutionModel, TransactionCostModel
 from metrics_reporting import RunMetrics
 
 from .cli_runs import resolve_cli_costs
-from .portfolio_artifacts import PortfolioMetadata, save_portfolio_artifacts
+from .portfolio_artifacts import save_portfolio_artifacts
 from .portfolio_backtest import PortfolioBacktestResult, StaticWeightPortfolioBacktester
 from .portfolio_benchmarks import build_portfolio_benchmark_comparison
 from .portfolio_data import load_multi_asset_dataset
+from .portfolio_metadata import PortfolioMetadata
 from .portfolio_spec import load_portfolio_spec
 from .research_index import RunIndexRecord, append_research_index_record
 from .research_registry import link_run_metadata_path, require_experiment
