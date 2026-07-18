@@ -60,6 +60,13 @@ class SavedBacktestArtifacts:
     artifact_paths: dict[str, str]
 
 
+@dataclass(frozen=True)
+class ExecutedBacktest:
+    result: object
+    metrics: object
+    artifact_paths: dict[str, str]
+
+
 def save_backtest_artifacts(
     *,
     result,
@@ -107,26 +114,19 @@ def run_single_backtest(
     run_name: str,
     research_note_path: str | None = None,
 ) -> RunArtifactResult:
-    strategy = build_rule_based_strategy(
-        strategy_spec,
-        order_quantity=config.quantity,
-        sizing=config.sizing,
-        allocation=config.allocation,
-    )
-    result = build_engine(config).run(data, strategy)
     benchmark = build_benchmark(data, config.initial_cash, config.benchmark)
-    saved = save_backtest_artifacts(
-        result=result,
+    executed = execute_and_save_backtest(
+        config=config,
+        data=data,
+        data_quality=data_quality,
+        strategy_spec=strategy_spec,
         benchmark_curve=benchmark.curve,
         benchmark_metrics=benchmark.metrics,
         benchmark_display_name=benchmark.display_name,
-        data_quality=data_quality,
         output_dir=output_dir,
         run_name=run_name,
         research_note_path=research_note_path,
     )
-    metrics = saved.metrics
-    artifact_paths = saved.artifact_paths
     persist_run_record(
         config=config,
         strategy_spec=strategy_spec,
@@ -135,22 +135,22 @@ def run_single_backtest(
         run_type="run",
         run_id=None,
         parameters={},
-        artifact_paths=artifact_paths,
-        metrics=metrics,
+        artifact_paths=executed.artifact_paths,
+        metrics=executed.metrics,
         benchmark_metrics=benchmark.metrics,
         output_dir=output_dir,
-        trade_count=len(result.trades),
-        strategy_total_return=result.total_return,
+        trade_count=len(executed.result.trades),
+        strategy_total_return=executed.result.total_return,
     )
 
     return RunArtifactResult(
         run_name=run_name,
-        artifact_paths=artifact_paths,
-        final_equity=result.final_equity,
-        total_return=result.total_return,
+        artifact_paths=executed.artifact_paths,
+        final_equity=executed.result.final_equity,
+        total_return=executed.result.total_return,
         benchmark_name=benchmark.name,
         benchmark_total_return=benchmark.metrics.total_return,
-        excess_total_return=excess_total_return(result.total_return, benchmark.metrics.total_return),
+        excess_total_return=excess_total_return(executed.result.total_return, benchmark.metrics.total_return),
     )
 
 
@@ -172,6 +172,61 @@ def run_sweep_variant(
     research_note_path: str | None = None,
 ) -> SweepSummaryRow:
     config = RunExecutionConfig.from_args(args)
+    executed = execute_and_save_backtest(
+        config=config,
+        data=data,
+        data_quality=data_quality,
+        strategy_spec=strategy_spec,
+        benchmark_curve=benchmark_curve,
+        benchmark_metrics=benchmark_metrics,
+        benchmark_display_name=benchmark_display_name,
+        output_dir=run_dir,
+        run_name=run_name,
+        strategy_payload=strategy_payload,
+        research_note_path=research_note_path,
+    )
+    persist_run_record(
+        config=config,
+        strategy_spec=strategy_spec,
+        data=data,
+        data_quality=data_quality,
+        run_type=run_type,
+        run_id=run_id,
+        parameters=parameters,
+        artifact_paths=executed.artifact_paths,
+        metrics=executed.metrics,
+        benchmark_metrics=benchmark_metrics,
+        output_dir=run_dir,
+        trade_count=len(executed.result.trades),
+        strategy_total_return=executed.result.total_return,
+    )
+
+    return build_summary_row(
+        run_id=run_id,
+        strategy_id=strategy_spec.strategy_id,
+        params=parameters,
+        result=executed.result,
+        metrics=executed.metrics,
+        benchmark_metrics=benchmark_metrics,
+        output_dir=run_dir,
+        config=config,
+    )
+
+
+def execute_and_save_backtest(
+    *,
+    config: RunExecutionConfig,
+    data: pd.DataFrame,
+    data_quality,
+    strategy_spec,
+    benchmark_curve,
+    benchmark_metrics,
+    benchmark_display_name: str,
+    output_dir: str | Path,
+    run_name: str,
+    strategy_payload: dict | None = None,
+    research_note_path: str | None = None,
+) -> ExecutedBacktest:
     strategy = build_rule_based_strategy(
         strategy_spec,
         order_quantity=config.quantity,
@@ -185,38 +240,15 @@ def run_sweep_variant(
         benchmark_metrics=benchmark_metrics,
         benchmark_display_name=benchmark_display_name,
         data_quality=data_quality,
-        output_dir=run_dir,
+        output_dir=output_dir,
         run_name=run_name,
         strategy_payload=strategy_payload,
         research_note_path=research_note_path,
     )
-    metrics = saved.metrics
-    artifact_paths = saved.artifact_paths
-    persist_run_record(
-        config=config,
-        strategy_spec=strategy_spec,
-        data=data,
-        data_quality=data_quality,
-        run_type=run_type,
-        run_id=run_id,
-        parameters=parameters,
-        artifact_paths=artifact_paths,
-        metrics=metrics,
-        benchmark_metrics=benchmark_metrics,
-        output_dir=run_dir,
-        trade_count=len(result.trades),
-        strategy_total_return=result.total_return,
-    )
-
-    return build_summary_row(
-        run_id=run_id,
-        strategy_id=strategy_spec.strategy_id,
-        params=parameters,
+    return ExecutedBacktest(
         result=result,
-        metrics=metrics,
-        benchmark_metrics=benchmark_metrics,
-        output_dir=run_dir,
-        config=config,
+        metrics=saved.metrics,
+        artifact_paths=saved.artifact_paths,
     )
 
 
