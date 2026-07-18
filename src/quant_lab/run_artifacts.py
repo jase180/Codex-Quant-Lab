@@ -127,8 +127,7 @@ def run_single_backtest(
     )
     metrics = saved.metrics
     artifact_paths = saved.artifact_paths
-    artifact_paths["research_index"] = str(config.index_path)
-    metadata = build_run_metadata(
+    persist_run_record(
         config=config,
         strategy_spec=strategy_spec,
         data=data,
@@ -136,21 +135,11 @@ def run_single_backtest(
         run_type="run",
         run_id=None,
         parameters={},
-        artifacts=artifact_paths,
-    )
-    artifact_paths["metadata"] = save_run_metadata(metadata, output_dir)
-    link_run_metadata_path(
-        registry_path=config.experiments_path,
-        experiment_id=config.experiment_id,
-        metadata_path=artifact_paths["metadata"],
-    )
-    append_research_index(
-        metadata=metadata,
+        artifact_paths=artifact_paths,
         metrics=metrics,
         benchmark_metrics=benchmark.metrics,
         output_dir=output_dir,
         trade_count=len(result.trades),
-        index_path=config.index_path,
         strategy_total_return=result.total_return,
     )
 
@@ -203,8 +192,7 @@ def run_sweep_variant(
     )
     metrics = saved.metrics
     artifact_paths = saved.artifact_paths
-    artifact_paths["research_index"] = str(config.index_path)
-    metadata = build_run_metadata(
+    persist_run_record(
         config=config,
         strategy_spec=strategy_spec,
         data=data,
@@ -212,21 +200,11 @@ def run_sweep_variant(
         run_type=run_type,
         run_id=run_id,
         parameters=parameters,
-        artifacts=artifact_paths,
-    )
-    artifact_paths["metadata"] = save_run_metadata(metadata, run_dir)
-    link_run_metadata_path(
-        registry_path=config.experiments_path,
-        experiment_id=config.experiment_id,
-        metadata_path=artifact_paths["metadata"],
-    )
-    append_research_index(
-        metadata=metadata,
+        artifact_paths=artifact_paths,
         metrics=metrics,
         benchmark_metrics=benchmark_metrics,
         output_dir=run_dir,
         trade_count=len(result.trades),
-        index_path=config.index_path,
         strategy_total_return=result.total_return,
     )
 
@@ -240,6 +218,51 @@ def run_sweep_variant(
         output_dir=run_dir,
         config=config,
     )
+
+
+def persist_run_record(
+    *,
+    config: RunExecutionConfig,
+    strategy_spec,
+    data: pd.DataFrame,
+    data_quality,
+    run_type: str,
+    run_id: str | None,
+    parameters: dict[str, str | int | float],
+    artifact_paths: dict[str, str],
+    metrics,
+    benchmark_metrics,
+    output_dir: str | Path,
+    trade_count: int,
+    strategy_total_return: float,
+) -> RunMetadata:
+    artifact_paths["research_index"] = str(config.index_path)
+    metadata = build_run_metadata(
+        config=config,
+        strategy_spec=strategy_spec,
+        data=data,
+        data_quality=data_quality,
+        run_type=run_type,
+        run_id=run_id,
+        parameters=parameters,
+        artifacts=artifact_paths,
+    )
+    artifact_paths["metadata"] = save_run_metadata(metadata, output_dir)
+    link_run_metadata_path(
+        registry_path=config.experiments_path,
+        experiment_id=config.experiment_id,
+        metadata_path=artifact_paths["metadata"],
+    )
+    append_research_index(
+        metadata=metadata,
+        metrics=metrics,
+        benchmark_metrics=benchmark_metrics,
+        output_dir=output_dir,
+        trade_count=trade_count,
+        index_path=config.index_path,
+        strategy_total_return=strategy_total_return,
+    )
+    return metadata
 
 
 def build_summary_row(
