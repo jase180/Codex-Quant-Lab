@@ -188,6 +188,34 @@ treat cached data as research input that may need verification. The provenance
 JSON records the provider, requested range, fetched timestamp, row count, actual
 data range, and CSV fingerprint.
 
+### Start A Guided Research Plan
+
+Use `research-plan init` when you have a hypothesis and want the lab to create a
+consistent local workspace before you start running backtests:
+
+```bash
+quant-lab research-plan init \
+  --title "QQQ SMA crossover trust check" \
+  --hypothesis "A daily SMA crossover may reduce drawdown versus buy-and-hold." \
+  --strategy data/strategies/qqq_sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --symbol QQQ \
+  --tag QQQ \
+  --tag sma \
+  --cost-preset retail-liquid \
+  --out artifacts/research/qqq_sma_trust
+```
+
+This writes:
+
+```text
+artifacts/research/qqq_sma_trust/research_plan.json
+artifacts/research/qqq_sma_trust/research_plan.md
+```
+
+It also creates or references an experiment id and prints the next copyable
+baseline `quant-lab run` command. It does not run the baseline automatically.
+
 ### Run One Backtest
 
 ```bash

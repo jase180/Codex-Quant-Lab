@@ -24,7 +24,34 @@ Hypothesis: faster moving-average windows may reduce drawdown, but may also
 underperform buy-and-hold if they exit during strong trends.
 ```
 
-Create an experiment record for the hypothesis:
+Recommended guided start:
+
+```bash
+quant-lab research-plan init \
+  --title "QQQ SMA crossover research" \
+  --hypothesis "Faster moving-average windows may reduce drawdown, but may also underperform buy-and-hold during strong trends." \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --symbol QQQ \
+  --tag QQQ \
+  --tag sma \
+  --cost-preset retail-liquid \
+  --out artifacts/research/sma_qqq_2015_2025
+```
+
+This creates:
+
+```text
+artifacts/research/sma_qqq_2015_2025/research_plan.json
+artifacts/research/sma_qqq_2015_2025/research_plan.md
+```
+
+It also creates or references an experiment id and prints the next baseline
+`quant-lab run` command. Copy that command when you are ready to run the
+baseline. The guided plan organizes the workflow, but it does not hide or
+auto-run the underlying commands.
+
+Manual alternative: create an experiment record directly for the hypothesis:
 
 ```bash
 quant-lab new-experiment \
@@ -36,9 +63,9 @@ quant-lab new-experiment \
   --data data/cache/QQQ_2015-01-01_2025-12-31.csv
 ```
 
-The command prints an id such as `EXP-001`. Use that id on related `run` and
-`sweep` commands so generated `run_metadata.json` files are linked back to the
-experiment automatically.
+Both paths produce or use an id such as `EXP-001`. Use that id on related `run`
+and `sweep` commands so generated `run_metadata.json` files are linked back to
+the experiment automatically.
 
 ## 2. Fetch Or Choose Data
 

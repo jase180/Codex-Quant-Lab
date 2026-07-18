@@ -113,7 +113,7 @@ run metadata, research index rows, experiment records, and summary artifacts.
 
 ## Deliverable 1: Research Plan Files
 
-Status: planned.
+Status: delivered.
 
 Goal: create a durable local plan file for one research question.
 
@@ -127,7 +127,7 @@ Acceptance criteria:
 
 ## Deliverable 2: Baseline Command Recommendation
 
-Status: planned.
+Status: delivered.
 
 Goal: make the first action obvious after creating a plan.
 
@@ -161,7 +161,7 @@ Acceptance criteria:
 
 ## Deliverable 4: Documentation
 
-Status: planned.
+Status: in progress.
 
 Goal: make the guided workflow easy to learn.
 
