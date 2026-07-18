@@ -49,6 +49,7 @@ docs/
   milestone-12-data-source-trust.md  Planned data/source trust workflow.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
+  roadmap-to-ready.md         Long-range roadmap to a more mature lab.
   milestones.md                  Project milestone plan.
   research-workflow.md           End-to-end research workflow.
   strategy-schema.md            Strategy schema notes.
@@ -74,6 +75,7 @@ More detailed module notes:
 - [docs/milestone-12-data-source-trust.md](docs/milestone-12-data-source-trust.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
+- [docs/roadmap-to-ready.md](docs/roadmap-to-ready.md)
 - [docs/research-workflow.md](docs/research-workflow.md)
 - [src/backtester_core/README.md](src/backtester_core/README.md)
 - [src/quant_lab/README.md](src/quant_lab/README.md)

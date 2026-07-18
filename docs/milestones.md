@@ -4,6 +4,9 @@ This document tracks the practical build plan for the lab. It is intentionally
 plain: each milestone should leave the project more useful for actual research,
 not just more complex.
 
+For the longer roadmap from the current working proof of concept to a more
+dependable small research lab, see [roadmap-to-ready.md](roadmap-to-ready.md).
+
 ## Current Status
 
 The project has completed its first foundation phase: a reproducible local
@@ -302,6 +305,111 @@ Exit criteria:
   portfolio runs, and see data-trust checks appear naturally in guided research
   workflows.
 
+## Milestone 13: Evidence And Decision Quality
+
+Status: proposed.
+
+Goal: make it harder to overread a good-looking run, sweep, or batch.
+
+Planned work:
+
+- Unified strategy evidence summaries.
+- Better train/test and walk-forward interpretation.
+- Decision prompts that separate evidence, uncertainty, and next tests.
+- Conservative result labels such as weak, mixed, promising, and rejected.
+
+## Milestone 14: Reproducible Research Sessions
+
+Status: proposed.
+
+Goal: make a whole local research session restartable and auditable.
+
+Planned work:
+
+- Session manifests.
+- Session status commands.
+- Stronger links between plans, experiments, indexes, and artifacts.
+- Missing/orphaned artifact checks.
+
+## Milestone 15: Strategy Language V2
+
+Status: proposed.
+
+Goal: expand strategy expressiveness while preserving strict validation and
+no-lookahead behavior.
+
+Planned work:
+
+- Versioned `strategy_schema.v2`.
+- Position-state-aware rules.
+- Stops, exits, holding-period rules, and cooldowns.
+- Migration docs from v1 to v2.
+
+## Milestone 16: Portfolio Realism
+
+Status: proposed.
+
+Goal: make portfolio tests more realistic without becoming a broker simulator.
+
+Planned work:
+
+- Rebalance drift thresholds.
+- Allocation constraints.
+- Simple volatility-aware allocation options.
+- Better blended portfolio benchmarks.
+
+## Milestone 17: Robustness And Sensitivity
+
+Status: proposed.
+
+Goal: challenge promising ideas with controlled perturbations.
+
+Planned work:
+
+- Date-range sensitivity.
+- Cost sensitivity.
+- Parameter-neighborhood reports.
+- Symbol and benchmark substitution checks.
+
+## Milestone 18: CLI UX And Configuration Polish
+
+Status: proposed.
+
+Goal: make normal use less verbose without hiding assumptions.
+
+Planned work:
+
+- Project config defaults.
+- `quant-lab doctor`.
+- Better command help and beginner-facing errors.
+- Current quickstart cleanup.
+
+## Milestone 19: Example Research Library
+
+Status: proposed.
+
+Goal: teach the intended workflow through complete examples.
+
+Planned work:
+
+- Complete strategy example.
+- Complete portfolio example.
+- Rejected idea example.
+- Data-quality warning example.
+
+## Milestone 20: Test, Packaging, And Maintenance Hardening
+
+Status: proposed.
+
+Goal: keep the project easy to extend after the feature surface grows.
+
+Planned work:
+
+- Stable internal APIs for common artifact workflows.
+- Test helpers and fixture factories.
+- Basic CI instructions or GitHub Actions workflow.
+- Maintenance checklist for adding new commands and artifacts.
+
 ## Maintenance: CLI And Workflow Organization
 
 Status: complete.
@@ -332,3 +440,7 @@ Start Milestone 12 with data provenance inspection.
 Reason: the lab can now create and automate realistic local research loops. The
 next highest-risk gap is not running more ideas; it is making sure each result's
 input data is easy to explain, verify, and distrust when needed.
+
+After Milestone 12, follow the readiness roadmap: improve interpretation,
+session reproducibility, strategy expressiveness, portfolio realism, robustness,
+CLI polish, example workflows, and maintenance hardening.
