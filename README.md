@@ -22,6 +22,7 @@ tool that makes backtest assumptions visible.
   only the selected variant on the later test period.
 - Run explicit walk-forward windows for repeated train/test checks.
 - Run simple static-weight multi-symbol portfolio backtests.
+- Plan dry-run batches of portfolio candidate runs before executing them.
 - Track research hypotheses in a local experiment registry.
 - Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
 - Save optional research notes beside run and sweep artifacts.
@@ -359,6 +360,20 @@ quant-lab portfolio-candidates \
 ```
 
 This writes candidate JSON files only. It does not run backtests automatically.
+
+Plan a dry-run batch from a directory of portfolio candidate specs:
+
+```bash
+quant-lab portfolio-batch plan \
+  --portfolios data/portfolios/candidates/qqq_spy_tlt \
+  --out artifacts/research/qqq_spy_tlt/batch_001 \
+  --initial-cash 100000 \
+  --cost-preset retail-liquid
+```
+
+This writes `portfolio_batch_manifest.json` with one planned `portfolio-run`
+command per candidate. It validates every portfolio spec first and still does
+not run any backtests.
 
 ```bash
 quant-lab portfolio-run \
@@ -765,13 +780,13 @@ what to test next.
 ## Current Limitations
 
 - No short selling.
-- No multi-symbol portfolio support.
+- No live trading, broker integration, or automatic order routing.
 - Charts are intentionally simple PNG artifacts, not an interactive dashboard.
 - `yfinance` data is convenient but should not be treated as institutional-grade
   data without verification.
 
 ## Near-Term Roadmap
 
-1. Add richer research summaries.
-2. Expand strategy expressiveness carefully.
-3. Keep expanding validation around data, costs, and out-of-sample checks.
+1. Add portfolio batch execution from saved manifests.
+2. Add batch guardrail summaries before picking winners.
+3. Add strategy sweep guardrail reports.

@@ -256,7 +256,7 @@ Exit criteria:
 
 ## Milestone 11: Research Automation And Guardrails
 
-Status: planned.
+Status: in progress.
 
 Goal: make repeated research runs easier without making it easier to fool
 ourselves.
@@ -266,7 +266,7 @@ Detailed plan:
 
 Planned work:
 
-- Portfolio batch run manifests.
+- Portfolio batch run manifests. Delivered.
 - Sequential portfolio batch execution.
 - Batch guardrail summaries.
 - Guided portfolio plan integration for batches.
@@ -303,10 +303,11 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 11 deliverable 1: portfolio batch run manifests.
+Build Milestone 11 deliverable 2: sequential portfolio batch execution.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
 static-weight portfolio ideas, and it can now generate allocation plus rebalance
 variants, summarize linked portfolio runs, guide those steps, and generate
-capped candidate specs. The next useful gap is a dry-run manifest that shows
-exactly what a portfolio candidate batch would run before executing anything.
+capped candidate specs, and now write dry-run batch manifests that show exactly
+what a portfolio candidate batch would run. The next useful gap is executing
+that saved manifest sequentially while recording per-item success or failure.

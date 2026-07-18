@@ -157,6 +157,40 @@ class CliPortfolioTests(unittest.TestCase):
             self.assertIn("skipped_candidates: 1", stdout.getvalue())
             self.assertEqual(payload["benchmark"]["symbol"], "SPY")
 
+    def test_portfolio_batch_plan_command_writes_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            portfolios_dir = workspace / "candidates"
+            output_dir = workspace / "batch"
+            portfolios_dir.mkdir()
+            write_portfolio(portfolios_dir / "candidate.json")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "portfolio-batch",
+                        "plan",
+                        "--portfolios",
+                        str(portfolios_dir),
+                        "--out",
+                        str(output_dir),
+                        "--initial-cash",
+                        "25000",
+                        "--cost-preset",
+                        "retail-liquid",
+                    ]
+                )
+
+            manifest_path = output_dir / "portfolio_batch_manifest.json"
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Portfolio batch manifest written", stdout.getvalue())
+            self.assertIn("planned_runs: 1", stdout.getvalue())
+            self.assertEqual(payload["item_count"], 1)
+            self.assertEqual(payload["items"][0]["status"], "planned")
+            self.assertIn("--initial-cash", payload["items"][0]["command"])
+            self.assertIn("25000.0", payload["items"][0]["command"])
+
     def test_portfolio_run_writes_artifacts_index_and_experiment_link(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)

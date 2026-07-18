@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+In progress.
 
 ## Goal
 
@@ -47,6 +47,8 @@ This milestone should stay local, explicit, and auditable.
 ## Deliverables
 
 ### 1. Portfolio Batch Run Manifest
+
+Status: delivered.
 
 Add a dry-run command that turns a directory of portfolio specs into a durable
 batch manifest.

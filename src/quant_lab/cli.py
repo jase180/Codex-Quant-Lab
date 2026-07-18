@@ -34,6 +34,7 @@ from .cli_portfolio import (
     portfolio_variants_command,
     portfolio_run_command,
 )
+from .cli_portfolio_batch import portfolio_batch_plan_command
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
@@ -61,6 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     register_run_commands(subparsers)
     register_portfolio_commands(subparsers)
+    register_portfolio_batch_commands(subparsers)
     register_data_commands(subparsers)
     register_run_inspection_commands(subparsers)
     register_experiment_commands(subparsers)
@@ -284,6 +286,45 @@ def register_portfolio_commands(subparsers) -> None:
     add_experiment_link_argument(portfolio_parser)
     add_index_argument(portfolio_parser)
     portfolio_parser.set_defaults(func=portfolio_run_command)
+
+
+def register_portfolio_batch_commands(subparsers) -> None:
+    batch_parser = subparsers.add_parser(
+        "portfolio-batch",
+        help="Plan and run auditable batches of portfolio specs.",
+    )
+    batch_subparsers = batch_parser.add_subparsers(dest="portfolio_batch_command", required=True)
+
+    plan_parser = batch_subparsers.add_parser(
+        "plan",
+        help="Write a dry-run manifest for a directory of portfolio specs.",
+    )
+    plan_parser.add_argument(
+        "--portfolios",
+        required=True,
+        help="Directory containing portfolio_plan.v1 JSON specs.",
+    )
+    plan_parser.add_argument(
+        "--out",
+        required=True,
+        help="Directory where portfolio_batch_manifest.json is written.",
+    )
+    plan_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash for planned runs. Defaults to 100000.",
+    )
+    plan_parser.add_argument(
+        "--cost-preset",
+        choices=sorted(COST_PRESETS),
+        default="none",
+        help="Cost preset for planned runs. Defaults to none.",
+    )
+    add_experiment_registry_argument(plan_parser)
+    add_index_argument(plan_parser)
+    plan_parser.add_argument("--force", action="store_true", help="Overwrite an existing manifest.")
+    plan_parser.set_defaults(func=portfolio_batch_plan_command)
 
 
 def register_data_commands(subparsers) -> None:

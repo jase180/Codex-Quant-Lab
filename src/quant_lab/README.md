@@ -32,6 +32,7 @@ It owns:
   `portfolio_metadata.json` shape.
 - `portfolio_report.py`: renders the portfolio markdown report.
 - `portfolio_inspection.py`: loads and formats saved portfolio run summaries.
+- `portfolio_batch.py`: writes dry-run manifests for batches of portfolio specs.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
@@ -176,6 +177,20 @@ artifacts/research/sma_train_test/
 The selected test run is recorded with run type `test_selected_run`. Its
 metadata parameters include the split dates, the selection metric, and the
 selected train run id.
+
+Plan a dry-run portfolio batch:
+
+```bash
+quant-lab portfolio-batch plan \
+  --portfolios data/portfolios/candidates/qqq_spy_tlt \
+  --out artifacts/research/qqq_spy_tlt/batch_001 \
+  --initial-cash 100000 \
+  --cost-preset retail-liquid
+```
+
+The batch planner validates each portfolio JSON file and writes
+`portfolio_batch_manifest.json`. It records planned `portfolio-run` command
+tokens but does not execute them.
 
 Run walk-forward windows:
 
