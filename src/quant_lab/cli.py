@@ -49,6 +49,7 @@ from .cli_portfolio_batch import (
 )
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
+from .cli_robustness import cost_sensitivity_command
 from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -81,6 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_experiment_commands(subparsers)
     register_research_plan_commands(subparsers)
     register_portfolio_plan_commands(subparsers)
+    register_robustness_commands(subparsers)
     register_sweep_commands(subparsers)
     register_sweep_guardrail_commands(subparsers)
     return parser
@@ -145,6 +147,7 @@ def register_run_commands(subparsers) -> None:
             "test_selected_run",
             "walk_forward_train_run",
             "walk_forward_test_run",
+            "cost_sensitivity_run",
             "portfolio_run",
         ],
         default=None,
@@ -919,6 +922,58 @@ def register_sweep_guardrail_commands(subparsers) -> None:
         help="Warn when runs have fewer trades than this. Defaults to 5.",
     )
     guardrail_parser.set_defaults(func=summarize_sweep_guardrails_command)
+
+
+def register_robustness_commands(subparsers) -> None:
+    robustness_parser = subparsers.add_parser(
+        "robustness",
+        help="Run controlled robustness checks for promising research ideas.",
+    )
+    robustness_subparsers = robustness_parser.add_subparsers(dest="robustness_command", required=True)
+
+    cost_parser = robustness_subparsers.add_parser(
+        "cost-sensitivity",
+        help="Rerun one strategy setup across cost presets.",
+    )
+    cost_parser.add_argument("--strategy", required=True, help="Path to a v1 strategy JSON file.")
+    cost_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
+    cost_parser.add_argument("--out", required=True, help="Directory where robustness artifacts are written.")
+    cost_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash. Defaults to 100000.",
+    )
+    cost_parser.add_argument(
+        "--quantity",
+        type=float,
+        default=1,
+        help="Order quantity for fixed-shares sizing. Defaults to 1.",
+    )
+    cost_parser.add_argument(
+        "--sizing",
+        choices=["fixed-shares", "percent-equity"],
+        default="fixed-shares",
+        help="Position sizing mode. Defaults to fixed-shares.",
+    )
+    cost_parser.add_argument(
+        "--allocation",
+        type=float,
+        default=1.0,
+        help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
+    )
+    cost_parser.add_argument(
+        "--cost-preset",
+        action="append",
+        choices=sorted(COST_PRESETS),
+        required=True,
+        help="Cost preset to test. Repeat for multiple presets.",
+    )
+    add_benchmark_argument(cost_parser)
+    add_experiment_registry_argument(cost_parser)
+    add_experiment_link_argument(cost_parser)
+    add_index_argument(cost_parser)
+    cost_parser.set_defaults(func=cost_sensitivity_command)
 
 
 def add_cost_arguments(parser: argparse.ArgumentParser) -> None:

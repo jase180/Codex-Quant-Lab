@@ -346,6 +346,24 @@ Use `--cost-preset` for named assumptions such as `none`, `retail-liquid`,
 `retail-conservative`, and `high-friction`. Explicit cost flags override preset
 values.
 
+Run cost sensitivity when a result looks promising and you want to know whether
+it survives stricter assumptions:
+
+```bash
+quant-lab robustness cost-sensitivity \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --benchmark buy-and-hold \
+  --cost-preset none \
+  --cost-preset retail-liquid \
+  --cost-preset retail-conservative \
+  --out artifacts/research/qqq_sma/robustness/costs
+```
+
+This writes normal child run folders plus `cost_sensitivity_summary.csv` and
+`cost_sensitivity_report.md`. Child runs are indexed as
+`cost_sensitivity_run`.
+
 `run_metadata.json` records the command, strategy identity, data range, sizing,
 cost assumptions, benchmark choice, optional experiment id, Git commit, and
 artifact paths. It also records a SHA-256 fingerprint, file size, and modified

@@ -49,6 +49,10 @@ class RunArtifactResult:
     artifact_paths: dict[str, str]
     final_equity: float
     total_return: float
+    cagr: float | None
+    sharpe_ratio: float | None
+    max_drawdown: float
+    trade_count: int
     benchmark_name: str
     benchmark_total_return: float
     excess_total_return: float
@@ -113,6 +117,9 @@ def run_single_backtest(
     output_dir: str | Path,
     run_name: str,
     research_note_path: str | None = None,
+    run_type: str = "run",
+    run_id: str | None = None,
+    parameters: dict[str, str | int | float] | None = None,
 ) -> RunArtifactResult:
     benchmark = build_benchmark(data, config.initial_cash, config.benchmark)
     executed = execute_and_save_backtest(
@@ -132,9 +139,9 @@ def run_single_backtest(
         strategy_spec=strategy_spec,
         data=data,
         data_quality=data_quality,
-        run_type="run",
-        run_id=None,
-        parameters={},
+        run_type=run_type,
+        run_id=run_id,
+        parameters=parameters or {},
         artifact_paths=executed.artifact_paths,
         metrics=executed.metrics,
         benchmark_metrics=benchmark.metrics,
@@ -148,6 +155,10 @@ def run_single_backtest(
         artifact_paths=executed.artifact_paths,
         final_equity=executed.result.final_equity,
         total_return=executed.result.total_return,
+        cagr=executed.metrics.cagr,
+        sharpe_ratio=executed.metrics.sharpe_ratio,
+        max_drawdown=executed.metrics.max_drawdown,
+        trade_count=len(executed.result.trades),
         benchmark_name=benchmark.name,
         benchmark_total_return=benchmark.metrics.total_return,
         excess_total_return=excess_total_return(executed.result.total_return, benchmark.metrics.total_return),

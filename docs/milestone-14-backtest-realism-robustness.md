@@ -60,7 +60,7 @@ Main gaps:
 
 ### 1. Strategy Cost Sensitivity
 
-Status: planned.
+Status: delivered for strategy cost-preset sensitivity.
 
 Add a repeatable way to rerun one strategy setup across cost assumptions.
 
@@ -86,6 +86,17 @@ Acceptance criteria:
 - Writes `cost_sensitivity_report.md`.
 - The report calls out whether the result survives stricter costs.
 - Tests cover command planning, execution, summary rows, and report warnings.
+
+Delivered behavior:
+
+- `quant-lab robustness cost-sensitivity` reruns one strategy setup once per
+  repeated `--cost-preset`.
+- Each child run writes normal run artifacts and appends a
+  `cost_sensitivity_run` row to the research index.
+- The command writes `cost_sensitivity_summary.csv` and
+  `cost_sensitivity_report.md`.
+- `list-runs --run-type cost_sensitivity_run` can filter the generated child
+  runs.
 
 ### 2. Strategy Date-Range Sensitivity
 
