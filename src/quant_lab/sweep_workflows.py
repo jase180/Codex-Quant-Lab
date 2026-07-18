@@ -64,34 +64,18 @@ def sweep_command(args: argparse.Namespace) -> int:
         return train_test_sweep_command(args)
 
     setup = prepare_sweep_setup(args)
-    data_quality = build_data_quality_report(setup.data)
-    benchmark = build_benchmark(setup.data, args.initial_cash, args.benchmark)
-
-    summary_rows: list[SweepSummaryRow] = []
-    for index, variant in enumerate(setup.variants, start=1):
-        run_id = f"run_{index:03d}"
-        strategy_payload = variant["payload"]
-        params = variant["params"]
-        strategy_spec = parse_strategy(strategy_payload)
-        run_name_prefix = args.run_name or strategy_spec.name
-        summary_rows.append(
-            run_sweep_variant(
-                args=args,
-                data=setup.data,
-                benchmark_curve=benchmark.curve,
-                benchmark_metrics=benchmark.metrics,
-                benchmark_display_name=benchmark.display_name,
-                data_quality=data_quality,
-                strategy_spec=strategy_spec,
-                strategy_payload=strategy_payload,
-                run_dir=setup.output_dir / run_id,
-                run_name=f"{run_name_prefix} {run_id}",
-                parameters=params,
-                run_type="sweep_run",
-                run_id=run_id,
-                research_note_path=setup.research_note_path,
-            )
-        )
+    summary_rows, _ = run_sweep_variant_grid(
+        args=args,
+        variants=setup.variants,
+        data=setup.data,
+        run_dir=setup.output_dir,
+        run_type="sweep_run",
+        run_id_prefix="",
+        run_name_context="",
+        run_name_phase="",
+        extra_params={},
+        research_note_path=setup.research_note_path,
+    )
 
     # Sorting after all runs keeps the run directories stable while making the
     # comparison table easy to scan from best to worst total return.
@@ -309,44 +293,18 @@ def run_train_sweep_variants(
     extra_params: dict,
     research_note_path: str | None,
 ) -> TrainSweepResult:
-    train_benchmark = build_benchmark(train_data, args.initial_cash, args.benchmark)
-    train_data_quality = build_data_quality_report(train_data)
-    train_rows: list[SweepSummaryRow] = []
-    variants_by_run_id: dict[str, dict] = {}
-
-    for index, variant in enumerate(variants, start=1):
-        local_run_id = f"run_{index:03d}"
-        persisted_run_id = f"{run_id_prefix}{local_run_id}"
-        variants_by_run_id[persisted_run_id] = variant
-        strategy_payload = variant["payload"]
-        params = {
-            **variant["params"],
-            **extra_params,
-        }
-        strategy_spec = parse_strategy(strategy_payload)
-        run_name_prefix = args.run_name or strategy_spec.name
-        run_name_parts = [run_name_prefix]
-        if run_name_context:
-            run_name_parts.append(run_name_context)
-        run_name_parts.extend(["train", local_run_id])
-        train_rows.append(
-            run_sweep_variant(
-                args=args,
-                data=train_data,
-                benchmark_curve=train_benchmark.curve,
-                benchmark_metrics=train_benchmark.metrics,
-                benchmark_display_name=train_benchmark.display_name,
-                data_quality=train_data_quality,
-                strategy_spec=strategy_spec,
-                strategy_payload=strategy_payload,
-                run_dir=train_dir / local_run_id,
-                run_name=" ".join(run_name_parts),
-                parameters=params,
-                run_type=run_type,
-                run_id=persisted_run_id,
-                research_note_path=research_note_path,
-            )
-        )
+    train_rows, variants_by_run_id = run_sweep_variant_grid(
+        args=args,
+        variants=variants,
+        data=train_data,
+        run_dir=train_dir,
+        run_type=run_type,
+        run_id_prefix=run_id_prefix,
+        run_name_context=run_name_context,
+        run_name_phase="train",
+        extra_params=extra_params,
+        research_note_path=research_note_path,
+    )
 
     train_rows.sort(key=lambda row: _selection_value(row, args.select_by), reverse=True)
     summary_path = save_sweep_summary(train_rows, train_dir)
@@ -358,6 +316,62 @@ def run_train_sweep_variants(
         best_row=best_row,
         best_variant=best_variant,
     )
+
+
+def run_sweep_variant_grid(
+    *,
+    args: argparse.Namespace,
+    variants: Sequence[dict],
+    data: pd.DataFrame,
+    run_dir: Path,
+    run_type: str,
+    run_id_prefix: str,
+    run_name_context: str,
+    run_name_phase: str,
+    extra_params: dict,
+    research_note_path: str | None,
+) -> tuple[list[SweepSummaryRow], dict[str, dict]]:
+    benchmark = build_benchmark(data, args.initial_cash, args.benchmark)
+    data_quality = build_data_quality_report(data)
+    rows: list[SweepSummaryRow] = []
+    variants_by_run_id: dict[str, dict] = {}
+
+    for index, variant in enumerate(variants, start=1):
+        local_run_id = f"run_{index:03d}"
+        persisted_run_id = f"{run_id_prefix}{local_run_id}"
+        variants_by_run_id[persisted_run_id] = variant
+        strategy_payload = variant["payload"]
+        strategy_spec = parse_strategy(strategy_payload)
+        params = {
+            **variant["params"],
+            **extra_params,
+        }
+        run_name_parts = [args.run_name or strategy_spec.name]
+        if run_name_context:
+            run_name_parts.append(run_name_context)
+        if run_name_phase:
+            run_name_parts.append(run_name_phase)
+        run_name_parts.append(local_run_id)
+        rows.append(
+            run_sweep_variant(
+                args=args,
+                data=data,
+                benchmark_curve=benchmark.curve,
+                benchmark_metrics=benchmark.metrics,
+                benchmark_display_name=benchmark.display_name,
+                data_quality=data_quality,
+                strategy_spec=strategy_spec,
+                strategy_payload=strategy_payload,
+                run_dir=run_dir / local_run_id,
+                run_name=" ".join(run_name_parts),
+                parameters=params,
+                run_type=run_type,
+                run_id=persisted_run_id,
+                research_note_path=research_note_path,
+            )
+        )
+
+    return rows, variants_by_run_id
 
 
 def prepare_sweep_setup(args: argparse.Namespace) -> SweepSetup:
