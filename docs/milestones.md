@@ -254,6 +254,30 @@ Exit criteria:
   their evidence, and let the guided portfolio plan recommend the next research
   step without manually editing every candidate spec.
 
+## Milestone 11: Research Automation And Guardrails
+
+Status: planned.
+
+Goal: make repeated research runs easier without making it easier to fool
+ourselves.
+
+Detailed plan:
+[milestone-11-research-automation-guardrails.md](milestone-11-research-automation-guardrails.md)
+
+Planned work:
+
+- Portfolio batch run manifests.
+- Sequential portfolio batch execution.
+- Batch guardrail summaries.
+- Guided portfolio plan integration for batches.
+- Strategy sweep guardrail reports.
+
+Exit criteria:
+
+- A user can plan, run, and summarize a small batch of portfolio candidates
+  locally, with enough guardrails to see when the batch is too broad or the
+  evidence is too weak to trust.
+
 ## Maintenance: CLI And Workflow Organization
 
 Status: complete.
@@ -279,10 +303,10 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Plan Milestone 11: research automation and guardrails.
+Build Milestone 11 deliverable 1: portfolio batch run manifests.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
 static-weight portfolio ideas, and it can now generate allocation plus rebalance
 variants, summarize linked portfolio runs, guide those steps, and generate
-capped candidate specs. The next useful phase should improve automation around
-running candidate batches while keeping guardrails against overfitting.
+capped candidate specs. The next useful gap is a dry-run manifest that shows
+exactly what a portfolio candidate batch would run before executing anything.
