@@ -42,7 +42,7 @@ docs/
   milestone-5-strategy-research-depth.md  Detailed Milestone 5 plan.
   milestone-7-guided-research-workflow.md  Planned guided workflow.
   milestone-8-portfolio-multi-asset-research.md  Completed portfolio workflow.
-  milestone-9-portfolio-usability-research-loops.md  Planned portfolio usability.
+  milestone-9-portfolio-usability-research-loops.md  Completed portfolio usability.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
   milestones.md                  Project milestone plan.
@@ -354,6 +354,27 @@ Compare saved portfolio runs:
 quant-lab compare-portfolio-runs \
   --metadata artifacts/research/portfolio_a/portfolio_metadata.json \
   --metadata artifacts/research/portfolio_b/portfolio_metadata.json
+```
+
+Start a guided portfolio research plan when you have an allocation hypothesis
+and want the lab to create the local plan files plus the first copyable command:
+
+```bash
+quant-lab portfolio-plan init \
+  --title "QQQ SPY allocation check" \
+  --hypothesis "A 60/40 QQQ/SPY allocation may improve return versus SPY buy-and-hold." \
+  --portfolio data/portfolios/qqq_spy_static_60_40.json \
+  --tag QQQ \
+  --tag SPY \
+  --cost-preset retail-liquid \
+  --out artifacts/research/qqq_spy_static_60_40
+```
+
+After each portfolio run, ask for the next step:
+
+```bash
+quant-lab portfolio-plan next \
+  --plan artifacts/research/qqq_spy_static_60_40/portfolio_research_plan.json
 ```
 
 ### List Previous Runs

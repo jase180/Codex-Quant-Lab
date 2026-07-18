@@ -31,6 +31,7 @@ from .cli_portfolio import (
     new_portfolio_command,
     portfolio_run_command,
 )
+from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -61,6 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_run_inspection_commands(subparsers)
     register_experiment_commands(subparsers)
     register_research_plan_commands(subparsers)
+    register_portfolio_plan_commands(subparsers)
     register_sweep_commands(subparsers)
     return parser
 
@@ -517,6 +519,58 @@ def register_research_plan_commands(subparsers) -> None:
     )
     next_parser.add_argument("--plan", required=True, help="Path to research_plan.json.")
     next_parser.set_defaults(func=research_plan_next_command)
+
+
+def register_portfolio_plan_commands(subparsers) -> None:
+    portfolio_plan_parser = subparsers.add_parser(
+        "portfolio-plan",
+        help="Create and inspect guided portfolio research workflow plans.",
+    )
+    portfolio_plan_subparsers = portfolio_plan_parser.add_subparsers(
+        dest="portfolio_plan_command",
+        required=True,
+    )
+
+    init_parser = portfolio_plan_subparsers.add_parser(
+        "init",
+        help="Create a local portfolio research plan and print the baseline portfolio-run command.",
+    )
+    init_parser.add_argument("--title", required=True, help="Short research plan title.")
+    init_parser.add_argument("--hypothesis", required=True, help="Portfolio hypothesis to test.")
+    init_parser.add_argument("--portfolio", required=True, help="Path to a portfolio_plan.v1 JSON file.")
+    init_parser.add_argument(
+        "--out",
+        required=True,
+        help="Directory where portfolio_research_plan files are written.",
+    )
+    init_parser.add_argument(
+        "--experiment-id",
+        default=None,
+        help="Optional explicit id such as EXP-001. Defaults to the next local id.",
+    )
+    init_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Research tag. May be repeated or comma-separated.",
+    )
+    init_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash for the recommended baseline. Defaults to 100000.",
+    )
+    add_cost_arguments(init_parser)
+    add_experiment_registry_argument(init_parser)
+    add_index_argument(init_parser)
+    init_parser.set_defaults(func=portfolio_plan_init_command)
+
+    next_parser = portfolio_plan_subparsers.add_parser(
+        "next",
+        help="Recommend the next command for an existing portfolio research plan.",
+    )
+    next_parser.add_argument("--plan", required=True, help="Path to portfolio_research_plan.json.")
+    next_parser.set_defaults(func=portfolio_plan_next_command)
 
 
 def register_sweep_commands(subparsers) -> None:

@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+Complete.
 
 ## Goal
 
@@ -134,7 +134,7 @@ Delivered implementation:
 
 ### 4. Guided Portfolio Research Plan
 
-Status: not started.
+Status: delivered.
 
 Extend the guided research idea to portfolios only after inspection and
 comparison are in place.
@@ -156,6 +156,17 @@ Acceptance criteria:
 - Recommends inspect, compare, or decision steps based on local artifacts.
 
 This is intentionally last. It needs good inspection output to be worth adding.
+
+Delivered implementation:
+
+- `quant-lab portfolio-plan init`.
+- `quant-lab portfolio-plan next`.
+- `portfolio_research_plan.json` and `portfolio_research_plan.md`.
+- Experiment creation/reuse with linked research index paths.
+- Next-step recommendations for baseline run, inspect one portfolio run, compare
+  multiple portfolio runs, and done after a recorded decision.
+- Tests cover plan persistence, Markdown rendering, command building, CLI init,
+  and CLI next-step recommendations.
 
 ## Build Order
 

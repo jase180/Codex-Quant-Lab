@@ -207,7 +207,7 @@ Exit criteria:
 
 ## Milestone 9: Portfolio Usability And Research Loops
 
-Status: planned.
+Status: complete.
 
 Goal: make portfolio runs easier to inspect, compare, repeat, and fold into
 normal research decisions.
@@ -215,13 +215,14 @@ normal research decisions.
 Detailed plan:
 [milestone-9-portfolio-usability-research-loops.md](milestone-9-portfolio-usability-research-loops.md)
 
-Planned work:
+Delivered:
 
 - `quant-lab show-portfolio-run`.
 - `quant-lab compare-portfolio-runs`.
 - Portfolio templates with `quant-lab list-portfolio-templates` and
   `quant-lab new-portfolio`.
-- Guided portfolio research plans.
+- Guided portfolio research plans with `quant-lab portfolio-plan init` and
+  `quant-lab portfolio-plan next`.
 - README and workflow updates for the portfolio research loop.
 
 Exit criteria:
@@ -254,8 +255,10 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 9 deliverable 4: guided portfolio research plans.
+Plan Milestone 10: portfolio research depth.
 
-Reason: portfolio specs can now be created, run, inspected, and compared from
-the CLI. The next usability gap is a durable portfolio-specific research plan
-that recommends the next command and keeps the hypothesis tied to its runs.
+Reason: the lab can now create, run, inspect, compare, and guide simple
+static-weight portfolio ideas. The next useful jump is deeper portfolio
+research, such as allocation variants, rebalance-frequency comparisons,
+portfolio-specific summaries, or lightweight optimizer-style candidate
+generation.

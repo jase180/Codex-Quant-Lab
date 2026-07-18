@@ -1,0 +1,84 @@
+"""CLI command handlers for guided portfolio research plans."""
+
+from __future__ import annotations
+
+import argparse
+
+from .portfolio_research_plan import (
+    create_portfolio_research_plan,
+    load_portfolio_research_plan,
+    recommend_portfolio_next_step,
+    save_portfolio_research_plan,
+)
+from .research_index import filter_index_records, load_research_index
+from .research_registry import (
+    append_experiment_record,
+    create_experiment_record,
+    load_experiments,
+    next_experiment_id,
+    normalize_tags,
+)
+
+
+def portfolio_plan_init_command(args: argparse.Namespace) -> int:
+    records = load_experiments(args.experiments_path)
+    existing_ids = {record.experiment_id for record in records}
+    experiment_id = args.experiment_id or next_experiment_id(records)
+    if experiment_id not in existing_ids:
+        record = create_experiment_record(
+            experiment_id=experiment_id,
+            title=args.title,
+            hypothesis=args.hypothesis,
+            status="planned",
+            tags=normalize_tags(args.tag),
+            strategy_path=args.portfolio,
+            data_path=None,
+            notes="Created by portfolio-plan init.",
+        )
+        append_experiment_record(record, args.experiments_path)
+
+    plan = create_portfolio_research_plan(
+        title=args.title,
+        hypothesis=args.hypothesis,
+        portfolio_path=args.portfolio,
+        experiment_id=experiment_id,
+        experiments_path=args.experiments_path,
+        index_path=args.index_path,
+        output_dir=args.out,
+        initial_cash=args.initial_cash,
+        cost_preset=args.cost_preset,
+        commission_fixed=args.commission_fixed,
+        commission_rate=args.commission_rate,
+        slippage_bps=args.slippage_bps,
+        tags=args.tag,
+    )
+    json_path, markdown_path = save_portfolio_research_plan(plan)
+    recommendation = recommend_portfolio_next_step(plan, [], experiment_has_decision=False)
+
+    print(f"Portfolio research plan created: {json_path}")
+    print(f"markdown: {markdown_path}")
+    print(f"experiment_id: {experiment_id}")
+    print("next_command:")
+    print(recommendation.command)
+    return 0
+
+
+def portfolio_plan_next_command(args: argparse.Namespace) -> int:
+    plan = load_portfolio_research_plan(args.plan)
+    records = filter_index_records(load_research_index(plan.index_path), experiment_id=plan.experiment_id)
+    experiments = load_experiments(plan.experiments_path)
+    experiment = next((record for record in experiments if record.experiment_id == plan.experiment_id), None)
+    recommendation = recommend_portfolio_next_step(
+        plan,
+        records,
+        experiment_has_decision=experiment is not None and experiment.decision_record is not None,
+    )
+
+    print(f"Portfolio research plan: {args.plan}")
+    print(f"experiment_id: {plan.experiment_id}")
+    print(f"recommended_step: {recommendation.step}")
+    print(f"reason: {recommendation.reason}")
+    if recommendation.command is not None:
+        print("next_command:")
+        print(recommendation.command)
+    return 0

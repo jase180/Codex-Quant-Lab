@@ -134,6 +134,45 @@ The comparison table shows portfolio id, symbols, rebalance frequency, total
 return, benchmark return, excess return, max drawdown, Sharpe ratio, cost
 preset, and output directory.
 
+## 6. Use A Guided Portfolio Plan
+
+When you have a portfolio hypothesis, create a durable local plan before
+running the baseline:
+
+```bash
+quant-lab portfolio-plan init \
+  --title "QQQ SPY allocation check" \
+  --hypothesis "A 60/40 QQQ/SPY allocation may improve return versus SPY buy-and-hold." \
+  --portfolio data/portfolios/qqq_spy_static_60_40.json \
+  --tag QQQ \
+  --tag SPY \
+  --cost-preset retail-liquid \
+  --out artifacts/research/qqq_spy_static_60_40
+```
+
+This writes:
+
+```text
+artifacts/research/qqq_spy_static_60_40/
+  portfolio_research_plan.json
+  portfolio_research_plan.md
+```
+
+It also creates or references an experiment id and prints the first
+`portfolio-run` command. After each run, ask for the next step:
+
+```bash
+quant-lab portfolio-plan next \
+  --plan artifacts/research/qqq_spy_static_60_40/portfolio_research_plan.json
+```
+
+The first version recommends:
+
+- `portfolio-run` when no linked portfolio run exists.
+- `show-portfolio-run` when one linked portfolio run exists.
+- `compare-portfolio-runs` when multiple linked portfolio runs exist.
+- `done` after the experiment has a recorded decision.
+
 ## Assumptions To Remember
 
 - Symbols are aligned by date intersection. Rows missing from any symbol are
