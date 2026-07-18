@@ -311,6 +311,9 @@ Status: proposed.
 
 Goal: make it harder to overread a good-looking run, sweep, or batch.
 
+Detailed plan:
+[milestone-13-evidence-decision-quality.md](milestone-13-evidence-decision-quality.md)
+
 Planned work:
 
 - Unified strategy evidence summaries.
@@ -435,11 +438,11 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 12 with data provenance inspection.
+Start Milestone 13 with evidence label heuristics.
 
-Reason: the lab can now create and automate realistic local research loops. The
-next highest-risk gap is not running more ideas; it is making sure each result's
-input data is easy to explain, verify, and distrust when needed.
+Reason: the lab can now create and automate realistic local research loops with
+data trust checks. The next highest-risk gap is interpretation: a user needs
+help seeing when evidence is weak, mixed, promising, or contradicted.
 
 After Milestone 12, follow the readiness roadmap: improve interpretation,
 session reproducibility, strategy expressiveness, portfolio realism, robustness,
