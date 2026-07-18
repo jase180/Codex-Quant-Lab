@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 
+from .parameter_neighborhood import summarize_parameter_neighborhood
 from .robustness import run_benchmark_sensitivity, run_cost_sensitivity, run_date_sensitivity
 
 
@@ -40,4 +41,16 @@ def benchmark_sensitivity_command(args: argparse.Namespace) -> int:
         weakest = min(result.rows, key=lambda row: float(row["excess_total_return"]))
         print(f"weakest_benchmark: {weakest['benchmark_name']}")
         print(f"weakest_excess_total_return: {float(weakest['excess_total_return']):.2%}")
+    return 0
+
+
+def parameter_neighborhood_command(args: argparse.Namespace) -> int:
+    result = summarize_parameter_neighborhood(summary_path=args.summary, output_dir=args.out)
+    print(f"Parameter neighborhood report written: {result.report_path}")
+    print(f"summary: {result.summary_path}")
+    print(f"best_run: {result.best_run_id or 'none'}")
+    print(f"assessment: {result.assessment}")
+    print(f"parameters_checked: {len(result.rows)}")
+    if result.skipped_parameters:
+        print(f"skipped_parameters: {', '.join(result.skipped_parameters)}")
     return 0

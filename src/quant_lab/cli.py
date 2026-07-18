@@ -49,7 +49,12 @@ from .cli_portfolio_batch import (
 )
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
-from .cli_robustness import benchmark_sensitivity_command, cost_sensitivity_command, date_sensitivity_command
+from .cli_robustness import (
+    benchmark_sensitivity_command,
+    cost_sensitivity_command,
+    date_sensitivity_command,
+    parameter_neighborhood_command,
+)
 from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -1064,6 +1069,18 @@ def register_robustness_commands(subparsers) -> None:
     add_experiment_link_argument(benchmark_parser)
     add_index_argument(benchmark_parser)
     benchmark_parser.set_defaults(func=benchmark_sensitivity_command)
+
+    neighborhood_parser = robustness_subparsers.add_parser(
+        "parameter-neighborhood",
+        help="Summarize whether nearby sweep parameters also beat the benchmark.",
+    )
+    neighborhood_parser.add_argument("--summary", required=True, help="Path to a sweep summary.csv file.")
+    neighborhood_parser.add_argument(
+        "--out",
+        default=None,
+        help="Directory for parameter neighborhood artifacts. Defaults beside the summary.",
+    )
+    neighborhood_parser.set_defaults(func=parameter_neighborhood_command)
 
 
 def add_cost_arguments(parser: argparse.ArgumentParser) -> None:

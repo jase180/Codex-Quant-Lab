@@ -184,7 +184,7 @@ Delivered behavior:
 
 ### 4. Parameter Neighborhood Robustness
 
-Status: planned.
+Status: delivered for sweep summary neighborhood reports.
 
 Upgrade sweep interpretation so a single winning parameter set is not treated
 as robust by itself.
@@ -197,6 +197,21 @@ Acceptance criteria:
 - Integrates with existing sweep guardrail reports instead of replacing them.
 - Tests cover stable neighborhoods, isolated winners, and missing/non-numeric
   parameter values.
+
+Delivered behavior:
+
+- `quant-lab robustness parameter-neighborhood` reads an existing sweep
+  `summary.csv`.
+- The command writes `parameter_neighborhood_summary.csv` and
+  `parameter_neighborhood_report.md`.
+- The report treats the top total-return row as the best row and checks each
+  numeric parameter's one-parameter neighbors.
+- Neighbor support is based on benchmark excess return, not only closeness to
+  the best total return.
+- Non-numeric parameters are listed as skipped, and rows with missing parameter
+  keys are counted as incompatible.
+- The existing `summarize-sweep-guardrails` command remains available as the
+  broader sweep warning report.
 
 ### 5. Portfolio Robustness Notes
 

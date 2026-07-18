@@ -332,6 +332,20 @@ quant-lab summarize-sweep-guardrails \
 This writes `sweep_guardrails.md` and warns about broad grids, tiny trade
 counts, fragile parameter winners, and benchmark underperformance.
 
+Write a focused parameter-neighborhood robustness report for the same sweep:
+
+```bash
+quant-lab robustness parameter-neighborhood \
+  --summary artifacts/research/qqq_sma_crossover_2015_2025/summary.csv \
+  --out artifacts/research/qqq_sma_crossover_2015_2025/robustness/parameters
+```
+
+This writes `parameter_neighborhood_summary.csv` and
+`parameter_neighborhood_report.md`. It treats the best sweep row as the center,
+checks one-parameter numeric neighbors, and asks whether those nearby values
+also beat the benchmark. Non-numeric parameters are listed but skipped because
+distance is not meaningful.
+
 `report.md` includes a benchmark section built from the same CSV date range and
 initial cash. Buy-and-hold is the default benchmark. Use `--benchmark cash` when
 you want a flat cash baseline instead. The PNG charts plot the strategy beside

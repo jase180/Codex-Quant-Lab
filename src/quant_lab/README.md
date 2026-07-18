@@ -46,6 +46,8 @@ It owns:
 - `trust_common.py`: shared warning/check helpers for trust-report commands.
 - `sweep_guardrails.py`: reads sweep `summary.csv` files and writes skeptical
   markdown guardrail reports.
+- `parameter_neighborhood.py`: reads sweep `summary.csv` files and writes a
+  focused robustness report for nearby numeric parameter values.
 - `robustness.py`: reruns strategy setups under controlled sensitivity checks
   and writes robustness summaries.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
