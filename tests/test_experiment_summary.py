@@ -160,6 +160,12 @@ class ExperimentSummaryTests(unittest.TestCase):
         self.assertIn("Experiment Decision Draft", draft)
         self.assertIn("Suggested outcome: continue", draft)
         self.assertIn("no train/test or walk-forward validation run is linked yet", draft)
+        self.assertIn("Evidence Label", draft)
+        self.assertIn("Label: weak", draft)
+        self.assertIn("Uncertainty", draft)
+        self.assertIn("There is no out-of-sample validation linked to this experiment.", draft)
+        self.assertIn("What Would Change My Mind", draft)
+        self.assertIn("Add a train/test or walk-forward validation run that also beats the benchmark.", draft)
         self.assertIn("--supporting-run \"artifacts/sweep/run_001/run_metadata.json\"", draft)
 
     def test_drafts_reject_when_validation_underperforms(self) -> None:
@@ -192,6 +198,9 @@ class ExperimentSummaryTests(unittest.TestCase):
 
         self.assertIn("Suggested outcome: reject", draft)
         self.assertIn("Validation evidence did not beat the benchmark", draft)
+        self.assertIn("Label: rejected", draft)
+        self.assertIn("A better sweep result alone should not override failed validation evidence.", draft)
+        self.assertIn("Do not keep widening this branch just because one exploratory run looked good.", draft)
         self.assertIn("--contradicting-run \"artifacts/test/run_metadata.json\"", draft)
 
     def test_drafts_accept_when_validation_and_all_linked_evidence_are_positive(self) -> None:
@@ -209,6 +218,7 @@ class ExperimentSummaryTests(unittest.TestCase):
                 "run_id": "run_004",
                 "metadata_path": "artifacts/sweep/run_004/run_metadata.json",
                 "excess_total_return": 0.08,
+                "trade_count": 8,
             },
             {
                 "experiment_id": "EXP-001",
@@ -217,6 +227,7 @@ class ExperimentSummaryTests(unittest.TestCase):
                 "run_id": "window_001_test_selected",
                 "metadata_path": "artifacts/walk_forward/window_001/test_selected/run_metadata.json",
                 "excess_total_return": 0.04,
+                "trade_count": 7,
             },
         ]
 
@@ -224,6 +235,9 @@ class ExperimentSummaryTests(unittest.TestCase):
 
         self.assertIn("Suggested outcome: accept", draft)
         self.assertIn("Linked evidence and validation evidence both show positive excess return", draft)
+        self.assertIn("Label: promising", draft)
+        self.assertIn("Promising is not proof.", draft)
+        self.assertIn("Run robustness checks across dates, costs, and symbols.", draft)
         self.assertIn("--next-action \"Promote this idea to stricter validation or paper-trading research.\"", draft)
 
 

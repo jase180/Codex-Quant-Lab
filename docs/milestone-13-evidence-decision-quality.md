@@ -104,7 +104,7 @@ Acceptance criteria:
 
 ### 3. Decision Draft Improvements
 
-Status: planned.
+Status: delivered for strategy experiment decision drafts.
 
 Make `draft-decision` more useful for a junior researcher trying not to fool
 themselves.
@@ -115,6 +115,16 @@ Acceptance criteria:
 - Adds "what would change my mind?" prompts.
 - Adds suggested next tests based on the evidence gap.
 - Keeps the generated `decide-experiment` command copyable.
+
+Delivered behavior:
+
+- `draft-decision` now includes the same strategy evidence label and label
+  reasons used by the evidence summary.
+- It adds explicit uncertainty notes so a good-looking run is not mistaken for
+  proof.
+- It adds "what would change my mind?" prompts tailored to `no_evidence`,
+  `weak`, `mixed`, `promising`, and `rejected` evidence.
+- The generated `decide-experiment` command remains unchanged and copyable.
 - Does not write to the registry until the user explicitly runs
   `decide-experiment`.
 

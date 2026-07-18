@@ -117,6 +117,7 @@ def format_experiment_decision_draft(
     linked_records = _linked_index_records(experiment, index_records)
     linked_records.sort(key=lambda record: str(record.get("created_at_utc", "")), reverse=True)
 
+    evidence_label = label_strategy_evidence(linked_records)
     draft = _draft_decision_fields(linked_records)
     command = _format_decide_command(experiment.experiment_id, draft)
     return "\n".join(
@@ -134,6 +135,17 @@ def format_experiment_decision_draft(
             f"  Contradicting run: {draft['contradicting_run'] or '-'}",
             f"  Next action: {draft['next_action']}",
             "",
+            "Evidence Label",
+            f"  Label: {evidence_label.label}",
+            "  Reasons:",
+            *_indented_lines(evidence_label.reasons),
+            "",
+            "Uncertainty",
+            *_indented_lines(_decision_uncertainty_lines(evidence_label.label, linked_records)),
+            "",
+            "What Would Change My Mind",
+            *_indented_lines(_change_my_mind_lines(evidence_label.label, linked_records)),
+            "",
             "Review Notes",
             "  This command does not write to the experiment registry.",
             "  Read the evidence summary before copying the decision into the registry.",
@@ -143,6 +155,68 @@ def format_experiment_decision_draft(
             command,
         ]
     )
+
+
+def _decision_uncertainty_lines(label: str, records: list[dict]) -> list[str]:
+    validation_records = [record for record in records if record.get("run_type") in VALIDATION_RUN_TYPES]
+    low_trade_count = sum(1 for record in records if _numeric(record.get("trade_count"), missing=0) < 5)
+
+    if label == "no_evidence":
+        return ["No linked evidence exists, so any decision would be guesswork."]
+    if label == "weak":
+        lines = ["Evidence is still exploratory or thin."]
+        if not validation_records:
+            lines.append("There is no out-of-sample validation linked to this experiment.")
+        if low_trade_count:
+            lines.append("One or more linked runs have too few trades to trust the metric shape.")
+        return lines
+    if label == "rejected":
+        return [
+            "The current linked evidence does not support the hypothesis.",
+            "A better sweep result alone should not override failed validation evidence.",
+        ]
+    if label == "mixed":
+        return [
+            "Some linked evidence supports the hypothesis and some contradicts it.",
+            "The failure mode matters more than the best single run.",
+        ]
+    if label == "promising":
+        return [
+            "Promising is not proof.",
+            "The result can still depend on date range, costs, asset choice, or parameter luck.",
+        ]
+    return ["Review the linked evidence before deciding."]
+
+
+def _change_my_mind_lines(label: str, records: list[dict]) -> list[str]:
+    validation_records = [record for record in records if record.get("run_type") in VALIDATION_RUN_TYPES]
+    low_trade_count = sum(1 for record in records if _numeric(record.get("trade_count"), missing=0) < 5)
+
+    if label == "no_evidence":
+        return ["Run a baseline plus a validation check with trusted data and realistic costs."]
+    if label == "weak":
+        lines = ["Add a train/test or walk-forward validation run that also beats the benchmark."]
+        if not validation_records:
+            lines.append("Use validation before accepting the idea, even if the sweep winner looks strong.")
+        if low_trade_count:
+            lines.append("Increase sample size or test a period that naturally creates more trades.")
+        return lines
+    if label == "rejected":
+        return [
+            "State a revised hypothesis before running more sweeps.",
+            "Do not keep widening this branch just because one exploratory run looked good.",
+        ]
+    if label == "mixed":
+        return [
+            "Identify why the underperforming runs failed.",
+            "Run a targeted validation window that directly tests that failure explanation.",
+        ]
+    if label == "promising":
+        return [
+            "Run robustness checks across dates, costs, and symbols.",
+            "Downgrade the idea if it fails under reasonable perturbations.",
+        ]
+    return ["Write down the evidence that would change the decision before adding more runs."]
 
 
 def _draft_decision_fields(records: list[dict]) -> dict[str, str | None]:
