@@ -2,23 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
+from .evidence_labels import (
+    LARGE_DRAWDOWN,
+    MARGINAL_EXCESS_RETURN,
+    MAX_PORTFOLIO_VARIANTS,
+    MIN_PORTFOLIO_VARIANTS,
+    label_portfolio_evidence,
+    portfolio_data_trust_report_exists,
+)
 from .research_registry import ExperimentRecord, format_experiment_detail
-
-
-PORTFOLIO_DATA_TRUST_REPORT_FILENAME = "portfolio_data_trust_report.md"
-MIN_PORTFOLIO_VARIANTS = 2
-MAX_PORTFOLIO_VARIANTS = 20
-MARGINAL_EXCESS_RETURN = 0.01
-LARGE_DRAWDOWN = -0.2
-
-
-@dataclass(frozen=True)
-class PortfolioEvidenceLabel:
-    label: str
-    reasons: list[str]
 
 
 def format_portfolio_experiment_summary(
@@ -122,67 +116,6 @@ def format_portfolio_experiment_summary(
     return "\n".join(lines)
 
 
-def label_portfolio_evidence(records: list[dict]) -> PortfolioEvidenceLabel:
-    """Classify linked portfolio evidence with deliberately conservative rules."""
-
-    if not records:
-        return PortfolioEvidenceLabel("no_evidence", ["No linked portfolio run evidence exists yet."])
-
-    best_excess = _best_record(records, "excess_total_return")
-    best_excess_value = _numeric(best_excess.get("excess_total_return"))
-    underperformer_count = sum(1 for record in records if _numeric(record.get("excess_total_return")) < 0)
-    large_drawdown_count = sum(
-        1 for record in records if _numeric(record.get("max_drawdown")) <= LARGE_DRAWDOWN
-    )
-    trust_report_exists = _portfolio_data_trust_report_exists(records)
-
-    if best_excess_value <= 0:
-        return PortfolioEvidenceLabel(
-            "rejected",
-            [
-                "No linked portfolio run beat the benchmark on excess return.",
-                f"Best excess return was {_format_percent(best_excess_value)}.",
-            ],
-        )
-
-    reasons: list[str] = []
-    if len(records) < MIN_PORTFOLIO_VARIANTS:
-        reasons.append(
-            f"Only {len(records)} linked portfolio run(s) exist; compare at least {MIN_PORTFOLIO_VARIANTS} variants."
-        )
-    if len(records) > MAX_PORTFOLIO_VARIANTS:
-        reasons.append(
-            f"{len(records)} linked portfolio runs exist; summarize a narrower candidate set before choosing."
-        )
-    if not trust_report_exists:
-        reasons.append("No portfolio data trust report was found beside linked metadata.")
-    if best_excess_value < MARGINAL_EXCESS_RETURN:
-        reasons.append(
-            f"Best excess return is only {_format_percent(best_excess_value)}, which is marginal."
-        )
-
-    if underperformer_count or large_drawdown_count:
-        if underperformer_count:
-            reasons.append(f"{underperformer_count} linked portfolio run(s) underperformed the benchmark.")
-        if large_drawdown_count:
-            reasons.append(
-                f"{large_drawdown_count} linked portfolio run(s) had drawdown at or below {_format_percent(LARGE_DRAWDOWN)}."
-            )
-        return PortfolioEvidenceLabel("mixed", reasons)
-
-    if reasons:
-        return PortfolioEvidenceLabel("weak", reasons)
-
-    return PortfolioEvidenceLabel(
-        "promising",
-        [
-            "Multiple linked portfolio runs beat the benchmark.",
-            "No linked portfolio run underperformed the benchmark.",
-            "A portfolio data trust report exists for linked evidence.",
-        ],
-    )
-
-
 def save_portfolio_experiment_summary(markdown: str, output_path: str | Path) -> str:
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -265,19 +198,9 @@ def _portfolio_marginal_notes(best_excess: dict) -> list[str]:
 
 
 def _portfolio_trust_notes(records: list[dict]) -> list[str]:
-    if _portfolio_data_trust_report_exists(records):
+    if portfolio_data_trust_report_exists(records):
         return ["- Portfolio data trust report found for linked evidence."]
     return ["- No portfolio data trust report found beside linked metadata."]
-
-
-def _portfolio_data_trust_report_exists(records: list[dict]) -> bool:
-    for record in records:
-        metadata_path = record.get("metadata_path")
-        if not metadata_path:
-            continue
-        if (Path(str(metadata_path)).parent / PORTFOLIO_DATA_TRUST_REPORT_FILENAME).exists():
-            return True
-    return False
 
 
 def _markdown_bullets(lines: list[str], *, indent: int = 0) -> list[str]:

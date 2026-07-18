@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .evidence_labels import label_strategy_evidence
+from .evidence_labels import VALIDATION_RUN_TYPES, label_strategy_evidence
 from .research_registry import ExperimentRecord, format_experiment_detail
-
-VALIDATION_RUN_TYPES = {"test_selected_run", "walk_forward_test_run"}
 
 
 def format_experiment_evidence_summary(
