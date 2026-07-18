@@ -73,6 +73,7 @@ def format_portfolio_experiment_summary(
     variant_notes = _portfolio_variant_notes(portfolio_records)
     marginal_notes = _portfolio_marginal_notes(best_excess)
     trust_notes = _portfolio_trust_notes(portfolio_records)
+    robustness_notes = _portfolio_robustness_notes(portfolio_records)
 
     lines.extend(
         [
@@ -90,6 +91,7 @@ def format_portfolio_experiment_summary(
             *variant_notes,
             *marginal_notes,
             *trust_notes,
+            *robustness_notes,
             "- Do not promote an allocation from this summary alone. Inspect the source metadata and reports.",
             "",
             "## Top By Excess Return",
@@ -201,6 +203,34 @@ def _portfolio_trust_notes(records: list[dict]) -> list[str]:
     if portfolio_data_trust_report_exists(records):
         return ["- Portfolio data trust report found for linked evidence."]
     return ["- No portfolio data trust report found beside linked metadata."]
+
+
+def _portfolio_robustness_notes(records: list[dict]) -> list[str]:
+    cost_presets = _non_empty_values(records, "cost_preset")
+    benchmark_names = _non_empty_values(records, "benchmark_name")
+    notes = [
+        f"- Cost presets represented: {_format_value_set(cost_presets)}.",
+        f"- Benchmarks represented: {_format_value_set(benchmark_names)}.",
+    ]
+    if len(cost_presets) <= 1:
+        notes.append("- No portfolio cost-sensitivity evidence is visible in linked runs.")
+    else:
+        notes.append("- Portfolio cost-sensitivity evidence is visible across linked runs.")
+    if len(benchmark_names) <= 1:
+        notes.append("- No portfolio benchmark-substitution evidence is visible in linked runs.")
+    else:
+        notes.append("- Portfolio benchmark-substitution evidence is visible across linked runs.")
+    return notes
+
+
+def _non_empty_values(records: list[dict], field: str) -> set[str]:
+    return {str(record.get(field)) for record in records if str(record.get(field) or "").strip()}
+
+
+def _format_value_set(values: set[str]) -> str:
+    if not values:
+        return "`none`"
+    return ", ".join(f"`{value}`" for value in sorted(values))
 
 
 def _markdown_bullets(lines: list[str], *, indent: int = 0) -> list[str]:

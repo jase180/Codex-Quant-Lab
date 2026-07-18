@@ -207,6 +207,14 @@ Sharpe ratio, and drawdown. It also adds a conservative evidence label such as
 excess return, drawdown, data-trust report presence, and whether you tested too
 few or too many allocation variants.
 
+The summary also lists which cost presets and benchmark names are represented
+by linked portfolio runs. If every linked run uses the same cost preset or the
+same benchmark, treat the allocation as not yet tested for that robustness
+dimension. To create that evidence today, run comparable portfolio candidates
+under stricter `--cost-preset` values, or duplicate the portfolio spec with a
+different benchmark symbol/data input, then link those runs to the same
+experiment and regenerate `portfolio_summary.md`.
+
 ## 9. Use A Guided Portfolio Plan
 
 When you have a portfolio hypothesis, create a durable local plan before

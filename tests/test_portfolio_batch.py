@@ -247,6 +247,8 @@ class PortfolioBatchTests(unittest.TestCase):
             self.assertTrue(any("Large batch" in warning for warning in summary.warnings))
             self.assertIn("# Portfolio Batch Summary", markdown)
             self.assertIn("- Planned: `2`", markdown)
+            self.assertIn("## Robustness Notes", markdown)
+            self.assertIn("not a full", markdown)
             self.assertIn("- no result file yet", markdown)
 
     def test_summarize_portfolio_batch_reports_result_counts_and_items(self) -> None:
@@ -290,6 +292,7 @@ class PortfolioBatchTests(unittest.TestCase):
             self.assertTrue(any("Only 1 completed" in warning for warning in summary.warnings))
             self.assertIn("`completed` `candidate_a`", markdown)
             self.assertIn("portfolio_metadata.json", markdown)
+            self.assertIn("which cost presets and benchmarks are represented", markdown)
 
 
 def _write_portfolio(

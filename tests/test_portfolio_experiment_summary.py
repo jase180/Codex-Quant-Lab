@@ -36,6 +36,8 @@ class PortfolioExperimentSummaryTests(unittest.TestCase):
                 benchmark_total_return=0.06,
                 max_drawdown=-0.12,
                 sharpe_ratio=0.8,
+                cost_preset="retail-liquid",
+                benchmark_name="buy-and-hold-spy",
                 metadata_path="artifacts/portfolio_a/portfolio_metadata.json",
                 output_dir="artifacts/portfolio_a",
             ),
@@ -48,6 +50,8 @@ class PortfolioExperimentSummaryTests(unittest.TestCase):
                 benchmark_total_return=0.07,
                 max_drawdown=-0.24,
                 sharpe_ratio=0.2,
+                cost_preset="retail-liquid",
+                benchmark_name="buy-and-hold-spy",
                 metadata_path="artifacts/portfolio_b/portfolio_metadata.json",
                 output_dir="artifacts/portfolio_b",
             ),
@@ -71,6 +75,10 @@ class PortfolioExperimentSummaryTests(unittest.TestCase):
         self.assertIn("Benchmark underperformers: 1 of 2 portfolio runs.", summary)
         self.assertIn("Runs with drawdown at or below -20.00%: 1.", summary)
         self.assertIn("Allocation variant count is reviewable: 2 linked runs.", summary)
+        self.assertIn("Cost presets represented: `retail-liquid`.", summary)
+        self.assertIn("Benchmarks represented: `buy-and-hold-spy`.", summary)
+        self.assertIn("No portfolio cost-sensitivity evidence is visible in linked runs.", summary)
+        self.assertIn("No portfolio benchmark-substitution evidence is visible in linked runs.", summary)
         self.assertIn("## Top By Excess Return", summary)
         self.assertIn("## Worst Drawdowns", summary)
         self.assertIn("`artifacts/portfolio_a/portfolio_metadata.json`", summary)
@@ -115,6 +123,8 @@ class PortfolioExperimentSummaryTests(unittest.TestCase):
                     benchmark_total_return=0.05,
                     max_drawdown=-0.12,
                     sharpe_ratio=0.8,
+                    cost_preset="retail-liquid",
+                    benchmark_name="buy-and-hold-spy",
                     metadata_path=str(run_a / "portfolio_metadata.json"),
                     output_dir=str(run_a),
                 ),
@@ -127,6 +137,8 @@ class PortfolioExperimentSummaryTests(unittest.TestCase):
                     benchmark_total_return=0.05,
                     max_drawdown=-0.10,
                     sharpe_ratio=0.7,
+                    cost_preset="high-friction",
+                    benchmark_name="buy-and-hold-qqq",
                     metadata_path=str(run_b / "portfolio_metadata.json"),
                     output_dir=str(run_b),
                 ),
@@ -138,6 +150,8 @@ class PortfolioExperimentSummaryTests(unittest.TestCase):
         self.assertIn("Multiple linked portfolio runs beat the benchmark.", summary)
         self.assertIn("Portfolio data trust report found for linked evidence.", summary)
         self.assertIn("Best allocation clears the marginal edge check: 3.00% excess return.", summary)
+        self.assertIn("Portfolio cost-sensitivity evidence is visible across linked runs.", summary)
+        self.assertIn("Portfolio benchmark-substitution evidence is visible across linked runs.", summary)
 
     def test_save_portfolio_experiment_summary_writes_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -159,6 +173,8 @@ def _portfolio_record(
     benchmark_total_return: float,
     max_drawdown: float,
     sharpe_ratio: float,
+    cost_preset: str = "retail-liquid",
+    benchmark_name: str = "buy-and-hold-spy",
     metadata_path: str,
     output_dir: str,
 ) -> dict:
@@ -173,7 +189,8 @@ def _portfolio_record(
         "benchmark_total_return": benchmark_total_return,
         "max_drawdown": max_drawdown,
         "sharpe_ratio": sharpe_ratio,
-        "cost_preset": "retail-liquid",
+        "cost_preset": cost_preset,
+        "benchmark_name": benchmark_name,
         "metadata_path": metadata_path,
         "output_dir": output_dir,
     }

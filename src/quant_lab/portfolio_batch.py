@@ -569,6 +569,17 @@ def _render_portfolio_batch_summary(
 
 {warnings}
 
+## Robustness Notes
+
+- This batch compares allocation candidates from the manifest; it is not a full
+  portfolio robustness check by itself.
+- To test cost sensitivity, run comparable portfolio batches with stricter
+  `--cost-preset` values and link those runs to the same experiment.
+- To test benchmark sensitivity, rerun candidate portfolios with alternate
+  benchmark symbols in their portfolio specs before writing the final summary.
+- Read the portfolio experiment summary after linking those runs; it reports
+  which cost presets and benchmarks are represented.
+
 ## Items
 
 {item_lines}

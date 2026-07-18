@@ -215,7 +215,7 @@ Delivered behavior:
 
 ### 5. Portfolio Robustness Notes
 
-Status: planned.
+Status: delivered for portfolio summary and batch guidance.
 
 Apply the same robustness language to portfolio allocation research without
 building a full optimizer.
@@ -228,6 +228,19 @@ Acceptance criteria:
   those runs are linked.
 - Docs explain how to run simple allocation robustness checks with existing
   portfolio commands before any new portfolio-specific automation is added.
+
+Delivered behavior:
+
+- Portfolio experiment summaries now list represented cost presets and
+  benchmark names for linked `portfolio_run` rows.
+- Portfolio experiment summaries explicitly call out when linked evidence does
+  not show portfolio cost sensitivity or benchmark substitution.
+- Portfolio batch summaries now include robustness notes explaining that a
+  batch compares allocation candidates, not full cost/benchmark robustness by
+  itself.
+- Portfolio workflow docs explain how to create simple robustness evidence
+  today by rerunning comparable portfolio candidates under stricter costs or
+  alternate benchmark specs.
 
 ### 6. Guided Workflow Integration
 

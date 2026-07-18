@@ -592,7 +592,8 @@ quant-lab summarize-portfolio-experiment \
 
 The portfolio summary includes a conservative evidence label and skeptical
 notes for benchmark underperformance, large drawdowns, data-trust report
-presence, marginal excess return, and allocation variant count.
+presence, marginal excess return, allocation variant count, and whether linked
+portfolio runs represent multiple cost presets or benchmarks.
 
 ### List Previous Runs
 
