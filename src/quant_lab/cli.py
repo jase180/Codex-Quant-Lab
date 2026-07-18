@@ -49,7 +49,7 @@ from .cli_portfolio_batch import (
 )
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
-from .cli_robustness import cost_sensitivity_command
+from .cli_robustness import cost_sensitivity_command, date_sensitivity_command
 from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -148,6 +148,7 @@ def register_run_commands(subparsers) -> None:
             "walk_forward_train_run",
             "walk_forward_test_run",
             "cost_sensitivity_run",
+            "date_sensitivity_run",
             "portfolio_run",
         ],
         default=None,
@@ -974,6 +975,50 @@ def register_robustness_commands(subparsers) -> None:
     add_experiment_link_argument(cost_parser)
     add_index_argument(cost_parser)
     cost_parser.set_defaults(func=cost_sensitivity_command)
+
+    date_parser = robustness_subparsers.add_parser(
+        "date-sensitivity",
+        help="Rerun one strategy setup over explicit date windows.",
+    )
+    date_parser.add_argument("--strategy", required=True, help="Path to a v1 strategy JSON file.")
+    date_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
+    date_parser.add_argument("--out", required=True, help="Directory where robustness artifacts are written.")
+    date_parser.add_argument(
+        "--window",
+        action="append",
+        required=True,
+        help="Date window in start,end form. Repeat for multiple windows.",
+    )
+    date_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash. Defaults to 100000.",
+    )
+    date_parser.add_argument(
+        "--quantity",
+        type=float,
+        default=1,
+        help="Order quantity for fixed-shares sizing. Defaults to 1.",
+    )
+    date_parser.add_argument(
+        "--sizing",
+        choices=["fixed-shares", "percent-equity"],
+        default="fixed-shares",
+        help="Position sizing mode. Defaults to fixed-shares.",
+    )
+    date_parser.add_argument(
+        "--allocation",
+        type=float,
+        default=1.0,
+        help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
+    )
+    add_cost_arguments(date_parser)
+    add_benchmark_argument(date_parser)
+    add_experiment_registry_argument(date_parser)
+    add_experiment_link_argument(date_parser)
+    add_index_argument(date_parser)
+    date_parser.set_defaults(func=date_sensitivity_command)
 
 
 def add_cost_arguments(parser: argparse.ArgumentParser) -> None:

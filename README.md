@@ -364,6 +364,25 @@ This writes normal child run folders plus `cost_sensitivity_summary.csv` and
 `cost_sensitivity_report.md`. Child runs are indexed as
 `cost_sensitivity_run`.
 
+Run date sensitivity when you want to see whether a result depends too much on
+one hand-picked sample period:
+
+```bash
+quant-lab robustness date-sensitivity \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --benchmark buy-and-hold \
+  --cost-preset retail-liquid \
+  --window 2015-01-01,2018-12-31 \
+  --window 2019-01-01,2021-12-31 \
+  --window 2022-01-01,2025-12-31 \
+  --out artifacts/research/qqq_sma/robustness/dates
+```
+
+This writes normal child run folders plus `date_sensitivity_summary.csv` and
+`date_sensitivity_report.md`. Child runs are indexed as
+`date_sensitivity_run`; each child metadata file records its requested window.
+
 `run_metadata.json` records the command, strategy identity, data range, sizing,
 cost assumptions, benchmark choice, optional experiment id, Git commit, and
 artifact paths. It also records a SHA-256 fingerprint, file size, and modified

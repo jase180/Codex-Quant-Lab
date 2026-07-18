@@ -100,7 +100,7 @@ Delivered behavior:
 
 ### 2. Strategy Date-Range Sensitivity
 
-Status: planned.
+Status: delivered for explicit strategy date windows.
 
 Add explicit date-window checks for one strategy.
 
@@ -126,6 +126,21 @@ Acceptance criteria:
 - Writes `date_sensitivity_summary.csv`.
 - Writes `date_sensitivity_report.md`.
 - The report highlights windows that underperform the benchmark.
+
+Delivered behavior:
+
+- `quant-lab robustness date-sensitivity` reruns one strategy setup once per
+  repeated `--window start,end`.
+- Each child run writes normal run artifacts and appends a
+  `date_sensitivity_run` row to the research index.
+- Each child run metadata file records the requested `window_start` and
+  `window_end` parameters.
+- The command writes `date_sensitivity_summary.csv` and
+  `date_sensitivity_report.md`.
+- The command rejects invalid, empty, and one-row windows before treating the
+  check as successful.
+- `list-runs --run-type date_sensitivity_run` can filter the generated child
+  runs.
 
 ### 3. Benchmark Substitution Checks
 
