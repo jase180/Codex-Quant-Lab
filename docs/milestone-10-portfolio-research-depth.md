@@ -120,7 +120,7 @@ Delivered implementation:
 
 ### 3. Portfolio Experiment Summary
 
-Status: not started.
+Status: delivered.
 
 Add a portfolio-specific evidence summary for one experiment.
 
@@ -142,6 +142,16 @@ Acceptance criteria:
 - Includes enough metadata paths for a user to inspect source runs.
 - Does not hide weak evidence behind a single score.
 - Tests cover summary output with multiple linked portfolio runs.
+
+Delivered implementation:
+
+- `quant-lab summarize-portfolio-experiment`.
+- Prints Markdown to stdout by default or writes it with `--out`.
+- `quant_lab.portfolio_experiment_summary` filters linked `portfolio_run` rows,
+  ranks evidence by multiple metrics, counts benchmark underperformers and large
+  drawdowns, and lists source metadata paths.
+- Tests cover portfolio-only filtering, empty evidence, file writing, and CLI
+  output.
 
 ### 4. Guided Plan Integration
 

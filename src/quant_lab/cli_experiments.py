@@ -6,6 +6,10 @@ import argparse
 from pathlib import Path
 
 from .experiment_summary import format_experiment_decision_draft, format_experiment_evidence_summary
+from .portfolio_experiment_summary import (
+    format_portfolio_experiment_summary,
+    save_portfolio_experiment_summary,
+)
 from .research_index import load_research_index
 from .research_registry import (
     append_experiment_record,
@@ -151,6 +155,26 @@ def summarize_experiment_command(args: argparse.Namespace) -> int:
             recent_limit=args.recent_limit,
         )
     )
+    return 0
+
+
+def summarize_portfolio_experiment_command(args: argparse.Namespace) -> int:
+    if args.top_limit < 1:
+        raise ValueError("--top-limit must be at least 1")
+
+    records = load_experiments(args.experiments_path)
+    experiment = find_experiment(records, args.experiment_id)
+    index_records = load_research_index(args.index_path)
+    summary = format_portfolio_experiment_summary(
+        experiment,
+        index_records,
+        top_limit=args.top_limit,
+    )
+    if args.out is not None:
+        output_path = save_portfolio_experiment_summary(summary, args.out)
+        print(f"Portfolio experiment summary written: {output_path}")
+    else:
+        print(summary)
     return 0
 
 

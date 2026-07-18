@@ -16,6 +16,7 @@ from .cli_experiments import (
     list_experiments_command,
     new_experiment_command,
     show_experiment_command,
+    summarize_portfolio_experiment_command,
     summarize_experiment_command,
     update_experiment_command,
 )
@@ -475,6 +476,30 @@ def register_experiment_commands(subparsers) -> None:
         help="Maximum recent linked runs to show. Defaults to 5.",
     )
     summarize_experiment_parser.set_defaults(func=summarize_experiment_command)
+
+    summarize_portfolio_experiment_parser = subparsers.add_parser(
+        "summarize-portfolio-experiment",
+        help="Write or print a portfolio-specific evidence summary for one experiment.",
+    )
+    add_experiment_registry_argument(summarize_portfolio_experiment_parser)
+    add_index_argument(summarize_portfolio_experiment_parser)
+    summarize_portfolio_experiment_parser.add_argument(
+        "--experiment-id",
+        required=True,
+        help="Experiment id, such as EXP-001.",
+    )
+    summarize_portfolio_experiment_parser.add_argument(
+        "--out",
+        default=None,
+        help="Optional markdown path to write. Defaults to printing to stdout.",
+    )
+    summarize_portfolio_experiment_parser.add_argument(
+        "--top-limit",
+        type=int,
+        default=5,
+        help="Maximum rows per ranked section. Defaults to 5.",
+    )
+    summarize_portfolio_experiment_parser.set_defaults(func=summarize_portfolio_experiment_command)
 
     draft_decision_parser = subparsers.add_parser(
         "draft-decision",

@@ -244,7 +244,7 @@ Planned work:
 
 - Portfolio weight variants with `quant-lab portfolio-variants`.
 - Rebalance-frequency variants with repeated `--rebalance` values.
-- Portfolio experiment summaries.
+- Portfolio experiment summaries with `quant-lab summarize-portfolio-experiment`.
 - Guided portfolio plan integration for variants and summaries.
 - Small static-weight candidate generation.
 
@@ -279,9 +279,10 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 10 deliverable 3: portfolio experiment summaries.
+Build Milestone 10 deliverable 4: guided portfolio plan integration.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
 static-weight portfolio ideas, and it can now generate allocation plus rebalance
-variants. The next useful gap is summarizing several linked portfolio runs into
-one skeptical evidence note.
+variants and summarize linked portfolio runs. The next useful gap is making
+`portfolio-plan next` recommend variant generation and portfolio summaries at
+the right time.

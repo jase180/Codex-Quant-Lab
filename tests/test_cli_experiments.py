@@ -382,6 +382,88 @@ class CliExperimentTests(unittest.TestCase):
             self.assertIn("fast_strategy", output)
             self.assertIn("Best excess return", output)
 
+    def test_summarize_portfolio_experiment_writes_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            registry_path = temp_path / "experiments.jsonl"
+            index_path = temp_path / "research_index.jsonl"
+            output_path = temp_path / "portfolio_summary.md"
+            index_path.write_text(
+                json.dumps(
+                    {
+                        "index_schema_version": "research_index.v1",
+                        "created_at_utc": "2026-01-01T00:00:00Z",
+                        "run_type": "portfolio_run",
+                        "run_id": None,
+                        "experiment_id": "EXP-001",
+                        "strategy_id": "qqq_50_spy_50",
+                        "strategy_name": "QQQ SPY 50/50",
+                        "symbol": "QQQ,SPY",
+                        "timeframe": "1d",
+                        "data_start": "2026-01-01",
+                        "data_end": "2026-01-31",
+                        "final_equity": 1080,
+                        "total_return": 0.08,
+                        "cagr": None,
+                        "sharpe_ratio": 0.8,
+                        "max_drawdown": -0.12,
+                        "trade_count": 4,
+                        "benchmark_name": "buy-and-hold-spy",
+                        "benchmark_total_return": 0.06,
+                        "benchmark_max_drawdown": -0.1,
+                        "excess_total_return": 0.02,
+                        "sizing": "static-weights",
+                        "initial_cash": 1000,
+                        "quantity": 0,
+                        "allocation": 1,
+                        "cost_preset": "none",
+                        "commission_fixed": 0,
+                        "commission_rate": 0,
+                        "slippage_bps": 0,
+                        "output_dir": "artifacts/portfolio_a",
+                        "metadata_path": "artifacts/portfolio_a/portfolio_metadata.json",
+                        "git_commit": "abc",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-001",
+                        "--title",
+                        "Portfolio variants",
+                        "--hypothesis",
+                        "Allocation variants may beat SPY.",
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "summarize-portfolio-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-001",
+                        "--out",
+                        str(output_path),
+                    ]
+                )
+
+            markdown = output_path.read_text(encoding="utf-8")
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Portfolio experiment summary written:", stdout.getvalue())
+            self.assertIn("# Portfolio Experiment Summary", markdown)
+            self.assertIn("qqq_50_spy_50", markdown)
+
     def test_draft_decision_prints_template_without_writing_registry(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)

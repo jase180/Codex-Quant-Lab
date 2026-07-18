@@ -395,6 +395,14 @@ quant-lab portfolio-plan next \
   --plan artifacts/research/qqq_spy_static_60_40/portfolio_research_plan.json
 ```
 
+Summarize linked portfolio runs for one experiment:
+
+```bash
+quant-lab summarize-portfolio-experiment \
+  --experiment-id EXP-001 \
+  --out artifacts/research/qqq_spy_static_60_40/portfolio_summary.md
+```
+
 ### List Previous Runs
 
 ```bash

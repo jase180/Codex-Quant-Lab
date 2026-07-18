@@ -159,7 +159,23 @@ The comparison table shows portfolio id, symbols, rebalance frequency, total
 return, benchmark return, excess return, max drawdown, Sharpe ratio, cost
 preset, and output directory.
 
-## 7. Use A Guided Portfolio Plan
+## 7. Summarize Portfolio Evidence
+
+After multiple portfolio runs are linked to one experiment, write a
+portfolio-specific evidence note:
+
+```bash
+quant-lab summarize-portfolio-experiment \
+  --experiment-id EXP-001 \
+  --out artifacts/research/qqq_spy_static_60_40/portfolio_summary.md
+```
+
+The summary ranks linked `portfolio_run` rows by excess return, total return,
+Sharpe ratio, and drawdown. It also calls out benchmark underperformers and
+large drawdowns so the evidence stays skeptical instead of becoming a single
+magic score.
+
+## 8. Use A Guided Portfolio Plan
 
 When you have a portfolio hypothesis, create a durable local plan before
 running the baseline:
