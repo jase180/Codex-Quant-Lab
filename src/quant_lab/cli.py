@@ -42,6 +42,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    register_run_commands(subparsers)
+    register_data_commands(subparsers)
+    register_run_inspection_commands(subparsers)
+    register_experiment_commands(subparsers)
+    register_sweep_commands(subparsers)
+    return parser
+
+
+def register_run_commands(subparsers) -> None:
     run_parser = subparsers.add_parser("run", help="Run one strategy against one OHLCV CSV.")
     run_parser.add_argument("--strategy", required=True, help="Path to a v1 strategy JSON file.")
     run_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
@@ -82,48 +91,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_experiment_link_argument(run_parser)
     add_index_argument(run_parser)
     run_parser.set_defaults(func=run_command)
-
-    fetch_parser = subparsers.add_parser(
-        "fetch",
-        help="Fetch daily market data into the local CSV cache.",
-    )
-    fetch_parser.add_argument("--symbol", required=True, help="Ticker symbol, such as SPY or QQQ.")
-    fetch_parser.add_argument("--start", required=True, help="Start date in YYYY-MM-DD format.")
-    fetch_parser.add_argument("--end", required=True, help="End date in YYYY-MM-DD format.")
-    fetch_parser.add_argument(
-        "--out",
-        default="data/cache",
-        help="Directory where the normalized OHLCV CSV is written. Defaults to data/cache.",
-    )
-    fetch_parser.add_argument(
-        "--interval",
-        default="1d",
-        help="Market data interval. Only 1d is supported for now.",
-    )
-    fetch_parser.set_defaults(func=fetch_command)
-
-    template_list_parser = subparsers.add_parser(
-        "list-strategy-templates",
-        help="List built-in strategy templates.",
-    )
-    template_list_parser.set_defaults(func=list_strategy_templates_command)
-
-    new_strategy_parser = subparsers.add_parser(
-        "new-strategy",
-        help="Create a valid v1 strategy JSON file from a built-in template.",
-    )
-    new_strategy_parser.add_argument(
-        "--template",
-        required=True,
-        choices=available_strategy_templates(),
-        help="Template name.",
-    )
-    new_strategy_parser.add_argument("--symbol", required=True, help="Market symbol, such as QQQ or SPY.")
-    new_strategy_parser.add_argument("--out", required=True, help="Path where the strategy JSON is written.")
-    new_strategy_parser.add_argument("--strategy-id", default=None, help="Optional strategy_id override.")
-    new_strategy_parser.add_argument("--name", default=None, help="Optional display name override.")
-    new_strategy_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
-    new_strategy_parser.set_defaults(func=new_strategy_command)
 
     list_parser = subparsers.add_parser(
         "list-runs",
@@ -174,6 +141,52 @@ def build_parser() -> argparse.ArgumentParser:
     )
     list_parser.set_defaults(func=list_runs_command)
 
+
+def register_data_commands(subparsers) -> None:
+    fetch_parser = subparsers.add_parser(
+        "fetch",
+        help="Fetch daily market data into the local CSV cache.",
+    )
+    fetch_parser.add_argument("--symbol", required=True, help="Ticker symbol, such as SPY or QQQ.")
+    fetch_parser.add_argument("--start", required=True, help="Start date in YYYY-MM-DD format.")
+    fetch_parser.add_argument("--end", required=True, help="End date in YYYY-MM-DD format.")
+    fetch_parser.add_argument(
+        "--out",
+        default="data/cache",
+        help="Directory where the normalized OHLCV CSV is written. Defaults to data/cache.",
+    )
+    fetch_parser.add_argument(
+        "--interval",
+        default="1d",
+        help="Market data interval. Only 1d is supported for now.",
+    )
+    fetch_parser.set_defaults(func=fetch_command)
+
+    template_list_parser = subparsers.add_parser(
+        "list-strategy-templates",
+        help="List built-in strategy templates.",
+    )
+    template_list_parser.set_defaults(func=list_strategy_templates_command)
+
+    new_strategy_parser = subparsers.add_parser(
+        "new-strategy",
+        help="Create a valid v1 strategy JSON file from a built-in template.",
+    )
+    new_strategy_parser.add_argument(
+        "--template",
+        required=True,
+        choices=available_strategy_templates(),
+        help="Template name.",
+    )
+    new_strategy_parser.add_argument("--symbol", required=True, help="Market symbol, such as QQQ or SPY.")
+    new_strategy_parser.add_argument("--out", required=True, help="Path where the strategy JSON is written.")
+    new_strategy_parser.add_argument("--strategy-id", default=None, help="Optional strategy_id override.")
+    new_strategy_parser.add_argument("--name", default=None, help="Optional display name override.")
+    new_strategy_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
+    new_strategy_parser.set_defaults(func=new_strategy_command)
+
+
+def register_run_inspection_commands(subparsers) -> None:
     show_parser = subparsers.add_parser(
         "show-run",
         help="Inspect one saved run from run_metadata.json.",
@@ -200,6 +213,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     compare_parser.set_defaults(func=compare_runs_command)
 
+
+def register_experiment_commands(subparsers) -> None:
     new_experiment_parser = subparsers.add_parser(
         "new-experiment",
         help="Create a research experiment record.",
@@ -350,6 +365,8 @@ def build_parser() -> argparse.ArgumentParser:
     draft_decision_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
     draft_decision_parser.set_defaults(func=draft_decision_command)
 
+
+def register_sweep_commands(subparsers) -> None:
     sweep_parser = subparsers.add_parser(
         "sweep",
         help="Run every combination of strategy parameter overrides.",
@@ -416,7 +433,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_experiment_link_argument(sweep_parser)
     add_index_argument(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
-    return parser
 
 
 def add_cost_arguments(parser: argparse.ArgumentParser) -> None:
