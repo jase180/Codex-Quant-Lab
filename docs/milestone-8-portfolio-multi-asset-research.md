@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+In progress.
 
 ## Goal
 
@@ -143,6 +143,8 @@ multiply later, they can be grouped.
 
 ### 1. Multi-Symbol Data Loader
 
+Status: delivered.
+
 Build a loader that accepts the portfolio spec, validates every CSV, normalizes
 each symbol to the current OHLCV expectations, aligns dates, and returns a
 multi-symbol dataset.
@@ -155,7 +157,18 @@ Acceptance criteria:
 - Date alignment is deterministic and documented.
 - Unit tests cover happy path and failure cases.
 
+Delivered implementation:
+
+- `quant_lab.portfolio_spec` validates strict `portfolio_plan.v1` JSON.
+- `quant_lab.portfolio_data` loads symbol CSVs, validates OHLCV shape,
+  fingerprints each input file, summarizes per-symbol data quality, and aligns
+  symbols by date intersection.
+- `tests/test_portfolio_spec.py` and `tests/test_portfolio_data.py` cover the
+  first parser and loader behavior.
+
 ### 2. Static-Weight Portfolio Backtest
+
+Status: not started.
 
 Build the first portfolio engine around static target weights and periodic
 rebalancing.
@@ -169,6 +182,8 @@ Acceptance criteria:
 - Tests cover fills, valuation, costs, and final-bar order behavior.
 
 ### 3. Portfolio Artifacts And Metadata
+
+Status: not started.
 
 Persist portfolio outputs beside normal run artifacts.
 
@@ -194,6 +209,8 @@ Acceptance criteria:
 
 ### 4. Portfolio Benchmark Comparison
 
+Status: not started.
+
 Compare the portfolio equity curve against an explicit benchmark.
 
 Acceptance criteria:
@@ -204,6 +221,8 @@ Acceptance criteria:
   comparison.
 
 ### 5. Example Workflow And Docs
+
+Status: not started.
 
 Add one copyable example portfolio workflow.
 

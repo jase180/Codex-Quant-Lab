@@ -18,6 +18,10 @@ It owns:
 - `benchmarks.py`: builds benchmark curves and report sections.
 - `data_fetch.py`: fetches and normalizes daily OHLCV data.
 - `data_quality.py`: summarizes suspicious input-data conditions for artifacts.
+- `portfolio_spec.py`: validates explicit `portfolio_plan.v1` multi-symbol
+  allocation JSON.
+- `portfolio_data.py`: loads portfolio CSV inputs, fingerprints them, and aligns
+  symbols to a shared date calendar.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,

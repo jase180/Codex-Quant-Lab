@@ -33,6 +33,7 @@ tool that makes backtest assumptions visible.
 ```text
 data/
   sample_ohlcv.csv              Small sample dataset.
+  portfolios/                   Example portfolio JSON files.
   strategies/                   Example strategy JSON files.
 docs/
   milestone-4-validation-realism.md  Detailed Milestone 4 plan.

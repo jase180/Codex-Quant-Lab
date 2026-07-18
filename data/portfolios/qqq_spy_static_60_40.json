@@ -1,0 +1,25 @@
+{
+  "schema_version": "portfolio_plan.v1",
+  "portfolio_id": "qqq_spy_static_60_40",
+  "name": "QQQ SPY Static 60/40",
+  "description": "Static two-symbol allocation example for portfolio research.",
+  "symbols": [
+    {
+      "symbol": "QQQ",
+      "data": "../cache/QQQ_2015-01-01_2025-12-31.csv",
+      "target_weight": 0.6
+    },
+    {
+      "symbol": "SPY",
+      "data": "../cache/SPY_2015-01-01_2025-12-31.csv",
+      "target_weight": 0.4
+    }
+  ],
+  "rebalance": {
+    "frequency": "monthly"
+  },
+  "benchmark": {
+    "symbol": "SPY",
+    "data": "../cache/SPY_2015-01-01_2025-12-31.csv"
+  }
+}
