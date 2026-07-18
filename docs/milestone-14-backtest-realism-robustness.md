@@ -144,7 +144,7 @@ Delivered behavior:
 
 ### 3. Benchmark Substitution Checks
 
-Status: planned.
+Status: delivered for strategy benchmark substitution.
 
 Make benchmark substitution an intentional robustness check instead of a manual
 rerun habit.
@@ -168,6 +168,19 @@ Acceptance criteria:
 - Writes `benchmark_sensitivity_report.md`.
 - The report makes clear when a result only looks good against cash but not
   buy-and-hold.
+
+Delivered behavior:
+
+- `quant-lab robustness benchmark-sensitivity` reruns one strategy setup once
+  per repeated `--benchmark`.
+- Each child run writes normal run artifacts and appends a
+  `benchmark_sensitivity_run` row to the research index.
+- Each child run metadata file records the requested benchmark parameter.
+- The command writes `benchmark_sensitivity_summary.csv` and
+  `benchmark_sensitivity_report.md`.
+- The report treats beating cash as weaker evidence than beating buy-and-hold.
+- `list-runs --run-type benchmark_sensitivity_run` can filter the generated
+  child runs.
 
 ### 4. Parameter Neighborhood Robustness
 

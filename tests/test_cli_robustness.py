@@ -265,6 +265,93 @@ class CliRobustnessTests(unittest.TestCase):
                     ]
                 )
 
+    def test_benchmark_sensitivity_runs_requested_benchmarks_and_writes_reports(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "robustness" / "benchmarks"
+            index_path = temp_path / "research_index.jsonl"
+            experiments_path = temp_path / "experiments.jsonl"
+
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--experiment-id",
+                        "EXP-001",
+                        "--title",
+                        "Benchmark sensitivity check",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "robustness",
+                        "benchmark-sensitivity",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--initial-cash",
+                        "1000",
+                        "--quantity",
+                        "3",
+                        "--cost-preset",
+                        "retail-liquid",
+                        "--benchmark",
+                        "cash",
+                        "--benchmark",
+                        "buy-and-hold",
+                        "--index-path",
+                        str(index_path),
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--experiment-id",
+                        "EXP-001",
+                    ]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Benchmark sensitivity complete: 2 runs", output)
+            self.assertIn("benchmark_sensitivity_summary.csv", output)
+            self.assertIn("benchmark_sensitivity_report.md", output)
+            self.assertTrue((output_dir / "benchmark_001_cash" / "run_metadata.json").exists())
+            self.assertTrue((output_dir / "benchmark_002_buy_and_hold" / "run_metadata.json").exists())
+
+            summary = (output_dir / "benchmark_sensitivity_summary.csv").read_text(encoding="utf-8")
+            self.assertIn("benchmark_name", summary)
+            self.assertIn("cash", summary)
+            self.assertIn("buy-and-hold", summary)
+
+            report = (output_dir / "benchmark_sensitivity_report.md").read_text(encoding="utf-8")
+            self.assertIn("# Benchmark Sensitivity Report", report)
+            self.assertIn("Beating cash is useful", report)
+
+            index_rows = _read_jsonl(index_path)
+            self.assertEqual(len(index_rows), 2)
+            self.assertEqual({row["run_type"] for row in index_rows}, {"benchmark_sensitivity_run"})
+            self.assertEqual({row["benchmark_name"] for row in index_rows}, {"cash", "buy-and-hold"})
+
+            metadata = json.loads(
+                (output_dir / "benchmark_002_buy_and_hold" / "run_metadata.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(metadata["parameters"]["benchmark"], "buy-and-hold")
+
+            experiment_rows = _read_jsonl(experiments_path)
+            self.assertEqual(len(experiment_rows[0]["linked_runs"]), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

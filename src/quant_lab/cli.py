@@ -49,7 +49,7 @@ from .cli_portfolio_batch import (
 )
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
-from .cli_robustness import cost_sensitivity_command, date_sensitivity_command
+from .cli_robustness import benchmark_sensitivity_command, cost_sensitivity_command, date_sensitivity_command
 from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -149,6 +149,7 @@ def register_run_commands(subparsers) -> None:
             "walk_forward_test_run",
             "cost_sensitivity_run",
             "date_sensitivity_run",
+            "benchmark_sensitivity_run",
             "portfolio_run",
         ],
         default=None,
@@ -1019,6 +1020,50 @@ def register_robustness_commands(subparsers) -> None:
     add_experiment_link_argument(date_parser)
     add_index_argument(date_parser)
     date_parser.set_defaults(func=date_sensitivity_command)
+
+    benchmark_parser = robustness_subparsers.add_parser(
+        "benchmark-sensitivity",
+        help="Rerun one strategy setup against multiple benchmarks.",
+    )
+    benchmark_parser.add_argument("--strategy", required=True, help="Path to a v1 strategy JSON file.")
+    benchmark_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
+    benchmark_parser.add_argument("--out", required=True, help="Directory where robustness artifacts are written.")
+    benchmark_parser.add_argument(
+        "--benchmark",
+        action="append",
+        choices=["buy-and-hold", "cash"],
+        required=True,
+        help="Benchmark to test. Repeat for multiple benchmarks.",
+    )
+    benchmark_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash. Defaults to 100000.",
+    )
+    benchmark_parser.add_argument(
+        "--quantity",
+        type=float,
+        default=1,
+        help="Order quantity for fixed-shares sizing. Defaults to 1.",
+    )
+    benchmark_parser.add_argument(
+        "--sizing",
+        choices=["fixed-shares", "percent-equity"],
+        default="fixed-shares",
+        help="Position sizing mode. Defaults to fixed-shares.",
+    )
+    benchmark_parser.add_argument(
+        "--allocation",
+        type=float,
+        default=1.0,
+        help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
+    )
+    add_cost_arguments(benchmark_parser)
+    add_experiment_registry_argument(benchmark_parser)
+    add_experiment_link_argument(benchmark_parser)
+    add_index_argument(benchmark_parser)
+    benchmark_parser.set_defaults(func=benchmark_sensitivity_command)
 
 
 def add_cost_arguments(parser: argparse.ArgumentParser) -> None:

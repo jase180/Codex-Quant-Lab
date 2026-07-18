@@ -383,6 +383,24 @@ This writes normal child run folders plus `date_sensitivity_summary.csv` and
 `date_sensitivity_report.md`. Child runs are indexed as
 `date_sensitivity_run`; each child metadata file records its requested window.
 
+Run benchmark sensitivity when you want to check whether the result only looks
+good against an easy hurdle:
+
+```bash
+quant-lab robustness benchmark-sensitivity \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --cost-preset retail-liquid \
+  --benchmark cash \
+  --benchmark buy-and-hold \
+  --out artifacts/research/qqq_sma/robustness/benchmarks
+```
+
+This writes normal child run folders plus
+`benchmark_sensitivity_summary.csv` and `benchmark_sensitivity_report.md`.
+Child runs are indexed as `benchmark_sensitivity_run`; the report treats
+beating cash as weaker evidence than beating buy-and-hold.
+
 `run_metadata.json` records the command, strategy identity, data range, sizing,
 cost assumptions, benchmark choice, optional experiment id, Git commit, and
 artifact paths. It also records a SHA-256 fingerprint, file size, and modified

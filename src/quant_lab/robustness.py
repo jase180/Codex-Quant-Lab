@@ -21,6 +21,8 @@ COST_SENSITIVITY_SUMMARY_FILENAME = "cost_sensitivity_summary.csv"
 COST_SENSITIVITY_REPORT_FILENAME = "cost_sensitivity_report.md"
 DATE_SENSITIVITY_SUMMARY_FILENAME = "date_sensitivity_summary.csv"
 DATE_SENSITIVITY_REPORT_FILENAME = "date_sensitivity_report.md"
+BENCHMARK_SENSITIVITY_SUMMARY_FILENAME = "benchmark_sensitivity_summary.csv"
+BENCHMARK_SENSITIVITY_REPORT_FILENAME = "benchmark_sensitivity_report.md"
 COST_SENSITIVITY_FIELDNAMES = [
     "run_id",
     "cost_preset",
@@ -57,6 +59,21 @@ DATE_SENSITIVITY_FIELDNAMES = [
     "output_dir",
     "metadata_path",
 ]
+BENCHMARK_SENSITIVITY_FIELDNAMES = [
+    "run_id",
+    "benchmark_name",
+    "cost_preset",
+    "final_equity",
+    "total_return",
+    "cagr",
+    "sharpe_ratio",
+    "max_drawdown",
+    "trade_count",
+    "benchmark_total_return",
+    "excess_total_return",
+    "output_dir",
+    "metadata_path",
+]
 
 
 @dataclass(frozen=True)
@@ -75,6 +92,13 @@ class DateSensitivityWindow:
 
 @dataclass(frozen=True)
 class DateSensitivityResult:
+    rows: list[dict[str, str | int | float | None]]
+    summary_path: str
+    report_path: str
+
+
+@dataclass(frozen=True)
+class BenchmarkSensitivityResult:
     rows: list[dict[str, str | int | float | None]]
     summary_path: str
     report_path: str
@@ -106,6 +130,7 @@ def run_cost_sensitivity(args) -> CostSensitivityResult:
             data_quality=data_quality,
             strategy_spec=strategy_spec,
             cost_assumptions=cost_assumptions,
+            benchmark=args.benchmark,
             output_dir=run_output_dir,
             run_name=f"{strategy_spec.name} Cost Sensitivity {cost_preset}",
             run_type="cost_sensitivity_run",
@@ -151,6 +176,7 @@ def run_date_sensitivity(args) -> DateSensitivityResult:
             data_quality=data_quality,
             strategy_spec=strategy_spec,
             cost_assumptions=cost_assumptions,
+            benchmark=args.benchmark,
             output_dir=run_output_dir,
             run_name=f"{strategy_spec.name} Date Sensitivity {window.start} to {window.end}",
             run_type="date_sensitivity_run",
@@ -172,6 +198,50 @@ def run_date_sensitivity(args) -> DateSensitivityResult:
     return DateSensitivityResult(rows=rows, summary_path=summary_path, report_path=report_path)
 
 
+def run_benchmark_sensitivity(args) -> BenchmarkSensitivityResult:
+    """Run one strategy setup once per benchmark choice."""
+
+    require_experiment(args.experiments_path, args.experiment_id)
+    strategy_spec = load_strategy(args.strategy)
+    data = pd.read_csv(args.data)
+    data_quality = build_data_quality_report(data)
+    output_dir = Path(args.out)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    cost_assumptions = resolve_cost_assumptions(
+        cost_preset=args.cost_preset,
+        commission_fixed=args.commission_fixed,
+        commission_rate=args.commission_rate,
+        slippage_bps=args.slippage_bps,
+    )
+
+    rows: list[dict[str, str | int | float | None]] = []
+    for index, benchmark in enumerate(args.benchmark, start=1):
+        run_id = f"benchmark_{index:03d}_{_slug(benchmark)}"
+        run_output_dir = output_dir / run_id
+        run_output = _run_robustness_child(
+            args=args,
+            data=data,
+            data_quality=data_quality,
+            strategy_spec=strategy_spec,
+            cost_assumptions=cost_assumptions,
+            benchmark=benchmark,
+            output_dir=run_output_dir,
+            run_name=f"{strategy_spec.name} Benchmark Sensitivity {benchmark}",
+            run_type="benchmark_sensitivity_run",
+            run_id=run_id,
+            parameters={"benchmark": benchmark},
+        )
+        rows.append(_benchmark_sensitivity_row(run_id, cost_assumptions, run_output, run_output_dir))
+
+    summary_path = save_benchmark_sensitivity_summary(rows, output_dir)
+    report_path = save_benchmark_sensitivity_report(
+        rows,
+        output_dir,
+        strategy_id=strategy_spec.strategy_id,
+    )
+    return BenchmarkSensitivityResult(rows=rows, summary_path=summary_path, report_path=report_path)
+
+
 def _run_robustness_child(
     *,
     args,
@@ -179,6 +249,7 @@ def _run_robustness_child(
     data_quality,
     strategy_spec: StrategySpec,
     cost_assumptions: CostAssumptions,
+    benchmark: str,
     output_dir: Path,
     run_name: str,
     run_type: str,
@@ -200,7 +271,7 @@ def _run_robustness_child(
         quantity=args.quantity,
         sizing=args.sizing,
         allocation=args.allocation,
-        benchmark=args.benchmark,
+        benchmark=benchmark,
         cost_assumptions=cost_assumptions,
         command_tokens=args.command_tokens,
         experiment_id=args.experiment_id,
@@ -277,6 +348,20 @@ def save_date_sensitivity_summary(
     return str(summary_path)
 
 
+def save_benchmark_sensitivity_summary(
+    rows: Sequence[dict[str, str | int | float | None]],
+    output_dir: str | Path,
+) -> str:
+    destination = Path(output_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    summary_path = destination / BENCHMARK_SENSITIVITY_SUMMARY_FILENAME
+    with summary_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=BENCHMARK_SENSITIVITY_FIELDNAMES)
+        writer.writeheader()
+        writer.writerows(rows)
+    return str(summary_path)
+
+
 def save_cost_sensitivity_report(
     rows: Sequence[dict[str, str | int | float | None]],
     output_dir: str | Path,
@@ -306,6 +391,22 @@ def save_date_sensitivity_report(
     report_path = destination / DATE_SENSITIVITY_REPORT_FILENAME
     report_path.write_text(
         _format_date_sensitivity_report(rows, strategy_id=strategy_id, benchmark=benchmark),
+        encoding="utf-8",
+    )
+    return str(report_path)
+
+
+def save_benchmark_sensitivity_report(
+    rows: Sequence[dict[str, str | int | float | None]],
+    output_dir: str | Path,
+    *,
+    strategy_id: str,
+) -> str:
+    destination = Path(output_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    report_path = destination / BENCHMARK_SENSITIVITY_REPORT_FILENAME
+    report_path.write_text(
+        _format_benchmark_sensitivity_report(rows, strategy_id=strategy_id),
         encoding="utf-8",
     )
     return str(report_path)
@@ -357,6 +458,29 @@ def _date_sensitivity_row(
         "max_drawdown": run_output.max_drawdown,
         "trade_count": run_output.trade_count,
         "benchmark_name": run_output.benchmark_name,
+        "benchmark_total_return": run_output.benchmark_total_return,
+        "excess_total_return": run_output.excess_total_return,
+        "output_dir": str(output_dir),
+        "metadata_path": run_output.artifact_paths["metadata"],
+    }
+
+
+def _benchmark_sensitivity_row(
+    run_id: str,
+    cost_assumptions,
+    run_output: RunArtifactResult,
+    output_dir: Path,
+) -> dict[str, str | int | float | None]:
+    return {
+        "run_id": run_id,
+        "benchmark_name": run_output.benchmark_name,
+        "cost_preset": cost_assumptions.preset,
+        "final_equity": run_output.final_equity,
+        "total_return": run_output.total_return,
+        "cagr": run_output.cagr,
+        "sharpe_ratio": run_output.sharpe_ratio,
+        "max_drawdown": run_output.max_drawdown,
+        "trade_count": run_output.trade_count,
         "benchmark_total_return": run_output.benchmark_total_return,
         "excess_total_return": run_output.excess_total_return,
         "output_dir": str(output_dir),
@@ -467,6 +591,56 @@ def _format_date_sensitivity_report(
     return "\n".join(lines)
 
 
+def _format_benchmark_sensitivity_report(
+    rows: Sequence[dict[str, str | int | float | None]],
+    *,
+    strategy_id: str,
+) -> str:
+    lines = [
+        "# Benchmark Sensitivity Report",
+        "",
+        f"- Strategy: `{strategy_id}`",
+        f"- Benchmarks: `{len(rows)}`",
+        "",
+        "## Verdict",
+        "",
+        f"- {_benchmark_sensitivity_verdict(rows)}",
+        "",
+        "## Results",
+        "",
+        "| run | benchmark | strategy return | benchmark return | excess | drawdown | sharpe | trades | metadata |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for row in rows:
+        lines.append(
+            " | ".join(
+                [
+                    f"| `{row['run_id']}`",
+                    f"`{row['benchmark_name']}`",
+                    _format_percent(row["total_return"]),
+                    _format_percent(row["benchmark_total_return"]),
+                    _format_percent(row["excess_total_return"]),
+                    _format_percent(row["max_drawdown"]),
+                    _format_decimal(row["sharpe_ratio"]),
+                    str(row["trade_count"]),
+                    f"`{row['metadata_path']}` |",
+                ]
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Skeptical Notes",
+            "",
+            "- Benchmark sensitivity is a comparison check, not proof of future performance.",
+            "- Beating cash is useful, but beating buy-and-hold is a stronger hurdle for long-only equity ideas.",
+            "- If the result only looks good against cash, treat it as weak evidence until tested against a market benchmark.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _cost_sensitivity_verdict(rows: Sequence[dict[str, str | int | float | None]]) -> str:
     if not rows:
         return "No cost sensitivity runs were produced."
@@ -487,6 +661,24 @@ def _date_sensitivity_verdict(rows: Sequence[dict[str, str | int | float | None]
     if any(value > 0 for value in excess_values):
         return "Result is date fragile: some windows beat the benchmark and some did not."
     return "Result did not survive date sensitivity: no requested window beat the benchmark."
+
+
+def _benchmark_sensitivity_verdict(rows: Sequence[dict[str, str | int | float | None]]) -> str:
+    if not rows:
+        return "No benchmark sensitivity runs were produced."
+    excess_by_benchmark = {
+        str(row["benchmark_name"]): _numeric(row["excess_total_return"])
+        for row in rows
+    }
+    buy_and_hold_excess = excess_by_benchmark.get("buy-and-hold")
+    cash_excess = excess_by_benchmark.get("cash")
+    if buy_and_hold_excess is not None and buy_and_hold_excess > 0:
+        return "Result survived the buy-and-hold benchmark hurdle on excess return."
+    if cash_excess is not None and cash_excess > 0:
+        return "Result only cleared the cash hurdle; treat it as weak until it beats buy-and-hold."
+    if any(value > 0 for value in excess_by_benchmark.values()):
+        return "Result beat at least one requested benchmark but missed the strongest common hurdle."
+    return "Result did not beat any requested benchmark on excess return."
 
 
 def _slug(value: str) -> str:
