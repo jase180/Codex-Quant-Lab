@@ -230,6 +230,30 @@ Exit criteria:
 - A user can create, run, inspect, compare, and reuse a simple portfolio idea
   from the CLI without needing to manually inspect every artifact file.
 
+## Milestone 10: Portfolio Research Depth
+
+Status: planned.
+
+Goal: make portfolio research deeper without turning the lab into a black-box
+optimizer.
+
+Detailed plan:
+[milestone-10-portfolio-research-depth.md](milestone-10-portfolio-research-depth.md)
+
+Planned work:
+
+- Portfolio weight variants.
+- Rebalance-frequency variants.
+- Portfolio experiment summaries.
+- Guided portfolio plan integration for variants and summaries.
+- Small static-weight candidate generation.
+
+Exit criteria:
+
+- A user can generate a small set of portfolio variants, run them, summarize
+  their evidence, and let the guided portfolio plan recommend the next research
+  step without manually editing every candidate spec.
+
 ## Maintenance: CLI And Workflow Organization
 
 Status: complete.
@@ -255,10 +279,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Plan Milestone 10: portfolio research depth.
+Build Milestone 10 deliverable 1: portfolio weight variants.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
-static-weight portfolio ideas. The next useful jump is deeper portfolio
-research, such as allocation variants, rebalance-frequency comparisons,
-portfolio-specific summaries, or lightweight optimizer-style candidate
-generation.
+static-weight portfolio ideas. The next useful gap is repeatable generation of
+valid allocation variants without hand-editing every portfolio JSON file.

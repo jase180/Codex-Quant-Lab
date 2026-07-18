@@ -43,6 +43,7 @@ docs/
   milestone-7-guided-research-workflow.md  Planned guided workflow.
   milestone-8-portfolio-multi-asset-research.md  Completed portfolio workflow.
   milestone-9-portfolio-usability-research-loops.md  Completed portfolio usability.
+  milestone-10-portfolio-research-depth.md  Planned portfolio research depth.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
   milestones.md                  Project milestone plan.
@@ -65,6 +66,7 @@ More detailed module notes:
 - [docs/milestone-7-guided-research-workflow.md](docs/milestone-7-guided-research-workflow.md)
 - [docs/milestone-8-portfolio-multi-asset-research.md](docs/milestone-8-portfolio-multi-asset-research.md)
 - [docs/milestone-9-portfolio-usability-research-loops.md](docs/milestone-9-portfolio-usability-research-loops.md)
+- [docs/milestone-10-portfolio-research-depth.md](docs/milestone-10-portfolio-research-depth.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
 - [docs/research-workflow.md](docs/research-workflow.md)
