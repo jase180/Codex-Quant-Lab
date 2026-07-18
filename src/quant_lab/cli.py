@@ -20,6 +20,7 @@ from .cli_experiments import (
     update_experiment_command,
 )
 from .cli_run_inspection import compare_runs_command, show_run_command, verify_run_command
+from .cli_research_plan import research_plan_init_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
     EXPERIMENT_STATUSES,
@@ -46,6 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_data_commands(subparsers)
     register_run_inspection_commands(subparsers)
     register_experiment_commands(subparsers)
+    register_research_plan_commands(subparsers)
     register_sweep_commands(subparsers)
     return parser
 
@@ -364,6 +366,65 @@ def register_experiment_commands(subparsers) -> None:
     add_index_argument(draft_decision_parser)
     draft_decision_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
     draft_decision_parser.set_defaults(func=draft_decision_command)
+
+
+def register_research_plan_commands(subparsers) -> None:
+    research_plan_parser = subparsers.add_parser(
+        "research-plan",
+        help="Create and inspect guided research workflow plans.",
+    )
+    research_plan_subparsers = research_plan_parser.add_subparsers(dest="research_plan_command", required=True)
+
+    init_parser = research_plan_subparsers.add_parser(
+        "init",
+        help="Create a local research plan and print the baseline run command.",
+    )
+    init_parser.add_argument("--title", required=True, help="Short research plan title.")
+    init_parser.add_argument("--hypothesis", required=True, help="Research hypothesis to test.")
+    init_parser.add_argument("--strategy", required=True, help="Path to a v1 strategy JSON file.")
+    init_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
+    init_parser.add_argument("--symbol", required=True, help="Market symbol, such as QQQ or SPY.")
+    init_parser.add_argument("--out", required=True, help="Directory where research_plan files are written.")
+    init_parser.add_argument(
+        "--experiment-id",
+        default=None,
+        help="Optional explicit id such as EXP-001. Defaults to the next local id.",
+    )
+    init_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Research tag. May be repeated or comma-separated.",
+    )
+    init_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash for the recommended baseline. Defaults to 100000.",
+    )
+    init_parser.add_argument(
+        "--quantity",
+        type=float,
+        default=1,
+        help="Order quantity for fixed-shares sizing. Defaults to 1.",
+    )
+    init_parser.add_argument(
+        "--sizing",
+        choices=["fixed-shares", "percent-equity"],
+        default="percent-equity",
+        help="Position sizing mode for the recommended baseline. Defaults to percent-equity.",
+    )
+    init_parser.add_argument(
+        "--allocation",
+        type=float,
+        default=1.0,
+        help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
+    )
+    add_cost_arguments(init_parser)
+    add_benchmark_argument(init_parser)
+    add_experiment_registry_argument(init_parser)
+    add_index_argument(init_parser)
+    init_parser.set_defaults(func=research_plan_init_command)
 
 
 def register_sweep_commands(subparsers) -> None:
