@@ -196,7 +196,7 @@ Delivered implementation:
 
 ### 3. Portfolio Artifacts And Metadata
 
-Status: not started.
+Status: delivered.
 
 Persist portfolio outputs beside normal run artifacts.
 
@@ -219,6 +219,18 @@ Acceptance criteria:
 - Report includes allocation, rebalance, benchmark, cost, and data-quality
   assumptions.
 - Research index rows can distinguish portfolio runs from single-symbol runs.
+
+Delivered implementation:
+
+- `quant_lab.portfolio_artifacts` writes portfolio metrics, equity curve,
+  positions, trades, allocation drift, report, and metadata artifacts.
+- `portfolio_metadata.json` records the portfolio spec fingerprint when a source
+  file exists, every symbol input fingerprint, target weights, row counts,
+  dropped rows, data-quality severity, costs, benchmark input, command tokens,
+  and git commit.
+- `tests/test_portfolio_artifacts.py` covers artifact writing, metadata shape,
+  metrics persistence, report content, and in-memory specs without a source
+  file.
 
 ### 4. Portfolio Benchmark Comparison
 

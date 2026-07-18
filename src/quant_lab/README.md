@@ -24,6 +24,8 @@ It owns:
   symbols to a shared date calendar.
 - `portfolio_backtest.py`: runs static-weight portfolio simulations with
   next-open rebalance fills.
+- `portfolio_artifacts.py`: writes portfolio metrics, CSV outputs, reports, and
+  metadata.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
