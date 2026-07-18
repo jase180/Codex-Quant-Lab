@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from .portfolio_generation import validate_rebalance_frequency, weight_suffix, write_portfolio_json
 from .portfolio_spec import parse_portfolio_spec
-from .portfolio_variants import ALLOWED_REBALANCE_FREQUENCIES
 
 _WEIGHT_TOLERANCE = 1e-9
 
@@ -68,11 +67,7 @@ def write_portfolio_candidates(
     parsed_symbols = parse_candidate_symbols(symbols if isinstance(symbols, str) else ",".join(symbols))
     if max_candidates < 1:
         raise ValueError("--max-candidates must be at least 1.")
-    if rebalance_frequency not in ALLOWED_REBALANCE_FREQUENCIES:
-        raise ValueError(
-            f"Unsupported rebalance frequency '{rebalance_frequency}'. "
-            f"Expected one of {list(ALLOWED_REBALANCE_FREQUENCIES)}."
-        )
+    rebalance = validate_rebalance_frequency(rebalance_frequency)
     benchmark = (benchmark_symbol or parsed_symbols[0]).strip().upper()
     if benchmark not in parsed_symbols:
         raise ValueError("--benchmark-symbol must be one of the candidate symbols.")
@@ -94,13 +89,13 @@ def write_portfolio_candidates(
             weights=weights,
             data_paths=data_paths,
             base_id=base_id,
-            rebalance_frequency=rebalance_frequency,
+            rebalance_frequency=rebalance,
             benchmark_symbol=benchmark,
         )
         path = output_path / f"{payload['portfolio_id']}.json"
         if path.exists() and not force:
             raise FileExistsError(f"Portfolio candidate already exists: {path}. Use --force to overwrite it.")
-        path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        write_portfolio_json(path, payload)
         written.append(PortfolioCandidateWriteResult(portfolio_id=payload["portfolio_id"], path=str(path)))
     return PortfolioCandidateGenerationResult(written=written, skipped_count=skipped_count)
 
@@ -139,7 +134,7 @@ def _candidate_payload(
     rebalance_frequency: str,
     benchmark_symbol: str,
 ) -> dict:
-    suffix = _weight_suffix(weights, symbols)
+    suffix = weight_suffix(weights, symbols)
     portfolio_id = f"{base_id}_{suffix}_rebalance_{rebalance_frequency}"
     payload = {
         "schema_version": "portfolio_plan.v1",
@@ -162,11 +157,3 @@ def _candidate_payload(
     }
     parse_portfolio_spec(payload)
     return payload
-
-
-def _weight_suffix(weights: dict[str, float], ordered_symbols: list[str]) -> str:
-    parts = []
-    for symbol in ordered_symbols:
-        basis_points = int(round(weights[symbol] * 10_000))
-        parts.append(f"{symbol.lower()}_{basis_points:04d}bp")
-    return "_".join(parts)

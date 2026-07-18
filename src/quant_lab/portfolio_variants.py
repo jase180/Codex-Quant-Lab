@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from .portfolio_generation import (
+    validate_rebalance_frequency,
+    weight_suffix,
+    write_portfolio_json,
+)
 from .portfolio_spec import PortfolioSpec, load_portfolio_spec, parse_portfolio_spec
 
 _WEIGHT_TOLERANCE = 1e-9
-ALLOWED_REBALANCE_FREQUENCIES = ("none", "monthly", "quarterly", "annually")
 
 
 @dataclass(frozen=True)
@@ -61,12 +64,7 @@ def normalize_rebalance_frequencies(raw_frequencies: Iterable[str] | None) -> li
         return []
     frequencies: list[str] = []
     for raw_frequency in raw_frequencies:
-        frequency = str(raw_frequency).strip().lower()
-        if frequency not in ALLOWED_REBALANCE_FREQUENCIES:
-            raise ValueError(
-                f"Unsupported rebalance frequency '{raw_frequency}'. "
-                f"Expected one of {list(ALLOWED_REBALANCE_FREQUENCIES)}."
-            )
+        frequency = validate_rebalance_frequency(str(raw_frequency))
         if frequency not in frequencies:
             frequencies.append(frequency)
     return frequencies
@@ -80,9 +78,9 @@ def build_portfolio_variant_payload(
 ) -> dict:
     """Build and validate one portfolio_plan.v1 payload using a base spec."""
 
-    weight_suffix = _weight_suffix(weights, [symbol.symbol for symbol in base.symbols])
+    weight_suffix_value = weight_suffix(weights, [symbol.symbol for symbol in base.symbols])
     frequency = rebalance_frequency or base.rebalance.frequency
-    variant_suffix = f"{weight_suffix}_rebalance_{frequency}"
+    variant_suffix = f"{weight_suffix_value}_rebalance_{frequency}"
     payload = {
         "schema_version": "portfolio_plan.v1",
         "portfolio_id": f"{base.portfolio_id}_{variant_suffix}",
@@ -130,16 +128,6 @@ def write_portfolio_variants(
             path = output_path / f"{payload['portfolio_id']}.json"
             if path.exists() and not force:
                 raise FileExistsError(f"Portfolio variant already exists: {path}. Use --force to overwrite it.")
-            path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            write_portfolio_json(path, payload)
             results.append(PortfolioVariantWriteResult(portfolio_id=payload["portfolio_id"], path=str(path)))
     return results
-
-
-def _weight_suffix(weights: dict[str, float], ordered_symbols: list[str]) -> str:
-    parts = []
-    for symbol in ordered_symbols:
-        # Portfolio ids must match ^[a-z][a-z0-9_]*$, so use lowercase symbols
-        # and integer basis points instead of decimal punctuation.
-        basis_points = int(round(weights[symbol] * 10_000))
-        parts.append(f"{symbol.lower()}_{basis_points:04d}bp")
-    return "_".join(parts)
