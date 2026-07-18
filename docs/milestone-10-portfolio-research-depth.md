@@ -49,6 +49,8 @@ The milestone should stay CLI-first and artifact-first.
 
 ### 1. Portfolio Variant Generation
 
+Status: delivered.
+
 Add a command that creates multiple valid portfolio specs from one base
 portfolio spec.
 
@@ -72,7 +74,18 @@ Acceptance criteria:
 - Keeps data paths, benchmark, and default rebalance rule from the base spec.
 - Tests cover valid generation, invalid weights, and overwrite protection.
 
+Delivered implementation:
+
+- `quant-lab portfolio-variants --portfolio ... --weights ... --out ...`.
+- `quant_lab.portfolio_variants` parses complete symbol weight sets, validates
+  weights, preserves base data paths, benchmark, and rebalance frequency, and
+  writes validated `portfolio_plan.v1` JSON files.
+- Tests cover weight parsing, invalid/missing weights, generated spec validity,
+  overwrite protection, and CLI output.
+
 ### 2. Rebalance Frequency Variants
+
+Status: not started.
 
 Extend variant generation to create specs across rebalance frequencies.
 
@@ -97,6 +110,8 @@ Acceptance criteria:
 
 ### 3. Portfolio Experiment Summary
 
+Status: not started.
+
 Add a portfolio-specific evidence summary for one experiment.
 
 Possible command:
@@ -120,6 +135,8 @@ Acceptance criteria:
 
 ### 4. Guided Plan Integration
 
+Status: not started.
+
 Teach `portfolio-plan next` to recommend variant generation and portfolio
 summaries when useful.
 
@@ -134,6 +151,8 @@ Acceptance criteria:
 - Tests cover the new next-step branches.
 
 ### 5. Small Candidate Generator
+
+Status: not started.
 
 Add a deliberately simple candidate generator only after manual variants and
 summary output are working.

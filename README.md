@@ -329,6 +329,19 @@ quant-lab new-portfolio \
 The command validates the generated JSON before writing it and refuses to
 overwrite an existing file unless `--force` is provided.
 
+Generate weight variants from a base portfolio spec:
+
+```bash
+quant-lab portfolio-variants \
+  --portfolio data/portfolios/qqq_spy_static_60_40.json \
+  --weights QQQ=0.50,SPY=0.50 \
+  --weights QQQ=0.70,SPY=0.30 \
+  --out data/portfolios/variants/qqq_spy
+```
+
+The generated files are normal `portfolio_plan.v1` JSON specs, so each one can
+be reviewed, committed, or passed to `portfolio-run`.
+
 ```bash
 quant-lab portfolio-run \
   --portfolio data/portfolios/qqq_spy_static_60_40.json \

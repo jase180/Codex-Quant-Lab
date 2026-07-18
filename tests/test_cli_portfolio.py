@@ -83,6 +83,38 @@ class CliPortfolioTests(unittest.TestCase):
                     ]
                 )
 
+    def test_portfolio_variants_command_writes_weight_variants(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            portfolio_path = workspace / "portfolio.json"
+            output_dir = workspace / "variants"
+            write_portfolio(portfolio_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "portfolio-variants",
+                        "--portfolio",
+                        str(portfolio_path),
+                        "--weights",
+                        "QQQ=0.5,SPY=0.5",
+                        "--weights",
+                        "QQQ=0.7,SPY=0.3",
+                        "--out",
+                        str(output_dir),
+                    ]
+                )
+
+            first_path = output_dir / "qqq_spy_static_60_40_qqq_5000bp_spy_5000bp.json"
+            second_path = output_dir / "qqq_spy_static_60_40_qqq_7000bp_spy_3000bp.json"
+            first_payload = json.loads(first_path.read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(first_path.exists())
+            self.assertTrue(second_path.exists())
+            self.assertIn("Portfolio variants written: 2", stdout.getvalue())
+            self.assertEqual(first_payload["symbols"][0]["target_weight"], 0.5)
+            self.assertEqual(first_payload["symbols"][1]["target_weight"], 0.5)
+
     def test_portfolio_run_writes_artifacts_index_and_experiment_link(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)

@@ -29,6 +29,7 @@ from .cli_run_inspection import (
 from .cli_portfolio import (
     list_portfolio_templates_command,
     new_portfolio_command,
+    portfolio_variants_command,
     portfolio_run_command,
 )
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
@@ -180,6 +181,29 @@ def register_portfolio_commands(subparsers) -> None:
     new_portfolio_parser.add_argument("--out", required=True, help="Path where the portfolio JSON is written.")
     new_portfolio_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
     new_portfolio_parser.set_defaults(func=new_portfolio_command)
+
+    variants_parser = subparsers.add_parser(
+        "portfolio-variants",
+        help="Generate valid portfolio_plan.v1 weight variants from a base portfolio spec.",
+    )
+    variants_parser.add_argument(
+        "--portfolio",
+        required=True,
+        help="Path to the base portfolio_plan.v1 JSON file.",
+    )
+    variants_parser.add_argument(
+        "--weights",
+        action="append",
+        required=True,
+        help="Variant weights in SYMBOL=weight,SYMBOL=weight form. May be repeated.",
+    )
+    variants_parser.add_argument(
+        "--out",
+        required=True,
+        help="Directory where generated portfolio JSON files are written.",
+    )
+    variants_parser.add_argument("--force", action="store_true", help="Overwrite generated files if they exist.")
+    variants_parser.set_defaults(func=portfolio_variants_command)
 
     portfolio_parser = subparsers.add_parser(
         "portfolio-run",

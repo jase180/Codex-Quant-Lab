@@ -20,6 +20,7 @@ from .portfolio_templates import (
     build_portfolio_template,
     write_portfolio_template,
 )
+from .portfolio_variants import write_portfolio_variants
 from .research_index import RunIndexRecord, append_research_index_record
 from .research_registry import link_run_metadata_path, require_experiment
 
@@ -37,6 +38,19 @@ def new_portfolio_command(args: argparse.Namespace) -> int:
     print(f"template: {args.template}")
     print(f"portfolio_id: {payload['portfolio_id']}")
     print(f"symbols: {', '.join(symbol['symbol'] for symbol in payload['symbols'])}")
+    return 0
+
+
+def portfolio_variants_command(args: argparse.Namespace) -> int:
+    results = write_portfolio_variants(
+        portfolio_path=args.portfolio,
+        raw_weight_sets=args.weights,
+        output_dir=args.out,
+        force=args.force,
+    )
+    print(f"Portfolio variants written: {len(results)}")
+    for result in results:
+        print(f"{result.portfolio_id}: {result.path}")
     return 0
 
 

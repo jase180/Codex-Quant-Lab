@@ -73,7 +73,27 @@ The important fields are:
 
 Weights must sum to `1.0`.
 
-## 3. Run The Portfolio
+## 3. Generate Weight Variants
+
+Create a small set of allocation variants from the base spec:
+
+```bash
+quant-lab portfolio-variants \
+  --portfolio data/portfolios/qqq_spy_static_60_40.json \
+  --weights QQQ=0.50,SPY=0.50 \
+  --weights QQQ=0.60,SPY=0.40 \
+  --weights QQQ=0.70,SPY=0.30 \
+  --out data/portfolios/variants/qqq_spy
+```
+
+Each generated file is a normal `portfolio_plan.v1` JSON file. The command
+keeps the base spec's data paths, benchmark, and rebalance rule, then validates
+each generated spec before writing it. It refuses to overwrite generated files
+unless `--force` is provided.
+
+Run generated variants by passing one generated JSON file to `portfolio-run`.
+
+## 4. Run The Portfolio
 
 ```bash
 quant-lab portfolio-run \
@@ -100,7 +120,7 @@ artifacts/research/qqq_spy_static_60_40/baseline/
 artifacts/research_index.jsonl
 ```
 
-## 4. Read The Result
+## 5. Read The Result
 
 Start with the CLI summary:
 
@@ -120,7 +140,7 @@ Then inspect:
 - `portfolio_allocation_drift.csv` for target-versus-actual weight drift.
 - `portfolio_benchmark_metrics.json` for the buy-and-hold benchmark result.
 
-## 5. Compare Portfolio Runs
+## 6. Compare Portfolio Runs
 
 After you have two saved portfolio runs, compare them from metadata:
 
@@ -134,7 +154,7 @@ The comparison table shows portfolio id, symbols, rebalance frequency, total
 return, benchmark return, excess return, max drawdown, Sharpe ratio, cost
 preset, and output directory.
 
-## 6. Use A Guided Portfolio Plan
+## 7. Use A Guided Portfolio Plan
 
 When you have a portfolio hypothesis, create a durable local plan before
 running the baseline:

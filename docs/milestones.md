@@ -242,7 +242,7 @@ Detailed plan:
 
 Planned work:
 
-- Portfolio weight variants.
+- Portfolio weight variants with `quant-lab portfolio-variants`.
 - Rebalance-frequency variants.
 - Portfolio experiment summaries.
 - Guided portfolio plan integration for variants and summaries.
@@ -279,8 +279,9 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 10 deliverable 1: portfolio weight variants.
+Build Milestone 10 deliverable 2: rebalance-frequency variants.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
-static-weight portfolio ideas. The next useful gap is repeatable generation of
-valid allocation variants without hand-editing every portfolio JSON file.
+static-weight portfolio ideas, and it can now generate allocation variants. The
+next useful gap is testing whether the same weights behave differently under
+`none`, `monthly`, `quarterly`, or `annually` rebalancing.
