@@ -232,7 +232,7 @@ Exit criteria:
 
 ## Milestone 10: Portfolio Research Depth
 
-Status: planned.
+Status: complete.
 
 Goal: make portfolio research deeper without turning the lab into a black-box
 optimizer.
@@ -240,13 +240,13 @@ optimizer.
 Detailed plan:
 [milestone-10-portfolio-research-depth.md](milestone-10-portfolio-research-depth.md)
 
-Planned work:
+Delivered:
 
 - Portfolio weight variants with `quant-lab portfolio-variants`.
 - Rebalance-frequency variants with repeated `--rebalance` values.
 - Portfolio experiment summaries with `quant-lab summarize-portfolio-experiment`.
 - Guided portfolio plan integration for variants and summaries.
-- Small static-weight candidate generation.
+- Small static-weight candidate generation with `quant-lab portfolio-candidates`.
 
 Exit criteria:
 
@@ -279,10 +279,10 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 10 deliverable 5: small static-weight candidate generation.
+Plan Milestone 11: research automation and guardrails.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
 static-weight portfolio ideas, and it can now generate allocation plus rebalance
-variants, summarize linked portfolio runs, and guide those steps. The remaining
-Milestone 10 gap is generating a capped grid of candidate portfolio specs from
-explicit symbols.
+variants, summarize linked portfolio runs, guide those steps, and generate
+capped candidate specs. The next useful phase should improve automation around
+running candidate batches while keeping guardrails against overfitting.

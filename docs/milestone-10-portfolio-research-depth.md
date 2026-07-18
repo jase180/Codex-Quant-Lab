@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+Complete.
 
 ## Goal
 
@@ -183,7 +183,7 @@ Delivered implementation:
 
 ### 5. Small Candidate Generator
 
-Status: not started.
+Status: delivered.
 
 Add a deliberately simple candidate generator only after manual variants and
 summary output are working.
@@ -206,6 +206,19 @@ Acceptance criteria:
 - Prints the number of generated specs and any skipped combinations.
 - Validates generated specs before writing.
 - Does not run backtests automatically.
+
+Delivered implementation:
+
+- `quant-lab portfolio-candidates`.
+- Requires explicit comma-separated symbols, a grid `--step`, `--data-dir`, and
+  output directory.
+- Generates positive static-weight candidates that sum to `1.0`.
+- Uses `--max-candidates` to cap generated specs and reports skipped
+  candidates.
+- Resolves data files from `SYMBOL.csv` or exactly one `SYMBOL_*.csv` match.
+- Supports optional benchmark symbol and rebalance frequency.
+- Tests cover symbol parsing, grid generation, invalid step values, generated
+  candidate validity, ambiguous data files, cap behavior, and CLI output.
 
 ## Build Order
 

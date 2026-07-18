@@ -30,6 +30,7 @@ from .cli_run_inspection import (
 from .cli_portfolio import (
     list_portfolio_templates_command,
     new_portfolio_command,
+    portfolio_candidates_command,
     portfolio_variants_command,
     portfolio_run_command,
 )
@@ -212,6 +213,51 @@ def register_portfolio_commands(subparsers) -> None:
     )
     variants_parser.add_argument("--force", action="store_true", help="Overwrite generated files if they exist.")
     variants_parser.set_defaults(func=portfolio_variants_command)
+
+    candidates_parser = subparsers.add_parser(
+        "portfolio-candidates",
+        help="Generate capped static-weight portfolio candidate specs on a coarse grid.",
+    )
+    candidates_parser.add_argument(
+        "--symbols",
+        required=True,
+        help="Comma-separated symbols, such as QQQ,SPY,TLT.",
+    )
+    candidates_parser.add_argument(
+        "--step",
+        type=float,
+        required=True,
+        help="Weight grid step that divides 1.0 evenly, such as 0.5, 0.25, or 0.1.",
+    )
+    candidates_parser.add_argument(
+        "--data-dir",
+        required=True,
+        help="Directory containing one CSV per symbol.",
+    )
+    candidates_parser.add_argument(
+        "--out",
+        required=True,
+        help="Directory where generated portfolio JSON files are written.",
+    )
+    candidates_parser.add_argument(
+        "--max-candidates",
+        type=int,
+        default=100,
+        help="Maximum candidate specs to write. Defaults to 100.",
+    )
+    candidates_parser.add_argument(
+        "--rebalance",
+        choices=["none", "monthly", "quarterly", "annually"],
+        default="monthly",
+        help="Rebalance frequency for generated candidates. Defaults to monthly.",
+    )
+    candidates_parser.add_argument(
+        "--benchmark-symbol",
+        default=None,
+        help="Benchmark symbol. Defaults to the first symbol.",
+    )
+    candidates_parser.add_argument("--force", action="store_true", help="Overwrite generated files if they exist.")
+    candidates_parser.set_defaults(func=portfolio_candidates_command)
 
     portfolio_parser = subparsers.add_parser(
         "portfolio-run",

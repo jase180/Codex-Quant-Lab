@@ -345,6 +345,19 @@ The generated files are normal `portfolio_plan.v1` JSON specs, so each one can
 be reviewed, committed, or passed to `portfolio-run`. If `--rebalance` is
 omitted, the command keeps the base portfolio spec's rebalance frequency.
 
+Generate a capped grid of static-weight candidates from explicit symbols:
+
+```bash
+quant-lab portfolio-candidates \
+  --symbols QQQ,SPY,TLT \
+  --step 0.25 \
+  --data-dir data/cache \
+  --max-candidates 25 \
+  --out data/portfolios/candidates/qqq_spy_tlt
+```
+
+This writes candidate JSON files only. It does not run backtests automatically.
+
 ```bash
 quant-lab portfolio-run \
   --portfolio data/portfolios/qqq_spy_static_60_40.json \

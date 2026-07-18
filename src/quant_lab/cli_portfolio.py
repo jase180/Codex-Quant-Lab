@@ -12,6 +12,7 @@ from .cli_runs import resolve_cli_costs
 from .portfolio_artifacts import save_portfolio_artifacts
 from .portfolio_backtest import PortfolioBacktestResult, StaticWeightPortfolioBacktester
 from .portfolio_benchmarks import build_portfolio_benchmark_comparison
+from .portfolio_candidates import write_portfolio_candidates
 from .portfolio_data import load_multi_asset_dataset
 from .portfolio_metadata import PortfolioMetadata
 from .portfolio_spec import load_portfolio_spec
@@ -52,6 +53,24 @@ def portfolio_variants_command(args: argparse.Namespace) -> int:
     print(f"Portfolio variants written: {len(results)}")
     for result in results:
         print(f"{result.portfolio_id}: {result.path}")
+    return 0
+
+
+def portfolio_candidates_command(args: argparse.Namespace) -> int:
+    result = write_portfolio_candidates(
+        symbols=args.symbols,
+        step=args.step,
+        data_dir=args.data_dir,
+        output_dir=args.out,
+        max_candidates=args.max_candidates,
+        rebalance_frequency=args.rebalance,
+        benchmark_symbol=args.benchmark_symbol,
+        force=args.force,
+    )
+    print(f"Portfolio candidates written: {len(result.written)}")
+    print(f"skipped_candidates: {result.skipped_count}")
+    for written in result.written:
+        print(f"{written.portfolio_id}: {written.path}")
     return 0
 
 

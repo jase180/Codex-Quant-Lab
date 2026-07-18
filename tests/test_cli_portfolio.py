@@ -120,6 +120,43 @@ class CliPortfolioTests(unittest.TestCase):
             self.assertEqual(first_payload["symbols"][1]["target_weight"], 0.5)
             self.assertEqual(first_payload["rebalance"]["frequency"], "none")
 
+    def test_portfolio_candidates_command_writes_capped_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            data_dir = workspace / "data"
+            output_dir = workspace / "candidates"
+            data_dir.mkdir()
+            write_ohlcv(data_dir / "QQQ.csv", [("2026-01-01", 100)])
+            write_ohlcv(data_dir / "SPY.csv", [("2026-01-01", 100)])
+            write_ohlcv(data_dir / "TLT.csv", [("2026-01-01", 100)])
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "portfolio-candidates",
+                        "--symbols",
+                        "QQQ,SPY,TLT",
+                        "--step",
+                        "0.25",
+                        "--data-dir",
+                        str(data_dir),
+                        "--out",
+                        str(output_dir),
+                        "--max-candidates",
+                        "2",
+                        "--benchmark-symbol",
+                        "SPY",
+                    ]
+                )
+
+            written_files = sorted(output_dir.glob("*.json"))
+            payload = json.loads(written_files[0].read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(len(written_files), 2)
+            self.assertIn("Portfolio candidates written: 2", stdout.getvalue())
+            self.assertIn("skipped_candidates: 1", stdout.getvalue())
+            self.assertEqual(payload["benchmark"]["symbol"], "SPY")
+
     def test_portfolio_run_writes_artifacts_index_and_experiment_link(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)

@@ -98,7 +98,27 @@ files unless `--force` is provided.
 
 Run generated variants by passing one generated JSON file to `portfolio-run`.
 
-## 4. Run The Portfolio
+## 4. Generate Candidate Specs
+
+For a broader but still capped search, generate a coarse candidate grid from
+explicit symbols:
+
+```bash
+quant-lab portfolio-candidates \
+  --symbols QQQ,SPY,TLT \
+  --step 0.25 \
+  --data-dir data/cache \
+  --max-candidates 25 \
+  --out data/portfolios/candidates/qqq_spy_tlt
+```
+
+The command requires at least two symbols, uses positive weights that sum to
+`1.0`, and caps generated files with `--max-candidates`. It resolves data files
+from `--data-dir` by first looking for `SYMBOL.csv`, then for exactly one
+`SYMBOL_*.csv` match. It writes candidate specs only and does not run
+backtests.
+
+## 5. Run The Portfolio
 
 ```bash
 quant-lab portfolio-run \
@@ -125,7 +145,7 @@ artifacts/research/qqq_spy_static_60_40/baseline/
 artifacts/research_index.jsonl
 ```
 
-## 5. Read The Result
+## 6. Read The Result
 
 Start with the CLI summary:
 
@@ -145,7 +165,7 @@ Then inspect:
 - `portfolio_allocation_drift.csv` for target-versus-actual weight drift.
 - `portfolio_benchmark_metrics.json` for the buy-and-hold benchmark result.
 
-## 6. Compare Portfolio Runs
+## 7. Compare Portfolio Runs
 
 After you have two saved portfolio runs, compare them from metadata:
 
@@ -159,7 +179,7 @@ The comparison table shows portfolio id, symbols, rebalance frequency, total
 return, benchmark return, excess return, max drawdown, Sharpe ratio, cost
 preset, and output directory.
 
-## 7. Summarize Portfolio Evidence
+## 8. Summarize Portfolio Evidence
 
 After multiple portfolio runs are linked to one experiment, write a
 portfolio-specific evidence note:
@@ -175,7 +195,7 @@ Sharpe ratio, and drawdown. It also calls out benchmark underperformers and
 large drawdowns so the evidence stays skeptical instead of becoming a single
 magic score.
 
-## 8. Use A Guided Portfolio Plan
+## 9. Use A Guided Portfolio Plan
 
 When you have a portfolio hypothesis, create a durable local plan before
 running the baseline:
