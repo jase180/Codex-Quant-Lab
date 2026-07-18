@@ -37,6 +37,8 @@ It owns:
 - `portfolio_batch.py`: writes dry-run manifests for batches of portfolio specs.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
+- `sweep_guardrails.py`: reads sweep `summary.csv` files and writes skeptical
+  markdown guardrail reports.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
   and run inspection commands.
 
@@ -141,6 +143,16 @@ Sweep `research.md` includes:
 The stability heuristic checks one-parameter neighbors around the best run and
 labels the result as `supported`, `mixed`, `isolated`, or `grid_too_sparse`.
 This is only a research prompt; it is not statistical proof.
+
+Write a guardrail report for an existing sweep summary:
+
+```bash
+quant-lab summarize-sweep-guardrails \
+  --summary artifacts/research/sma_sweep/summary.csv
+```
+
+The report warns about broad grids, tiny trade counts, fragile parameter
+winners, and benchmark underperformance. It does not rerun or change the sweep.
 
 Run a train/test sweep:
 

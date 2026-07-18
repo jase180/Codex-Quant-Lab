@@ -256,7 +256,7 @@ Exit criteria:
 
 ## Milestone 11: Research Automation And Guardrails
 
-Status: in progress.
+Status: complete.
 
 Goal: make repeated research runs easier without making it easier to fool
 ourselves.
@@ -270,7 +270,7 @@ Planned work:
 - Sequential portfolio batch execution. Delivered.
 - Batch guardrail summaries. Delivered.
 - Guided portfolio plan integration for batches. Delivered.
-- Strategy sweep guardrail reports.
+- Strategy sweep guardrail reports. Delivered.
 
 Exit criteria:
 
@@ -303,13 +303,15 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 11 deliverable 5: strategy sweep guardrail reports.
+Review Milestone 11 in real sample research, then plan Milestone 12.
 
 Reason: the lab can now create, run, inspect, compare, and guide simple
 static-weight portfolio ideas, and it can now generate allocation plus rebalance
 variants, summarize linked portfolio runs, guide those steps, and generate
 capped candidate specs, write dry-run batch manifests, execute those saved
-manifests sequentially, summarize batch counts plus guardrail warnings, and let
-`portfolio-plan next` recommend the batch plan, run, and summarize steps. The
-next useful gap is adding lightweight guardrail reports for existing strategy
-sweep summaries.
+manifests sequentially, summarize batch counts plus guardrail warnings, let
+`portfolio-plan next` recommend the batch plan, run, and summarize steps, and
+write lightweight guardrail reports for existing strategy sweep summaries. The
+next useful step is to use these workflows on a small realistic sample and then
+choose whether Milestone 12 should focus on data/source quality or result
+comparison UX.

@@ -133,6 +133,47 @@ class CliSweepWorkflowTests(unittest.TestCase):
             self.assertIn(str(output_dir / "run_001" / "run_metadata.json"), experiment_rows[0]["linked_runs"])
             self.assertIn(str(output_dir / "run_004" / "run_metadata.json"), experiment_rows[0]["linked_runs"])
 
+    def test_summarize_sweep_guardrails_command_writes_report(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            strategy_path = temp_path / "strategy.json"
+            data_path = temp_path / "ohlcv.csv"
+            output_dir = temp_path / "sweep"
+            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            _write_ohlcv_fixture(data_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                sweep_exit_code = main(
+                    [
+                        "sweep",
+                        "--strategy",
+                        str(strategy_path),
+                        "--data",
+                        str(data_path),
+                        "--out",
+                        str(output_dir),
+                        "--param",
+                        "sma_2.inputs.length=2,3",
+                        "--param",
+                        "sma_3.inputs.length=3,4",
+                    ]
+                )
+                guardrail_exit_code = main(
+                    [
+                        "summarize-sweep-guardrails",
+                        "--summary",
+                        str(output_dir / "summary.csv"),
+                        "--max-rows",
+                        "1",
+                    ]
+                )
+
+            self.assertEqual(sweep_exit_code, 0)
+            self.assertEqual(guardrail_exit_code, 0)
+            self.assertTrue((output_dir / "sweep_guardrails.md").exists())
+            self.assertIn("Sweep guardrail report written", stdout.getvalue())
+            self.assertIn("warnings:", stdout.getvalue())
+
     def test_sweep_command_supports_train_test_split(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)

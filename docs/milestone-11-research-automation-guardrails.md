@@ -2,7 +2,7 @@
 
 ## Status
 
-In progress.
+Complete.
 
 ## Goal
 
@@ -135,6 +135,8 @@ Acceptance criteria:
 
 ### 5. Strategy Sweep Guardrails
 
+Status: delivered.
+
 Add a lightweight guardrail report for existing strategy sweeps.
 
 Possible command:
@@ -174,6 +176,7 @@ Acceptance criteria:
 
 ## Exit Criteria
 
-Milestone 11 is done when a user can plan, run, and summarize a small batch of
+Milestone 11 is done. A user can plan, run, and summarize a small batch of
 portfolio candidates locally, with enough guardrails to see when the batch is too
-broad or the evidence is too weak to trust.
+broad or the evidence is too weak to trust. A user can also write a lightweight
+guardrail report for existing strategy sweep summaries.

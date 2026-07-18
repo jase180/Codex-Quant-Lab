@@ -271,6 +271,16 @@ artifacts/qqq_sma_crossover/
 artifacts/research_index.jsonl
 ```
 
+Write a guardrail report for an existing sweep summary:
+
+```bash
+quant-lab summarize-sweep-guardrails \
+  --summary artifacts/research/qqq_sma_crossover_2015_2025/summary.csv
+```
+
+This writes `sweep_guardrails.md` and warns about broad grids, tiny trade
+counts, fragile parameter winners, and benchmark underperformance.
+
 `report.md` includes a benchmark section built from the same CSV date range and
 initial cash. Buy-and-hold is the default benchmark. Use `--benchmark cash` when
 you want a flat cash baseline instead. The PNG charts plot the strategy beside
@@ -814,6 +824,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Teach `portfolio-plan next` to recommend batch steps.
-2. Add strategy sweep guardrail reports.
+1. Use Milestone 11 on real sample research and tighten rough edges.
+2. Plan the next milestone around data/source quality or result comparison UX.
 3. Add richer batch evidence summaries if real usage shows gaps.

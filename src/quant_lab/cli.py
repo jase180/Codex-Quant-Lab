@@ -41,6 +41,7 @@ from .cli_portfolio_batch import (
 )
 from .cli_portfolio_research_plan import portfolio_plan_init_command, portfolio_plan_next_command
 from .cli_research_plan import research_plan_init_command, research_plan_next_command
+from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
     EXPERIMENT_STATUSES,
@@ -73,6 +74,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_research_plan_commands(subparsers)
     register_portfolio_plan_commands(subparsers)
     register_sweep_commands(subparsers)
+    register_sweep_guardrail_commands(subparsers)
     return parser
 
 
@@ -836,6 +838,32 @@ def register_sweep_commands(subparsers) -> None:
     add_experiment_link_argument(sweep_parser)
     add_index_argument(sweep_parser)
     sweep_parser.set_defaults(func=sweep_command)
+
+
+def register_sweep_guardrail_commands(subparsers) -> None:
+    guardrail_parser = subparsers.add_parser(
+        "summarize-sweep-guardrails",
+        help="Write a guardrail report for an existing sweep summary.csv.",
+    )
+    guardrail_parser.add_argument("--summary", required=True, help="Path to a sweep summary.csv file.")
+    guardrail_parser.add_argument(
+        "--out",
+        default=None,
+        help="Markdown report path. Defaults to sweep_guardrails.md beside the summary.",
+    )
+    guardrail_parser.add_argument(
+        "--max-rows",
+        type=int,
+        default=25,
+        help="Warn when the sweep has more rows than this. Defaults to 25.",
+    )
+    guardrail_parser.add_argument(
+        "--min-trades",
+        type=int,
+        default=5,
+        help="Warn when runs have fewer trades than this. Defaults to 5.",
+    )
+    guardrail_parser.set_defaults(func=summarize_sweep_guardrails_command)
 
 
 def add_cost_arguments(parser: argparse.ArgumentParser) -> None:
