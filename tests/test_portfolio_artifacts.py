@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from quant_lab.costs import COST_PRESETS  # noqa: E402
 from quant_lab.portfolio_artifacts import save_portfolio_artifacts  # noqa: E402
 from quant_lab.portfolio_backtest import StaticWeightPortfolioBacktester  # noqa: E402
+from quant_lab.portfolio_benchmarks import build_portfolio_benchmark_comparison  # noqa: E402
 from quant_lab.portfolio_data import load_multi_asset_dataset  # noqa: E402
 from quant_lab.portfolio_spec import load_portfolio_spec  # noqa: E402
 
@@ -64,6 +65,12 @@ class PortfolioArtifactsTests(unittest.TestCase):
             portfolio = load_portfolio_spec(portfolio_path)
             dataset = load_multi_asset_dataset(portfolio)
             result = StaticWeightPortfolioBacktester(initial_cash=1000).run(portfolio, dataset)
+            benchmark = build_portfolio_benchmark_comparison(
+                portfolio=portfolio,
+                dataset=dataset,
+                result=result,
+                initial_cash=1000,
+            )
             output_dir = workspace / "artifacts"
 
             saved = save_portfolio_artifacts(
@@ -73,6 +80,7 @@ class PortfolioArtifactsTests(unittest.TestCase):
                 output_dir=output_dir,
                 initial_cash=1000,
                 cost_assumptions=COST_PRESETS["none"],
+                benchmark_comparison=benchmark,
                 command=["quant-lab", "portfolio-run"],
             )
 
@@ -80,18 +88,25 @@ class PortfolioArtifactsTests(unittest.TestCase):
             metrics = json.loads(Path(saved.artifact_paths["metrics"]).read_text(encoding="utf-8"))
             report = Path(saved.artifact_paths["report"]).read_text(encoding="utf-8")
             trades_csv = Path(saved.artifact_paths["trades"]).read_text(encoding="utf-8")
+            benchmark_curve = Path(saved.artifact_paths["benchmark_equity_curve"]).read_text(
+                encoding="utf-8"
+            )
 
         self.assertEqual(metadata["metadata_schema_version"], "portfolio_metadata.v1")
         self.assertEqual(metadata["run_type"], "portfolio_run")
         self.assertEqual(metadata["portfolio_id"], "qqq_spy_static_60_40")
         self.assertEqual(metadata["command"], ["quant-lab", "portfolio-run"])
         self.assertEqual(len(metadata["symbols"]), 2)
+        self.assertEqual(metadata["benchmark"]["symbol"], "SPY")
+        self.assertIn("portfolio_benchmark_metrics.json", metadata["artifacts"]["benchmark_metrics"])
         self.assertIn("file_sha256", metadata["portfolio_spec"])
         self.assertIn("portfolio_equity_curve.csv", metadata["artifacts"]["equity_curve"])
         self.assertAlmostEqual(metrics["ending_equity"], saved.metrics.ending_equity)
         self.assertIn("# QQQ SPY Static 60/40", report)
         self.assertIn("Rebalance decisions use close prices", report)
+        self.assertIn("## Benchmark: Buy And Hold SPY", report)
         self.assertIn("QQQ", trades_csv)
+        self.assertIn("2026-01-05", benchmark_curve)
 
     def test_metadata_allows_in_memory_portfolio_without_spec_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

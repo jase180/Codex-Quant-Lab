@@ -228,9 +228,8 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Build Milestone 8 deliverable 1: portfolio spec parsing and multi-symbol data
-loading.
+Build Milestone 8 deliverable 5: portfolio CLI wiring and example workflow.
 
-Reason: the guided single-symbol research loop is now in place, and the
-portfolio milestone has a narrow plan. The next durable step is to validate the
-portfolio input model before adding portfolio accounting.
+Reason: the portfolio input model, static-weight engine, artifact persistence,
+and benchmark comparison are now in place. The next durable step is to expose
+that workflow through `quant-lab portfolio-run` and document a copyable example.

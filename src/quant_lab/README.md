@@ -24,6 +24,8 @@ It owns:
   symbols to a shared date calendar.
 - `portfolio_backtest.py`: runs static-weight portfolio simulations with
   next-open rebalance fills.
+- `portfolio_benchmarks.py`: builds buy-and-hold benchmark comparisons over the
+  same aligned portfolio dates.
 - `portfolio_artifacts.py`: writes portfolio metrics, CSV outputs, reports, and
   metadata.
 - `research_index.py`: appends flat JSONL rows to the local research registry.

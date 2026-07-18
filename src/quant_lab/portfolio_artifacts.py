@@ -8,10 +8,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Mapping, Sequence
 
+import pandas as pd
+
 from metrics_reporting import build_equity_curve, build_metrics_summary
 from metrics_reporting.metrics import RunMetrics
 from quant_lab.costs import CostAssumptions
 from quant_lab.portfolio_backtest import PortfolioBacktestResult
+from quant_lab.portfolio_benchmarks import PortfolioBenchmarkComparison
 from quant_lab.portfolio_data import MultiAssetDataSet
 from quant_lab.portfolio_spec import PortfolioSpec
 from quant_lab.run_artifacts import current_git_commit
@@ -56,6 +59,21 @@ class PortfolioEnvironmentMetadata:
 
 
 @dataclass(frozen=True)
+class PortfolioBenchmarkMetadata:
+    symbol: str
+    data_path: str
+    file_sha256: str
+    file_size_bytes: int
+    modified_at_utc: str
+    ending_equity: float
+    total_return: float
+    cagr: float | None
+    sharpe_ratio: float | None
+    max_drawdown: float
+    excess_total_return: float
+
+
+@dataclass(frozen=True)
 class PortfolioMetadata:
     metadata_schema_version: str
     run_type: str
@@ -73,6 +91,7 @@ class PortfolioMetadata:
     symbols: list[PortfolioSymbolMetadata]
     costs: PortfolioCostMetadata
     environment: PortfolioEnvironmentMetadata
+    benchmark: PortfolioBenchmarkMetadata | None = None
     artifacts: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -94,6 +113,7 @@ def save_portfolio_artifacts(
     output_dir: str | Path,
     initial_cash: float,
     cost_assumptions: CostAssumptions,
+    benchmark_comparison: PortfolioBenchmarkComparison | None = None,
     command: Sequence[str] = (),
 ) -> SavedPortfolioArtifacts:
     """Save the first portfolio artifact set and return paths plus metadata."""
@@ -113,12 +133,22 @@ def save_portfolio_artifacts(
             destination / "portfolio_allocation_drift.csv",
         ),
     }
+    if benchmark_comparison is not None:
+        artifact_paths["benchmark_metrics"] = _save_json(
+            destination / "portfolio_benchmark_metrics.json",
+            benchmark_comparison.metrics.to_dict(),
+        )
+        artifact_paths["benchmark_equity_curve"] = _save_benchmark_curve(
+            benchmark_comparison,
+            destination / "portfolio_benchmark_equity_curve.csv",
+        )
     report = build_portfolio_report(
         portfolio=portfolio,
         dataset=dataset,
         metrics=metrics,
         result=result,
         cost_assumptions=cost_assumptions,
+        benchmark_comparison=benchmark_comparison,
     )
     artifact_paths["report"] = _save_text(destination / "portfolio_report.md", report)
     artifact_paths["metadata"] = str(destination / "portfolio_metadata.json")
@@ -127,6 +157,7 @@ def save_portfolio_artifacts(
         dataset=dataset,
         initial_cash=initial_cash,
         cost_assumptions=cost_assumptions,
+        benchmark_comparison=benchmark_comparison,
         artifact_paths=artifact_paths,
         command=command,
     )
@@ -144,6 +175,7 @@ def build_portfolio_metadata(
     dataset: MultiAssetDataSet,
     initial_cash: float,
     cost_assumptions: CostAssumptions,
+    benchmark_comparison: PortfolioBenchmarkComparison | None = None,
     artifact_paths: Mapping[str, str],
     command: Sequence[str] = (),
 ) -> PortfolioMetadata:
@@ -169,6 +201,7 @@ def build_portfolio_metadata(
             slippage_bps=float(cost_assumptions.slippage_bps),
         ),
         environment=PortfolioEnvironmentMetadata(git_commit=current_git_commit()),
+        benchmark=_benchmark_metadata(benchmark_comparison),
         artifacts=dict(artifact_paths),
     )
 
@@ -191,6 +224,7 @@ def build_portfolio_report(
     metrics: RunMetrics,
     result: PortfolioBacktestResult,
     cost_assumptions: CostAssumptions,
+    benchmark_comparison: PortfolioBenchmarkComparison | None = None,
 ) -> str:
     symbols_table = "\n".join(
         "| {symbol} | {weight:.2%} | {rows} | {dropped} | {severity} |".format(
@@ -203,6 +237,7 @@ def build_portfolio_report(
         for symbol in portfolio.symbols
     )
     caveat_lines = "\n".join(f"- {caveat}" for caveat in metrics.caveats) or "- None."
+    benchmark_section = _benchmark_report_section(benchmark_comparison)
 
     return f"""# {portfolio.name}
 
@@ -234,6 +269,8 @@ def build_portfolio_report(
 - Costs: `{cost_assumptions.preset}`, fixed commission {cost_assumptions.commission_fixed:.4f},
   rate {cost_assumptions.commission_rate:.6f}, slippage {cost_assumptions.slippage_bps:.2f} bps.
 - Benchmark input: `{portfolio.benchmark.symbol}` from `{portfolio.benchmark.data}`.
+
+{benchmark_section}
 
 ## Caveats
 
@@ -292,6 +329,42 @@ def _symbol_metadata(
     return metadata
 
 
+def _benchmark_metadata(
+    benchmark: PortfolioBenchmarkComparison | None,
+) -> PortfolioBenchmarkMetadata | None:
+    if benchmark is None:
+        return None
+    return PortfolioBenchmarkMetadata(
+        symbol=benchmark.symbol,
+        data_path=benchmark.data_path,
+        file_sha256=benchmark.file_sha256,
+        file_size_bytes=benchmark.file_size_bytes,
+        modified_at_utc=benchmark.modified_at_utc,
+        ending_equity=benchmark.metrics.ending_equity,
+        total_return=benchmark.metrics.total_return,
+        cagr=benchmark.metrics.cagr,
+        sharpe_ratio=benchmark.metrics.sharpe_ratio,
+        max_drawdown=benchmark.metrics.max_drawdown,
+        excess_total_return=benchmark.excess_total_return,
+    )
+
+
+def _benchmark_report_section(benchmark: PortfolioBenchmarkComparison | None) -> str:
+    if benchmark is None:
+        return "## Benchmark\n\n- Not computed."
+
+    return f"""## Benchmark: Buy And Hold {benchmark.symbol}
+
+| Metric | Value |
+| --- | ---: |
+| Final Equity | {benchmark.metrics.ending_equity:.2f} |
+| Total Return | {benchmark.metrics.total_return:.2%} |
+| CAGR | {_optional_percent(benchmark.metrics.cagr)} |
+| Sharpe Ratio | {_optional_number(benchmark.metrics.sharpe_ratio)} |
+| Max Drawdown | {benchmark.metrics.max_drawdown:.2%} |
+| Excess Total Return | {benchmark.excess_total_return:.2%} |"""
+
+
 def _save_json(path: Path, payload: dict) -> str:
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
@@ -307,6 +380,11 @@ def _save_text(path: Path, content: str) -> str:
 
 def _save_frame(frame, path: Path) -> str:
     frame.to_csv(path)
+    return str(path)
+
+
+def _save_benchmark_curve(benchmark: PortfolioBenchmarkComparison, path: Path) -> str:
+    pd.DataFrame(benchmark.curve).to_csv(path, index=False)
     return str(path)
 
 

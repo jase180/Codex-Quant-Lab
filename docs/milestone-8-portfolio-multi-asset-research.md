@@ -234,7 +234,7 @@ Delivered implementation:
 
 ### 4. Portfolio Benchmark Comparison
 
-Status: not started.
+Status: delivered.
 
 Compare the portfolio equity curve against an explicit benchmark.
 
@@ -244,6 +244,18 @@ Acceptance criteria:
 - Metrics make clear whether the portfolio beat the benchmark after costs.
 - Missing benchmark data fails explicitly instead of silently skipping
   comparison.
+
+Delivered implementation:
+
+- `quant_lab.portfolio_benchmarks` builds buy-and-hold benchmark curves over the
+  same aligned dates used by the portfolio run.
+- Missing benchmark rows fail with an explicit error naming the first missing
+  aligned date.
+- `quant_lab.portfolio_artifacts` can save benchmark metrics, benchmark equity
+  curve, benchmark metadata, and a benchmark report section.
+- `tests/test_portfolio_benchmarks.py` and `tests/test_portfolio_artifacts.py`
+  cover same-date comparison, excess total return, benchmark persistence, and
+  missing-date failures.
 
 ### 5. Example Workflow And Docs
 
