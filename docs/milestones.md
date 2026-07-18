@@ -23,8 +23,12 @@ Working capabilities:
 - Append every run to a local JSONL research index.
 - List previous runs with `quant-lab list-runs`.
 - Inspect one saved run with `quant-lab show-run`.
+- Verify that a saved run still matches its local input CSV with
+  `quant-lab verify-run`.
 - Compare saved runs with `quant-lab compare-runs`.
 - Filter and export the run index with `list-runs` options.
+- Track experiments, summarize linked evidence, draft decisions, and record
+  structured research decisions.
 
 ## Milestone 1: Reproducible Backtesting Foundation
 
@@ -128,13 +132,13 @@ Exit criteria:
 
 ## Milestone 6: Research Trustworthiness
 
-Status: planned.
+Status: complete.
 
 Goal: make research conclusions harder to fool yourself with.
 
 Detailed plan: [milestone-6-research-trustworthiness.md](milestone-6-research-trustworthiness.md)
 
-Likely work:
+Delivered:
 
 - Dataset fingerprints in run metadata.
 - Stronger data provenance in fetch/cache outputs.
@@ -167,8 +171,9 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 6 with dataset fingerprints.
+Do a CLI organization pass before starting Milestone 7.
 
-Reason: the lab now records experiments and decisions well enough that the next
-major risk is trusting a conclusion whose input data silently changed or was
-never described clearly enough.
+Reason: the lab is now useful enough that the CLI module is carrying many
+responsibilities. A small refactor into command-focused modules will make
+portfolio and multi-asset work easier to add without turning `cli.py` into a
+catch-all file.
