@@ -202,9 +202,10 @@ quant-lab summarize-portfolio-experiment \
 ```
 
 The summary ranks linked `portfolio_run` rows by excess return, total return,
-Sharpe ratio, and drawdown. It also calls out benchmark underperformers and
-large drawdowns so the evidence stays skeptical instead of becoming a single
-magic score.
+Sharpe ratio, and drawdown. It also adds a conservative evidence label such as
+`weak`, `mixed`, `promising`, or `rejected`, with reasons based on benchmark
+excess return, drawdown, data-trust report presence, and whether you tested too
+few or too many allocation variants.
 
 ## 9. Use A Guided Portfolio Plan
 

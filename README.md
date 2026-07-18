@@ -518,6 +518,10 @@ quant-lab summarize-portfolio-experiment \
   --out artifacts/research/qqq_spy_static_60_40/portfolio_summary.md
 ```
 
+The portfolio summary includes a conservative evidence label and skeptical
+notes for benchmark underperformance, large drawdowns, data-trust report
+presence, marginal excess return, and allocation variant count.
+
 ### List Previous Runs
 
 ```bash

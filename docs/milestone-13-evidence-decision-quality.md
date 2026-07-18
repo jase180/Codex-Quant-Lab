@@ -130,7 +130,7 @@ Delivered behavior:
 
 ### 4. Portfolio Evidence Interpretation
 
-Status: planned.
+Status: delivered.
 
 Apply the same interpretive vocabulary to portfolio experiment summaries.
 
@@ -142,6 +142,16 @@ Acceptance criteria:
 - Summaries call out when allocation variants are too few or too many.
 - Summaries call out when the best allocation is only marginally better than the
   benchmark.
+
+Delivered behavior:
+
+- `summarize-portfolio-experiment` now includes a conservative portfolio
+  evidence label and readable reasons.
+- Labels consider benchmark excess return, drawdown, linked run count, marginal
+  excess return, and whether a portfolio data trust report exists beside linked
+  metadata.
+- Skeptical notes call out allocation variant count, marginal best allocation
+  edges, data-trust presence, benchmark underperformers, and large drawdowns.
 
 ### 5. Guided Workflow Integration
 
