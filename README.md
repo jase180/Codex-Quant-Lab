@@ -216,6 +216,19 @@ quant-lab show-data-source \
 This prints row count, actual date range, file fingerprint, provider, requested
 range, fetched timestamp, and warnings such as missing provenance.
 
+### Summarize Run Data Trust
+
+After a run exists, write a Markdown trust report from its metadata:
+
+```bash
+quant-lab summarize-run-trust \
+  --metadata artifacts/research/qqq_sma_trust/baseline/run_metadata.json
+```
+
+The report verifies whether the current local CSV still matches the saved
+fingerprint, includes source/provenance details, and summarizes data-quality
+findings.
+
 ### Start A Guided Research Plan
 
 Use `research-plan init` when you have a hypothesis and want the lab to create a

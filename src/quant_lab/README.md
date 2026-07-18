@@ -38,6 +38,7 @@ It owns:
 - `portfolio_batch.py`: writes dry-run manifests for batches of portfolio specs.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
+- `run_trust.py`: writes Markdown data-trust reports for saved strategy runs.
 - `sweep_guardrails.py`: reads sweep `summary.csv` files and writes skeptical
   markdown guardrail reports.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,
@@ -114,6 +115,12 @@ Inspect one cached CSV and its provenance sidecar:
 
 ```bash
 quant-lab show-data-source --data data/cache/QQQ_2015-01-01_2025-12-31.csv
+```
+
+Write a trust report for a saved strategy run:
+
+```bash
+quant-lab summarize-run-trust --metadata artifacts/research/qqq_sma/baseline/run_metadata.json
 ```
 
 Run one strategy:

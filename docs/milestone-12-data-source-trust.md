@@ -82,7 +82,7 @@ Acceptance criteria:
 
 ### 2. Single-Run Trust Report
 
-Status: planned.
+Status: delivered.
 
 Add a command that turns existing run metadata into a short Markdown trust
 report.

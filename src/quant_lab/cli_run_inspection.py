@@ -12,6 +12,7 @@ from .run_inspection import (
     load_run_summary,
     verify_run_input_file,
 )
+from .run_trust import summarize_run_trust
 from .portfolio_inspection import (
     format_portfolio_run_comparison,
     format_portfolio_run_summary,
@@ -41,6 +42,14 @@ def compare_portfolio_runs_command(args: argparse.Namespace) -> int:
 def verify_run_command(args: argparse.Namespace) -> int:
     verification = verify_run_input_file(args.metadata)
     print(format_run_verification(verification))
+    return 0
+
+
+def summarize_run_trust_command(args: argparse.Namespace) -> int:
+    report = summarize_run_trust(args.metadata, output_path=args.out)
+    print(f"Run trust report written: {report.report_path}")
+    print(f"verification_result: {report.result}")
+    print(f"worst_warning: {report.worst_warning}")
     return 0
 
 

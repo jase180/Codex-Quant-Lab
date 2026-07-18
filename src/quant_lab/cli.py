@@ -30,6 +30,7 @@ from .cli_run_inspection import (
     compare_runs_command,
     show_portfolio_run_command,
     show_run_command,
+    summarize_run_trust_command,
     verify_run_command,
 )
 from .cli_portfolio import (
@@ -463,6 +464,18 @@ def register_run_inspection_commands(subparsers) -> None:
     )
     verify_parser.add_argument("--metadata", required=True, help="Path to a run_metadata.json file.")
     verify_parser.set_defaults(func=verify_run_command)
+
+    run_trust_parser = subparsers.add_parser(
+        "summarize-run-trust",
+        help="Write a Markdown data trust report for one saved run.",
+    )
+    run_trust_parser.add_argument("--metadata", required=True, help="Path to a run_metadata.json file.")
+    run_trust_parser.add_argument(
+        "--out",
+        default=None,
+        help="Optional output path. Defaults to run_trust_report.md beside the metadata file.",
+    )
+    run_trust_parser.set_defaults(func=summarize_run_trust_command)
 
     compare_parser = subparsers.add_parser(
         "compare-runs",
