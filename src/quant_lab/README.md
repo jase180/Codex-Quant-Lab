@@ -22,6 +22,8 @@ It owns:
   allocation JSON.
 - `portfolio_data.py`: loads portfolio CSV inputs, fingerprints them, and aligns
   symbols to a shared date calendar.
+- `portfolio_backtest.py`: runs static-weight portfolio simulations with
+  next-open rebalance fills.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `cli.py`: implements `quant-lab fetch`, `quant-lab run`, `quant-lab sweep`,

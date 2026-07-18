@@ -168,7 +168,7 @@ Delivered implementation:
 
 ### 2. Static-Weight Portfolio Backtest
 
-Status: not started.
+Status: delivered.
 
 Build the first portfolio engine around static target weights and periodic
 rebalancing.
@@ -180,6 +180,19 @@ Acceptance criteria:
 - Equity is valued at close on aligned dates.
 - Cash, per-symbol holdings, portfolio value, and allocation drift are recorded.
 - Tests cover fills, valuation, costs, and final-bar order behavior.
+
+Delivered implementation:
+
+- `quant_lab.portfolio_backtest` runs static-weight portfolio simulations.
+- Rebalance orders are generated from close-price allocation drift and filled at
+  the next aligned open.
+- Monthly, quarterly, and annual rebalances trigger on the first available
+  aligned session in that period.
+- Sells execute before buys so rebalance proceeds can fund new allocations.
+- The result includes an equity curve, positions, trades, allocation drift,
+  final cash, final equity, and total return.
+- `tests/test_portfolio_backtest.py` covers next-open fills, no-rebalance
+  behavior, final-bar signals, transaction costs, and symbol validation.
 
 ### 3. Portfolio Artifacts And Metadata
 
