@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+Completed.
 
 ## Goal
 
@@ -299,3 +299,18 @@ Milestone 14 is done when a user can take a promising strategy or portfolio
 idea, run a small set of cost/date/benchmark/parameter checks, and read a local
 report that clearly says where the idea survived, where it failed, and what
 should be tested next.
+
+## Closeout
+
+Milestone 14 is complete. Strategy robustness now has first-class commands for
+cost presets, explicit date windows, benchmark substitution, and sweep
+parameter neighborhoods. Portfolio workflows now surface whether linked runs
+show cost and benchmark robustness evidence. Guided strategy and portfolio
+plans recommend these checks before decision steps, while keeping the language
+skeptical and local to the tested artifacts.
+
+Remaining caveat: portfolio robustness is still mostly a guided workflow over
+existing `portfolio-run` and portfolio-spec variants, not a single automated
+portfolio robustness runner. That is intentional for this milestone; a later
+portfolio-realism milestone can add deeper automation if the data model proves
+stable.

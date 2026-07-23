@@ -48,7 +48,7 @@ docs/
   milestone-11-research-automation-guardrails.md  Completed automation guardrails.
   milestone-12-data-source-trust.md  Completed data/source trust workflow.
   milestone-13-evidence-decision-quality.md  Completed evidence interpretation.
-  milestone-14-backtest-realism-robustness.md  Planned robustness checks.
+  milestone-14-backtest-realism-robustness.md  Completed robustness checks.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
   roadmap-to-ready.md         Long-range roadmap to a more mature lab.
@@ -951,6 +951,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Close Milestone 14 with final docs and any cleanup after robustness workflow integration.
-2. Start the next readiness milestone around session/run manifests and easier end-to-end replay.
+1. Start Milestone 15 around session/run manifests and easier end-to-end replay.
+2. Turn saved artifacts into clearer saved knowledge: current conclusion, contradiction, and next useful test.
 3. Keep tightening examples so a junior researcher can follow baseline, validation, robustness, and decision steps.

@@ -97,7 +97,7 @@ Why this follows data trust:
 
 ### Milestone 14: Backtest Realism And Robustness
 
-Status: proposed.
+Status: completed.
 
 Purpose: challenge promising ideas with controlled perturbations before calling
 them sturdy.
@@ -300,10 +300,11 @@ a proof of concept. It is a small, honest, local research environment.
 
 ## Recommended Build Sequence
 
-1. Build Milestone 14.
-2. Do a short refactor/maintenance pass if robustness code creates repeated
-   artifact plumbing.
-3. Build Milestone 15.
+1. Build Milestone 15.
+2. Focus the first slice on session/run manifests and one obvious current
+   conclusion artifact for an experiment.
+3. Use the new robustness outputs as inputs to that knowledge layer instead of
+   adding more disconnected reports.
 4. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
 5. Build Milestones 16 and 17.
 6. Polish setup, examples, and maintenance through Milestones 18 through 20.

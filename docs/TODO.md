@@ -1,9 +1,10 @@
 MOST IMPORTANT:
-make codex generate next strategy based on previous findings and come up with ihdeas... 
-right nwo they're saved but not really useful
+Make Codex generate the next strategy or research idea from previous findings.
+Right now findings are saved, but they are not useful enough as reusable
+knowledge.
 
-Docs folder README .
-  backfikll early milestones
+Docs folder README.
+  backfill early milestones
   cleanup
 
 .env.example
@@ -14,8 +15,8 @@ local setup
 
 requirements.txt
 
-so it just generates too much noise? with all the different artifacts
-too many artifacts competing to explain the same experiment, without one obvious final conclusion.
+Does it generate too much noise with all the different artifacts?
+Too many artifacts compete to explain the same experiment, without one obvious final conclusion.
 
 Weakness 1: Integration may be procedural rather than informational
 
@@ -24,7 +25,7 @@ Weakness 2: The workflow may be clearer to the program than to you
 
 
 
-Below is what its right now and where it needs to go
+Below is what it is right now and where it needs to go.
 
 The key distinction: saved data versus saved knowledge
 

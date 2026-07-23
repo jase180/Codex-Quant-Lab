@@ -325,7 +325,7 @@ Planned work:
 
 ## Milestone 14: Backtest Realism And Robustness
 
-Status: proposed.
+Status: completed.
 
 Goal: challenge promising ideas with controlled perturbations before calling
 them sturdy.
@@ -333,7 +333,7 @@ them sturdy.
 Detailed plan:
 [milestone-14-backtest-realism-robustness.md](milestone-14-backtest-realism-robustness.md)
 
-Planned work:
+Delivered work:
 
 - Strategy cost sensitivity.
 - Strategy date-range sensitivity.
@@ -446,12 +446,12 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 14 with strategy cost sensitivity.
+Start Milestone 15 with reproducible research sessions.
 
-Reason: Milestone 13 made interpretation more honest. The next highest-risk gap
-is robustness: a promising result needs to survive stricter costs and controlled
-reruns before it deserves more confidence.
+Reason: Milestone 14 added robustness checks, but the project now has many
+artifacts. The next highest-risk gap is turning saved artifacts into one
+restartable session and one obvious current conclusion.
 
-From here, follow the readiness roadmap: improve robustness, session
-reproducibility, strategy expressiveness, portfolio realism, CLI polish, example
-workflows, and maintenance hardening.
+From here, follow the readiness roadmap: improve session reproducibility,
+strategy expressiveness, portfolio realism, CLI polish, example workflows, and
+maintenance hardening.
