@@ -257,6 +257,12 @@ def recommend_portfolio_next_step(
             reason="Multiple portfolio runs exist; write a portfolio-specific evidence summary.",
             command=build_portfolio_summarize_command_from_plan(plan),
         )
+    if not _portfolio_robustness_visible(portfolio_records):
+        return PortfolioPlanRecommendation(
+            step="portfolio_robustness_review",
+            reason="Portfolio evidence exists, but linked runs do not yet show both cost and benchmark robustness.",
+            command=build_portfolio_cost_robustness_command_from_plan(plan, portfolio_records),
+        )
     if not variants_exist:
         return PortfolioPlanRecommendation(
             step="variants",
@@ -341,6 +347,34 @@ def build_portfolio_summarize_command_from_plan(plan: PortfolioResearchPlan) -> 
             _display_path(Path(plan.output_dir) / "portfolio_summary.md"),
         ]
     )
+
+
+def build_portfolio_cost_robustness_command_from_plan(
+    plan: PortfolioResearchPlan,
+    portfolio_records: list[dict],
+) -> str | None:
+    if len(_non_empty_values(portfolio_records, "cost_preset")) > 1:
+        return None
+    stricter_preset = "retail-conservative" if plan.cost_preset != "retail-conservative" else "high-friction"
+    command = [
+        "quant-lab",
+        "portfolio-run",
+        "--portfolio",
+        plan.portfolio_path,
+        "--out",
+        _display_path(Path(plan.output_dir) / "robustness" / "costs" / stricter_preset),
+        "--initial-cash",
+        str(plan.initial_cash),
+        "--cost-preset",
+        stricter_preset,
+        "--experiments-path",
+        plan.experiments_path,
+        "--experiment-id",
+        plan.experiment_id,
+        "--index-path",
+        plan.index_path,
+    ]
+    return shlex.join(command)
 
 
 def build_portfolio_variants_command_from_plan(plan: PortfolioResearchPlan) -> str:
@@ -444,3 +478,14 @@ def _display_path(path: str | Path) -> str:
     if Path(path).is_absolute():
         return path_string
     return path_string.replace("\\", "/")
+
+
+def _portfolio_robustness_visible(records: list[dict]) -> bool:
+    return (
+        len(_non_empty_values(records, "cost_preset")) > 1
+        and len(_non_empty_values(records, "benchmark_name")) > 1
+    )
+
+
+def _non_empty_values(records: list[dict], field: str) -> set[str]:
+    return {str(record.get(field)) for record in records if str(record.get(field) or "").strip()}

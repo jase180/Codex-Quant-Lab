@@ -86,6 +86,7 @@ def research_plan_next_command(args: argparse.Namespace) -> int:
         experiment_has_decision=experiment_has_decision(experiment),
         run_trust_report_exists=_run_trust_report_exists(records),
         evidence_summary_exists=_evidence_summary_exists(plan.output_dir),
+        parameter_neighborhood_exists=_parameter_neighborhood_exists(plan.output_dir),
     )
 
     print(f"Research plan: {args.plan}")
@@ -105,6 +106,7 @@ def recommend_next_step(
     experiment_has_decision: bool = False,
     run_trust_report_exists: bool = False,
     evidence_summary_exists: bool = False,
+    parameter_neighborhood_exists: bool = False,
 ) -> ResearchPlanRecommendation:
     if experiment_has_decision:
         return ResearchPlanRecommendation(
@@ -145,9 +147,33 @@ def recommend_next_step(
             reason="Validation evidence exists; write the evidence summary before drafting a decision.",
             command=build_summarize_command_from_plan(plan),
         )
+    if "cost_sensitivity_run" not in run_types:
+        return ResearchPlanRecommendation(
+            step="robustness_cost_sensitivity",
+            reason="The evidence summary exists; stress costs before drafting a decision.",
+            command=build_cost_sensitivity_command_from_plan(plan),
+        )
+    if "date_sensitivity_run" not in run_types:
+        return ResearchPlanRecommendation(
+            step="robustness_date_sensitivity",
+            reason="Cost sensitivity exists; test explicit date windows before drafting a decision.",
+            command=build_date_sensitivity_command_from_plan(plan),
+        )
+    if "benchmark_sensitivity_run" not in run_types:
+        return ResearchPlanRecommendation(
+            step="robustness_benchmark_sensitivity",
+            reason="Date sensitivity exists; check benchmark substitution before drafting a decision.",
+            command=build_benchmark_sensitivity_command_from_plan(plan),
+        )
+    if _sweep_summary_exists(plan.output_dir) and not parameter_neighborhood_exists:
+        return ResearchPlanRecommendation(
+            step="robustness_parameter_neighborhood",
+            reason="Benchmark sensitivity exists; summarize whether nearby sweep parameters also beat the benchmark.",
+            command=build_parameter_neighborhood_command_from_plan(plan),
+        )
     return ResearchPlanRecommendation(
         step="draft_decision",
-        reason="The evidence summary exists; draft a conservative decision before writing it to the registry.",
+        reason="Evidence and robustness checks exist; draft a conservative decision before writing it to the registry.",
         command=build_draft_decision_command_from_plan(plan),
     )
 
@@ -165,6 +191,14 @@ def _run_trust_report_exists(index_records: list[dict]) -> bool:
 
 def _evidence_summary_exists(output_dir: str) -> bool:
     return (Path(output_dir) / "evidence_summary.md").exists()
+
+
+def _parameter_neighborhood_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "robustness" / "parameters" / "parameter_neighborhood_report.md").exists()
+
+
+def _sweep_summary_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "sweep_001" / "summary.csv").exists()
 
 
 def build_baseline_run_command(args: argparse.Namespace, experiment_id: str) -> str:
@@ -343,6 +377,128 @@ def build_draft_decision_command_from_plan(plan: ResearchPlan) -> str:
     )
 
 
+def build_cost_sensitivity_command_from_plan(plan: ResearchPlan) -> str:
+    presets = _ordered_unique([plan.cost_preset, "retail-conservative", "high-friction"])
+    command = [
+        "quant-lab",
+        "robustness",
+        "cost-sensitivity",
+        "--strategy",
+        plan.strategy_path,
+        "--data",
+        plan.data_path,
+        "--out",
+        _display_path(Path(plan.output_dir) / "robustness" / "costs"),
+        "--initial-cash",
+        str(plan.initial_cash),
+        "--quantity",
+        str(plan.quantity),
+        "--sizing",
+        plan.sizing,
+        "--allocation",
+        str(plan.allocation),
+        "--benchmark",
+        plan.benchmark,
+        "--experiments-path",
+        plan.experiments_path,
+        "--experiment-id",
+        plan.experiment_id,
+        "--index-path",
+        plan.index_path,
+    ]
+    for preset in presets:
+        command.extend(["--cost-preset", preset])
+    return shlex.join(command)
+
+
+def build_date_sensitivity_command_from_plan(plan: ResearchPlan) -> str:
+    command = [
+        "quant-lab",
+        "robustness",
+        "date-sensitivity",
+        "--strategy",
+        plan.strategy_path,
+        "--data",
+        plan.data_path,
+        "--out",
+        _display_path(Path(plan.output_dir) / "robustness" / "dates"),
+        "--initial-cash",
+        str(plan.initial_cash),
+        "--quantity",
+        str(plan.quantity),
+        "--sizing",
+        plan.sizing,
+        "--allocation",
+        str(plan.allocation),
+        "--cost-preset",
+        plan.cost_preset,
+        "--benchmark",
+        plan.benchmark,
+        "--window",
+        "START_DATE,END_DATE",
+        "--window",
+        "START_DATE,END_DATE",
+        "--experiments-path",
+        plan.experiments_path,
+        "--experiment-id",
+        plan.experiment_id,
+        "--index-path",
+        plan.index_path,
+    ]
+    add_optional_cost_overrides(command, plan.commission_fixed, plan.commission_rate, plan.slippage_bps)
+    return shlex.join(command)
+
+
+def build_benchmark_sensitivity_command_from_plan(plan: ResearchPlan) -> str:
+    command = [
+        "quant-lab",
+        "robustness",
+        "benchmark-sensitivity",
+        "--strategy",
+        plan.strategy_path,
+        "--data",
+        plan.data_path,
+        "--out",
+        _display_path(Path(plan.output_dir) / "robustness" / "benchmarks"),
+        "--initial-cash",
+        str(plan.initial_cash),
+        "--quantity",
+        str(plan.quantity),
+        "--sizing",
+        plan.sizing,
+        "--allocation",
+        str(plan.allocation),
+        "--cost-preset",
+        plan.cost_preset,
+        "--benchmark",
+        "cash",
+        "--benchmark",
+        "buy-and-hold",
+        "--experiments-path",
+        plan.experiments_path,
+        "--experiment-id",
+        plan.experiment_id,
+        "--index-path",
+        plan.index_path,
+    ]
+    add_optional_cost_overrides(command, plan.commission_fixed, plan.commission_rate, plan.slippage_bps)
+    return shlex.join(command)
+
+
+def build_parameter_neighborhood_command_from_plan(plan: ResearchPlan) -> str:
+    return shlex.join(
+        [
+            "quant-lab",
+            "robustness",
+            "parameter-neighborhood",
+            "--summary",
+            _display_path(Path(plan.output_dir) / "sweep_001" / "summary.csv"),
+            "--out",
+            _display_path(Path(plan.output_dir) / "robustness" / "parameters"),
+        ]
+    )
+
+
 def build_run_trust_command(metadata_path: str) -> str:
     return shlex.join(["quant-lab", "summarize-run-trust", "--metadata", metadata_path])
 
@@ -362,3 +518,14 @@ def _display_path(path: str | Path) -> str:
     if Path(path).is_absolute():
         return path_string
     return path_string.replace("\\", "/")
+
+
+def _ordered_unique(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        unique.append(value)
+    return unique

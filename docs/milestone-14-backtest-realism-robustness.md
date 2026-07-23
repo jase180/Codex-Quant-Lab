@@ -244,7 +244,7 @@ Delivered behavior:
 
 ### 6. Guided Workflow Integration
 
-Status: planned.
+Status: delivered for strategy and portfolio guided plans.
 
 Teach guided plans when to suggest robustness checks.
 
@@ -255,6 +255,21 @@ Acceptance criteria:
 - `portfolio-plan next` recommends robustness review before compare/decision
   when portfolio evidence exists.
 - Recommendations remain conservative and do not automatically promote results.
+
+Delivered behavior:
+
+- `research-plan next` now inserts strategy robustness recommendations after
+  evidence summary and before decision drafting.
+- Strategy guided plans recommend cost sensitivity, date sensitivity, benchmark
+  sensitivity, and parameter-neighborhood reporting when the relevant evidence
+  is missing.
+- `portfolio-plan next` now pauses after portfolio summaries when linked runs do
+  not show both cost-preset diversity and benchmark diversity.
+- Portfolio guided plans print a stricter-cost `portfolio-run` command when cost
+  robustness is missing, while leaving benchmark substitution as an explicit
+  portfolio-spec review step.
+- Guided recommendations remain conservative and never convert robustness into
+  an automatic accept/reject decision.
 
 ## Build Order
 

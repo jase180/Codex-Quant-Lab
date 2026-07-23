@@ -114,31 +114,55 @@ class PortfolioResearchPlanTests(unittest.TestCase):
             ],
             data_trust_report_exists=True,
         )
-        variants = recommend_portfolio_next_step(
+        robust_records = [
+            {
+                "run_type": "portfolio_run",
+                "metadata_path": "baseline/portfolio_metadata.json",
+                "cost_preset": "retail-liquid",
+                "benchmark_name": "buy-and-hold-spy",
+            },
+            {
+                "run_type": "portfolio_run",
+                "metadata_path": "variant/portfolio_metadata.json",
+                "cost_preset": "high-friction",
+                "benchmark_name": "buy-and-hold-qqq",
+            },
+        ]
+        robustness_review = recommend_portfolio_next_step(
             plan,
             [
-                {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
-                {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
+                {
+                    "run_type": "portfolio_run",
+                    "metadata_path": "baseline/portfolio_metadata.json",
+                    "cost_preset": "retail-liquid",
+                    "benchmark_name": "buy-and-hold-spy",
+                },
+                {
+                    "run_type": "portfolio_run",
+                    "metadata_path": "variant/portfolio_metadata.json",
+                    "cost_preset": "retail-liquid",
+                    "benchmark_name": "buy-and-hold-spy",
+                },
             ],
+            summary_exists=True,
+            data_trust_report_exists=True,
+        )
+        variants = recommend_portfolio_next_step(
+            plan,
+            robust_records,
             summary_exists=True,
             data_trust_report_exists=True,
         )
         compare = recommend_portfolio_next_step(
             plan,
-            [
-                {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
-                {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
-            ],
+            robust_records,
             summary_exists=True,
             variants_exist=True,
             data_trust_report_exists=True,
         )
         batch_plan = recommend_portfolio_next_step(
             plan,
-            [
-                {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
-                {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
-            ],
+            robust_records,
             summary_exists=True,
             variants_exist=True,
             candidate_specs_exist=True,
@@ -146,10 +170,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
         )
         batch_run = recommend_portfolio_next_step(
             plan,
-            [
-                {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
-                {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
-            ],
+            robust_records,
             summary_exists=True,
             variants_exist=True,
             candidate_specs_exist=True,
@@ -158,10 +179,7 @@ class PortfolioResearchPlanTests(unittest.TestCase):
         )
         batch_summarize = recommend_portfolio_next_step(
             plan,
-            [
-                {"run_type": "portfolio_run", "metadata_path": "baseline/portfolio_metadata.json"},
-                {"run_type": "portfolio_run", "metadata_path": "variant/portfolio_metadata.json"},
-            ],
+            robust_records,
             summary_exists=True,
             variants_exist=True,
             candidate_specs_exist=True,
@@ -179,6 +197,8 @@ class PortfolioResearchPlanTests(unittest.TestCase):
         self.assertIn("summarize-portfolio-data-trust", data_trust.command or "")
         self.assertEqual(summarize.step, "summarize")
         self.assertIn("summarize-portfolio-experiment", summarize.command or "")
+        self.assertEqual(robustness_review.step, "portfolio_robustness_review")
+        self.assertIn("portfolio-run", robustness_review.command or "")
         self.assertEqual(variants.step, "variants")
         self.assertIn("portfolio-variants", variants.command or "")
         self.assertEqual(compare.step, "compare")

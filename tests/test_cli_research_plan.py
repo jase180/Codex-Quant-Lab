@@ -254,7 +254,7 @@ class CliResearchPlanTests(unittest.TestCase):
             self.assertIn("--out", output)
             self.assertIn(str(output_dir / "evidence_summary.md"), output)
 
-    def test_research_plan_next_recommends_draft_decision_after_summary_exists(self) -> None:
+    def test_research_plan_next_recommends_cost_sensitivity_after_summary_exists(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
             (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
@@ -265,8 +265,88 @@ class CliResearchPlanTests(unittest.TestCase):
 
             output = stdout.getvalue()
             self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: robustness_cost_sensitivity", output)
+            self.assertIn("quant-lab robustness cost-sensitivity", output)
+            self.assertIn(str(output_dir / "robustness" / "costs"), output)
+
+    def test_research_plan_next_recommends_date_sensitivity_after_cost_sensitivity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
+            self._write_index_records(
+                index_path,
+                [
+                    {"run_type": "run", "experiment_id": "EXP-001"},
+                    {"run_type": "sweep_run", "experiment_id": "EXP-001"},
+                    {"run_type": "test_selected_run", "experiment_id": "EXP-001"},
+                    {"run_type": "cost_sensitivity_run", "experiment_id": "EXP-001"},
+                ],
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: robustness_date_sensitivity", output)
+            self.assertIn("quant-lab robustness date-sensitivity", output)
+            self.assertIn("--window START_DATE,END_DATE", output)
+
+    def test_research_plan_next_recommends_benchmark_sensitivity_after_date_sensitivity(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
+            self._write_index_records(
+                index_path,
+                [
+                    {"run_type": "run", "experiment_id": "EXP-001"},
+                    {"run_type": "sweep_run", "experiment_id": "EXP-001"},
+                    {"run_type": "test_selected_run", "experiment_id": "EXP-001"},
+                    {"run_type": "cost_sensitivity_run", "experiment_id": "EXP-001"},
+                    {"run_type": "date_sensitivity_run", "experiment_id": "EXP-001"},
+                ],
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: robustness_benchmark_sensitivity", output)
+            self.assertIn("quant-lab robustness benchmark-sensitivity", output)
+            self.assertIn("--benchmark cash", output)
+            self.assertIn("--benchmark buy-and-hold", output)
+
+    def test_research_plan_next_recommends_parameter_neighborhood_when_sweep_summary_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
+            (output_dir / "sweep_001").mkdir()
+            (output_dir / "sweep_001" / "summary.csv").write_text("placeholder\n", encoding="utf-8")
+            self._write_robustness_index_records(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: robustness_parameter_neighborhood", output)
+            self.assertIn("quant-lab robustness parameter-neighborhood", output)
+            self.assertIn(str(output_dir / "sweep_001" / "summary.csv"), output)
+
+    def test_research_plan_next_recommends_draft_decision_after_robustness_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
+            self._write_robustness_index_records(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
             self.assertIn("recommended_step: draft_decision", output)
-            self.assertIn("draft a conservative decision", output)
+            self.assertIn("Evidence and robustness checks exist", output)
             self.assertIn("quant-lab draft-decision", output)
             self.assertIn("--experiment-id EXP-001", output)
 
@@ -369,6 +449,19 @@ class CliResearchPlanTests(unittest.TestCase):
                 {"run_type": "run", "experiment_id": "EXP-001"},
                 {"run_type": "sweep_run", "experiment_id": "EXP-001"},
                 {"run_type": "test_selected_run", "experiment_id": "EXP-001"},
+            ],
+        )
+
+    def _write_robustness_index_records(self, index_path: Path) -> None:
+        self._write_index_records(
+            index_path,
+            [
+                {"run_type": "run", "experiment_id": "EXP-001"},
+                {"run_type": "sweep_run", "experiment_id": "EXP-001"},
+                {"run_type": "test_selected_run", "experiment_id": "EXP-001"},
+                {"run_type": "cost_sensitivity_run", "experiment_id": "EXP-001"},
+                {"run_type": "date_sensitivity_run", "experiment_id": "EXP-001"},
+                {"run_type": "benchmark_sensitivity_run", "experiment_id": "EXP-001"},
             ],
         )
 

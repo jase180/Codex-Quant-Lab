@@ -156,11 +156,35 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
             self.assertIn("--out", output)
             self.assertIn(str(output_dir / "portfolio_summary.md"), output)
 
-    def test_portfolio_plan_next_recommends_variants_after_summary(self) -> None:
+    def test_portfolio_plan_next_recommends_robustness_review_after_summary(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
             (output_dir / "portfolio_summary.md").write_text("# Summary\n", encoding="utf-8")
             self._write_two_portfolio_run_records(index_path, output_dir, trust_report_exists=True)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    ["portfolio-plan", "next", "--plan", str(output_dir / "portfolio_research_plan.json")]
+                )
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: portfolio_robustness_review", output)
+            self.assertIn("linked runs do not yet show both cost and benchmark robustness", output)
+            self.assertIn("quant-lab portfolio-run", output)
+            self.assertIn("--cost-preset retail-conservative", output)
+
+    def test_portfolio_plan_next_recommends_variants_after_robustness_is_visible(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "portfolio_summary.md").write_text("# Summary\n", encoding="utf-8")
+            self._write_two_portfolio_run_records(
+                index_path,
+                output_dir,
+                trust_report_exists=True,
+                second_cost_preset="high-friction",
+                second_benchmark_name="buy-and-hold-qqq",
+            )
 
             with contextlib.redirect_stdout(io.StringIO()) as stdout:
                 exit_code = main(
@@ -266,7 +290,13 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
     def _create_plan_ready_for_batch(self, temp_path: Path) -> tuple[Path, Path, Path]:
         output_dir, experiments_path, index_path = self._create_plan_fixture(temp_path)
         (output_dir / "portfolio_summary.md").write_text("# Summary\n", encoding="utf-8")
-        self._write_two_portfolio_run_records(index_path, output_dir, trust_report_exists=True)
+        self._write_two_portfolio_run_records(
+            index_path,
+            output_dir,
+            trust_report_exists=True,
+            second_cost_preset="high-friction",
+            second_benchmark_name="buy-and-hold-qqq",
+        )
         return output_dir, experiments_path, index_path
 
     def _write_two_portfolio_run_records(
@@ -275,6 +305,8 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
         output_dir: Path,
         *,
         trust_report_exists: bool,
+        second_cost_preset: str = "retail-liquid",
+        second_benchmark_name: str = "buy-and-hold-spy",
     ) -> None:
         baseline_metadata = output_dir / "baseline" / "portfolio_metadata.json"
         variant_metadata = output_dir / "variant" / "portfolio_metadata.json"
@@ -291,11 +323,15 @@ class CliPortfolioResearchPlanTests(unittest.TestCase):
                     "run_type": "portfolio_run",
                     "experiment_id": "EXP-001",
                     "metadata_path": str(baseline_metadata),
+                    "cost_preset": "retail-liquid",
+                    "benchmark_name": "buy-and-hold-spy",
                 },
                 {
                     "run_type": "portfolio_run",
                     "experiment_id": "EXP-001",
                     "metadata_path": str(variant_metadata),
+                    "cost_preset": second_cost_preset,
+                    "benchmark_name": second_benchmark_name,
                 },
             ],
         )

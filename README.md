@@ -951,6 +951,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Start Milestone 14 with strategy cost sensitivity.
-2. Add date-range and benchmark sensitivity checks.
-3. Feed robustness artifacts back into evidence summaries and guided plans.
+1. Close Milestone 14 with final docs and any cleanup after robustness workflow integration.
+2. Start the next readiness milestone around session/run manifests and easier end-to-end replay.
+3. Keep tightening examples so a junior researcher can follow baseline, validation, robustness, and decision steps.
