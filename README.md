@@ -120,6 +120,7 @@ docs/
   milestone-13-evidence-decision-quality.md  Completed evidence interpretation.
   milestone-14-backtest-realism-robustness.md  Completed robustness checks.
   milestone-15-default-workflow-canonical-conclusion.md  Planned default workflow.
+  core-backtest-assumption-audit.md  Current simulation assumption audit.
   experiment-conclusion-schema.md  Planned conclusion JSON and Markdown shape.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
@@ -150,6 +151,7 @@ More detailed module notes:
 - [docs/milestone-13-evidence-decision-quality.md](docs/milestone-13-evidence-decision-quality.md)
 - [docs/milestone-14-backtest-realism-robustness.md](docs/milestone-14-backtest-realism-robustness.md)
 - [docs/milestone-15-default-workflow-canonical-conclusion.md](docs/milestone-15-default-workflow-canonical-conclusion.md)
+- [docs/core-backtest-assumption-audit.md](docs/core-backtest-assumption-audit.md)
 - [docs/experiment-conclusion-schema.md](docs/experiment-conclusion-schema.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/portfolio-workflow.md](docs/portfolio-workflow.md)

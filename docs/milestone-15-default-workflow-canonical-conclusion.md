@@ -211,7 +211,8 @@ Acceptance criteria:
 
 ### 5. Core Backtest Audit
 
-Status: planned.
+Status: assumption audit documented; future realism changes still require
+tests before behavior changes.
 
 Before simplifying the user-facing workflow too far, audit the core simulation
 assumptions that conclusions depend on.
@@ -234,6 +235,9 @@ Acceptance criteria:
 - Identify which assumptions are acceptable for the small lab and which should
   become future milestones.
 - Do not hide uncertainty; name it in the default workflow.
+
+Audit doc:
+[core-backtest-assumption-audit.md](core-backtest-assumption-audit.md)
 
 ### 6. One Complete Real Experiment
 
@@ -292,7 +296,8 @@ Acceptance criteria:
    conclusion command.)
 6. Teach guided plans to recommend conclusions before decisions. (Done for
    strategy research plans.)
-7. Audit core backtest assumptions and fill test gaps.
+7. Audit core backtest assumptions and fill test gaps. (Assumption audit doc
+   done; no behavior change made.)
 8. Run the complete SPY long/cash experiment.
 9. Add session manifests around the stable workflow.
 10. Rewrite README around the default path.
