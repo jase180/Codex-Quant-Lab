@@ -5,6 +5,8 @@ knowledge.
 
 Promoted into Milestone 15:
 `milestone-15-default-workflow-canonical-conclusion.md`.
+Design note: build deterministic conclusion fields first, then let Codex or a
+local open-source agent critique, rewrite, or suggest the next test.
 
 Docs folder README.
   backfill early milestones

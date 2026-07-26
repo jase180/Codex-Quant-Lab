@@ -954,5 +954,6 @@ what to test next.
 ## Near-Term Roadmap
 
 1. Start Milestone 15 around one default workflow and one canonical experiment conclusion.
-2. Turn saved artifacts into clearer saved knowledge: current conclusion, contradiction, and next useful test.
-3. Keep tightening examples so a junior researcher can follow baseline, validation, robustness, and decision steps.
+2. Make the conclusion readable by humans and parseable by local agents.
+3. Turn saved artifacts into clearer saved knowledge: current conclusion, contradiction, and next useful test.
+4. Keep tightening examples so a junior researcher can follow baseline, validation, robustness, and decision steps.

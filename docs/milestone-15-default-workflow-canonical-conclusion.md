@@ -13,8 +13,8 @@ Milestone 14 added enough robustness machinery that the next bottleneck is not
 "can the lab create evidence?" The next bottleneck is:
 
 ```text
-Can a beginner, or future Codex, quickly understand what was learned, what
-should not be repeated, and what the next useful test is?
+Can a beginner, future Codex, or a local research agent quickly understand what
+was learned, what should not be repeated, and what the next useful test is?
 ```
 
 This milestone should turn saved data and saved findings into saved knowledge.
@@ -50,6 +50,8 @@ obvious conclusion artifact.
 - No deletion of raw artifacts.
 - No attempt to make conclusions automatic truth. Conclusions remain local,
   conservative research notes derived from linked evidence.
+- No requirement that an LLM or local agent exists. The deterministic CLI must
+  still produce useful conclusion drafts on its own.
 
 ## Deliverables
 
@@ -77,7 +79,8 @@ Acceptance criteria:
 
 Status: planned.
 
-Create one artifact that future humans and future Codex should read first.
+Create one artifact pair that future humans, future Codex, and local agents
+should read first.
 
 Proposed files:
 
@@ -86,8 +89,31 @@ experiment_conclusion.md
 experiment_conclusion.json
 ```
 
-The Markdown is the human source of truth. The JSON is optional but useful for
-future automation.
+The Markdown is the human source of truth. The JSON is the stable machine-facing
+summary for future automation and local-agent loops.
+
+Proposed JSON fields:
+
+```text
+schema_version
+experiment_id
+generated_at_utc
+confidence_label
+current_conclusion
+supporting_evidence
+contradicting_evidence
+robustness_notes
+do_not_repeat
+next_useful_tests
+open_questions
+source_artifacts
+agent_instructions
+```
+
+The first implementation should produce these fields deterministically from the
+experiment registry and research index. A local agent can later edit prose or
+propose next tests, but it should not be the only thing capable of creating the
+artifact.
 
 The conclusion should answer:
 
@@ -106,9 +132,43 @@ Acceptance criteria:
 - The conclusion references supporting artifacts instead of copying all details.
 - The conclusion has a clear `Do Not Repeat` section.
 - The conclusion has a clear `Next Useful Test` section.
+- The JSON has stable keys that a local agent can parse without reading every
+  raw artifact.
 - Future guided plan output points to this conclusion before decision steps.
 
-### 3. Human-Facing Report Hierarchy
+### 3. Agent Research Context
+
+Status: planned.
+
+Add a small context artifact for local agents that need to help with each
+research cycle.
+
+Proposed files:
+
+```text
+agent_context.md
+research_memory.md
+```
+
+This file should tell an agent what matters before it proposes the next step:
+
+- read `experiment_conclusion.json` first,
+- do not optimize to the best backtest row,
+- respect `do_not_repeat`,
+- propose small falsifiable next tests,
+- cite source artifacts,
+- preserve no-lookahead and next-open-fill assumptions,
+- ask for data verification when conclusions depend on provider assumptions.
+
+Acceptance criteria:
+
+- A local agent can start from the context file and conclusion JSON without
+  scanning the whole artifact tree.
+- The context file explains the lab's conservative research posture.
+- The context file distinguishes raw evidence from current conclusion.
+- The default workflow mentions where this file lives.
+
+### 4. Human-Facing Report Hierarchy
 
 Status: planned.
 
@@ -143,7 +203,7 @@ Acceptance criteria:
   into the conclusion flow where practical.
 - No raw artifact is removed unless a test proves it is redundant and unused.
 
-### 4. Core Backtest Audit
+### 5. Core Backtest Audit
 
 Status: planned.
 
@@ -169,7 +229,7 @@ Acceptance criteria:
   become future milestones.
 - Do not hide uncertainty; name it in the default workflow.
 
-### 5. One Complete Real Experiment
+### 6. One Complete Real Experiment
 
 Status: planned.
 
@@ -198,7 +258,7 @@ Acceptance criteria:
   or marked as raw/audit-only.
 - The example becomes the recommended walkthrough for new users.
 
-### 6. Session Manifest, After The Conclusion Shape Is Clear
+### 7. Session Manifest, After The Conclusion Shape Is Clear
 
 Status: planned.
 
@@ -218,22 +278,28 @@ Acceptance criteria:
 ## Build Order
 
 1. Plan and document the default workflow and report hierarchy.
-2. Add the canonical conclusion artifact and CLI command.
-3. Teach guided plans to recommend conclusions before decisions.
-4. Audit core backtest assumptions and fill test gaps.
-5. Run the complete SPY long/cash experiment.
-6. Add session manifests around the stable workflow.
-7. Rewrite README around the default path.
+2. Define the canonical conclusion JSON shape and human Markdown layout.
+3. Add the deterministic conclusion CLI command.
+4. Add the agent context artifact and local-agent instructions.
+5. Teach guided plans to recommend conclusions before decisions.
+6. Audit core backtest assumptions and fill test gaps.
+7. Run the complete SPY long/cash experiment.
+8. Add session manifests around the stable workflow.
+9. Rewrite README around the default path.
 
 ## Design Notes
 
 - Optimize for a junior researcher returning after a week away.
 - Prefer one clear conclusion over more parallel reports.
 - Treat Codex as a future reader: it should know what to read first.
+- Treat a local agent as an analyst/editor over structured evidence, not as the
+  source of truth.
 - Raw data stays available, but the default workflow should not require reading
   every raw file.
 - The conclusion should be conservative, falsifiable, and explicit about what
   would change it.
+- Build deterministic conclusion fields before adding optional agent-assisted
+  prose or next-test generation.
 
 ## Exit Criteria
 

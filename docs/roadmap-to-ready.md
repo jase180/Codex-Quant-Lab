@@ -137,6 +137,8 @@ Deliverables:
   test.
 - A canonical experiment conclusion artifact that records what was learned,
   what not to repeat, and what to test next.
+- Agent-readable conclusion fields plus context instructions for local agents
+  that help critique conclusions or suggest the next research cycle.
 - A human-facing report hierarchy that separates the main source of truth from
   supporting and raw audit artifacts.
 - A core backtest audit covering adjusted prices, fills, cash, benchmark
@@ -305,7 +307,8 @@ a proof of concept. It is a small, honest, local research environment.
 ## Recommended Build Sequence
 
 1. Build Milestone 15.
-2. Focus the first slice on the default workflow and canonical conclusion shape.
+2. Focus the first slice on the default workflow and canonical conclusion shape,
+   including stable fields for local-agent use.
 3. Use the new robustness outputs as inputs to that knowledge layer instead of
    adding more disconnected reports.
 4. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.

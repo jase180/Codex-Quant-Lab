@@ -353,6 +353,7 @@ Planned work:
 
 - README rewrite around one default strategy workflow.
 - Canonical `experiment_conclusion.md` and optional structured companion data.
+- Agent-readable conclusion fields and local-agent context instructions.
 - Human-facing report hierarchy: main conclusion, supporting interpretation,
   raw audit artifacts.
 - Core backtest audit for adjusted prices, fills, cash, benchmarks, warm-up, and
