@@ -74,11 +74,14 @@ Goal: define exactly what the agent reads.
 
 Planned work:
 
-- Document the required context files in `docs/local-agent.md`.
-- Build a context assembler that starts from `session_manifest.json`.
+- Document the required context files in `docs/local-agent.md`. Delivered.
+- Build a context assembler that starts from `session_manifest.json`. Delivered
+  with `quant-lab agent context`.
 - Include only the current plan, current recommendation, latest relevant
-  reports, conclusion, warnings, and artifact paths.
+  reports, conclusion, warnings, and artifact paths. Delivered for manifest
+  artifacts and current next commands.
 - Record missing or stale context explicitly instead of silently omitting it.
+  Delivered.
 
 Exit criteria:
 

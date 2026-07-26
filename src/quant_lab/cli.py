@@ -13,6 +13,7 @@ from .cli_data import (
     new_strategy_command,
     show_data_source_command,
 )
+from .cli_agent import agent_context_command
 from .cli_health import doctor_command, smoke_test_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
@@ -92,6 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_research_plan_commands(subparsers)
     register_portfolio_plan_commands(subparsers)
     register_session_commands(subparsers)
+    register_agent_commands(subparsers)
     register_robustness_commands(subparsers)
     register_sweep_commands(subparsers)
     register_sweep_guardrail_commands(subparsers)
@@ -939,6 +941,33 @@ def register_session_commands(subparsers) -> None:
     )
     refresh_parser.add_argument("--plan", required=True, help="Path to research_plan.json.")
     refresh_parser.set_defaults(func=session_refresh_command)
+
+
+def register_agent_commands(subparsers) -> None:
+    agent_parser = subparsers.add_parser(
+        "agent",
+        help="Prepare bounded local-agent advisor inputs.",
+    )
+    agent_subparsers = agent_parser.add_subparsers(dest="agent_command", required=True)
+
+    context_parser = agent_subparsers.add_parser(
+        "context",
+        help="Build an agent-readable context bundle from a session manifest.",
+    )
+    context_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
+    context_parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Directory where context artifacts are written. Defaults to the manifest output directory.",
+    )
+    context_parser.add_argument(
+        "--max-chars-per-file",
+        type=int,
+        default=12_000,
+        help="Maximum text characters to embed from each file. Defaults to 12000.",
+    )
+    context_parser.add_argument("--json", action="store_true", help="Print the context bundle JSON after writing files.")
+    context_parser.set_defaults(func=agent_context_command)
 
 
 def register_sweep_commands(subparsers) -> None:

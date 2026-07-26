@@ -70,6 +70,9 @@ artifacts/research/<experiment>/experiment_conclusion.json
 For install, smoke-test, and first-run commands, start with
 [docs/getting-running.md](docs/getting-running.md).
 
+For local-agent advisor boundaries and context files, see
+[docs/local-agent.md](docs/local-agent.md).
+
 For the full walkthrough, see [docs/research-workflow.md](docs/research-workflow.md).
 For a copyable skeptical example, see
 [docs/trustworthy-example-workflow.md](docs/trustworthy-example-workflow.md).
@@ -134,6 +137,7 @@ data/
   strategies/                   Example strategy JSON files.
 docs/
   getting-running.md             Install, smoke-test, and first real run guide.
+  local-agent.md                 Local-agent advisor contract and context flow.
   milestone-4-validation-realism.md  Detailed Milestone 4 plan.
   milestone-5-strategy-research-depth.md  Detailed Milestone 5 plan.
   milestone-7-guided-research-workflow.md  Planned guided workflow.
@@ -169,6 +173,7 @@ More detailed module notes:
 
 - [docs/milestones.md](docs/milestones.md)
 - [docs/getting-running.md](docs/getting-running.md)
+- [docs/local-agent.md](docs/local-agent.md)
 - [docs/milestone-4-validation-realism.md](docs/milestone-4-validation-realism.md)
 - [docs/milestone-5-strategy-research-depth.md](docs/milestone-5-strategy-research-depth.md)
 - [docs/milestone-7-guided-research-workflow.md](docs/milestone-7-guided-research-workflow.md)
@@ -1132,7 +1137,7 @@ what to test next.
 1. Build Milestone 17: local-agent advisor support.
 2. Add a health/smoke command so humans, Codex, and local agents can prove the
    repo is runnable before giving research advice.
-3. Define the strict agent context and recommendation schema.
+3. Define the strict agent recommendation schema.
 4. Add deterministic `agent suggest`, then a local OpenAI-compatible model
    adapter.
 5. Reassess Strategy Language V2 versus Portfolio Realism after the advisor loop

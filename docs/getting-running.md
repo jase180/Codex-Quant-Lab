@@ -73,6 +73,22 @@ The smoke test creates a sample research plan, runs one baseline against the
 tracked sample CSV, refreshes a session manifest, and prints `read_first` plus
 the next recommended command.
 
+Build the local-agent context bundle from that manifest:
+
+Windows PowerShell:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli agent context `
+  --manifest artifacts\smoke-test\session_manifest.json
+```
+
+WSL, Linux, or macOS:
+
+```bash
+quant-lab agent context \
+  --manifest artifacts/smoke-test/session_manifest.json
+```
+
 Run the unit tests before trusting any research output:
 
 Windows PowerShell:
