@@ -126,7 +126,7 @@ Why this matters:
 
 ### Milestone 15: Default Workflow And Canonical Conclusion
 
-Status: proposed.
+Status: substantially delivered.
 
 Purpose: make the lab feel like one clear research workflow instead of a pile of
 useful artifacts.
@@ -144,7 +144,8 @@ Deliverables:
 - A core backtest audit covering adjusted prices, fills, cash, benchmark
   alignment, indicator warm-up, and costs.
 - One complete real SPY long/cash experiment.
-- Session manifests after the conclusion shape is clear.
+- Session manifests deferred to Milestone 16 after the conclusion shape became
+  stable.
 
 Exit criteria:
 
@@ -152,12 +153,42 @@ Exit criteria:
   understand what the research question was, what evidence exists, what should
   not be repeated, and what remains.
 
-Why this waits:
+Why this came before session manifests:
 
-- The project can already produce many useful files. Session work should happen
-  after robustness checks define which files belong in a mature research pass.
+- The project could already produce many useful files. The conclusion had to
+  become the source of truth before a session manifest could safely organize the
+  surrounding workflow.
 
-### Milestone 16: Strategy Language V2
+### Milestone 16: Session Manifests And Workflow Resume
+
+Status: proposed.
+
+Purpose: make one research session easy to inspect, resume, and replay without
+turning the session record into another conclusion report.
+
+Deliverables:
+
+- A documented session manifest schema.
+- `session_manifest.json` and `session_manifest.md` formatters.
+- `quant-lab session status` for one-line orientation.
+- `quant-lab session replay-plan` for intended commands without rerunning them.
+- `quant-lab session refresh` or equivalent to rebuild pointers from known
+  research artifacts.
+- Stale or missing artifact warnings that point back to the canonical
+  conclusion.
+
+Exit criteria:
+
+- A user can return after a week and find the current conclusion, decision,
+  plan, and key artifacts from one manifest.
+
+Why this comes next:
+
+- The lab has enough real workflow now to know what belongs in a session record.
+  The manifest should preserve continuity before the strategy language becomes
+  more expressive.
+
+### Milestone 17: Strategy Language V2
 
 Status: proposed.
 
@@ -184,7 +215,7 @@ Why this waits:
 - More expressive strategies are useful, but they become dangerous if the lab
   does not first improve trust, interpretation, and robustness.
 
-### Milestone 17: Portfolio Realism
+### Milestone 18: Portfolio Realism
 
 Status: proposed.
 
@@ -211,7 +242,7 @@ Why this comes after strategy language:
 
 ## Phase 4: Make It Comfortable To Use
 
-### Milestone 18: CLI UX And Configuration Polish
+### Milestone 19: CLI UX And Configuration Polish
 
 Status: proposed.
 
@@ -237,7 +268,7 @@ Why this waits:
 - UX polish should stabilize around the real workflows, not around early command
   shapes that may still change.
 
-### Milestone 19: Example Research Library
+### Milestone 20: Example Research Library
 
 Status: proposed.
 
@@ -263,7 +294,7 @@ Why this matters:
 
 ## Phase 5: Hardening
 
-### Milestone 20: Test, Packaging, And Maintenance Hardening
+### Milestone 21: Test, Packaging, And Maintenance Hardening
 
 Status: proposed.
 
@@ -290,7 +321,7 @@ Why this is a milestone, not a chore:
 
 ## Pretty Ready Exit Criteria
 
-The project is "pretty ready" after Milestone 20 if:
+The project is "pretty ready" after Milestone 21 if:
 
 - A full sample strategy workflow can be run from fresh setup docs.
 - A full sample portfolio workflow can be run from fresh setup docs.
@@ -311,9 +342,10 @@ a proof of concept. It is a small, honest, local research environment.
    including stable fields for local-agent use.
 3. Use the new robustness outputs as inputs to that knowledge layer instead of
    adding more disconnected reports.
-4. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
-5. Build Milestones 16 and 17.
-6. Polish setup, examples, and maintenance through Milestones 18 through 20.
+4. Build Milestone 16 so sessions can be resumed cleanly.
+5. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
+6. Build Milestones 17 and 18.
+7. Polish setup, examples, and maintenance through Milestones 19 through 21.
 
 This order keeps the project honest: first trust inputs, then trust
 interpretation, then challenge robustness, then broaden the research surface,

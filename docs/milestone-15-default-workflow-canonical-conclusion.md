@@ -2,7 +2,8 @@
 
 ## Status
 
-Planned.
+Substantially delivered. Session manifests were deliberately deferred to
+Milestone 16 after the canonical conclusion shape became stable.
 
 ## Goal
 
@@ -57,7 +58,8 @@ obvious conclusion artifact.
 
 ### 1. One Default Workflow
 
-Status: README default path implemented; deeper workflow pruning still planned.
+Status: README default path implemented; deeper workflow pruning still remains
+for future cleanup.
 
 Rewrite the first user-facing path around one plain workflow:
 
@@ -143,16 +145,15 @@ Acceptance criteria:
 
 ### 3. Agent Research Context
 
-Status: planned.
+Status: implemented for the conclusion command.
 
 Add a small context artifact for local agents that need to help with each
 research cycle.
 
-Proposed files:
+Current generated file:
 
 ```text
 agent_context.md
-research_memory.md
 ```
 
 This file should tell an agent what matters before it proposes the next step:
@@ -172,6 +173,9 @@ Acceptance criteria:
 - The context file explains the lab's conservative research posture.
 - The context file distinguishes raw evidence from current conclusion.
 - The default workflow mentions where this file lives.
+
+`research_memory.md` remains a possible future layer, but it should not be added
+until the session manifest design proves what durable memory is actually needed.
 
 ### 4. Human-Facing Report Hierarchy
 
@@ -273,11 +277,12 @@ Experiment note:
 
 ### 7. Session Manifest, After The Conclusion Shape Is Clear
 
-Status: planned.
+Status: deferred to Milestone 16.
 
-Keep session manifests in Milestone 15, but do them after the conclusion
-artifact has a stable shape. The manifest should organize the workflow; it
-should not become one more competing explanation.
+Session manifests are worth doing, but they should not be squeezed into
+Milestone 15. Milestone 15 created the conclusion as the single source of truth;
+the manifest should organize the workflow around that conclusion, not become one
+more competing explanation.
 
 Acceptance criteria:
 
@@ -287,6 +292,9 @@ Acceptance criteria:
 - `quant-lab session replay-plan` or equivalent prints intended commands
   without rerunning them.
 - Missing/orphaned artifact checks point back to the canonical conclusion.
+
+Next milestone plan:
+[milestone-16-session-manifests.md](milestone-16-session-manifests.md)
 
 ## Build Order
 
@@ -302,8 +310,8 @@ Acceptance criteria:
 7. Audit core backtest assumptions and fill test gaps. (Assumption audit doc
    done; no behavior change made.)
 8. Run the complete SPY long/cash experiment. (Done.)
-9. Add session manifests around the stable workflow.
-10. Rewrite README around the default path.
+9. Defer session manifests to Milestone 16 after the state review. (Done.)
+10. Rewrite README around the default path. (Initial pass done.)
 
 ## Design Notes
 
@@ -331,3 +339,6 @@ Which file should I read first next time?
 ```
 
 without needing to understand every artifact the lab can produce.
+
+Current state review:
+[milestone-15-state-review.md](milestone-15-state-review.md)

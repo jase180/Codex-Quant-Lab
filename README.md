@@ -119,7 +119,9 @@ docs/
   milestone-12-data-source-trust.md  Completed data/source trust workflow.
   milestone-13-evidence-decision-quality.md  Completed evidence interpretation.
   milestone-14-backtest-realism-robustness.md  Completed robustness checks.
-  milestone-15-default-workflow-canonical-conclusion.md  Planned default workflow.
+  milestone-15-default-workflow-canonical-conclusion.md  Default workflow and conclusions.
+  milestone-15-state-review.md  Current Milestone 15 state review.
+  milestone-16-session-manifests.md  Planned workflow resume/session manifests.
   core-backtest-assumption-audit.md  Current simulation assumption audit.
   experiment-conclusion-schema.md  Planned conclusion JSON and Markdown shape.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
@@ -151,6 +153,8 @@ More detailed module notes:
 - [docs/milestone-13-evidence-decision-quality.md](docs/milestone-13-evidence-decision-quality.md)
 - [docs/milestone-14-backtest-realism-robustness.md](docs/milestone-14-backtest-realism-robustness.md)
 - [docs/milestone-15-default-workflow-canonical-conclusion.md](docs/milestone-15-default-workflow-canonical-conclusion.md)
+- [docs/milestone-15-state-review.md](docs/milestone-15-state-review.md)
+- [docs/milestone-16-session-manifests.md](docs/milestone-16-session-manifests.md)
 - [docs/core-backtest-assumption-audit.md](docs/core-backtest-assumption-audit.md)
 - [docs/spy-long-cash-trend-experiment.md](docs/spy-long-cash-trend-experiment.md)
 - [docs/experiment-conclusion-schema.md](docs/experiment-conclusion-schema.md)

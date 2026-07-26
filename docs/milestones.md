@@ -344,12 +344,12 @@ Delivered work:
 
 ## Milestone 15: Default Workflow And Canonical Conclusion
 
-Status: proposed.
+Status: substantially delivered.
 
 Goal: make one clear default workflow and one canonical conclusion artifact that
 turns saved runs into saved knowledge.
 
-Planned work:
+Delivered work:
 
 - README rewrite around one default strategy workflow.
 - Canonical `experiment_conclusion.md` and optional structured companion data.
@@ -359,9 +359,26 @@ Planned work:
 - Core backtest audit for adjusted prices, fills, cash, benchmarks, warm-up, and
   costs.
 - One complete SPY long/cash experiment.
-- Session manifests after the conclusion shape is clear.
+- Session manifests deferred to Milestone 16 after the conclusion shape became
+  clear.
 
-## Milestone 16: Strategy Language V2
+## Milestone 16: Session Manifests And Workflow Resume
+
+Status: proposed.
+
+Goal: make one research session easy to inspect, resume, and replay without
+turning the session record into another conclusion report.
+
+Planned work:
+
+- Documented `session_manifest.json` and `session_manifest.md` shapes.
+- `quant-lab session status`.
+- `quant-lab session replay-plan`.
+- `quant-lab session refresh` or equivalent.
+- Stale or missing artifact warnings that point back to the canonical
+  conclusion.
+
+## Milestone 17: Strategy Language V2
 
 Status: proposed.
 
@@ -375,7 +392,7 @@ Planned work:
 - Stops, exits, holding-period rules, and cooldowns.
 - Migration docs from v1 to v2.
 
-## Milestone 17: Portfolio Realism
+## Milestone 18: Portfolio Realism
 
 Status: proposed.
 
@@ -388,7 +405,7 @@ Planned work:
 - Simple volatility-aware allocation options.
 - Better blended portfolio benchmarks.
 
-## Milestone 18: CLI UX And Configuration Polish
+## Milestone 19: CLI UX And Configuration Polish
 
 Status: proposed.
 
@@ -401,7 +418,7 @@ Planned work:
 - Better command help and beginner-facing errors.
 - Current quickstart cleanup.
 
-## Milestone 19: Example Research Library
+## Milestone 20: Example Research Library
 
 Status: proposed.
 
@@ -414,7 +431,7 @@ Planned work:
 - Rejected idea example.
 - Data-quality warning example.
 
-## Milestone 20: Test, Packaging, And Maintenance Hardening
+## Milestone 21: Test, Packaging, And Maintenance Hardening
 
 Status: proposed.
 
