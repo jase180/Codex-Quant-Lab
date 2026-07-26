@@ -254,6 +254,27 @@ def update_manifest_after_conclusion(
     )
 
 
+def update_manifest_after_decision(
+    manifest: SessionManifest,
+    *,
+    decision_path: str,
+    updated_at_utc: str | None = None,
+) -> SessionManifest:
+    return replace(
+        manifest,
+        updated_at_utc=updated_at_utc or utc_now_iso(),
+        commands=[command for command in manifest.commands if command.label != "Recommended next step: draft_decision"],
+        key_artifacts=_upsert_artifacts(
+            manifest.key_artifacts,
+            [SessionArtifact(kind="experiment_decision", path=decision_path, role="decision")],
+        ),
+        decision_path=decision_path,
+        current_status="complete",
+        outstanding_next_steps=[],
+        warnings=_remove_decision_warnings(manifest.warnings),
+    )
+
+
 def format_session_manifest_markdown(manifest: SessionManifest) -> str:
     validate_session_manifest(manifest)
     return "\n".join(
@@ -412,6 +433,10 @@ def _remove_conclusion_missing_warnings(warnings: list[str]) -> list[str]:
         for warning in warnings
         if "experiment_conclusion" not in warning and "Canonical conclusion is missing" not in warning
     ]
+
+
+def _remove_decision_warnings(warnings: list[str]) -> list[str]:
+    return [warning for warning in warnings if "decision" not in warning.lower()]
 
 
 def _dedupe_strings(items: Iterable[object]) -> list[str]:

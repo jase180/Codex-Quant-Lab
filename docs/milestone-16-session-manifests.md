@@ -88,6 +88,7 @@ index, and known artifact filenames.
 6. Teach conclusion commands to update manifest pointers when a manifest exists.
    (Done.)
 7. Teach decision commands to update manifest pointers when a manifest exists.
+   (Done.)
 8. Add missing-artifact and stale-report warnings that point back to the
    canonical conclusion.
 9. Update README and workflow docs so returning users read:

@@ -725,6 +725,87 @@ class CliExperimentTests(unittest.TestCase):
             self.assertIn("Suggested outcome:", output)
             self.assertIn("quant-lab decide-experiment", output)
 
+    def test_decide_experiment_updates_existing_session_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            registry_path = temp_path / "experiments.jsonl"
+            output_dir = temp_path / "research" / "qqq"
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                    ]
+                )
+            plan = create_research_plan(
+                title="QQQ idea",
+                hypothesis="A valid hypothesis.",
+                strategy_path="data/strategies/qqq.json",
+                data_path="data/cache/qqq.csv",
+                symbol="QQQ",
+                experiment_id="EXP-002",
+                experiments_path=registry_path,
+                output_dir=output_dir,
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            plan_path, _ = save_research_plan(plan)
+            manifest = create_session_manifest(
+                session_id="session-exp-002",
+                experiment_id="EXP-002",
+                title="QQQ idea",
+                hypothesis="A valid hypothesis.",
+                plan_path=plan_path,
+                output_dir=output_dir,
+                commands=[
+                    SessionCommand(
+                        label="Recommended next step: draft_decision",
+                        command="quant-lab draft-decision ...",
+                        status="suggested",
+                    )
+                ],
+                conclusion_path=output_dir / "experiment_conclusion.md",
+                current_status="needs_decision",
+                outstanding_next_steps=["draft_decision: Draft a conservative decision."],
+                warnings=["Decision has not been recorded yet."],
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            manifest_path, _ = save_session_manifest(manifest)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "decide-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--outcome",
+                        "reject",
+                        "--rationale",
+                        "Evidence did not beat benchmark.",
+                        "--session-manifest",
+                        manifest_path,
+                    ]
+                )
+
+            payload = json.loads((output_dir / "session_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertIn("session_manifest:", stdout.getvalue())
+            self.assertEqual("complete", payload["current_status"])
+            self.assertEqual("experiment:EXP-002", payload["decision_path"])
+            self.assertEqual([], payload["commands"])
+            self.assertEqual([], payload["outstanding_next_steps"])
+            self.assertEqual([], payload["warnings"])
+            artifact_paths = [artifact["path"] for artifact in payload["key_artifacts"]]
+            self.assertIn("experiment:EXP-002", artifact_paths)
+
 
 if __name__ == "__main__":
     unittest.main()

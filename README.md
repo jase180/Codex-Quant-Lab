@@ -855,6 +855,7 @@ quant-lab decide-experiment \
   --supporting-run artifacts/research/qqq_sma_crossover_2015_2025/run_004/run_metadata.json \
   --contradicting-run artifacts/research/qqq_sma_train_test_2015_2025/test_selected/run_metadata.json \
   --next-action "Try the same research question on SPY before adding complexity." \
+  --session-manifest artifacts/research/qqq_sma_trust/session_manifest.json \
   --tag rejected
 ```
 
@@ -865,6 +866,10 @@ is provided. This catches typos before a long backtest or sweep starts.
 registry while also keeping the older plain `decision` text. Outcomes are
 `accept`, `reject`, and `continue`. `accept` and `reject` mark the experiment
 `completed`; `continue` keeps it `running`.
+
+When `--session-manifest` is provided, the command also marks that session
+manifest `complete`, records the decision pointer, and clears outstanding next
+steps.
 
 Use `update-experiment` for simple status, notes, tag, or legacy decision text
 edits when you do not need the structured decision fields.

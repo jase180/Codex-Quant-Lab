@@ -646,6 +646,11 @@ def register_experiment_commands(subparsers) -> None:
     )
     decide_experiment_parser.add_argument("--next-action", default=None, help="Concrete next research action.")
     decide_experiment_parser.add_argument(
+        "--session-manifest",
+        default=None,
+        help="Optional session_manifest.json to update after recording the decision.",
+    )
+    decide_experiment_parser.add_argument(
         "--tag",
         action="append",
         default=[],

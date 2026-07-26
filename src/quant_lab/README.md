@@ -217,6 +217,17 @@ If `session_manifest.json` already exists in the same output directory,
 `conclude-experiment` updates it with the conclusion paths and the next
 `draft-decision` suggestion.
 
+When recording the final experiment decision, pass the manifest path to keep the
+session state current:
+
+```bash
+quant-lab decide-experiment \
+  --experiment-id EXP-001 \
+  --outcome reject \
+  --rationale "Evidence did not beat the benchmark." \
+  --session-manifest artifacts/research/qqq_sma_trust/session_manifest.json
+```
+
 Inspect a saved research session manifest:
 
 ```bash

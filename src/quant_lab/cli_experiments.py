@@ -43,6 +43,7 @@ from .session_manifest import (
     load_session_manifest,
     replace_session_manifest,
     session_manifest_json_path,
+    update_manifest_after_decision,
     update_manifest_after_conclusion,
 )
 
@@ -138,6 +139,9 @@ def decide_experiment_command(args: argparse.Namespace) -> int:
     print(f"rationale: {decision_record.rationale}")
     if decision_record.next_action is not None:
         print(f"next_action: {decision_record.next_action}")
+    if args.session_manifest is not None:
+        updated_manifest = _update_session_manifest_after_decision(args.session_manifest, updated.experiment_id)
+        print(f"session_manifest: {updated_manifest}")
     return 0
 
 
@@ -252,3 +256,13 @@ def _draft_decision_command_from_manifest(plan_path: str) -> str | None:
     if not path.exists():
         return None
     return build_draft_decision_command_from_plan(load_research_plan(path))
+
+
+def _update_session_manifest_after_decision(manifest_path: str, experiment_id: str) -> str:
+    manifest = load_session_manifest(manifest_path)
+    updated = update_manifest_after_decision(
+        manifest,
+        decision_path=f"experiment:{experiment_id}",
+    )
+    json_path, _ = replace_session_manifest(updated)
+    return json_path
