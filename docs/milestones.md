@@ -396,6 +396,7 @@ Planned work:
 - A strict agent context contract that starts from `session_manifest.json`.
   Delivered with `docs/local-agent.md` and `quant-lab agent context`.
 - A strict `agent_recommendation.v1` output schema.
+  Delivered with `quant-lab agent validate-recommendation`.
 - Deterministic `quant-lab agent suggest` before model integration.
 - Local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
   similar endpoints.

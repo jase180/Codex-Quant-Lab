@@ -108,16 +108,17 @@ Initial shape:
 
 Planned work:
 
-- Define allowed `recommended_action` values.
-- Validate required fields.
-- Reject unknown actions.
-- Save both JSON and Markdown recommendation artifacts.
-- Add tests around valid, invalid, and cautious recommendations.
+- Define allowed `recommended_action` values. Delivered.
+- Validate required fields. Delivered.
+- Reject unknown actions. Delivered.
+- Save both JSON and Markdown recommendation artifacts. Delivered.
+- Add tests around valid, invalid, and cautious recommendations. Delivered.
 
 Exit criteria:
 
 - The repo can tell whether an agent recommendation is structurally valid before
-  a human decides whether to run it.
+  a human decides whether to run it. Delivered with
+  `quant-lab agent validate-recommendation`.
 
 ## Phase 4: Deterministic Advisor Command
 

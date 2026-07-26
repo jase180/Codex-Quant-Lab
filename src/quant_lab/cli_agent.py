@@ -5,6 +5,12 @@ from __future__ import annotations
 import argparse
 
 from .agent_context import agent_context_to_json, build_agent_context, save_agent_context
+from .agent_recommendation import (
+    agent_recommendation_to_json,
+    format_agent_recommendation_markdown,
+    load_agent_recommendation,
+    save_agent_recommendation,
+)
 
 
 def agent_context_command(args: argparse.Namespace) -> int:
@@ -24,4 +30,28 @@ def agent_context_command(args: argparse.Namespace) -> int:
         if context.next_commands:
             print("next_command:")
             print(context.next_commands[0])
+    return 0
+
+
+def agent_validate_recommendation_command(args: argparse.Namespace) -> int:
+    recommendation = load_agent_recommendation(args.recommendation)
+    if args.out_dir is not None:
+        json_path, markdown_path = save_agent_recommendation(recommendation, args.out_dir)
+
+    if args.json:
+        print(agent_recommendation_to_json(recommendation))
+    elif args.out_dir is None:
+        print("Agent recommendation: valid")
+        print(f"action: {recommendation.recommended_action}")
+        print(f"confidence: {recommendation.confidence}")
+        if recommendation.next_command:
+            print("next_command:")
+            print(recommendation.next_command)
+        else:
+            print("next_command: -")
+        if args.markdown:
+            print(format_agent_recommendation_markdown(recommendation))
+    else:
+        print(f"Agent recommendation written: {json_path}")
+        print(f"markdown: {markdown_path}")
     return 0

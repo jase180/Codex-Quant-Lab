@@ -13,7 +13,7 @@ from .cli_data import (
     new_strategy_command,
     show_data_source_command,
 )
-from .cli_agent import agent_context_command
+from .cli_agent import agent_context_command, agent_validate_recommendation_command
 from .cli_health import doctor_command, smoke_test_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
@@ -968,6 +968,20 @@ def register_agent_commands(subparsers) -> None:
     )
     context_parser.add_argument("--json", action="store_true", help="Print the context bundle JSON after writing files.")
     context_parser.set_defaults(func=agent_context_command)
+
+    validate_parser = agent_subparsers.add_parser(
+        "validate-recommendation",
+        help="Validate an agent_recommendation.v1 JSON file.",
+    )
+    validate_parser.add_argument("--recommendation", required=True, help="Path to agent_recommendation.json.")
+    validate_parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Optional directory where normalized recommendation JSON and Markdown are written.",
+    )
+    validate_parser.add_argument("--json", action="store_true", help="Print normalized recommendation JSON.")
+    validate_parser.add_argument("--markdown", action="store_true", help="Print normalized Markdown after validation.")
+    validate_parser.set_defaults(func=agent_validate_recommendation_command)
 
 
 def register_sweep_commands(subparsers) -> None:

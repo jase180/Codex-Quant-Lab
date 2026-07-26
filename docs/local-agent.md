@@ -44,6 +44,13 @@ quant-lab agent context \
   --json
 ```
 
+Validate a recommendation before trusting it:
+
+```bash
+quant-lab agent validate-recommendation \
+  --recommendation artifacts/research/<experiment>/agent_recommendation.json
+```
+
 ## Context Contract
 
 The context bundle starts from `session_manifest.json`. It includes:
@@ -87,9 +94,9 @@ For automation, prefer:
 3. `experiment_conclusion.json`, if present
 4. linked `run_metadata.json` files only when needed
 
-## Expected Recommendation Shape
+## Recommendation Contract
 
-The next milestone phase will make this strict, but the intended shape is:
+Agent recommendations use strict `agent_recommendation.v1` JSON:
 
 ```json
 {
@@ -115,6 +122,15 @@ Allowed actions will be intentionally small and workflow-shaped, such as:
 - `decide`
 - `stop`
 - `needs_review`
+
+Runnable actions require `next_command`, and `next_command` must start with
+`quant-lab `. `stop` and `needs_review` do not require a command.
+
+Allowed confidence values are:
+
+- `low`
+- `medium`
+- `high`
 
 ## Stop Conditions
 
