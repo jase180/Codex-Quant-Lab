@@ -77,7 +77,8 @@ Acceptance criteria:
 
 ### 2. Canonical Experiment Conclusion
 
-Status: schema and layout planned.
+Status: deterministic model and formatter implemented; CLI wiring still
+planned.
 
 Create one artifact pair that future humans, future Codex, and local agents
 should read first.
@@ -131,6 +132,7 @@ The conclusion should answer:
 Acceptance criteria:
 
 - Document the v1 JSON schema and Markdown section layout before code.
+- Add a deterministic Python model and formatter for the conclusion artifacts.
 - Add a CLI command that writes the conclusion from an experiment id.
 - The command reads linked runs from the experiment registry and research index.
 - The conclusion references supporting artifacts instead of copying all details.
@@ -283,13 +285,14 @@ Acceptance criteria:
 
 1. Plan and document the default workflow and report hierarchy.
 2. Define the canonical conclusion JSON shape and human Markdown layout.
-3. Add the deterministic conclusion CLI command.
-4. Add the agent context artifact and local-agent instructions.
-5. Teach guided plans to recommend conclusions before decisions.
-6. Audit core backtest assumptions and fill test gaps.
-7. Run the complete SPY long/cash experiment.
-8. Add session manifests around the stable workflow.
-9. Rewrite README around the default path.
+3. Add the deterministic conclusion model and formatter. (Done.)
+4. Add the deterministic conclusion CLI command.
+5. Add the agent context artifact and local-agent instructions.
+6. Teach guided plans to recommend conclusions before decisions.
+7. Audit core backtest assumptions and fill test gaps.
+8. Run the complete SPY long/cash experiment.
+9. Add session manifests around the stable workflow.
+10. Rewrite README around the default path.
 
 ## Design Notes
 

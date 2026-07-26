@@ -96,6 +96,11 @@ Fields:
 
 The first implementation should use `deterministic`.
 
+The deterministic in-repo implementation lives in
+`src/quant_lab/experiment_conclusion.py`. It builds the schema fields and the
+Markdown layout from an experiment registry record plus linked research-index
+rows, before any CLI command or local agent touches the prose.
+
 ### `experiment`
 
 Copies the experiment identity fields needed for orientation. This is not a

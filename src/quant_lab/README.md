@@ -41,6 +41,10 @@ It owns:
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `evidence_labels.py`: labels linked strategy evidence with conservative,
   explainable heuristics.
+- `experiment_conclusion.py`: builds the deterministic
+  `experiment_conclusion.json`, `experiment_conclusion.md`, and
+  agent-readable context content from an experiment record plus linked research
+  index rows.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `run_trust.py`: writes Markdown data-trust reports for saved strategy runs.
 - `trust_common.py`: shared warning/check helpers for trust-report commands.
