@@ -67,6 +67,9 @@ artifacts/research/<experiment>/session_manifest.json
 artifacts/research/<experiment>/experiment_conclusion.json
 ```
 
+For install, smoke-test, and first-run commands, start with
+[docs/getting-running.md](docs/getting-running.md).
+
 For the full walkthrough, see [docs/research-workflow.md](docs/research-workflow.md).
 For a copyable skeptical example, see
 [docs/trustworthy-example-workflow.md](docs/trustworthy-example-workflow.md).
@@ -128,6 +131,7 @@ data/
   portfolios/                   Example portfolio JSON files.
   strategies/                   Example strategy JSON files.
 docs/
+  getting-running.md             Install, smoke-test, and first real run guide.
   milestone-4-validation-realism.md  Detailed Milestone 4 plan.
   milestone-5-strategy-research-depth.md  Detailed Milestone 5 plan.
   milestone-7-guided-research-workflow.md  Planned guided workflow.
@@ -161,6 +165,7 @@ data/cache/                     Ignored local market-data cache.
 More detailed module notes:
 
 - [docs/milestones.md](docs/milestones.md)
+- [docs/getting-running.md](docs/getting-running.md)
 - [docs/milestone-4-validation-realism.md](docs/milestone-4-validation-realism.md)
 - [docs/milestone-5-strategy-research-depth.md](docs/milestone-5-strategy-research-depth.md)
 - [docs/milestone-7-guided-research-workflow.md](docs/milestone-7-guided-research-workflow.md)
@@ -188,6 +193,8 @@ More detailed module notes:
 ## Setup
 
 Python 3.10+ is required. In this checkout, prefer WSL for Python commands.
+For the most practical setup path, including Windows PowerShell commands and an
+offline smoke workflow, see [docs/getting-running.md](docs/getting-running.md).
 
 ```bash
 python3 -m venv .venv
