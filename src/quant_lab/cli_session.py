@@ -5,15 +5,16 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .cli_research_plan import (
-    _evidence_summary_exists,
-    _experiment_conclusion_exists,
-    _parameter_neighborhood_exists,
-    _run_trust_report_exists,
-    recommend_next_step,
-)
 from .research_index import filter_index_records, load_research_index
 from .research_plan import load_research_plan, research_plan_markdown_path
+from .research_plan_workflow import (
+    evidence_summary_exists,
+    experiment_conclusion_exists,
+    experiment_has_decision,
+    parameter_neighborhood_exists,
+    recommend_next_step,
+    run_trust_report_exists,
+)
 from .research_registry import load_experiments
 from .session_manifest import (
     SessionArtifact,
@@ -60,11 +61,11 @@ def build_session_manifest_from_research_plan(plan_path: str | Path):
     recommendation = recommend_next_step(
         plan,
         index_records,
-        experiment_has_decision=experiment is not None and experiment.decision_record is not None,
-        run_trust_report_exists=_run_trust_report_exists(index_records),
-        evidence_summary_exists=_evidence_summary_exists(plan.output_dir),
-        parameter_neighborhood_exists=_parameter_neighborhood_exists(plan.output_dir),
-        experiment_conclusion_exists=_experiment_conclusion_exists(plan.output_dir),
+        experiment_has_decision=experiment_has_decision(experiment),
+        run_trust_report_exists=run_trust_report_exists(index_records),
+        evidence_summary_exists=evidence_summary_exists(plan.output_dir),
+        parameter_neighborhood_exists=parameter_neighborhood_exists(plan.output_dir),
+        experiment_conclusion_exists=experiment_conclusion_exists(plan.output_dir),
     )
 
     return create_session_manifest(
