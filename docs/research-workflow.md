@@ -370,6 +370,18 @@ This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
 `agent_context.md`. The Markdown is the main human conclusion. The JSON is the
 machine-readable research memory for future agent-assisted cycles.
 
+Refresh the session manifest so future you, Codex, or a local agent can resume
+from one orientation file:
+
+```bash
+quant-lab session refresh \
+  --plan artifacts/research/sma_qqq_2015_2025/research_plan.json
+```
+
+When returning later, read `session_manifest.md` first to find the current
+status, warnings, conclusion path, decision pointer, and next suggested command.
+Then read `experiment_conclusion.md` for what the experiment actually taught.
+
 Draft a decision before writing one:
 
 ```bash
@@ -433,12 +445,15 @@ quant-lab decide-experiment \
   --supporting-run artifacts/research/sma_qqq_2015_2025/sweep_001/run_004/run_metadata.json \
   --contradicting-run artifacts/research/sma_qqq_2015_2025/train_test_001/test_selected/run_metadata.json \
   --next-action "Run walk-forward windows and test the same idea on SPY." \
+  --session-manifest artifacts/research/sma_qqq_2015_2025/session_manifest.json \
   --tag needs-walk-forward
 ```
 
 Use `accept` only when the evidence is strong enough to promote the idea to a
 stricter validation or paper-trading phase. Use `reject` when the evidence does
 not justify more time. Use `continue` when the next action is still research.
+Passing `--session-manifest` marks the session complete and records the decision
+pointer in the manifest.
 
 ## Artifact Rule
 
@@ -446,6 +461,8 @@ If a result matters, keep the artifact folder. Chat history is not the source of
 truth. The source of truth is:
 
 ```text
+session_manifest.md
+experiment_conclusion.md
 run_metadata.json
 research_warnings.json
 metrics.json

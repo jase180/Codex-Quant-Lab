@@ -161,21 +161,22 @@ Why this came before session manifests:
 
 ### Milestone 16: Session Manifests And Workflow Resume
 
-Status: proposed.
+Status: complete.
 
 Purpose: make one research session easy to inspect, resume, and replay without
 turning the session record into another conclusion report.
 
 Deliverables:
 
-- A documented session manifest schema.
-- `session_manifest.json` and `session_manifest.md` formatters.
-- `quant-lab session status` for one-line orientation.
+- A documented session manifest schema. Delivered.
+- `session_manifest.json` and `session_manifest.md` formatters. Delivered.
+- `quant-lab session status` for one-line orientation. Delivered.
 - `quant-lab session replay-plan` for intended commands without rerunning them.
-- `quant-lab session refresh` or equivalent to rebuild pointers from known
-  research artifacts.
+  Delivered.
+- `quant-lab session refresh` to rebuild pointers from known research
+  artifacts. Delivered.
 - Stale or missing artifact warnings that point back to the canonical
-  conclusion.
+  conclusion. Delivered.
 
 Exit criteria:
 
@@ -337,15 +338,11 @@ a proof of concept. It is a small, honest, local research environment.
 
 ## Recommended Build Sequence
 
-1. Build Milestone 15.
-2. Focus the first slice on the default workflow and canonical conclusion shape,
-   including stable fields for local-agent use.
-3. Use the new robustness outputs as inputs to that knowledge layer instead of
-   adding more disconnected reports.
-4. Build Milestone 16 so sessions can be resumed cleanly.
-5. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
-6. Build Milestones 17 and 18.
-7. Polish setup, examples, and maintenance through Milestones 19 through 21.
+1. Milestones 15 and 16 are complete enough to make saved research readable and
+   resumable.
+2. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
+3. Build Milestones 17 and 18.
+4. Polish setup, examples, and maintenance through Milestones 19 through 21.
 
 This order keeps the project honest: first trust inputs, then trust
 interpretation, then challenge robustness, then broaden the research surface,

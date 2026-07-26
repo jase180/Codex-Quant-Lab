@@ -364,17 +364,18 @@ Delivered work:
 
 ## Milestone 16: Session Manifests And Workflow Resume
 
-Status: proposed.
+Status: complete.
 
 Goal: make one research session easy to inspect, resume, and replay without
 turning the session record into another conclusion report.
 
-Planned work:
+Delivered work:
 
 - Documented `session_manifest.json` and `session_manifest.md` shapes.
 - `quant-lab session status`.
 - `quant-lab session replay-plan`.
-- `quant-lab session refresh` or equivalent.
+- `quant-lab session refresh`.
+- Conclusion and decision commands update existing session manifests.
 - Stale or missing artifact warnings that point back to the canonical
   conclusion.
 
@@ -469,12 +470,13 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 15 with the default workflow and canonical conclusion.
+Milestones 15 and 16 now provide the default workflow, canonical conclusion,
+and resumable session manifest foundation.
 
-Reason: Milestone 14 added robustness checks, but the project now has many
-artifacts. The next highest-risk gap is turning saved artifacts into one
-restartable session and one obvious current conclusion.
+Reason: the project can now turn many saved artifacts into one obvious
+orientation file and one obvious conclusion file. The next highest-risk gap is
+choosing which research surface to broaden without weakening that workflow.
 
-From here, follow the readiness roadmap: improve session reproducibility,
-strategy expressiveness, portfolio realism, CLI polish, example workflows, and
+From here, follow the readiness roadmap: reassess Strategy Language V2 versus
+Portfolio Realism, then continue through CLI polish, example workflows, and
 maintenance hardening.

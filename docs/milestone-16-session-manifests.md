@@ -2,8 +2,7 @@
 
 ## Status
 
-In progress. The deterministic session manifest model, status/replay CLI, and
-research-plan refresh command are implemented.
+Complete.
 
 ## Goal
 
@@ -93,7 +92,21 @@ index, and known artifact filenames.
    canonical conclusion. (Done.)
 9. Update README and workflow docs so returning users read:
    `session_manifest.md` for orientation, then `experiment_conclusion.md` for
-   the actual research conclusion.
+   the actual research conclusion. (Done.)
+
+## Delivered
+
+- `session_manifest.json` and `session_manifest.md` model, validation, loader,
+  writer, and formatter.
+- `quant-lab session status` for compact orientation.
+- `quant-lab session replay-plan` for saved commands without execution.
+- `quant-lab session refresh` from `research_plan.json`, registry/index rows,
+  and known artifact files.
+- Existing manifests update after `conclude-experiment`.
+- Existing manifests update after `decide-experiment --session-manifest`.
+- Missing/stale artifact warnings for conclusion halves, newer supporting
+  reports, missing linked metadata, missing baseline trust reports, and
+  decisions without conclusions.
 
 ## Acceptance Criteria
 

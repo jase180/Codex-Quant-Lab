@@ -40,16 +40,30 @@ The guided plan recommends the next conservative action: baseline, data-trust
 review, sweep, validation, evidence summary, robustness checks, canonical
 conclusion, decision draft, or done.
 
-If you are returning to an experiment, read this first:
+If you are returning to an experiment, orient from the session manifest first:
+
+```text
+artifacts/research/<experiment>/session_manifest.md
+```
+
+Then read the research conclusion:
 
 ```text
 artifacts/research/<experiment>/experiment_conclusion.md
 ```
 
-If you are using Codex or a local agent to continue a cycle, have it read this
+If the manifest is missing or stale, rebuild it from the plan:
+
+```bash
+quant-lab session refresh \
+  --plan artifacts/research/<experiment>/research_plan.json
+```
+
+If you are using Codex or a local agent to continue a cycle, have it read these
 first:
 
 ```text
+artifacts/research/<experiment>/session_manifest.json
 artifacts/research/<experiment>/experiment_conclusion.json
 ```
 
@@ -63,17 +77,20 @@ The lab writes many files, but they should not all compete for attention.
 
 Read in this order:
 
-1. Main conclusion:
+1. Workflow orientation:
+   `session_manifest.md`
+2. Main conclusion:
    `experiment_conclusion.md`
-2. Supporting interpretation:
+3. Supporting interpretation:
    `evidence_summary.md`, robustness reports, data-trust reports, portfolio
    summaries
-3. Raw audit files:
+4. Raw audit files:
    `run_metadata.json`, `portfolio_metadata.json`, `metrics.json`,
    `trades.csv`, `equity_curve.csv`, charts, research index rows
 
-Raw files stay available so results are auditable. The conclusion exists so a
-human, future Codex session, or local agent does not need to reread every raw
+Raw files stay available so results are auditable. The manifest exists so a
+human, future Codex session, or local agent can find the current files and
+warnings quickly. The conclusion exists so they do not need to reread every raw
 artifact before deciding what happened.
 
 ## What Works Today
@@ -99,8 +116,8 @@ artifact before deciding what happened.
 - Compare strategy results with explicit benchmarks. Buy-and-hold is the
   default, and cash is available as a flat baseline.
 - Write canonical experiment conclusions for humans and local agents.
-- Define session manifest artifacts that will orient future workflow-resume
-  commands around the canonical conclusion.
+- Define and refresh session manifest artifacts that orient future
+  workflow-resume commands around the canonical conclusion.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map
@@ -123,7 +140,7 @@ docs/
   milestone-14-backtest-realism-robustness.md  Completed robustness checks.
   milestone-15-default-workflow-canonical-conclusion.md  Default workflow and conclusions.
   milestone-15-state-review.md  Current Milestone 15 state review.
-  milestone-16-session-manifests.md  Planned workflow resume/session manifests.
+  milestone-16-session-manifests.md  Completed workflow resume/session manifests.
   core-backtest-assumption-audit.md  Current simulation assumption audit.
   experiment-conclusion-schema.md  Planned conclusion JSON and Markdown shape.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
@@ -1089,7 +1106,10 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Start Milestone 15 around one default workflow and one canonical experiment conclusion.
-2. Make the conclusion readable by humans and parseable by local agents.
-3. Turn saved artifacts into clearer saved knowledge: current conclusion, contradiction, and next useful test.
-4. Keep tightening examples so a junior researcher can follow baseline, validation, robustness, and decision steps.
+1. Reassess whether Strategy Language V2 or Portfolio Realism should come next.
+2. Keep the default workflow centered on one manifest, one conclusion, and one
+   recorded decision.
+3. Add example research libraries so a junior researcher can follow successful,
+   mixed, and rejected experiments.
+4. Continue hardening setup, tests, and maintenance docs before expanding into
+   larger automation.
