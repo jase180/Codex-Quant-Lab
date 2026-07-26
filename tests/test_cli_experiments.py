@@ -11,6 +11,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from quant_lab.cli import main  # noqa: E402
+from quant_lab.research_plan import create_research_plan, save_research_plan  # noqa: E402
+from quant_lab.session_manifest import (  # noqa: E402
+    SessionCommand,
+    create_session_manifest,
+    save_session_manifest,
+)
 from cli_fixtures import _write_index_fixture  # noqa: E402
 
 
@@ -521,6 +527,92 @@ class CliExperimentTests(unittest.TestCase):
             self.assertEqual(payload["confidence_label"], "weak")
             self.assertIn("artifacts/qqq_run/run_metadata.json", markdown)
             self.assertIn("experiment_conclusion.json", agent_context.read_text(encoding="utf-8"))
+
+    def test_conclude_experiment_updates_existing_session_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            registry_path = temp_path / "experiments.jsonl"
+            index_path = temp_path / "research_index.jsonl"
+            output_dir = temp_path / "research" / "qqq"
+            _write_index_fixture(index_path)
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                        "--strategy",
+                        "data/strategies/qqq.json",
+                        "--data",
+                        "data/cache/qqq.csv",
+                    ]
+                )
+            plan = create_research_plan(
+                title="QQQ idea",
+                hypothesis="A valid hypothesis.",
+                strategy_path="data/strategies/qqq.json",
+                data_path="data/cache/qqq.csv",
+                symbol="QQQ",
+                experiment_id="EXP-002",
+                experiments_path=registry_path,
+                index_path=index_path,
+                output_dir=output_dir,
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            plan_path, _ = save_research_plan(plan)
+            manifest = create_session_manifest(
+                session_id="session-exp-002",
+                experiment_id="EXP-002",
+                title="QQQ idea",
+                hypothesis="A valid hypothesis.",
+                plan_path=plan_path,
+                output_dir=output_dir,
+                commands=[
+                    SessionCommand(
+                        label="Recommended next step: conclude_experiment",
+                        command="quant-lab conclude-experiment ...",
+                        status="suggested",
+                    )
+                ],
+                current_status="needs_conclusion",
+                outstanding_next_steps=["conclude_experiment: Write the canonical conclusion."],
+                warnings=["Canonical conclusion is missing; run the recommended conclusion command before deciding."],
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            save_session_manifest(manifest)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "conclude-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--out",
+                        str(output_dir),
+                    ]
+                )
+
+            payload = json.loads((output_dir / "session_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertIn("session_manifest:", stdout.getvalue())
+            self.assertEqual("needs_decision", payload["current_status"])
+            self.assertEqual(str(output_dir / "experiment_conclusion.md"), payload["conclusion_path"])
+            self.assertEqual([], payload["warnings"])
+            self.assertEqual("Recommended next step: draft_decision", payload["commands"][0]["label"])
+            self.assertIn("quant-lab draft-decision", payload["commands"][0]["command"])
+            artifact_paths = [artifact["path"] for artifact in payload["key_artifacts"]]
+            self.assertIn(str(output_dir / "experiment_conclusion.md"), artifact_paths)
+            self.assertIn(str(output_dir / "experiment_conclusion.json"), artifact_paths)
 
     def test_conclude_experiment_refuses_to_overwrite_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

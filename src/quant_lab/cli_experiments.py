@@ -19,6 +19,8 @@ from .portfolio_experiment_summary import (
     save_portfolio_experiment_summary,
 )
 from .research_index import load_research_index
+from .research_plan import load_research_plan
+from .research_plan_workflow import build_draft_decision_command_from_plan
 from .research_registry import (
     append_experiment_record,
     create_experiment_decision,
@@ -37,6 +39,12 @@ from .research_registry import (
     update_experiment_record,
 )
 from .run_artifacts import current_git_commit
+from .session_manifest import (
+    load_session_manifest,
+    replace_session_manifest,
+    session_manifest_json_path,
+    update_manifest_after_conclusion,
+)
 
 
 def new_experiment_command(args: argparse.Namespace) -> int:
@@ -210,6 +218,10 @@ def conclude_experiment_command(args: argparse.Namespace) -> int:
     print(f"agent_context: {artifact_paths['agent_context']}")
     print(f"confidence: {conclusion.confidence_label}")
     print(f"next: {conclusion.next_useful_tests[0].test if conclusion.next_useful_tests else '-'}")
+    manifest_path = session_manifest_json_path(args.out)
+    if manifest_path.exists():
+        updated_manifest = _update_session_manifest_after_conclusion(manifest_path, artifact_paths)
+        print(f"session_manifest: {updated_manifest}")
     return 0
 
 
@@ -219,3 +231,24 @@ def draft_decision_command(args: argparse.Namespace) -> int:
     index_records = load_research_index(args.index_path)
     print(format_experiment_decision_draft(experiment, index_records))
     return 0
+
+
+def _update_session_manifest_after_conclusion(manifest_path: Path, artifact_paths: dict[str, str]) -> str:
+    manifest = load_session_manifest(manifest_path)
+    next_command = _draft_decision_command_from_manifest(manifest.plan_path)
+    updated = update_manifest_after_conclusion(
+        manifest,
+        conclusion_markdown_path=artifact_paths["markdown"],
+        conclusion_json_path=artifact_paths["json"],
+        agent_context_path=artifact_paths["agent_context"],
+        next_command=next_command,
+    )
+    json_path, _ = replace_session_manifest(updated)
+    return json_path
+
+
+def _draft_decision_command_from_manifest(plan_path: str) -> str | None:
+    path = Path(plan_path)
+    if not path.exists():
+        return None
+    return build_draft_decision_command_from_plan(load_research_plan(path))

@@ -783,6 +783,10 @@ This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
 `agent_context.md`. Read the Markdown first. Future Codex sessions or local
 agents should read the JSON before scanning raw run folders.
 
+If `session_manifest.json` already exists in the same output directory,
+`conclude-experiment` updates it with the conclusion paths, clears conclusion
+missing warnings, and records `draft-decision` as the next suggested command.
+
 Inspect a saved session manifest when you are returning to a research workflow:
 
 ```bash

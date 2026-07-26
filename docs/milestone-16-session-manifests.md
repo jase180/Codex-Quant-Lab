@@ -85,11 +85,12 @@ index, and known artifact filenames.
 3. Add `session status` for existing manifests. (Done.)
 4. Add `session replay-plan` for existing manifests. (Done.)
 5. Add `session refresh` from a research plan and artifact directory. (Done.)
-6. Teach conclusion and decision commands to update manifest pointers when a
-   manifest exists.
-7. Add missing-artifact and stale-report warnings that point back to the
+6. Teach conclusion commands to update manifest pointers when a manifest exists.
+   (Done.)
+7. Teach decision commands to update manifest pointers when a manifest exists.
+8. Add missing-artifact and stale-report warnings that point back to the
    canonical conclusion.
-8. Update README and workflow docs so returning users read:
+9. Update README and workflow docs so returning users read:
    `session_manifest.md` for orientation, then `experiment_conclusion.md` for
    the actual research conclusion.
 

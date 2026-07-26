@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 import json
 from pathlib import Path
 from typing import Iterable
@@ -181,6 +181,12 @@ def save_session_manifest(manifest: SessionManifest) -> tuple[str, str]:
     return str(json_path), str(markdown_path)
 
 
+def replace_session_manifest(manifest: SessionManifest) -> tuple[str, str]:
+    """Overwrite an existing manifest after another command updates session state."""
+
+    return save_session_manifest(manifest)
+
+
 def load_session_manifest(manifest_path: str | Path) -> SessionManifest:
     payload = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
     manifest = SessionManifest(
@@ -205,6 +211,47 @@ def load_session_manifest(manifest_path: str | Path) -> SessionManifest:
     )
     validate_session_manifest(manifest)
     return manifest
+
+
+def update_manifest_after_conclusion(
+    manifest: SessionManifest,
+    *,
+    conclusion_markdown_path: str | Path,
+    conclusion_json_path: str | Path,
+    agent_context_path: str | Path,
+    next_command: str | None = None,
+    updated_at_utc: str | None = None,
+) -> SessionManifest:
+    next_steps = []
+    commands = [command for command in manifest.commands if command.label != "Recommended next step: conclude_experiment"]
+    if manifest.decision_path is None:
+        next_steps = ["draft_decision: The canonical conclusion exists; draft a conservative decision before writing it to the registry."]
+        if next_command is not None:
+            commands.append(
+                SessionCommand(
+                    label="Recommended next step: draft_decision",
+                    command=next_command,
+                    status="suggested",
+                )
+            )
+
+    return replace(
+        manifest,
+        updated_at_utc=updated_at_utc or utc_now_iso(),
+        commands=commands,
+        key_artifacts=_upsert_artifacts(
+            manifest.key_artifacts,
+            [
+                SessionArtifact(kind="experiment_conclusion", path=str(conclusion_markdown_path), role="main"),
+                SessionArtifact(kind="experiment_conclusion_json", path=str(conclusion_json_path), role="main"),
+                SessionArtifact(kind="agent_context", path=str(agent_context_path), role="supporting"),
+            ],
+        ),
+        conclusion_path=str(conclusion_markdown_path),
+        current_status="complete" if manifest.decision_path is not None else "needs_decision",
+        outstanding_next_steps=next_steps,
+        warnings=_remove_conclusion_missing_warnings(manifest.warnings),
+    )
 
 
 def format_session_manifest_markdown(manifest: SessionManifest) -> str:
@@ -349,6 +396,22 @@ def _artifact_from_dict(payload: dict) -> SessionArtifact:
         path=str(payload.get("path", "")),
         role=str(payload.get("role", "unknown")),
     )
+
+
+def _upsert_artifacts(existing: list[SessionArtifact], updates: list[SessionArtifact]) -> list[SessionArtifact]:
+    artifacts = list(existing)
+    for update in updates:
+        artifacts = [artifact for artifact in artifacts if artifact.path != update.path and artifact.kind != update.kind]
+        artifacts.append(update)
+    return artifacts
+
+
+def _remove_conclusion_missing_warnings(warnings: list[str]) -> list[str]:
+    return [
+        warning
+        for warning in warnings
+        if "experiment_conclusion" not in warning and "Canonical conclusion is missing" not in warning
+    ]
 
 
 def _dedupe_strings(items: Iterable[object]) -> list[str]:
