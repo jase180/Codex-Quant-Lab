@@ -334,7 +334,7 @@ class CliResearchPlanTests(unittest.TestCase):
             self.assertIn("quant-lab robustness parameter-neighborhood", output)
             self.assertIn(str(output_dir / "sweep_001" / "summary.csv"), output)
 
-    def test_research_plan_next_recommends_draft_decision_after_robustness_exists(self) -> None:
+    def test_research_plan_next_recommends_conclusion_after_robustness_exists(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
             (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
@@ -345,8 +345,27 @@ class CliResearchPlanTests(unittest.TestCase):
 
             output = stdout.getvalue()
             self.assertEqual(exit_code, 0)
+            self.assertIn("recommended_step: conclude_experiment", output)
+            self.assertIn("write the canonical conclusion before drafting a decision", output)
+            self.assertIn("quant-lab conclude-experiment", output)
+            self.assertIn("--out", output)
+            self.assertIn(str(output_dir), output)
+            self.assertIn("--experiment-id EXP-001", output)
+
+    def test_research_plan_next_recommends_draft_decision_after_conclusion_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir, _, index_path = self._create_plan_fixture(Path(temp_dir))
+            (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
+            (output_dir / "experiment_conclusion.json").write_text("{}\n", encoding="utf-8")
+            self._write_robustness_index_records(index_path)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["research-plan", "next", "--plan", str(output_dir / "research_plan.json")])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
             self.assertIn("recommended_step: draft_decision", output)
-            self.assertIn("Evidence and robustness checks exist", output)
+            self.assertIn("The canonical conclusion exists", output)
             self.assertIn("quant-lab draft-decision", output)
             self.assertIn("--experiment-id EXP-001", output)
 

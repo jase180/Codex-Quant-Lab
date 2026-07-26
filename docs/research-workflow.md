@@ -59,9 +59,10 @@ quant-lab research-plan next \
 ```
 
 The recommendation is intentionally conservative. It looks at linked run index
-rows and moves from baseline to sweep, then train/test validation, then evidence
-summary. It prints placeholders for sweep parameters and split dates when those
-still require human judgment.
+rows and moves from baseline to sweep, then train/test validation, evidence
+summary, robustness checks, and a canonical conclusion before the final
+decision draft. It prints placeholders for sweep parameters and split dates
+when those still require human judgment.
 
 Manual alternative: create an experiment record directly for the hypothesis:
 
@@ -354,6 +355,20 @@ breakdown so you can tell whether the support came from one broad sweep, a
 train/test validation, or repeated walk-forward tests. The saved evidence
 summary also includes a conservative evidence label and the reasons for that
 label.
+
+After evidence and robustness checks are visible, write the canonical conclusion
+that humans, future Codex sessions, and local agents should read first:
+
+```bash
+quant-lab conclude-experiment \
+  --experiment-id EXP-001 \
+  --index-path artifacts/research_index.jsonl \
+  --out artifacts/research/sma_qqq_2015_2025
+```
+
+This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
+`agent_context.md`. The Markdown is the main human conclusion. The JSON is the
+machine-readable research memory for future agent-assisted cycles.
 
 Draft a decision before writing one:
 

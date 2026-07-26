@@ -293,7 +293,7 @@ quant-lab research-plan next \
 
 The guided plan checks the linked experiment's run index rows and recommends
 baseline, run-trust review, sweep, train/test validation, saved evidence
-summary, draft decision, or done.
+summary, robustness checks, canonical conclusion, draft decision, or done.
 
 ### Run One Backtest
 

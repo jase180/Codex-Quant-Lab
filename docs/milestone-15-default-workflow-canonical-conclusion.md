@@ -288,7 +288,8 @@ Acceptance criteria:
 4. Add the deterministic conclusion CLI command. (Done.)
 5. Add the agent context artifact and local-agent instructions. (Done for the
    conclusion command.)
-6. Teach guided plans to recommend conclusions before decisions.
+6. Teach guided plans to recommend conclusions before decisions. (Done for
+   strategy research plans.)
 7. Audit core backtest assumptions and fill test gaps.
 8. Run the complete SPY long/cash experiment.
 9. Add session manifests around the stable workflow.

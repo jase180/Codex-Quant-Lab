@@ -283,6 +283,8 @@ The summary command writes `portfolio_batch_summary.md` with batch counts and
 guardrail warnings. It can summarize a dry-run manifest before execution, but
 will warn that no performance evidence exists yet.
 
+`research-plan next` recommends `conclude-experiment` after linked evidence and
+robustness checks are visible, before drafting the final registry decision.
 `portfolio-plan next` can recommend the same batch sequence when a guided
 portfolio research directory contains candidate specs, a batch manifest, or a
 batch result that still needs a guardrail summary.

@@ -87,6 +87,7 @@ def research_plan_next_command(args: argparse.Namespace) -> int:
         run_trust_report_exists=_run_trust_report_exists(records),
         evidence_summary_exists=_evidence_summary_exists(plan.output_dir),
         parameter_neighborhood_exists=_parameter_neighborhood_exists(plan.output_dir),
+        experiment_conclusion_exists=_experiment_conclusion_exists(plan.output_dir),
     )
 
     print(f"Research plan: {args.plan}")
@@ -107,6 +108,7 @@ def recommend_next_step(
     run_trust_report_exists: bool = False,
     evidence_summary_exists: bool = False,
     parameter_neighborhood_exists: bool = False,
+    experiment_conclusion_exists: bool = False,
 ) -> ResearchPlanRecommendation:
     if experiment_has_decision:
         return ResearchPlanRecommendation(
@@ -171,9 +173,15 @@ def recommend_next_step(
             reason="Benchmark sensitivity exists; summarize whether nearby sweep parameters also beat the benchmark.",
             command=build_parameter_neighborhood_command_from_plan(plan),
         )
+    if not experiment_conclusion_exists:
+        return ResearchPlanRecommendation(
+            step="conclude_experiment",
+            reason="Evidence and robustness checks exist; write the canonical conclusion before drafting a decision.",
+            command=build_conclude_experiment_command_from_plan(plan),
+        )
     return ResearchPlanRecommendation(
         step="draft_decision",
-        reason="Evidence and robustness checks exist; draft a conservative decision before writing it to the registry.",
+        reason="The canonical conclusion exists; draft a conservative decision before writing it to the registry.",
         command=build_draft_decision_command_from_plan(plan),
     )
 
@@ -195,6 +203,10 @@ def _evidence_summary_exists(output_dir: str) -> bool:
 
 def _parameter_neighborhood_exists(output_dir: str) -> bool:
     return (Path(output_dir) / "robustness" / "parameters" / "parameter_neighborhood_report.md").exists()
+
+
+def _experiment_conclusion_exists(output_dir: str) -> bool:
+    return (Path(output_dir) / "experiment_conclusion.json").exists()
 
 
 def _sweep_summary_exists(output_dir: str) -> bool:
@@ -373,6 +385,23 @@ def build_draft_decision_command_from_plan(plan: ResearchPlan) -> str:
             plan.experiments_path,
             "--index-path",
             plan.index_path,
+        ]
+    )
+
+
+def build_conclude_experiment_command_from_plan(plan: ResearchPlan) -> str:
+    return shlex.join(
+        [
+            "quant-lab",
+            "conclude-experiment",
+            "--experiment-id",
+            plan.experiment_id,
+            "--experiments-path",
+            plan.experiments_path,
+            "--index-path",
+            plan.index_path,
+            "--out",
+            _display_path(plan.output_dir),
         ]
     )
 
