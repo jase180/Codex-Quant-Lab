@@ -51,3 +51,19 @@ PYTHONPATH=src python3 -m unittest discover -s tests
 ## Known Environment Note
 
 The Windows shell in this workspace may not expose `python` or `py` on `PATH`. WSL currently has Python 3.12, but the full backtester test suite requires `pandas` to be installed there.
+
+## Local Agent Runtime
+
+- Ollama for Windows has been installed in the user profile.
+- The Ollama executable may not appear on `PATH` in already-open shells. Use `C:\Users\jase1\AppData\Local\Programs\Ollama\ollama.exe` if `ollama` is not found.
+- The tested default local advisor model for this repo is `llama3.1:8b`.
+- `qwen3:8b` is also installed, but it failed the strict `agent_recommendation.v1` contract during initial integration tests.
+- Prefer this model-backed recommendation command when a session manifest exists:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli agent suggest `
+  --manifest artifacts\<experiment>\session_manifest.json `
+  --provider openai-compatible `
+  --base-url http://localhost:11434/v1 `
+  --model llama3.1:8b
+```
