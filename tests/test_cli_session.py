@@ -1,10 +1,12 @@
 import contextlib
 import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from quant_lab.cli import main
+from quant_lab.research_plan import create_research_plan, save_research_plan
 from quant_lab.session_manifest import (
     SessionArtifact,
     SessionCommand,
@@ -129,6 +131,92 @@ class CliSessionTest(unittest.TestCase):
             output = stdout.getvalue()
             self.assertEqual(exit_code, 0)
             self.assertIn("Baseline already done", output)
+
+    def test_session_refresh_writes_manifest_from_research_plan_and_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_path = Path(tmpdir)
+            output_dir = temp_path / "research" / "spy"
+            index_path = temp_path / "research_index.jsonl"
+            experiments_path = temp_path / "experiments.jsonl"
+            plan = create_research_plan(
+                title="SPY trend walkthrough",
+                hypothesis="Trend may reduce drawdown.",
+                strategy_path="data/strategies/spy_trend.json",
+                data_path="data/cache/SPY.csv",
+                symbol="SPY",
+                experiment_id="EXP-001",
+                experiments_path=experiments_path,
+                index_path=index_path,
+                output_dir=output_dir,
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            plan_path, _ = save_research_plan(plan)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["session", "refresh", "--plan", plan_path])
+
+            manifest_path = output_dir / "session_manifest.json"
+            markdown_path = output_dir / "session_manifest.md"
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            output = stdout.getvalue()
+
+            self.assertEqual(exit_code, 0)
+            self.assertTrue(markdown_path.exists())
+            self.assertEqual("session_manifest.v1", payload["schema_version"])
+            self.assertEqual("session-exp-001", payload["session_id"])
+            self.assertEqual("planned", payload["current_status"])
+            self.assertEqual(["data/cache/SPY.csv"], payload["data_sources"])
+            self.assertEqual(["data/strategies/spy_trend.json"], payload["strategy_paths"])
+            self.assertEqual("Recommended next step: baseline", payload["commands"][0]["label"])
+            self.assertIn("quant-lab run", payload["commands"][0]["command"])
+            self.assertIn(f"Session manifest refreshed: {manifest_path}", output)
+            self.assertIn("status: planned", output)
+
+    def test_session_refresh_detects_existing_conclusion_and_next_decision(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_path = Path(tmpdir)
+            output_dir = temp_path / "research" / "spy"
+            index_path = temp_path / "research_index.jsonl"
+            plan = create_research_plan(
+                title="SPY trend walkthrough",
+                hypothesis="Trend may reduce drawdown.",
+                strategy_path="data/strategies/spy_trend.json",
+                data_path="data/cache/SPY.csv",
+                symbol="SPY",
+                experiment_id="EXP-001",
+                index_path=index_path,
+                output_dir=output_dir,
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            plan_path, _ = save_research_plan(plan)
+            (output_dir / "evidence_summary.md").write_text("summary\n", encoding="utf-8")
+            (output_dir / "experiment_conclusion.md").write_text("# Conclusion\n", encoding="utf-8")
+            (output_dir / "experiment_conclusion.json").write_text("{}\n", encoding="utf-8")
+            index_path.write_text(
+                "\n".join(
+                    [
+                        json.dumps({"run_type": "run", "experiment_id": "EXP-001"}),
+                        json.dumps({"run_type": "sweep_run", "experiment_id": "EXP-001"}),
+                        json.dumps({"run_type": "test_selected_run", "experiment_id": "EXP-001"}),
+                        json.dumps({"run_type": "cost_sensitivity_run", "experiment_id": "EXP-001"}),
+                        json.dumps({"run_type": "date_sensitivity_run", "experiment_id": "EXP-001"}),
+                        json.dumps({"run_type": "benchmark_sensitivity_run", "experiment_id": "EXP-001"}),
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                exit_code = main(["session", "refresh", "--plan", plan_path])
+
+            payload = json.loads((output_dir / "session_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertEqual("needs_decision", payload["current_status"])
+            self.assertEqual(str(output_dir / "experiment_conclusion.md"), payload["conclusion_path"])
+            self.assertIn("draft_decision", payload["outstanding_next_steps"][0])
+            artifact_paths = [artifact["path"] for artifact in payload["key_artifacts"]]
+            self.assertIn(str(output_dir / "experiment_conclusion.md"), artifact_paths)
 
 
 if __name__ == "__main__":

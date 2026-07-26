@@ -2,8 +2,8 @@
 
 ## Status
 
-In progress. The deterministic session manifest model, validation, JSON writer,
-loader, and Markdown formatter are implemented.
+In progress. The deterministic session manifest model, status/replay CLI, and
+research-plan refresh command are implemented.
 
 ## Goal
 
@@ -84,7 +84,7 @@ index, and known artifact filenames.
 2. Add a small deterministic model and formatter. (Done.)
 3. Add `session status` for existing manifests. (Done.)
 4. Add `session replay-plan` for existing manifests. (Done.)
-5. Add `session refresh` from a research plan and artifact directory.
+5. Add `session refresh` from a research plan and artifact directory. (Done.)
 6. Teach conclusion and decision commands to update manifest pointers when a
    manifest exists.
 7. Add missing-artifact and stale-report warnings that point back to the

@@ -56,7 +56,7 @@ from .cli_robustness import (
     date_sensitivity_command,
     parameter_neighborhood_command,
 )
-from .cli_session import session_replay_plan_command, session_status_command
+from .cli_session import session_refresh_command, session_replay_plan_command, session_status_command
 from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -883,6 +883,13 @@ def register_session_commands(subparsers) -> None:
         help="Also print commands marked executed. Defaults to pending commands only.",
     )
     replay_parser.set_defaults(func=session_replay_plan_command)
+
+    refresh_parser = session_subparsers.add_parser(
+        "refresh",
+        help="Create or update session manifests from research_plan.json and known artifacts.",
+    )
+    refresh_parser.add_argument("--plan", required=True, help="Path to research_plan.json.")
+    refresh_parser.set_defaults(func=session_refresh_command)
 
 
 def register_sweep_commands(subparsers) -> None:

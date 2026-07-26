@@ -221,6 +221,17 @@ quant-lab session status \
 This command prints compact orientation: current status, experiment id,
 conclusion path, plan path, first next step, and first warning.
 
+Create or update the manifest from an existing research plan:
+
+```bash
+quant-lab session refresh \
+  --plan artifacts/research/qqq_sma_trust/research_plan.json
+```
+
+`refresh` reads the plan, experiment registry, research index, and common files
+in the output directory, then writes `session_manifest.json` and
+`session_manifest.md`.
+
 Print saved pending commands without executing them:
 
 ```bash

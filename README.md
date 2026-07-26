@@ -794,6 +794,17 @@ This prints the current session status, experiment id, conclusion path, plan
 path, first next step, and first warning. It is intentionally compact so a human,
 future Codex session, or local agent can orient before opening detailed reports.
 
+Create or update that manifest from a saved research plan:
+
+```bash
+quant-lab session refresh \
+  --plan artifacts/research/qqq_sma_trust/research_plan.json
+```
+
+`refresh` reads the plan, experiment registry, research index, and common files
+in the output directory. It writes `session_manifest.json` and
+`session_manifest.md`, then records the current recommended next command.
+
 Print saved pending commands without running them:
 
 ```bash
