@@ -2,7 +2,8 @@
 
 ## Status
 
-Planned.
+In progress. The deterministic session manifest model, validation, JSON writer,
+loader, and Markdown formatter are implemented.
 
 ## Goal
 
@@ -79,8 +80,8 @@ index, and known artifact filenames.
 
 ## Build Order
 
-1. Define the manifest schema and Markdown layout in docs.
-2. Add a small deterministic model and formatter.
+1. Define the manifest schema and Markdown layout in docs. (Done.)
+2. Add a small deterministic model and formatter. (Done.)
 3. Add `session status` for existing manifests.
 4. Add `session refresh` from a research plan and artifact directory.
 5. Teach conclusion and decision commands to update manifest pointers when a

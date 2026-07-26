@@ -99,6 +99,8 @@ artifact before deciding what happened.
 - Compare strategy results with explicit benchmarks. Buy-and-hold is the
   default, and cash is available as a flat baseline.
 - Write canonical experiment conclusions for humans and local agents.
+- Define session manifest artifacts that will orient future workflow-resume
+  commands around the canonical conclusion.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map

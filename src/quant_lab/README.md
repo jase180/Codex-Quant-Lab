@@ -45,6 +45,9 @@ It owns:
   `experiment_conclusion.json`, `experiment_conclusion.md`, and
   agent-readable context content from an experiment record plus linked research
   index rows.
+- `session_manifest.py`: defines the deterministic `session_manifest.json` and
+  `session_manifest.md` orientation layer for resuming a research workflow
+  without replacing the canonical conclusion.
 - `run_metadata.py`: defines the stable `run_metadata.json` artifact model.
 - `run_trust.py`: writes Markdown data-trust reports for saved strategy runs.
 - `trust_common.py`: shared warning/check helpers for trust-report commands.
