@@ -34,6 +34,8 @@ def build_portfolio_report(
 
     return f"""# {portfolio.name}
 
+Report role: supporting interpretation.
+
 ## Summary
 
 | Metric | Value |

@@ -62,6 +62,7 @@ class ExperimentSummaryTests(unittest.TestCase):
         summary = format_experiment_evidence_summary(experiment, records)
 
         self.assertIn("Experiment Evidence Summary", summary)
+        self.assertIn("Report role: supporting interpretation.", summary)
         self.assertIn("Registry linked metadata paths: 2", summary)
         self.assertIn("Linked index rows: 2", summary)
         self.assertIn("Linked paths missing from index: 0", summary)

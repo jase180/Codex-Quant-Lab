@@ -34,6 +34,7 @@ class ParameterNeighborhoodTests(unittest.TestCase):
             self.assertEqual({row["assessment"] for row in result.rows}, {"supported"})
             markdown = Path(result.report_path).read_text(encoding="utf-8")
             self.assertIn("# Parameter Neighborhood Report", markdown)
+            self.assertIn("Report role: supporting interpretation.", markdown)
             self.assertIn("nearby numeric values also beat the benchmark", markdown)
 
     def test_isolated_winner_when_neighbors_do_not_beat_benchmark(self) -> None:

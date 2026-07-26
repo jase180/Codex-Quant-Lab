@@ -175,7 +175,8 @@ Acceptance criteria:
 
 ### 4. Human-Facing Report Hierarchy
 
-Status: README hierarchy implemented; report cross-linking still planned.
+Status: README hierarchy and report role labels implemented; report
+cross-linking still planned.
 
 Reduce noise by defining a report hierarchy instead of deleting artifacts.
 

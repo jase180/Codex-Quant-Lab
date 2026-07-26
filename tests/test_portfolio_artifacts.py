@@ -103,6 +103,7 @@ class PortfolioArtifactsTests(unittest.TestCase):
         self.assertIn("portfolio_equity_curve.csv", metadata["artifacts"]["equity_curve"])
         self.assertAlmostEqual(metrics["ending_equity"], saved.metrics.ending_equity)
         self.assertIn("# QQQ SPY Static 60/40", report)
+        self.assertIn("Report role: supporting interpretation.", report)
         self.assertIn("Rebalance decisions use close prices", report)
         self.assertIn("## Benchmark: Buy And Hold SPY", report)
         self.assertIn("QQQ", trades_csv)

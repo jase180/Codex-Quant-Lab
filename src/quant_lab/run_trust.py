@@ -82,6 +82,8 @@ def _render_run_trust_report(
     lines = [
         "# Run Trust Report",
         "",
+        "Report role: supporting interpretation.",
+        "",
         "## Summary",
         "",
         f"- Metadata: `{metadata_file}`",

@@ -212,6 +212,8 @@ def format_experiment_conclusion_markdown(conclusion: ExperimentConclusion) -> s
     lines = [
         f"# Experiment Conclusion: {conclusion.experiment_id}",
         "",
+        "Report role: main source of truth.",
+        "",
         "## Current Conclusion",
         "",
         conclusion.current_conclusion,

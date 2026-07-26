@@ -114,6 +114,7 @@ class RunInspectionTests(unittest.TestCase):
             self.assertTrue(report_path.exists())
             markdown = report_path.read_text(encoding="utf-8")
             self.assertIn("# Run Trust Report", markdown)
+            self.assertIn("Report role: supporting interpretation.", markdown)
             self.assertIn("Verification result: reproducible input file", markdown)
             self.assertIn("Provider: fixture", markdown)
             self.assertIn("Worst severity: none", markdown)

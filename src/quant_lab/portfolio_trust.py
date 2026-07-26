@@ -162,6 +162,8 @@ def _render_portfolio_data_trust_report(
     lines = [
         "# Portfolio Data Trust Report",
         "",
+        "Report role: supporting interpretation.",
+        "",
         "## Summary",
         "",
         f"- Metadata: `{metadata_file}`",

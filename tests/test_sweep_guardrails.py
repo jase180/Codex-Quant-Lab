@@ -34,6 +34,7 @@ class SweepGuardrailTests(unittest.TestCase):
             self.assertTrue(any("Best run did not beat" in warning for warning in report.warnings))
             self.assertTrue(any("Best run has only 1 trade" in warning for warning in report.warnings))
             self.assertIn("# Sweep Guardrails", markdown)
+            self.assertIn("Report role: supporting interpretation.", markdown)
             self.assertIn("`run_001`", markdown)
 
     def test_summarize_sweep_guardrails_accepts_supported_small_sweep(self) -> None:

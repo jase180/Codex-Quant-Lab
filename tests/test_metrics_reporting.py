@@ -102,6 +102,7 @@ class MetricsReportingTests(unittest.TestCase):
         self.assertEqual(metrics.starting_equity, 100000.0)
         self.assertEqual(metrics.ending_equity, 103000.0)
         self.assertIn("# Sample Run", report)
+        self.assertIn("Report role: supporting interpretation.", report)
         self.assertIn("| Total Return |", report)
         self.assertIn("| 2026-04-02 | 103000.00 |", report)
         self.assertIn("CAGR is annualized from fewer than 252 trading days", report)

@@ -23,6 +23,8 @@ def format_experiment_evidence_summary(
         "Experiment Evidence Summary",
         "===========================",
         "",
+        "Report role: supporting interpretation.",
+        "",
         format_experiment_detail(experiment),
         "",
         "Evidence",
@@ -124,6 +126,8 @@ def format_experiment_decision_draft(
         [
             "Experiment Decision Draft",
             "=========================",
+            "",
+            "Report role: supporting interpretation.",
             "",
             f"Experiment: {experiment.experiment_id}",
             f"Title: {experiment.title}",

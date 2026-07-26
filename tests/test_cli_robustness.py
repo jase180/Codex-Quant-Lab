@@ -86,6 +86,7 @@ class CliRobustnessTests(unittest.TestCase):
 
             report = (output_dir / "cost_sensitivity_report.md").read_text(encoding="utf-8")
             self.assertIn("# Cost Sensitivity Report", report)
+            self.assertIn("Report role: supporting interpretation.", report)
             self.assertIn("## Verdict", report)
             self.assertIn("Inspect child run reports", report)
 
@@ -228,6 +229,7 @@ class CliRobustnessTests(unittest.TestCase):
 
             report = (output_dir / "date_sensitivity_report.md").read_text(encoding="utf-8")
             self.assertIn("# Date Sensitivity Report", report)
+            self.assertIn("Report role: supporting interpretation.", report)
             self.assertIn("Do not move window dates after seeing the results.", report)
 
             index_rows = _read_jsonl(index_path)
@@ -337,6 +339,7 @@ class CliRobustnessTests(unittest.TestCase):
 
             report = (output_dir / "benchmark_sensitivity_report.md").read_text(encoding="utf-8")
             self.assertIn("# Benchmark Sensitivity Report", report)
+            self.assertIn("Report role: supporting interpretation.", report)
             self.assertIn("Beating cash is useful", report)
 
             index_rows = _read_jsonl(index_path)

@@ -497,6 +497,8 @@ def _format_cost_sensitivity_report(
     lines = [
         "# Cost Sensitivity Report",
         "",
+        "Report role: supporting interpretation.",
+        "",
         f"- Strategy: `{strategy_id}`",
         f"- Benchmark: `{benchmark}`",
         f"- Runs: `{len(rows)}`",
@@ -548,6 +550,8 @@ def _format_date_sensitivity_report(
     lines = [
         "# Date Sensitivity Report",
         "",
+        "Report role: supporting interpretation.",
+        "",
         f"- Strategy: `{strategy_id}`",
         f"- Benchmark: `{benchmark}`",
         f"- Windows: `{len(rows)}`",
@@ -598,6 +602,8 @@ def _format_benchmark_sensitivity_report(
 ) -> str:
     lines = [
         "# Benchmark Sensitivity Report",
+        "",
+        "Report role: supporting interpretation.",
         "",
         f"- Strategy: `{strategy_id}`",
         f"- Benchmarks: `{len(rows)}`",

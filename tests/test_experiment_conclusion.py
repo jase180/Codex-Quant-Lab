@@ -205,6 +205,7 @@ class ExperimentConclusionTest(unittest.TestCase):
         )
 
         markdown = format_experiment_conclusion_markdown(conclusion)
+        self.assertIn("Report role: main source of truth.", markdown)
         last_index = -1
         for section in MARKDOWN_SECTION_ORDER:
             section_index = markdown.index(section)

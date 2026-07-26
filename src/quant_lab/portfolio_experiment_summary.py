@@ -27,6 +27,8 @@ def format_portfolio_experiment_summary(
     lines = [
         "# Portfolio Experiment Summary",
         "",
+        "Report role: supporting interpretation.",
+        "",
         "```text",
         format_experiment_detail(experiment),
         "```",

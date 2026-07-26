@@ -44,6 +44,8 @@ def build_markdown_report(
 
     return f"""# {run_name}
 
+Report role: supporting interpretation.
+
 ## Summary
 
 | Metric | Value |

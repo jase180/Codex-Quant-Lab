@@ -157,6 +157,8 @@ def _render_sweep_guardrail_report(
 
     return f"""# Sweep Guardrails
 
+Report role: supporting interpretation.
+
 ## Source
 
 - Summary: `{report.summary_path}`

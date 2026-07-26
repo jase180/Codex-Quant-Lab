@@ -33,6 +33,7 @@ class PortfolioTrustTests(unittest.TestCase):
             self.assertTrue(report_path.exists())
             markdown = report_path.read_text(encoding="utf-8")
             self.assertIn("# Portfolio Data Trust Report", markdown)
+            self.assertIn("Report role: supporting interpretation.", markdown)
             self.assertIn("| QQQ | reproducible input file | none | 2 | 0 |", markdown)
             self.assertIn("### benchmark: SPY", markdown)
             self.assertIn("Provider: fixture", markdown)

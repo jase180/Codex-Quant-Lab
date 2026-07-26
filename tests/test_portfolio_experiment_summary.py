@@ -66,6 +66,7 @@ class PortfolioExperimentSummaryTests(unittest.TestCase):
         summary = format_portfolio_experiment_summary(experiment, records)
 
         self.assertIn("# Portfolio Experiment Summary", summary)
+        self.assertIn("Report role: supporting interpretation.", summary)
         self.assertIn("Linked portfolio index rows: 2", summary)
         self.assertIn("## Evidence Label", summary)
         self.assertIn("Label: `mixed`", summary)

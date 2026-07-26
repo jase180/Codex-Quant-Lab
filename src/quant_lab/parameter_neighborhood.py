@@ -154,6 +154,8 @@ def _format_report(result: ParameterNeighborhoodResult, source: Path) -> str:
     lines = [
         "# Parameter Neighborhood Report",
         "",
+        "Report role: supporting interpretation.",
+        "",
         f"- Source summary: `{source}`",
         f"- Best run: `{result.best_run_id or 'none'}`",
         f"- Assessment: `{result.assessment}`",
