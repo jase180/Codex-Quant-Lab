@@ -122,6 +122,7 @@ artifact before deciding what happened.
 - Define and refresh session manifest artifacts that orient future
   workflow-resume commands around the canonical conclusion.
 - Check local setup and dependency health with `quant-lab doctor`.
+- Run an offline end-to-end wiring check with `quant-lab smoke-test`.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map
@@ -216,6 +217,12 @@ Check whether the local environment is ready for normal research workflows:
 
 ```bash
 quant-lab doctor
+```
+
+Run an offline end-to-end smoke workflow:
+
+```bash
+quant-lab smoke-test
 ```
 
 The tests avoid live market-data calls. Live fetching is done manually through

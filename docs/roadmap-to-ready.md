@@ -203,6 +203,8 @@ Deliverables:
 
 - `quant-lab doctor` for dependency, import, artifact-directory, and data-cache
   checks.
+- `quant-lab smoke-test` for an offline end-to-end wiring check that writes a
+  plan, baseline run, and session manifest.
 - A local-agent context contract rooted in `session_manifest.json`.
 - A strict `agent_recommendation.v1` schema.
 - Deterministic `quant-lab agent suggest` that works without a model.

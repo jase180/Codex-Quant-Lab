@@ -55,6 +55,24 @@ artifact write access, and the local data cache. An empty data cache is only a
 warning because a fresh clone should still be able to run the offline smoke
 workflow.
 
+Run the offline smoke workflow:
+
+Windows PowerShell:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli smoke-test --force
+```
+
+WSL, Linux, or macOS:
+
+```bash
+quant-lab smoke-test --force
+```
+
+The smoke test creates a sample research plan, runs one baseline against the
+tracked sample CSV, refreshes a session manifest, and prints `read_first` plus
+the next recommended command.
+
 Run the unit tests before trusting any research output:
 
 Windows PowerShell:
@@ -74,11 +92,12 @@ MPLCONFIGDIR=artifacts/matplotlib-cache python -m unittest discover -s tests
 directory instead of a user-level cache path. That makes test runs easier for
 Codex and other local agents to repeat.
 
-## 3. Run The Offline Smoke Workflow
+## 3. Run The Offline Smoke Workflow Manually
 
-This path needs no internet. It uses the tracked `data/sample_ohlcv.csv` file,
-so it is good for checking that commands, package imports, charts, reports, and
-session manifests work.
+The manual path below is the expanded version of `quant-lab smoke-test`. It
+needs no internet and uses the tracked `data/sample_ohlcv.csv` file, so it is
+good for checking that commands, package imports, charts, reports, and session
+manifests work.
 
 Create a guided research plan:
 

@@ -13,7 +13,7 @@ from .cli_data import (
     new_strategy_command,
     show_data_source_command,
 )
-from .cli_health import doctor_command
+from .cli_health import doctor_command, smoke_test_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .cli_experiments import (
@@ -489,6 +489,24 @@ def register_health_commands(subparsers) -> None:
     )
     doctor_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report.")
     doctor_parser.set_defaults(func=doctor_command)
+
+    smoke_parser = subparsers.add_parser(
+        "smoke-test",
+        help="Run an offline sample workflow and write artifacts for inspection.",
+    )
+    smoke_parser.add_argument(
+        "--repo-root",
+        default=".",
+        help="Project root to use for tracked sample inputs. Defaults to the current directory.",
+    )
+    smoke_parser.add_argument(
+        "--out",
+        default="artifacts/smoke-test",
+        help="Directory where smoke-test artifacts are written. Defaults to artifacts/smoke-test.",
+    )
+    smoke_parser.add_argument("--force", action="store_true", help="Replace the output directory if it already exists.")
+    smoke_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report.")
+    smoke_parser.set_defaults(func=smoke_test_command)
 
 
 def register_run_inspection_commands(subparsers) -> None:

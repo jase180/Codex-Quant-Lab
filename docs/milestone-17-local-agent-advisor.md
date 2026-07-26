@@ -57,9 +57,10 @@ Planned work:
 - Add `quant-lab doctor` for dependency, import, artifact-directory, and data
   cache checks. Delivered.
 - Add or document a one-command smoke workflow that uses tracked sample data.
-- Ensure the command output says which file to read next.
+  Delivered with `quant-lab smoke-test`.
+- Ensure the command output says which file to read next. Delivered.
 - Keep the smoke workflow honest by labeling it as a wiring check, not research
-  evidence.
+  evidence. Delivered.
 
 Exit criteria:
 
