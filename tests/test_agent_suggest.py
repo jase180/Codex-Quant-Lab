@@ -144,7 +144,8 @@ class AgentSuggestTest(unittest.TestCase):
                 hypothesis="Model should return valid schema.",
                 plan_path=output_dir / "research_plan.json",
                 output_dir=output_dir,
-                current_status="complete",
+                current_status="in_progress",
+                outstanding_next_steps=["unknown_step: Human should inspect this unusual session."],
                 created_at_utc="2026-07-25T00:00:00Z",
             )
             (output_dir / "research_plan.json").write_text("{}\n", encoding="utf-8")
@@ -179,6 +180,36 @@ class AgentSuggestTest(unittest.TestCase):
 
             self.assertEqual("needs_review", recommendation.recommended_action)
             self.assertIn("unusual", recommendation.reason)
+
+    def test_suggest_does_not_call_provider_for_complete_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="Complete model suggest",
+                hypothesis="Complete sessions should stop without model input.",
+                plan_path=output_dir / "research_plan.json",
+                output_dir=output_dir,
+                current_status="complete",
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            (output_dir / "research_plan.json").write_text("{}\n", encoding="utf-8")
+            manifest_path, _ = save_session_manifest(manifest)
+
+            def fake_post(_url, _payload, _timeout_seconds):
+                raise AssertionError("provider should not be called for a complete session")
+
+            recommendation = suggest_from_manifest(
+                manifest_path,
+                provider="openai-compatible",
+                base_url="http://local/v1",
+                model="fake",
+                http_post=fake_post,
+            )
+
+            self.assertEqual("stop", recommendation.recommended_action)
+            self.assertEqual("high", recommendation.confidence)
 
     def test_suggest_falls_back_when_provider_output_is_invalid(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

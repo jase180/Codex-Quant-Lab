@@ -45,6 +45,8 @@ def suggest_from_manifest(
     manifest = load_session_manifest(manifest_path)
     context = build_agent_context(manifest_path)
     deterministic = _deterministic_recommendation(manifest, context)
+    if deterministic.recommended_action == "stop":
+        return deterministic
     if provider == "deterministic":
         return deterministic
     if provider != "openai-compatible":

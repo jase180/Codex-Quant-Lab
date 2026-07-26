@@ -73,6 +73,10 @@ If the provider is unreachable, returns invalid JSON, or returns JSON that does
 not validate as `agent_recommendation.v1`, the command saves the deterministic
 fallback recommendation and records the model failure as a risk.
 
+Complete sessions short-circuit to the deterministic `stop` recommendation
+before calling a model. A recorded decision is treated as authoritative state,
+not as something a local model should reinterpret.
+
 Validate a recommendation before trusting it:
 
 ```bash
