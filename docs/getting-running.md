@@ -36,6 +36,25 @@ python -m quant_lab.cli --help
 
 ## 2. Prove The Environment
 
+Run the doctor command first:
+
+Windows PowerShell:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli doctor
+```
+
+WSL, Linux, or macOS:
+
+```bash
+quant-lab doctor
+```
+
+The doctor command checks Python, core dependencies, required project files,
+artifact write access, and the local data cache. An empty data cache is only a
+warning because a fresh clone should still be able to run the offline smoke
+workflow.
+
 Run the unit tests before trusting any research output:
 
 Windows PowerShell:

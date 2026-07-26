@@ -381,7 +381,7 @@ Delivered work:
 
 ## Milestone 17: Local Agent Advisor
 
-Status: proposed.
+Status: in progress.
 
 Goal: add a local-agent advisor loop that can read the current experiment state,
 recommend the next research step, explain why, and stop.

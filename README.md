@@ -121,6 +121,7 @@ artifact before deciding what happened.
 - Write canonical experiment conclusions for humans and local agents.
 - Define and refresh session manifest artifacts that orient future
   workflow-resume commands around the canonical conclusion.
+- Check local setup and dependency health with `quant-lab doctor`.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map
@@ -209,6 +210,12 @@ Run the test suite:
 ```bash
 . .venv/bin/activate
 python -m unittest discover -s tests
+```
+
+Check whether the local environment is ready for normal research workflows:
+
+```bash
+quant-lab doctor
 ```
 
 The tests avoid live market-data calls. Live fetching is done manually through

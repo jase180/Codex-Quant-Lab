@@ -13,6 +13,7 @@ from .cli_data import (
     new_strategy_command,
     show_data_source_command,
 )
+from .cli_health import doctor_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .cli_experiments import (
@@ -85,6 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_portfolio_commands(subparsers)
     register_portfolio_batch_commands(subparsers)
     register_data_commands(subparsers)
+    register_health_commands(subparsers)
     register_run_inspection_commands(subparsers)
     register_experiment_commands(subparsers)
     register_research_plan_commands(subparsers)
@@ -463,6 +465,30 @@ def register_data_commands(subparsers) -> None:
     new_strategy_parser.add_argument("--name", default=None, help="Optional display name override.")
     new_strategy_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
     new_strategy_parser.set_defaults(func=new_strategy_command)
+
+
+def register_health_commands(subparsers) -> None:
+    doctor_parser = subparsers.add_parser(
+        "doctor",
+        help="Check whether the local environment is ready to run research workflows.",
+    )
+    doctor_parser.add_argument(
+        "--repo-root",
+        default=".",
+        help="Project root to inspect. Defaults to the current directory.",
+    )
+    doctor_parser.add_argument(
+        "--artifacts-dir",
+        default="artifacts",
+        help="Artifacts directory to check for write access. Defaults to artifacts.",
+    )
+    doctor_parser.add_argument(
+        "--data-cache-dir",
+        default="data/cache",
+        help="Data cache directory to inspect. Defaults to data/cache.",
+    )
+    doctor_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report.")
+    doctor_parser.set_defaults(func=doctor_command)
 
 
 def register_run_inspection_commands(subparsers) -> None:

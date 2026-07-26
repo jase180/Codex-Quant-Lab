@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+In progress.
 
 ## Goal
 
@@ -55,7 +55,7 @@ Goal: make the project easy for a human or agent to prove runnable.
 Planned work:
 
 - Add `quant-lab doctor` for dependency, import, artifact-directory, and data
-  cache checks.
+  cache checks. Delivered.
 - Add or document a one-command smoke workflow that uses tracked sample data.
 - Ensure the command output says which file to read next.
 - Keep the smoke workflow honest by labeling it as a wiring check, not research
