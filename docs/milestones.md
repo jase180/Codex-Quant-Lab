@@ -409,12 +409,15 @@ Planned work:
   Delivered.
 - Future non-dry-run `agent cycle` with explicit step limits and stop
   conditions.
+  Deferred until explicit human review.
 
 Exit criteria:
 
 - A local agent can recommend the next experiment or analysis step from saved
   artifacts without taking ownership of source-code edits or unbounded runs.
   Delivered for dry-run cycles; non-dry-run execution remains future work.
+  While non-dry-run execution is deferred, keep work to dry-run validation,
+  docs, and cleanup.
 
 ## Milestone 18: Strategy Language V2
 

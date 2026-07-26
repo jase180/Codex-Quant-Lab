@@ -4,6 +4,10 @@
 
 In progress.
 
+Current boundary: pause before any non-dry-run execution work. The safe path is
+`agent cycle --dry-run`, documentation, validation hardening, and cleanup. A
+future `agent cycle --execute` design should wait for explicit human review.
+
 ## Goal
 
 Add a local-agent advisor loop that can read the current experiment state,
@@ -195,7 +199,8 @@ quant-lab agent cycle \
 Rules:
 
 - `--dry-run` writes context, recommendation, and cycle artifacts, then stops.
-- `--max-steps` is required for any non-dry-run cycle.
+- Non-dry-run execution is intentionally not implemented yet.
+- A future non-dry-run cycle must require explicit step limits.
 - The command may only run approved `quant-lab` research commands.
 - Every step must write a recommendation artifact.
 - Stop on failed commands, missing context, invalid model output, stale
@@ -208,6 +213,8 @@ Exit criteria:
   an auditable trail of recommendations, commands, outputs, and stop reasons.
 - `agent cycle --dry-run` can show the next proposed command without executing
   it. Delivered.
+- Model-backed dry-run has been checked against an in-progress baseline-only
+  workflow and agreed with `research-plan next` on `run_trust`. Delivered.
 
 ## Done Criteria
 
@@ -220,7 +227,8 @@ Milestone 17 is done when:
 - local-model `agent suggest` works through at least one OpenAI-compatible
   adapter,
 - `agent cycle --dry-run` can show a bounded plan. Delivered.
-- non-dry-run cycling is guarded by explicit limits and stop conditions,
+- non-dry-run cycling is either deliberately deferred or guarded by explicit
+  limits and stop conditions,
 - README and workflow docs explain that the agent recommends experiments rather
   than owning the repo.
 

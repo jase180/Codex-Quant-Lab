@@ -1136,9 +1136,9 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Finish Milestone 17 by deciding whether to add guarded non-dry-run
-   `agent cycle` execution or keep execution human-triggered for now.
-2. Use `agent cycle --dry-run` on one real experiment and compare its advice
-   with the deterministic research-plan next step.
+1. Keep Milestone 17 on the safe path while non-dry-run execution is deferred:
+   docs, validation hardening, dry-run comparison, and cleanup.
+2. Decide later, with explicit human review, whether guarded non-dry-run
+   `agent cycle` execution belongs in this lab.
 3. Reassess Strategy Language V2 versus Portfolio Realism after the advisor loop
    can recommend bounded next experiments from saved artifacts.

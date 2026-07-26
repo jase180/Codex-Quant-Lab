@@ -220,6 +220,7 @@ Deliverables:
   Delivered.
 - Future non-dry-run `agent cycle` with explicit step limits, stop conditions,
   and no source-code edits.
+  Deferred until explicit human review.
 
 Exit criteria:
 

@@ -112,6 +112,10 @@ agent_cycle.md
 context, recommendation, proposed command, and stop reason, then stops before
 running anything.
 
+Non-dry-run `agent cycle` execution is intentionally deferred. Until that
+boundary is revisited with explicit human review, local-agent work should stay
+limited to dry runs, docs, validation hardening, and cleanup.
+
 ## Context Contract
 
 The context bundle starts from `session_manifest.json`. It includes:
@@ -203,8 +207,10 @@ The advisor should stop and ask for review when:
 - the next step requires choosing new research assumptions,
 - evidence is weak or contradictory,
 - the model cannot produce valid JSON,
-- the requested cycle limit has been reached.
-- the command is running as `agent cycle --dry-run`.
+- a future requested cycle limit has been reached,
+- the command is running as `agent cycle --dry-run`,
+- non-dry-run execution has not been explicitly approved for the current work
+  session.
 
 ## Why This Boundary Exists
 

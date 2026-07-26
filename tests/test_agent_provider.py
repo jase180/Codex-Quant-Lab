@@ -3,7 +3,12 @@ import unittest
 from pathlib import Path
 
 from quant_lab.agent_context import build_agent_context
-from quant_lab.agent_provider import build_agent_prompt, suggest_with_openai_compatible_provider
+from quant_lab.agent_provider import (
+    AGENT_RECOMMENDATION_RESPONSE_FORMAT,
+    build_agent_prompt,
+    suggest_with_openai_compatible_provider,
+)
+from quant_lab.agent_recommendation import ALLOWED_RECOMMENDED_ACTIONS, CONFIDENCE_VALUES
 from quant_lab.session_manifest import SessionCommand, create_session_manifest, save_session_manifest
 
 
@@ -170,3 +175,9 @@ class AgentProviderTest(unittest.TestCase):
             self.assertIn("return exactly one JSON object", prompt)
             self.assertIn("agent_recommendation.v1", prompt)
             self.assertIn("Provider test", prompt)
+
+    def test_response_schema_uses_recommendation_validator_constants(self) -> None:
+        properties = AGENT_RECOMMENDATION_RESPONSE_FORMAT["json_schema"]["schema"]["properties"]
+
+        self.assertEqual(sorted(ALLOWED_RECOMMENDED_ACTIONS), properties["recommended_action"]["enum"])
+        self.assertEqual(sorted(CONFIDENCE_VALUES), properties["confidence"]["enum"])
