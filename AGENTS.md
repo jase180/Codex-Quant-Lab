@@ -11,25 +11,28 @@ This is a small Python quant research lab centered on:
 ## Local Setup
 
 - Python 3.10+ is required.
-- The package dependency is `pandas>=2.0`.
+- Runtime dependencies are listed in `pyproject.toml`: `pandas`, `matplotlib`, and `yfinance`.
 - Tests are written with `unittest`.
+- The verified local Windows environment is `.venv-win`.
 
 ## Tooling Preference
 
-- Prefer WSL for Python, test, package, and development commands in this repo.
-- Use PowerShell only when the task specifically needs Windows shell behavior or simple Windows filesystem inspection.
+- Prefer WSL for Python, test, package, and development commands when its dependencies are installed.
+- In the current checkout, `.venv-win` is the verified working environment; use it when WSL is missing project dependencies.
+- Use PowerShell when working from the verified Windows venv, when the task needs Windows shell behavior, or for simple Windows filesystem inspection.
 - The Windows checkout path maps to WSL as `/mnt/c/Users/jase1/Documents/Codex/2026-07-04/let-s-get-familiar-with-one`.
 
 Run tests with:
 
 ```powershell
-python -m unittest discover -s tests
+$env:MPLCONFIGDIR='artifacts/matplotlib-cache'
+.\.venv-win\Scripts\python.exe -m unittest discover -s tests
 ```
 
 If using WSL from this Windows checkout:
 
 ```bash
-PYTHONPATH=src python3 -m unittest discover -s tests
+MPLCONFIGDIR=artifacts/matplotlib-cache python -m unittest discover -s tests
 ```
 
 ## Development Guidance
@@ -50,7 +53,9 @@ PYTHONPATH=src python3 -m unittest discover -s tests
 
 ## Known Environment Note
 
-The Windows shell in this workspace may not expose `python` or `py` on `PATH`. WSL currently has Python 3.12, but the full backtester test suite requires `pandas` to be installed there.
+- The Windows shell in this workspace may not expose `python` or `py` on `PATH`; use `.\.venv-win\Scripts\python.exe` for repo commands.
+- `quant-lab doctor` has passed in the Windows venv with Python, pandas, matplotlib, yfinance, package imports, writable artifacts, and cached data checks.
+- WSL is still preferred for general development when its dependencies are installed, but do not assume WSL has the full Python environment ready.
 
 ## Local Agent Runtime
 
