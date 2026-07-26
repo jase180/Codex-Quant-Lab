@@ -978,29 +978,8 @@ def register_agent_commands(subparsers) -> None:
         "suggest",
         help="Write a deterministic next-step recommendation from a session manifest.",
     )
-    suggest_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
-    suggest_parser.add_argument(
-        "--provider",
-        choices=["deterministic", "openai-compatible"],
-        default="deterministic",
-        help="Recommendation provider. Defaults to deterministic.",
-    )
-    suggest_parser.add_argument(
-        "--base-url",
-        default="http://localhost:11434/v1",
-        help="OpenAI-compatible base URL. Defaults to Ollama's local v1 endpoint.",
-    )
-    suggest_parser.add_argument(
-        "--model",
-        default=None,
-        help="Model name for --provider openai-compatible, such as llama3.1:8b.",
-    )
-    suggest_parser.add_argument(
-        "--timeout-seconds",
-        type=float,
-        default=60.0,
-        help="Provider request timeout in seconds. Defaults to 60.",
-    )
+    add_agent_manifest_argument(suggest_parser)
+    add_agent_provider_arguments(suggest_parser)
     suggest_parser.add_argument(
         "--out-dir",
         default=None,
@@ -1014,34 +993,13 @@ def register_agent_commands(subparsers) -> None:
         "cycle",
         help="Create one human-gated local-agent cycle without executing commands.",
     )
-    cycle_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
+    add_agent_manifest_argument(cycle_parser)
     cycle_parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Required for now. Writes cycle artifacts and stops before execution.",
     )
-    cycle_parser.add_argument(
-        "--provider",
-        choices=["deterministic", "openai-compatible"],
-        default="deterministic",
-        help="Recommendation provider. Defaults to deterministic.",
-    )
-    cycle_parser.add_argument(
-        "--base-url",
-        default="http://localhost:11434/v1",
-        help="OpenAI-compatible base URL. Defaults to Ollama's local v1 endpoint.",
-    )
-    cycle_parser.add_argument(
-        "--model",
-        default=None,
-        help="Model name for --provider openai-compatible, such as llama3.1:8b.",
-    )
-    cycle_parser.add_argument(
-        "--timeout-seconds",
-        type=float,
-        default=60.0,
-        help="Provider request timeout in seconds. Defaults to 60.",
-    )
+    add_agent_provider_arguments(cycle_parser)
     cycle_parser.add_argument(
         "--out-dir",
         default=None,
@@ -1064,6 +1022,35 @@ def register_agent_commands(subparsers) -> None:
     validate_parser.add_argument("--json", action="store_true", help="Print normalized recommendation JSON.")
     validate_parser.add_argument("--markdown", action="store_true", help="Print normalized Markdown after validation.")
     validate_parser.set_defaults(func=agent_validate_recommendation_command)
+
+
+def add_agent_manifest_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
+
+
+def add_agent_provider_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--provider",
+        choices=["deterministic", "openai-compatible"],
+        default="deterministic",
+        help="Recommendation provider. Defaults to deterministic.",
+    )
+    parser.add_argument(
+        "--base-url",
+        default="http://localhost:11434/v1",
+        help="OpenAI-compatible base URL. Defaults to Ollama's local v1 endpoint.",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Model name for --provider openai-compatible, such as llama3.1:8b.",
+    )
+    parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=60.0,
+        help="Provider request timeout in seconds. Defaults to 60.",
+    )
 
 
 def register_sweep_commands(subparsers) -> None:

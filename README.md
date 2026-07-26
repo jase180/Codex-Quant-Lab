@@ -72,6 +72,8 @@ For install, smoke-test, and first-run commands, start with
 
 For local-agent advisor boundaries and context files, see
 [docs/local-agent.md](docs/local-agent.md).
+For copyable local-agent dry-run commands, see
+[docs/local-agent-runbook.md](docs/local-agent-runbook.md).
 
 For the full walkthrough, see [docs/research-workflow.md](docs/research-workflow.md).
 For a copyable skeptical example, see
@@ -154,6 +156,7 @@ docs/
   milestone-15-state-review.md  Current Milestone 15 state review.
   milestone-16-session-manifests.md  Completed workflow resume/session manifests.
   milestone-17-local-agent-advisor.md  Planned local-agent experiment advisor.
+  local-agent-runbook.md       Copyable local-agent dry-run command runbook.
   core-backtest-assumption-audit.md  Current simulation assumption audit.
   experiment-conclusion-schema.md  Planned conclusion JSON and Markdown shape.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
