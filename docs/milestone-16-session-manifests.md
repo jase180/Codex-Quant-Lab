@@ -90,7 +90,7 @@ index, and known artifact filenames.
 7. Teach decision commands to update manifest pointers when a manifest exists.
    (Done.)
 8. Add missing-artifact and stale-report warnings that point back to the
-   canonical conclusion.
+   canonical conclusion. (Done.)
 9. Update README and workflow docs so returning users read:
    `session_manifest.md` for orientation, then `experiment_conclusion.md` for
    the actual research conclusion.

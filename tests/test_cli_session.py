@@ -1,6 +1,7 @@
 import contextlib
 import io
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -217,6 +218,50 @@ class CliSessionTest(unittest.TestCase):
             self.assertIn("draft_decision", payload["outstanding_next_steps"][0])
             artifact_paths = [artifact["path"] for artifact in payload["key_artifacts"]]
             self.assertIn(str(output_dir / "experiment_conclusion.md"), artifact_paths)
+
+    def test_session_refresh_warns_about_stale_conclusion_and_missing_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_path = Path(tmpdir)
+            output_dir = temp_path / "research" / "spy"
+            index_path = temp_path / "research_index.jsonl"
+            missing_metadata_path = output_dir / "baseline" / "run_metadata.json"
+            plan = create_research_plan(
+                title="SPY trend walkthrough",
+                hypothesis="Trend may reduce drawdown.",
+                strategy_path="data/strategies/spy_trend.json",
+                data_path="data/cache/SPY.csv",
+                symbol="SPY",
+                experiment_id="EXP-001",
+                index_path=index_path,
+                output_dir=output_dir,
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            plan_path, _ = save_research_plan(plan)
+            (output_dir / "experiment_conclusion.md").write_text("# Old conclusion\n", encoding="utf-8")
+            (output_dir / "experiment_conclusion.json").write_text("{}\n", encoding="utf-8")
+            (output_dir / "evidence_summary.md").write_text("newer summary\n", encoding="utf-8")
+            os.utime(output_dir / "experiment_conclusion.md", (100, 100))
+            os.utime(output_dir / "evidence_summary.md", (200, 200))
+            index_path.write_text(
+                json.dumps(
+                    {
+                        "run_type": "run",
+                        "experiment_id": "EXP-001",
+                        "metadata_path": str(missing_metadata_path),
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()):
+                exit_code = main(["session", "refresh", "--plan", plan_path])
+
+            payload = json.loads((output_dir / "session_manifest.json").read_text(encoding="utf-8"))
+            warnings = "\n".join(payload["warnings"])
+            self.assertEqual(exit_code, 0)
+            self.assertIn("evidence_summary.md is newer than experiment_conclusion.md", warnings)
+            self.assertIn(f"Linked run metadata is missing: {missing_metadata_path}", warnings)
 
 
 if __name__ == "__main__":

@@ -58,10 +58,11 @@ def build_session_manifest_from_research_plan(plan_path: str | Path):
     index_records = filter_index_records(load_research_index(plan.index_path), experiment_id=plan.experiment_id)
     experiments = load_experiments(plan.experiments_path)
     experiment = next((record for record in experiments if record.experiment_id == plan.experiment_id), None)
+    has_decision = experiment_has_decision(experiment)
     recommendation = recommend_next_step(
         plan,
         index_records,
-        experiment_has_decision=experiment_has_decision(experiment),
+        experiment_has_decision=has_decision,
         run_trust_report_exists=run_trust_report_exists(index_records),
         evidence_summary_exists=evidence_summary_exists(plan.output_dir),
         parameter_neighborhood_exists=parameter_neighborhood_exists(plan.output_dir),
@@ -80,10 +81,10 @@ def build_session_manifest_from_research_plan(plan_path: str | Path):
         commands=_session_commands(recommendation),
         key_artifacts=_key_artifacts(plan_file, output_dir, index_records),
         conclusion_path=_conclusion_path(output_dir),
-        decision_path=f"experiment:{plan.experiment_id}" if experiment is not None and experiment.decision_record else None,
+        decision_path=f"experiment:{plan.experiment_id}" if has_decision else None,
         current_status=_manifest_status(recommendation.step),
         outstanding_next_steps=_outstanding_next_steps(recommendation),
-        warnings=_manifest_warnings(output_dir, recommendation.step),
+        warnings=_manifest_warnings(output_dir, recommendation.step, index_records, experiment_has_decision=has_decision),
     )
 
 
@@ -158,14 +159,54 @@ def _outstanding_next_steps(recommendation) -> list[str]:
     return [f"{recommendation.step}: {recommendation.reason}"]
 
 
-def _manifest_warnings(output_dir: Path, recommended_step: str) -> list[str]:
+def _manifest_warnings(
+    output_dir: Path,
+    recommended_step: str,
+    index_records: list[dict],
+    *,
+    experiment_has_decision: bool = False,
+) -> list[str]:
     warnings: list[str] = []
     conclusion_markdown = output_dir / "experiment_conclusion.md"
     conclusion_json = output_dir / "experiment_conclusion.json"
+    evidence_summary = output_dir / "evidence_summary.md"
+    parameter_report = output_dir / "robustness" / "parameters" / "parameter_neighborhood_report.md"
     if conclusion_json.exists() and not conclusion_markdown.exists():
         warnings.append("experiment_conclusion.json exists, but experiment_conclusion.md is missing.")
     if conclusion_markdown.exists() and not conclusion_json.exists():
         warnings.append("experiment_conclusion.md exists, but experiment_conclusion.json is missing.")
     if recommended_step == "conclude_experiment":
         warnings.append("Canonical conclusion is missing; run the recommended conclusion command before deciding.")
+    if experiment_has_decision and not conclusion_markdown.exists():
+        warnings.append("A registry decision exists, but experiment_conclusion.md is missing.")
+    if conclusion_markdown.exists() and evidence_summary.exists() and evidence_summary.stat().st_mtime > conclusion_markdown.stat().st_mtime:
+        warnings.append("evidence_summary.md is newer than experiment_conclusion.md; refresh the canonical conclusion before relying on it.")
+    if conclusion_markdown.exists() and parameter_report.exists() and parameter_report.stat().st_mtime > conclusion_markdown.stat().st_mtime:
+        warnings.append(
+            "parameter_neighborhood_report.md is newer than experiment_conclusion.md; refresh the canonical conclusion before relying on it."
+        )
+    warnings.extend(_missing_metadata_warnings(index_records))
+    warnings.extend(_missing_run_trust_warnings(index_records))
+    return warnings
+
+
+def _missing_metadata_warnings(index_records: list[dict]) -> list[str]:
+    warnings: list[str] = []
+    for metadata_path in _metadata_paths(index_records):
+        if not Path(metadata_path).exists():
+            warnings.append(f"Linked run metadata is missing: {metadata_path}")
+    return warnings
+
+
+def _missing_run_trust_warnings(index_records: list[dict]) -> list[str]:
+    warnings: list[str] = []
+    for record in index_records:
+        if str(record.get("run_type")) != "run":
+            continue
+        metadata_path = str(record.get("metadata_path") or "").strip()
+        if not metadata_path:
+            continue
+        trust_path = Path(metadata_path).parent / "run_trust_report.md"
+        if Path(metadata_path).exists() and not trust_path.exists():
+            warnings.append(f"Baseline run metadata exists, but run_trust_report.md is missing beside {metadata_path}.")
     return warnings
