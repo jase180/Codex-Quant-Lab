@@ -241,7 +241,7 @@ Audit doc:
 
 ### 6. One Complete Real Experiment
 
-Status: planned.
+Status: SPY long/cash trend experiment completed and documented.
 
 Run one boring, complete experiment end to end and use it to prune or demote
 unhelpful workflow pieces.
@@ -267,6 +267,9 @@ Acceptance criteria:
 - Any artifact that did not help reach the conclusion is either demoted in docs
   or marked as raw/audit-only.
 - The example becomes the recommended walkthrough for new users.
+
+Experiment note:
+[spy-long-cash-trend-experiment.md](spy-long-cash-trend-experiment.md)
 
 ### 7. Session Manifest, After The Conclusion Shape Is Clear
 
@@ -298,7 +301,7 @@ Acceptance criteria:
    strategy research plans.)
 7. Audit core backtest assumptions and fill test gaps. (Assumption audit doc
    done; no behavior change made.)
-8. Run the complete SPY long/cash experiment.
+8. Run the complete SPY long/cash experiment. (Done.)
 9. Add session manifests around the stable workflow.
 10. Rewrite README around the default path.
 

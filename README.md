@@ -152,6 +152,7 @@ More detailed module notes:
 - [docs/milestone-14-backtest-realism-robustness.md](docs/milestone-14-backtest-realism-robustness.md)
 - [docs/milestone-15-default-workflow-canonical-conclusion.md](docs/milestone-15-default-workflow-canonical-conclusion.md)
 - [docs/core-backtest-assumption-audit.md](docs/core-backtest-assumption-audit.md)
+- [docs/spy-long-cash-trend-experiment.md](docs/spy-long-cash-trend-experiment.md)
 - [docs/experiment-conclusion-schema.md](docs/experiment-conclusion-schema.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
