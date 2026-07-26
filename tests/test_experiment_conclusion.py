@@ -151,6 +151,35 @@ class ExperimentConclusionTest(unittest.TestCase):
         self.assertEqual("missing", statuses["benchmark_sensitivity"])
         self.assertIn("missing robustness checks", conclusion.next_useful_tests[0].test.lower())
 
+    def test_rejected_conclusion_prioritizes_stop_or_reformulate(self):
+        records = [
+            _index_record(
+                run_id="baseline",
+                run_type="run",
+                excess_total_return=-4.11,
+                metadata_path="artifacts/research/spy/baseline/run_metadata.json",
+                trade_count=51,
+            ),
+            _index_record(
+                run_id="sweep_best",
+                run_type="sweep_run",
+                excess_total_return=-2.01,
+                metadata_path="artifacts/research/spy/sweep/run_metadata.json",
+                trade_count=11,
+            ),
+        ]
+
+        conclusion = build_experiment_conclusion(_experiment(), records)
+
+        self.assertEqual("rejected", conclusion.confidence_label)
+        self.assertEqual(
+            "Stop this branch or reformulate the hypothesis before running more tests.",
+            conclusion.next_useful_tests[0].test,
+        )
+        next_test_names = [test.test for test in conclusion.next_useful_tests]
+        self.assertNotIn("Run train/test or walk-forward validation.", next_test_names)
+        self.assertFalse(any("missing robustness checks" in test.test.lower() for test in conclusion.next_useful_tests))
+
     def test_linked_run_paths_can_select_records_without_experiment_id(self):
         linked_path = "artifacts/research/spy/manual/run_metadata.json"
         records = [

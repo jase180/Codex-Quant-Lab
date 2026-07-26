@@ -475,6 +475,25 @@ def _next_useful_tests(
         ]
 
     tests: list[NextUsefulTest] = []
+    if confidence_label == "rejected":
+        tests.append(
+            NextUsefulTest(
+                test="Stop this branch or reformulate the hypothesis before running more tests.",
+                reason="No linked run beat the benchmark on excess return, so more validation would mostly confirm a weak branch.",
+                success_criteria="A revised hypothesis explains why the next test should behave differently from the rejected evidence.",
+                suggested_command=None,
+            )
+        )
+        tests.append(
+            NextUsefulTest(
+                test="Explain the failure mode before adding a broader sweep.",
+                reason="More variants can hide the original contradiction instead of resolving it.",
+                success_criteria="A written hypothesis explains why the contradicting evidence should not repeat.",
+                suggested_command=None,
+            )
+        )
+        return tests
+
     if not any(str(record.get("run_type")) in VALIDATION_RUN_TYPES for record in records):
         tests.append(
             NextUsefulTest(
@@ -494,7 +513,7 @@ def _next_useful_tests(
                 suggested_command=None,
             )
         )
-    if confidence_label in {"rejected", "mixed"}:
+    if confidence_label == "mixed":
         tests.append(
             NextUsefulTest(
                 test="Explain the failure mode before adding a broader sweep.",
