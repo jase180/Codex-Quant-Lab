@@ -59,7 +59,13 @@ def agent_validate_recommendation_command(args: argparse.Namespace) -> int:
 
 
 def agent_suggest_command(args: argparse.Namespace) -> int:
-    recommendation = suggest_from_manifest(args.manifest)
+    recommendation = suggest_from_manifest(
+        args.manifest,
+        provider=args.provider,
+        base_url=args.base_url,
+        model=args.model,
+        timeout_seconds=args.timeout_seconds,
+    )
     json_path, markdown_path = save_agent_suggestion(recommendation, args.manifest, args.out_dir)
 
     if args.json:

@@ -168,16 +168,17 @@ Candidate local runtimes:
 
 Planned work:
 
-- Build a small provider interface.
-- Send a cautious research-advisor prompt.
-- Parse model output as JSON.
-- Validate the output against the recommendation schema.
-- Fall back to deterministic advice if the model output is invalid.
+- Build a small provider interface. Delivered.
+- Send a cautious research-advisor prompt. Delivered.
+- Parse model output as JSON. Delivered.
+- Validate the output against the recommendation schema. Delivered.
+- Fall back to deterministic advice if the model output is invalid. Delivered.
 
 Exit criteria:
 
 - A local model can suggest the next research step, but invalid or vague output
-  cannot enter the workflow as a valid recommendation.
+  cannot enter the workflow as a valid recommendation. Delivered for
+  OpenAI-compatible local endpoints.
 
 ## Phase 6: Human-Gated Iteration
 

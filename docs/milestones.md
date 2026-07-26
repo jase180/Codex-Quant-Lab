@@ -401,6 +401,7 @@ Planned work:
   Delivered.
 - Local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
   similar endpoints.
+  Delivered.
 - Human-gated `agent cycle` with explicit step limits and stop conditions.
 
 Exit criteria:

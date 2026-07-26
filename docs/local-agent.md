@@ -58,6 +58,21 @@ agent_recommendation.json
 agent_recommendation.md
 ```
 
+Create a model-backed recommendation through an OpenAI-compatible local
+endpoint:
+
+```bash
+quant-lab agent suggest \
+  --manifest artifacts/research/<experiment>/session_manifest.json \
+  --provider openai-compatible \
+  --base-url http://localhost:11434/v1 \
+  --model qwen2.5:7b
+```
+
+If the provider is unreachable, returns invalid JSON, or returns JSON that does
+not validate as `agent_recommendation.v1`, the command saves the deterministic
+fallback recommendation and records the model failure as a risk.
+
 Validate a recommendation before trusting it:
 
 ```bash
@@ -164,3 +179,23 @@ Quant research workflows are easy to over-automate. The lab should make
 experiments easier to repeat and interpret, not easier to overfit. A bounded
 advisor gives useful momentum while keeping the CLI artifacts and human review
 as the source of truth.
+
+## Ollama Setup
+
+Ollama is a practical first local runtime because it exposes an
+OpenAI-compatible local endpoint.
+
+Install and pull a model:
+
+```powershell
+winget install Ollama.Ollama
+ollama pull qwen2.5:7b
+```
+
+Check the local endpoint:
+
+```powershell
+curl http://localhost:11434/v1/models
+```
+
+Then run `agent suggest` with `--provider openai-compatible`.

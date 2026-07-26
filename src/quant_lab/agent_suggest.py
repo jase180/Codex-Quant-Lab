@@ -6,6 +6,11 @@ from pathlib import Path
 
 from .agent_context import AgentContext, build_agent_context
 from .agent_recommendation import AgentRecommendation, create_agent_recommendation, save_agent_recommendation
+from .agent_provider import (
+    DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+    DEFAULT_TIMEOUT_SECONDS,
+    suggest_with_openai_compatible_provider,
+)
 from .session_manifest import SessionManifest, load_session_manifest
 
 
@@ -26,11 +31,40 @@ STEP_TO_ACTION = {
 }
 
 
-def suggest_from_manifest(manifest_path: str | Path) -> AgentRecommendation:
-    """Create a validated recommendation without calling an LLM."""
+def suggest_from_manifest(
+    manifest_path: str | Path,
+    *,
+    provider: str = "deterministic",
+    base_url: str = DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+    model: str | None = None,
+    timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    http_post=None,
+) -> AgentRecommendation:
+    """Create a validated recommendation, with deterministic fallback."""
 
     manifest = load_session_manifest(manifest_path)
     context = build_agent_context(manifest_path)
+    deterministic = _deterministic_recommendation(manifest, context)
+    if provider == "deterministic":
+        return deterministic
+    if provider != "openai-compatible":
+        raise ValueError("provider must be deterministic or openai-compatible")
+    if model is None or not model.strip():
+        raise ValueError("--model is required when --provider openai-compatible")
+
+    model_result = suggest_with_openai_compatible_provider(
+        context,
+        base_url=base_url,
+        model=model,
+        timeout_seconds=timeout_seconds,
+        http_post=http_post,
+    )
+    if model_result.recommendation is not None:
+        return model_result.recommendation
+    return _with_fallback_risk(deterministic, model_result.error or "model provider returned no recommendation")
+
+
+def _deterministic_recommendation(manifest: SessionManifest, context: AgentContext) -> AgentRecommendation:
     recommended_step, reason = _recommended_step_and_reason(manifest)
     action = STEP_TO_ACTION.get(recommended_step, "needs_review")
     next_command = _next_command(manifest)
@@ -66,6 +100,18 @@ def save_agent_suggestion(recommendation: AgentRecommendation, manifest_path: st
     manifest = load_session_manifest(manifest_path)
     destination = Path(output_dir or manifest.output_dir)
     return save_agent_recommendation(recommendation, destination)
+
+
+def _with_fallback_risk(recommendation: AgentRecommendation, error: str) -> AgentRecommendation:
+    return create_agent_recommendation(
+        recommended_action=recommendation.recommended_action,
+        reason=f"{recommendation.reason} Deterministic fallback used because model suggestion failed.",
+        next_command=recommendation.next_command,
+        risks=[*recommendation.risks, f"Model provider failed or returned invalid output: {error}"],
+        do_not_repeat=recommendation.do_not_repeat,
+        confidence="low",
+        created_at_utc=recommendation.created_at_utc,
+    )
 
 
 def _recommended_step_and_reason(manifest: SessionManifest) -> tuple[str, str]:

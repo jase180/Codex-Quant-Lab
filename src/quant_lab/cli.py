@@ -975,6 +975,28 @@ def register_agent_commands(subparsers) -> None:
     )
     suggest_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
     suggest_parser.add_argument(
+        "--provider",
+        choices=["deterministic", "openai-compatible"],
+        default="deterministic",
+        help="Recommendation provider. Defaults to deterministic.",
+    )
+    suggest_parser.add_argument(
+        "--base-url",
+        default="http://localhost:11434/v1",
+        help="OpenAI-compatible base URL. Defaults to Ollama's local v1 endpoint.",
+    )
+    suggest_parser.add_argument(
+        "--model",
+        default=None,
+        help="Model name for --provider openai-compatible, such as qwen2.5:7b.",
+    )
+    suggest_parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=60.0,
+        help="Provider request timeout in seconds. Defaults to 60.",
+    )
+    suggest_parser.add_argument(
         "--out-dir",
         default=None,
         help="Directory where recommendation artifacts are written. Defaults to the manifest output directory.",

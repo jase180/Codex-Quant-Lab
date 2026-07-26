@@ -211,6 +211,7 @@ Deliverables:
   Delivered.
 - A local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
   similar endpoints.
+  Delivered.
 - Human-gated `agent cycle` with explicit step limits, stop conditions, and no
   source-code edits.
 

@@ -133,3 +133,82 @@ class AgentSuggestTest(unittest.TestCase):
             self.assertEqual(0, exit_code)
             self.assertEqual("agent_recommendation.v1", payload["schema_version"])
             self.assertEqual("stop", payload["recommended_action"])
+
+    def test_suggest_can_use_openai_compatible_provider(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="Model suggest",
+                hypothesis="Model should return valid schema.",
+                plan_path=output_dir / "research_plan.json",
+                output_dir=output_dir,
+                current_status="complete",
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            (output_dir / "research_plan.json").write_text("{}\n", encoding="utf-8")
+            manifest_path, _ = save_session_manifest(manifest)
+
+            def fake_post(_url, _payload, _timeout_seconds):
+                return {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": (
+                                    '{"schema_version":"agent_recommendation.v1",'
+                                    '"recommended_action":"needs_review",'
+                                    '"reason":"Human should inspect this unusual complete session.",'
+                                    '"next_command":null,'
+                                    '"risks":["Model saw an unusual state."],'
+                                    '"do_not_repeat":["Do not run commands automatically."],'
+                                    '"confidence":"low"}'
+                                )
+                            }
+                        }
+                    ]
+                }
+
+            recommendation = suggest_from_manifest(
+                manifest_path,
+                provider="openai-compatible",
+                base_url="http://local/v1",
+                model="fake",
+                http_post=fake_post,
+            )
+
+            self.assertEqual("needs_review", recommendation.recommended_action)
+            self.assertIn("unusual", recommendation.reason)
+
+    def test_suggest_falls_back_when_provider_output_is_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="Fallback suggest",
+                hypothesis="Invalid model output should fallback.",
+                plan_path=output_dir / "research_plan.json",
+                output_dir=output_dir,
+                commands=[SessionCommand(label="Recommended next step: run_trust", command="quant-lab summarize-run-trust --metadata run.json")],
+                current_status="in_progress",
+                outstanding_next_steps=["run_trust: Trust report is missing."],
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            (output_dir / "research_plan.json").write_text("{}\n", encoding="utf-8")
+            manifest_path, _ = save_session_manifest(manifest)
+
+            def fake_post(_url, _payload, _timeout_seconds):
+                return {"choices": [{"message": {"content": "not json"}}]}
+
+            recommendation = suggest_from_manifest(
+                manifest_path,
+                provider="openai-compatible",
+                base_url="http://local/v1",
+                model="fake",
+                http_post=fake_post,
+            )
+
+            self.assertEqual("run_trust", recommendation.recommended_action)
+            self.assertEqual("low", recommendation.confidence)
+            self.assertTrue(any("Model provider failed" in risk for risk in recommendation.risks))
