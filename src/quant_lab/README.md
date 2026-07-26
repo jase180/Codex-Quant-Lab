@@ -221,6 +221,16 @@ quant-lab session status \
 This command prints compact orientation: current status, experiment id,
 conclusion path, plan path, first next step, and first warning.
 
+Print saved pending commands without executing them:
+
+```bash
+quant-lab session replay-plan \
+  --manifest artifacts/research/qqq_sma_trust/session_manifest.json
+```
+
+By default, this skips commands marked `executed`. Use `--include-executed` for
+an audit-style view of every stored command.
+
 Run a train/test sweep:
 
 ```bash

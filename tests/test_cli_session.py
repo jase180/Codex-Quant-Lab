@@ -61,6 +61,75 @@ class CliSessionTest(unittest.TestCase):
             self.assertIn("next: Record the decision", output)
             self.assertIn("warning: Evidence summary may be stale.", output)
 
+    def test_session_replay_plan_prints_pending_commands_without_running_them(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "spy"
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="SPY trend walkthrough",
+                hypothesis="Trend may reduce drawdown.",
+                plan_path=output_dir / "research_plan.json",
+                output_dir=output_dir,
+                commands=[
+                    SessionCommand(
+                        label="Baseline already done",
+                        command=f"quant-lab run --out {output_dir / 'baseline'}",
+                        status="executed",
+                    ),
+                    SessionCommand(
+                        label="Check next step",
+                        command=f"quant-lab research-plan next --plan {output_dir / 'research_plan.json'}",
+                        status="suggested",
+                    ),
+                ],
+                conclusion_path=output_dir / "experiment_conclusion.md",
+                current_status="in_progress",
+                outstanding_next_steps=["Review the suggested command before running it."],
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            manifest_path, _ = save_session_manifest(manifest)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["session", "replay-plan", "--manifest", manifest_path])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("This command does not run them.", output)
+            self.assertIn("Check next step", output)
+            self.assertIn("quant-lab research-plan next", output)
+            self.assertNotIn("Baseline already done", output)
+            self.assertNotIn("\\", output)
+
+    def test_session_replay_plan_can_include_executed_commands(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir) / "spy"
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="SPY trend walkthrough",
+                hypothesis="Trend may reduce drawdown.",
+                plan_path=output_dir / "research_plan.json",
+                output_dir=output_dir,
+                commands=[
+                    SessionCommand(
+                        label="Baseline already done",
+                        command=f"quant-lab run --out {output_dir / 'baseline'}",
+                        status="executed",
+                    )
+                ],
+                current_status="complete",
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            manifest_path, _ = save_session_manifest(manifest)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["session", "replay-plan", "--manifest", manifest_path, "--include-executed"])
+
+            output = stdout.getvalue()
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Baseline already done", output)
+
 
 if __name__ == "__main__":
     unittest.main()

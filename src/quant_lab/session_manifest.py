@@ -284,6 +284,39 @@ def format_session_status(manifest: SessionManifest) -> str:
     return "\n".join(lines)
 
 
+def format_session_replay_plan(manifest: SessionManifest, *, include_executed: bool = False) -> str:
+    """Return commands recorded in the manifest without executing them."""
+
+    validate_session_manifest(manifest)
+    commands = [
+        command
+        for command in manifest.commands
+        if include_executed or command.status != "executed"
+    ]
+    lines = [
+        f"# Session Replay Plan: {manifest.session_id}",
+        "",
+        f"Experiment: `{manifest.experiment_id}`",
+        f"Status: `{manifest.current_status}`",
+        "",
+        "These commands are printed for review only. This command does not run them.",
+        "",
+        "## Commands",
+        "",
+        *_command_replay_lines(commands),
+        "",
+        "## Outstanding Next Steps",
+        "",
+        *_bullet_lines(manifest.outstanding_next_steps),
+        "",
+        "## Read First",
+        "",
+        f"- `{_display_path(manifest.conclusion_path or session_manifest_markdown_path(manifest.output_dir))}`",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def _validate_command(command: SessionCommand) -> None:
     validate_required_text_fields(
         {"label": command.label, "command": command.command, "status": command.status},
@@ -363,6 +396,19 @@ def _command_markdown(commands: list[SessionCommand]) -> list[str]:
     if not commands:
         return ["- None"]
     return [f"- `{command.status}` {command.label}: `{command.command}`" for command in commands]
+
+
+def _command_replay_lines(commands: list[SessionCommand]) -> list[str]:
+    if not commands:
+        return ["- None"]
+    lines: list[str] = []
+    for command in commands:
+        lines.append(f"- {command.label} (`{command.status}`)")
+        lines.append("")
+        lines.append("  ```bash")
+        lines.append(f"  {_display_path(command.command)}")
+        lines.append("  ```")
+    return lines
 
 
 def _artifact_markdown(artifacts: list[SessionArtifact]) -> list[str]:

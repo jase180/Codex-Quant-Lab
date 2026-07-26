@@ -56,7 +56,7 @@ from .cli_robustness import (
     date_sensitivity_command,
     parameter_neighborhood_command,
 )
-from .cli_session import session_status_command
+from .cli_session import session_replay_plan_command, session_status_command
 from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -871,6 +871,18 @@ def register_session_commands(subparsers) -> None:
     )
     status_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
     status_parser.set_defaults(func=session_status_command)
+
+    replay_parser = session_subparsers.add_parser(
+        "replay-plan",
+        help="Print saved planned/suggested commands without executing them.",
+    )
+    replay_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
+    replay_parser.add_argument(
+        "--include-executed",
+        action="store_true",
+        help="Also print commands marked executed. Defaults to pending commands only.",
+    )
+    replay_parser.set_defaults(func=session_replay_plan_command)
 
 
 def register_sweep_commands(subparsers) -> None:

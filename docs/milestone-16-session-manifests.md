@@ -83,12 +83,13 @@ index, and known artifact filenames.
 1. Define the manifest schema and Markdown layout in docs. (Done.)
 2. Add a small deterministic model and formatter. (Done.)
 3. Add `session status` for existing manifests. (Done.)
-4. Add `session refresh` from a research plan and artifact directory.
-5. Teach conclusion and decision commands to update manifest pointers when a
+4. Add `session replay-plan` for existing manifests. (Done.)
+5. Add `session refresh` from a research plan and artifact directory.
+6. Teach conclusion and decision commands to update manifest pointers when a
    manifest exists.
-6. Add missing-artifact and stale-report warnings that point back to the
+7. Add missing-artifact and stale-report warnings that point back to the
    canonical conclusion.
-7. Update README and workflow docs so returning users read:
+8. Update README and workflow docs so returning users read:
    `session_manifest.md` for orientation, then `experiment_conclusion.md` for
    the actual research conclusion.
 

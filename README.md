@@ -794,6 +794,17 @@ This prints the current session status, experiment id, conclusion path, plan
 path, first next step, and first warning. It is intentionally compact so a human,
 future Codex session, or local agent can orient before opening detailed reports.
 
+Print saved pending commands without running them:
+
+```bash
+quant-lab session replay-plan \
+  --manifest artifacts/research/qqq_sma_trust/session_manifest.json
+```
+
+By default, replay output skips commands marked `executed`. Add
+`--include-executed` when you want an audit-style view of every command stored
+in the manifest.
+
 Draft a conservative decision without writing to the registry:
 
 ```bash
