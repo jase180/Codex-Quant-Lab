@@ -99,6 +99,8 @@ def validate_agent_recommendation(recommendation: AgentRecommendation) -> None:
         raise ValueError(f"next_command is required for action {recommendation.recommended_action}")
     if recommendation.next_command and not recommendation.next_command.startswith("quant-lab "):
         raise ValueError("next_command must start with 'quant-lab '")
+    if recommendation.next_command:
+        _validate_action_matches_command(recommendation.recommended_action, recommendation.next_command)
 
 
 def load_agent_recommendation(path: str | Path) -> AgentRecommendation:
@@ -217,3 +219,20 @@ def _bullet_lines(items: list[str]) -> list[str]:
 
 def _display_path(path: str | Path) -> str:
     return Path(path).as_posix()
+
+
+def _validate_action_matches_command(action: str, command: str) -> None:
+    command_tokens = command.split()
+    if len(command_tokens) < 2:
+        raise ValueError("next_command must include a quant-lab subcommand")
+    subcommand = command_tokens[1]
+    expected = {
+        "baseline": {"run"},
+        "run_trust": {"summarize-run-trust"},
+        "sweep": {"sweep"},
+        "summarize": {"summarize-experiment", "summarize-portfolio-experiment", "summarize-sweep-guardrails"},
+        "conclude": {"conclude-experiment"},
+        "decide": {"draft-decision", "decide-experiment"},
+    }.get(action)
+    if expected is not None and subcommand not in expected:
+        raise ValueError(f"next_command subcommand {subcommand!r} does not match recommended_action {action!r}")

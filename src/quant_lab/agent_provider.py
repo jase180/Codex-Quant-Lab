@@ -20,6 +20,49 @@ from .agent_recommendation import (
 DEFAULT_OPENAI_COMPATIBLE_BASE_URL = "http://localhost:11434/v1"
 DEFAULT_TIMEOUT_SECONDS = 60.0
 DEFAULT_TEMPERATURE = 0.0
+AGENT_RECOMMENDATION_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "agent_recommendation",
+        "schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": [
+                "schema_version",
+                "recommended_action",
+                "reason",
+                "next_command",
+                "risks",
+                "do_not_repeat",
+                "confidence",
+            ],
+            "properties": {
+                "schema_version": {"type": "string", "const": AGENT_RECOMMENDATION_SCHEMA_VERSION},
+                "recommended_action": {
+                    "type": "string",
+                    "enum": [
+                        "baseline",
+                        "run_trust",
+                        "sweep",
+                        "train_test",
+                        "walk_forward",
+                        "summarize",
+                        "robustness",
+                        "conclude",
+                        "decide",
+                        "stop",
+                        "needs_review",
+                    ],
+                },
+                "reason": {"type": "string"},
+                "next_command": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                "risks": {"type": "array", "items": {"type": "string"}},
+                "do_not_repeat": {"type": "array", "items": {"type": "string"}},
+                "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+            },
+        },
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -46,6 +89,7 @@ def suggest_with_openai_compatible_provider(
         raise ValueError("timeout_seconds must be positive")
 
     post = http_post or _post_json
+    content = None
     try:
         payload = post(
             _chat_completions_url(base_url),
@@ -56,7 +100,7 @@ def suggest_with_openai_compatible_provider(
         recommendation = _recommendation_from_model_content(content)
         return ModelSuggestionResult(recommendation=recommendation, raw_response=content, error=None)
     except Exception as exc:
-        return ModelSuggestionResult(recommendation=None, raw_response=None, error=str(exc))
+        return ModelSuggestionResult(recommendation=None, raw_response=content, error=str(exc))
 
 
 def build_agent_prompt(context: AgentContext) -> str:
@@ -87,6 +131,9 @@ def build_agent_prompt(context: AgentContext) -> str:
             "Allowed confidence values: low, medium, high",
             "Runnable actions require next_command starting with 'quant-lab '.",
             "stop and needs_review may use null next_command.",
+            "The recommended_action must match the next_command subcommand.",
+            "Use recommended_action 'run_trust' for 'quant-lab summarize-run-trust'.",
+            "Use recommended_action 'summarize' only for experiment or sweep summaries, not run-trust reports.",
             "",
             "Use this exact JSON shape:",
             "{",
@@ -101,6 +148,12 @@ def build_agent_prompt(context: AgentContext) -> str:
             "",
             "Context bundle JSON:",
             agent_context_to_json(context),
+            "",
+            "Return the recommendation now.",
+            "The top-level JSON object must use only these keys:",
+            "schema_version, recommended_action, reason, next_command, risks, do_not_repeat, confidence",
+            "Do not return context fields such as manifest_path, read_order, next_commands, operating_rules, or warnings.",
+            "Do not wrap the recommendation inside another object.",
         ]
     )
 
@@ -109,7 +162,7 @@ def _request_payload(context: AgentContext, *, model: str, temperature: float) -
     return {
         "model": model,
         "temperature": temperature,
-        "response_format": {"type": "json_object"},
+        "response_format": AGENT_RECOMMENDATION_RESPONSE_FORMAT,
         "messages": [
             {
                 "role": "system",

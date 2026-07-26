@@ -77,6 +77,11 @@ Complete sessions short-circuit to the deterministic `stop` recommendation
 before calling a model. A recorded decision is treated as authoritative state,
 not as something a local model should reinterpret.
 
+The provider requests structured JSON output with the
+`agent_recommendation.v1` schema. Recommendations are also validated for obvious
+action-command mismatches, such as `recommended_action: summarize` paired with
+`quant-lab summarize-run-trust`.
+
 Validate a recommendation before trusting it:
 
 ```bash

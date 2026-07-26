@@ -67,7 +67,11 @@ class AgentProviderTest(unittest.TestCase):
             self.assertEqual("run_trust", result.recommendation.recommended_action)
             self.assertEqual("http://localhost:11434/v1/chat/completions", seen["url"])
             self.assertEqual("qwen2.5:7b", seen["payload"]["model"])
-            self.assertEqual({"type": "json_object"}, seen["payload"]["response_format"])
+            self.assertEqual("json_schema", seen["payload"]["response_format"]["type"])
+            self.assertEqual(
+                "agent_recommendation",
+                seen["payload"]["response_format"]["json_schema"]["name"],
+            )
             self.assertEqual(12, seen["timeout"])
 
     def test_provider_accepts_json_inside_code_fence(self) -> None:
@@ -129,6 +133,33 @@ class AgentProviderTest(unittest.TestCase):
 
             self.assertIsNone(result.recommendation)
             self.assertIn("recommended_action", result.error)
+
+    def test_provider_preserves_raw_response_on_validation_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            context = _context_fixture(tmpdir)
+
+            def fake_post(_url, _payload, _timeout_seconds):
+                return {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": (
+                                    '{"schema_version":"wrong",'
+                                    '"recommended_action":"stop",'
+                                    '"reason":"Done.",'
+                                    '"next_command":null,'
+                                    '"risks":[],"do_not_repeat":[],"confidence":"high"}'
+                                )
+                            }
+                        }
+                    ]
+                }
+
+            result = suggest_with_openai_compatible_provider(context, base_url="http://local/v1", model="model", http_post=fake_post)
+
+            self.assertIsNone(result.recommendation)
+            self.assertIn("schema_version", result.error)
+            self.assertIn('"schema_version":"wrong"', result.raw_response)
 
     def test_prompt_contains_rules_and_context(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

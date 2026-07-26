@@ -69,6 +69,14 @@ class AgentRecommendationTest(unittest.TestCase):
                 next_command="python script.py",
             )
 
+    def test_rejects_known_action_command_mismatch(self) -> None:
+        with self.assertRaisesRegex(ValueError, "does not match recommended_action"):
+            create_agent_recommendation(
+                recommended_action="summarize",
+                reason="Need trust report.",
+                next_command="quant-lab summarize-run-trust --metadata artifacts/run/run_metadata.json",
+            )
+
     def test_load_recommendation_rejects_unknown_fields_and_missing_lists(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "agent_recommendation.json"
