@@ -49,6 +49,7 @@ docs/
   milestone-12-data-source-trust.md  Completed data/source trust workflow.
   milestone-13-evidence-decision-quality.md  Completed evidence interpretation.
   milestone-14-backtest-realism-robustness.md  Completed robustness checks.
+  milestone-15-default-workflow-canonical-conclusion.md  Planned default workflow.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
   portfolio-workflow.md       End-to-end portfolio workflow.
   roadmap-to-ready.md         Long-range roadmap to a more mature lab.
@@ -77,6 +78,7 @@ More detailed module notes:
 - [docs/milestone-12-data-source-trust.md](docs/milestone-12-data-source-trust.md)
 - [docs/milestone-13-evidence-decision-quality.md](docs/milestone-13-evidence-decision-quality.md)
 - [docs/milestone-14-backtest-realism-robustness.md](docs/milestone-14-backtest-realism-robustness.md)
+- [docs/milestone-15-default-workflow-canonical-conclusion.md](docs/milestone-15-default-workflow-canonical-conclusion.md)
 - [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
 - [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
 - [docs/roadmap-to-ready.md](docs/roadmap-to-ready.md)
@@ -951,6 +953,6 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Start Milestone 15 around session/run manifests and easier end-to-end replay.
+1. Start Milestone 15 around one default workflow and one canonical experiment conclusion.
 2. Turn saved artifacts into clearer saved knowledge: current conclusion, contradiction, and next useful test.
 3. Keep tightening examples so a junior researcher can follow baseline, validation, robustness, and decision steps.

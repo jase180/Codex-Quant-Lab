@@ -124,27 +124,31 @@ Why this matters:
 
 ## Phase 3: Improve Research Breadth Without Black Boxes
 
-### Milestone 15: Reproducible Research Sessions
+### Milestone 15: Default Workflow And Canonical Conclusion
 
 Status: proposed.
 
-Purpose: make complete local research sessions restartable and auditable.
+Purpose: make the lab feel like one clear research workflow instead of a pile of
+useful artifacts.
 
 Deliverables:
 
-- A session manifest that records plan, commands, artifacts, decisions, and
-  outstanding next steps.
-- `quant-lab session status` for one-line orientation.
-- `quant-lab session replay-plan` to print the intended command sequence without
-  rerunning it.
-- Stronger links between research plans, experiments, run indexes, and batch
-  artifacts.
-- A cleanup/check command that reports missing or orphaned artifacts.
+- One documented default path: strategy, run, main report, conclusion, next
+  test.
+- A canonical experiment conclusion artifact that records what was learned,
+  what not to repeat, and what to test next.
+- A human-facing report hierarchy that separates the main source of truth from
+  supporting and raw audit artifacts.
+- A core backtest audit covering adjusted prices, fills, cash, benchmark
+  alignment, indicator warm-up, and costs.
+- One complete real SPY long/cash experiment.
+- Session manifests after the conclusion shape is clear.
 
 Exit criteria:
 
-- A user can stop for a week, come back, run one status command, and understand
-  what the research question was, what evidence exists, and what remains.
+- A user can stop for a week, come back, read one conclusion artifact, and
+  understand what the research question was, what evidence exists, what should
+  not be repeated, and what remains.
 
 Why this waits:
 
@@ -301,8 +305,7 @@ a proof of concept. It is a small, honest, local research environment.
 ## Recommended Build Sequence
 
 1. Build Milestone 15.
-2. Focus the first slice on session/run manifests and one obvious current
-   conclusion artifact for an experiment.
+2. Focus the first slice on the default workflow and canonical conclusion shape.
 3. Use the new robustness outputs as inputs to that knowledge layer instead of
    adding more disconnected reports.
 4. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.

@@ -342,18 +342,23 @@ Delivered work:
 - Portfolio robustness notes.
 - Guided workflow integration for robustness checks.
 
-## Milestone 15: Reproducible Research Sessions
+## Milestone 15: Default Workflow And Canonical Conclusion
 
 Status: proposed.
 
-Goal: make a whole local research session restartable and auditable.
+Goal: make one clear default workflow and one canonical conclusion artifact that
+turns saved runs into saved knowledge.
 
 Planned work:
 
-- Session manifests.
-- Session status commands.
-- Stronger links between plans, experiments, indexes, and artifacts.
-- Missing/orphaned artifact checks.
+- README rewrite around one default strategy workflow.
+- Canonical `experiment_conclusion.md` and optional structured companion data.
+- Human-facing report hierarchy: main conclusion, supporting interpretation,
+  raw audit artifacts.
+- Core backtest audit for adjusted prices, fills, cash, benchmarks, warm-up, and
+  costs.
+- One complete SPY long/cash experiment.
+- Session manifests after the conclusion shape is clear.
 
 ## Milestone 16: Strategy Language V2
 
@@ -446,7 +451,7 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Start Milestone 15 with reproducible research sessions.
+Start Milestone 15 with the default workflow and canonical conclusion.
 
 Reason: Milestone 14 added robustness checks, but the project now has many
 artifacts. The next highest-risk gap is turning saved artifacts into one

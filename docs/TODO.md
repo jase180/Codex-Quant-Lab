@@ -3,6 +3,9 @@ Make Codex generate the next strategy or research idea from previous findings.
 Right now findings are saved, but they are not useful enough as reusable
 knowledge.
 
+Promoted into Milestone 15:
+`milestone-15-default-workflow-canonical-conclusion.md`.
+
 Docs folder README.
   backfill early milestones
   cleanup
