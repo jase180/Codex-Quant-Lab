@@ -208,6 +208,7 @@ Deliverables:
 - A local-agent context contract rooted in `session_manifest.json`.
 - A strict `agent_recommendation.v1` schema.
 - Deterministic `quant-lab agent suggest` that works without a model.
+  Delivered.
 - A local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
   similar endpoints.
 - Human-gated `agent cycle` with explicit step limits, stop conditions, and no

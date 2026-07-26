@@ -44,6 +44,20 @@ quant-lab agent context \
   --json
 ```
 
+Create a deterministic recommendation without calling a model:
+
+```bash
+quant-lab agent suggest \
+  --manifest artifacts/research/<experiment>/session_manifest.json
+```
+
+The command writes:
+
+```text
+agent_recommendation.json
+agent_recommendation.md
+```
+
 Validate a recommendation before trusting it:
 
 ```bash

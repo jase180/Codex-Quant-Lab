@@ -89,6 +89,22 @@ quant-lab agent context \
   --manifest artifacts/smoke-test/session_manifest.json
 ```
 
+Write the deterministic advisor recommendation:
+
+Windows PowerShell:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli agent suggest `
+  --manifest artifacts\smoke-test\session_manifest.json
+```
+
+WSL, Linux, or macOS:
+
+```bash
+quant-lab agent suggest \
+  --manifest artifacts/smoke-test/session_manifest.json
+```
+
 Run the unit tests before trusting any research output:
 
 Windows PowerShell:

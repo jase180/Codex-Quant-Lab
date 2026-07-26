@@ -398,6 +398,7 @@ Planned work:
 - A strict `agent_recommendation.v1` output schema.
   Delivered with `quant-lab agent validate-recommendation`.
 - Deterministic `quant-lab agent suggest` before model integration.
+  Delivered.
 - Local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
   similar endpoints.
 - Human-gated `agent cycle` with explicit step limits and stop conditions.

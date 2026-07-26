@@ -11,6 +11,7 @@ from .agent_recommendation import (
     load_agent_recommendation,
     save_agent_recommendation,
 )
+from .agent_suggest import save_agent_suggestion, suggest_from_manifest
 
 
 def agent_context_command(args: argparse.Namespace) -> int:
@@ -54,4 +55,25 @@ def agent_validate_recommendation_command(args: argparse.Namespace) -> int:
     else:
         print(f"Agent recommendation written: {json_path}")
         print(f"markdown: {markdown_path}")
+    return 0
+
+
+def agent_suggest_command(args: argparse.Namespace) -> int:
+    recommendation = suggest_from_manifest(args.manifest)
+    json_path, markdown_path = save_agent_suggestion(recommendation, args.manifest, args.out_dir)
+
+    if args.json:
+        print(agent_recommendation_to_json(recommendation))
+    else:
+        print(f"Agent recommendation written: {json_path}")
+        print(f"markdown: {markdown_path}")
+        print(f"action: {recommendation.recommended_action}")
+        print(f"confidence: {recommendation.confidence}")
+        if recommendation.next_command:
+            print("next_command:")
+            print(recommendation.next_command)
+        else:
+            print("next_command: -")
+        if args.markdown:
+            print(format_agent_recommendation_markdown(recommendation))
     return 0

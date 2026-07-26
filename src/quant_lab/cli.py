@@ -13,7 +13,7 @@ from .cli_data import (
     new_strategy_command,
     show_data_source_command,
 )
-from .cli_agent import agent_context_command, agent_validate_recommendation_command
+from .cli_agent import agent_context_command, agent_suggest_command, agent_validate_recommendation_command
 from .cli_health import doctor_command, smoke_test_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
@@ -968,6 +968,20 @@ def register_agent_commands(subparsers) -> None:
     )
     context_parser.add_argument("--json", action="store_true", help="Print the context bundle JSON after writing files.")
     context_parser.set_defaults(func=agent_context_command)
+
+    suggest_parser = agent_subparsers.add_parser(
+        "suggest",
+        help="Write a deterministic next-step recommendation from a session manifest.",
+    )
+    suggest_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
+    suggest_parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Directory where recommendation artifacts are written. Defaults to the manifest output directory.",
+    )
+    suggest_parser.add_argument("--json", action="store_true", help="Print recommendation JSON after writing files.")
+    suggest_parser.add_argument("--markdown", action="store_true", help="Print recommendation Markdown after writing files.")
+    suggest_parser.set_defaults(func=agent_suggest_command)
 
     validate_parser = agent_subparsers.add_parser(
         "validate-recommendation",

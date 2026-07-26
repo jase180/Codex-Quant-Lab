@@ -1137,7 +1137,6 @@ what to test next.
 1. Build Milestone 17: local-agent advisor support.
 2. Add a health/smoke command so humans, Codex, and local agents can prove the
    repo is runnable before giving research advice.
-3. Add deterministic `agent suggest`, then a local OpenAI-compatible model
-   adapter.
+3. Add a local OpenAI-compatible model adapter for model-backed `agent suggest`.
 4. Reassess Strategy Language V2 versus Portfolio Realism after the advisor loop
    can recommend bounded next experiments from saved artifacts.

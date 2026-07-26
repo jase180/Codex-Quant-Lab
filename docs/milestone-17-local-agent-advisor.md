@@ -132,16 +132,18 @@ quant-lab agent suggest --manifest artifacts/research/<name>/session_manifest.js
 
 Behavior:
 
-- Reads the manifest and linked files.
-- Uses deterministic workflow rules first.
-- Writes `agent_recommendation.json`.
-- Writes `agent_recommendation.md`.
-- Prints the recommended action and next command.
+- Reads the manifest and linked files. Delivered.
+- Uses deterministic workflow rules first. Delivered.
+- Writes `agent_recommendation.json`. Delivered.
+- Writes `agent_recommendation.md`. Delivered.
+- Prints the recommended action and next command. Delivered.
 
 Exit criteria:
 
 - The CLI can produce a valid recommendation artifact without calling an LLM.
-- The deterministic path becomes the fallback when a local model fails.
+  Delivered.
+- The deterministic path becomes the fallback when a local model fails. Ready
+  for the model-adapter phase.
 
 ## Phase 5: Local Model Adapter
 
