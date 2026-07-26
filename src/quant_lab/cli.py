@@ -13,7 +13,12 @@ from .cli_data import (
     new_strategy_command,
     show_data_source_command,
 )
-from .cli_agent import agent_context_command, agent_suggest_command, agent_validate_recommendation_command
+from .cli_agent import (
+    agent_context_command,
+    agent_cycle_command,
+    agent_suggest_command,
+    agent_validate_recommendation_command,
+)
 from .cli_health import doctor_command, smoke_test_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
@@ -1004,6 +1009,47 @@ def register_agent_commands(subparsers) -> None:
     suggest_parser.add_argument("--json", action="store_true", help="Print recommendation JSON after writing files.")
     suggest_parser.add_argument("--markdown", action="store_true", help="Print recommendation Markdown after writing files.")
     suggest_parser.set_defaults(func=agent_suggest_command)
+
+    cycle_parser = agent_subparsers.add_parser(
+        "cycle",
+        help="Create one human-gated local-agent cycle without executing commands.",
+    )
+    cycle_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
+    cycle_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Required for now. Writes cycle artifacts and stops before execution.",
+    )
+    cycle_parser.add_argument(
+        "--provider",
+        choices=["deterministic", "openai-compatible"],
+        default="deterministic",
+        help="Recommendation provider. Defaults to deterministic.",
+    )
+    cycle_parser.add_argument(
+        "--base-url",
+        default="http://localhost:11434/v1",
+        help="OpenAI-compatible base URL. Defaults to Ollama's local v1 endpoint.",
+    )
+    cycle_parser.add_argument(
+        "--model",
+        default=None,
+        help="Model name for --provider openai-compatible, such as llama3.1:8b.",
+    )
+    cycle_parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=60.0,
+        help="Provider request timeout in seconds. Defaults to 60.",
+    )
+    cycle_parser.add_argument(
+        "--out-dir",
+        default=None,
+        help="Directory where cycle artifacts are written. Defaults to <manifest output>/agent_cycle.",
+    )
+    cycle_parser.add_argument("--json", action="store_true", help="Print cycle JSON after writing files.")
+    cycle_parser.add_argument("--markdown", action="store_true", help="Print cycle Markdown after writing files.")
+    cycle_parser.set_defaults(func=agent_cycle_command)
 
     validate_parser = agent_subparsers.add_parser(
         "validate-recommendation",

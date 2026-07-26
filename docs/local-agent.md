@@ -80,6 +80,29 @@ quant-lab agent validate-recommendation \
   --recommendation artifacts/research/<experiment>/agent_recommendation.json
 ```
 
+Create one human-gated cycle without executing the proposed command:
+
+```bash
+quant-lab agent cycle \
+  --manifest artifacts/research/<experiment>/session_manifest.json \
+  --dry-run
+```
+
+The command writes a cycle directory containing:
+
+```text
+agent_context_bundle.json
+agent_context_bundle.md
+agent_recommendation.json
+agent_recommendation.md
+agent_cycle.json
+agent_cycle.md
+```
+
+`agent cycle --dry-run` is the current safest loop entry point. It packages the
+context, recommendation, proposed command, and stop reason, then stops before
+running anything.
+
 ## Context Contract
 
 The context bundle starts from `session_manifest.json`. It includes:
@@ -172,6 +195,7 @@ The advisor should stop and ask for review when:
 - evidence is weak or contradictory,
 - the model cannot produce valid JSON,
 - the requested cycle limit has been reached.
+- the command is running as `agent cycle --dry-run`.
 
 ## Why This Boundary Exists
 

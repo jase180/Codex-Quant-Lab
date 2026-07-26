@@ -392,7 +392,9 @@ Detailed plan:
 Planned work:
 
 - `quant-lab doctor` for setup and environment checks.
+  Delivered.
 - `quant-lab smoke-test` for an offline end-to-end wiring check.
+  Delivered.
 - A strict agent context contract that starts from `session_manifest.json`.
   Delivered with `docs/local-agent.md` and `quant-lab agent context`.
 - A strict `agent_recommendation.v1` output schema.
@@ -402,12 +404,17 @@ Planned work:
 - Local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
   similar endpoints.
   Delivered.
-- Human-gated `agent cycle` with explicit step limits and stop conditions.
+- Human-gated `agent cycle --dry-run` with explicit stop-before-execution
+  artifacts.
+  Delivered.
+- Future non-dry-run `agent cycle` with explicit step limits and stop
+  conditions.
 
 Exit criteria:
 
 - A local agent can recommend the next experiment or analysis step from saved
   artifacts without taking ownership of source-code edits or unbounded runs.
+  Delivered for dry-run cycles; non-dry-run execution remains future work.
 
 ## Milestone 18: Strategy Language V2
 

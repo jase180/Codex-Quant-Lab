@@ -189,12 +189,12 @@ Command sketch:
 ```bash
 quant-lab agent cycle \
   --manifest artifacts/research/<name>/session_manifest.json \
-  --max-steps 3 \
   --dry-run
 ```
 
 Rules:
 
+- `--dry-run` writes context, recommendation, and cycle artifacts, then stops.
 - `--max-steps` is required for any non-dry-run cycle.
 - The command may only run approved `quant-lab` research commands.
 - Every step must write a recommendation artifact.
@@ -206,6 +206,8 @@ Exit criteria:
 
 - The agent can help iterate through a short bounded research loop while leaving
   an auditable trail of recommendations, commands, outputs, and stop reasons.
+- `agent cycle --dry-run` can show the next proposed command without executing
+  it. Delivered.
 
 ## Done Criteria
 
@@ -217,7 +219,7 @@ Milestone 17 is done when:
 - deterministic `agent suggest` works,
 - local-model `agent suggest` works through at least one OpenAI-compatible
   adapter,
-- `agent cycle --dry-run` can show a bounded plan,
+- `agent cycle --dry-run` can show a bounded plan. Delivered.
 - non-dry-run cycling is guarded by explicit limits and stop conditions,
 - README and workflow docs explain that the agent recommends experiments rather
   than owning the repo.

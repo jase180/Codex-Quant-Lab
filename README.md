@@ -124,6 +124,8 @@ artifact before deciding what happened.
 - Write canonical experiment conclusions for humans and local agents.
 - Define and refresh session manifest artifacts that orient future
   workflow-resume commands around the canonical conclusion.
+- Create a human-gated local-agent cycle dry run that writes context,
+  recommendation, and proposed-command artifacts without executing commands.
 - Check local setup and dependency health with `quant-lab doctor`.
 - Run an offline end-to-end wiring check with `quant-lab smoke-test`.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
@@ -1134,9 +1136,9 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Build Milestone 17: local-agent advisor support.
-2. Add a health/smoke command so humans, Codex, and local agents can prove the
-   repo is runnable before giving research advice.
-3. Add human-gated `agent cycle` with explicit step limits and stop conditions.
-4. Reassess Strategy Language V2 versus Portfolio Realism after the advisor loop
+1. Finish Milestone 17 by deciding whether to add guarded non-dry-run
+   `agent cycle` execution or keep execution human-triggered for now.
+2. Use `agent cycle --dry-run` on one real experiment and compare its advice
+   with the deterministic research-plan next step.
+3. Reassess Strategy Language V2 versus Portfolio Realism after the advisor loop
    can recommend bounded next experiments from saved artifacts.

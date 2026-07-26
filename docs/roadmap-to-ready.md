@@ -194,7 +194,7 @@ Why this comes next:
 
 ### Milestone 17: Local Agent Advisor
 
-Status: proposed.
+Status: in progress.
 
 Purpose: let a local agent read the current research state, recommend the next
 experiment or analysis step, explain why, and stop.
@@ -203,17 +203,23 @@ Deliverables:
 
 - `quant-lab doctor` for dependency, import, artifact-directory, and data-cache
   checks.
+  Delivered.
 - `quant-lab smoke-test` for an offline end-to-end wiring check that writes a
   plan, baseline run, and session manifest.
+  Delivered.
 - A local-agent context contract rooted in `session_manifest.json`.
+  Delivered.
 - A strict `agent_recommendation.v1` schema.
+  Delivered.
 - Deterministic `quant-lab agent suggest` that works without a model.
   Delivered.
 - A local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
   similar endpoints.
   Delivered.
-- Human-gated `agent cycle` with explicit step limits, stop conditions, and no
-  source-code edits.
+- Human-gated `agent cycle --dry-run` with stop-before-execution artifacts.
+  Delivered.
+- Future non-dry-run `agent cycle` with explicit step limits, stop conditions,
+  and no source-code edits.
 
 Exit criteria:
 
