@@ -263,6 +263,27 @@ def format_session_manifest_markdown(manifest: SessionManifest) -> str:
     )
 
 
+def format_session_status(manifest: SessionManifest) -> str:
+    """Return compact resume text for humans, Codex, and local agents."""
+
+    validate_session_manifest(manifest)
+    lines = [
+        f"Session: {manifest.session_id}",
+        f"status: {manifest.current_status}",
+        f"experiment: {manifest.experiment_id}",
+        f"title: {manifest.title}",
+        f"read_first: {_display_path(manifest.conclusion_path or session_manifest_markdown_path(manifest.output_dir))}",
+        f"plan: {_display_path(manifest.plan_path)}",
+    ]
+    if manifest.decision_path is not None:
+        lines.append(f"decision: {_display_path(manifest.decision_path)}")
+    if manifest.outstanding_next_steps:
+        lines.append(f"next: {manifest.outstanding_next_steps[0]}")
+    if manifest.warnings:
+        lines.append(f"warning: {manifest.warnings[0]}")
+    return "\n".join(lines)
+
+
 def _validate_command(command: SessionCommand) -> None:
     validate_required_text_fields(
         {"label": command.label, "command": command.command, "status": command.status},

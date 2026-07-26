@@ -211,6 +211,16 @@ This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
 context files exist so future Codex or a local agent can continue the same
 research thread without rereading every raw artifact.
 
+Inspect a saved research session manifest:
+
+```bash
+quant-lab session status \
+  --manifest artifacts/research/qqq_sma_trust/session_manifest.json
+```
+
+This command prints compact orientation: current status, experiment id,
+conclusion path, plan path, first next step, and first warning.
+
 Run a train/test sweep:
 
 ```bash

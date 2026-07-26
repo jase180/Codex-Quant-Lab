@@ -82,7 +82,7 @@ index, and known artifact filenames.
 
 1. Define the manifest schema and Markdown layout in docs. (Done.)
 2. Add a small deterministic model and formatter. (Done.)
-3. Add `session status` for existing manifests.
+3. Add `session status` for existing manifests. (Done.)
 4. Add `session refresh` from a research plan and artifact directory.
 5. Teach conclusion and decision commands to update manifest pointers when a
    manifest exists.

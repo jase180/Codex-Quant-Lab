@@ -56,6 +56,7 @@ from .cli_robustness import (
     date_sensitivity_command,
     parameter_neighborhood_command,
 )
+from .cli_session import session_status_command
 from .cli_sweep_guardrails import summarize_sweep_guardrails_command
 from .research_registry import (
     EXPERIMENT_DECISION_OUTCOMES,
@@ -88,6 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_experiment_commands(subparsers)
     register_research_plan_commands(subparsers)
     register_portfolio_plan_commands(subparsers)
+    register_session_commands(subparsers)
     register_robustness_commands(subparsers)
     register_sweep_commands(subparsers)
     register_sweep_guardrail_commands(subparsers)
@@ -854,6 +856,21 @@ def register_portfolio_plan_commands(subparsers) -> None:
     )
     next_parser.add_argument("--plan", required=True, help="Path to portfolio_research_plan.json.")
     next_parser.set_defaults(func=portfolio_plan_next_command)
+
+
+def register_session_commands(subparsers) -> None:
+    session_parser = subparsers.add_parser(
+        "session",
+        help="Inspect and resume research session manifests.",
+    )
+    session_subparsers = session_parser.add_subparsers(dest="session_command", required=True)
+
+    status_parser = session_subparsers.add_parser(
+        "status",
+        help="Print compact orientation from session_manifest.json.",
+    )
+    status_parser.add_argument("--manifest", required=True, help="Path to session_manifest.json.")
+    status_parser.set_defaults(func=session_status_command)
 
 
 def register_sweep_commands(subparsers) -> None:

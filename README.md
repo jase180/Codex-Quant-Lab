@@ -783,6 +783,17 @@ This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
 `agent_context.md`. Read the Markdown first. Future Codex sessions or local
 agents should read the JSON before scanning raw run folders.
 
+Inspect a saved session manifest when you are returning to a research workflow:
+
+```bash
+quant-lab session status \
+  --manifest artifacts/research/qqq_sma_trust/session_manifest.json
+```
+
+This prints the current session status, experiment id, conclusion path, plan
+path, first next step, and first warning. It is intentionally compact so a human,
+future Codex session, or local agent can orient before opening detailed reports.
+
 Draft a conservative decision without writing to the registry:
 
 ```bash
