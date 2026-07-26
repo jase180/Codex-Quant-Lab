@@ -77,7 +77,7 @@ Acceptance criteria:
 
 ### 2. Canonical Experiment Conclusion
 
-Status: planned.
+Status: schema and layout planned.
 
 Create one artifact pair that future humans, future Codex, and local agents
 should read first.
@@ -110,6 +110,9 @@ source_artifacts
 agent_instructions
 ```
 
+Detailed schema and Markdown layout:
+[experiment-conclusion-schema.md](experiment-conclusion-schema.md)
+
 The first implementation should produce these fields deterministically from the
 experiment registry and research index. A local agent can later edit prose or
 propose next tests, but it should not be the only thing capable of creating the
@@ -127,6 +130,7 @@ The conclusion should answer:
 
 Acceptance criteria:
 
+- Document the v1 JSON schema and Markdown section layout before code.
 - Add a CLI command that writes the conclusion from an experiment id.
 - The command reads linked runs from the experiment registry and research index.
 - The conclusion references supporting artifacts instead of copying all details.
