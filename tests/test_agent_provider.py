@@ -67,6 +67,7 @@ class AgentProviderTest(unittest.TestCase):
             self.assertEqual("run_trust", result.recommendation.recommended_action)
             self.assertEqual("http://localhost:11434/v1/chat/completions", seen["url"])
             self.assertEqual("qwen2.5:7b", seen["payload"]["model"])
+            self.assertEqual({"type": "json_object"}, seen["payload"]["response_format"])
             self.assertEqual(12, seen["timeout"])
 
     def test_provider_accepts_json_inside_code_fence(self) -> None:

@@ -66,7 +66,7 @@ quant-lab agent suggest \
   --manifest artifacts/research/<experiment>/session_manifest.json \
   --provider openai-compatible \
   --base-url http://localhost:11434/v1 \
-  --model qwen2.5:7b
+  --model llama3.1:8b
 ```
 
 If the provider is unreachable, returns invalid JSON, or returns JSON that does
@@ -189,7 +189,7 @@ Install and pull a model:
 
 ```powershell
 winget install Ollama.Ollama
-ollama pull qwen2.5:7b
+ollama pull llama3.1:8b
 ```
 
 Check the local endpoint:
@@ -199,3 +199,7 @@ curl http://localhost:11434/v1/models
 ```
 
 Then run `agent suggest` with `--provider openai-compatible`.
+
+The current recommended first model for this repo is `llama3.1:8b`. It is small
+enough for a 32 GB RAM workstation and passed the strict
+`agent_recommendation.v1` JSON contract during local integration testing.

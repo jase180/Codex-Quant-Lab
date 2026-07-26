@@ -156,7 +156,7 @@ quant-lab agent suggest \
   --manifest artifacts/research/<name>/session_manifest.json \
   --provider openai-compatible \
   --base-url http://localhost:11434/v1 \
-  --model qwen2.5:7b
+  --model llama3.1:8b
 ```
 
 Candidate local runtimes:

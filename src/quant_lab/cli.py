@@ -988,7 +988,7 @@ def register_agent_commands(subparsers) -> None:
     suggest_parser.add_argument(
         "--model",
         default=None,
-        help="Model name for --provider openai-compatible, such as qwen2.5:7b.",
+        help="Model name for --provider openai-compatible, such as llama3.1:8b.",
     )
     suggest_parser.add_argument(
         "--timeout-seconds",
