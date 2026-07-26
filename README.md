@@ -145,6 +145,7 @@ docs/
   milestone-15-default-workflow-canonical-conclusion.md  Default workflow and conclusions.
   milestone-15-state-review.md  Current Milestone 15 state review.
   milestone-16-session-manifests.md  Completed workflow resume/session manifests.
+  milestone-17-local-agent-advisor.md  Planned local-agent experiment advisor.
   core-backtest-assumption-audit.md  Current simulation assumption audit.
   experiment-conclusion-schema.md  Planned conclusion JSON and Markdown shape.
   maintenance-cli-workflow-organization.md  Completed code organization pass.
@@ -179,6 +180,7 @@ More detailed module notes:
 - [docs/milestone-15-default-workflow-canonical-conclusion.md](docs/milestone-15-default-workflow-canonical-conclusion.md)
 - [docs/milestone-15-state-review.md](docs/milestone-15-state-review.md)
 - [docs/milestone-16-session-manifests.md](docs/milestone-16-session-manifests.md)
+- [docs/milestone-17-local-agent-advisor.md](docs/milestone-17-local-agent-advisor.md)
 - [docs/core-backtest-assumption-audit.md](docs/core-backtest-assumption-audit.md)
 - [docs/spy-long-cash-trend-experiment.md](docs/spy-long-cash-trend-experiment.md)
 - [docs/experiment-conclusion-schema.md](docs/experiment-conclusion-schema.md)
@@ -1113,10 +1115,11 @@ what to test next.
 
 ## Near-Term Roadmap
 
-1. Reassess whether Strategy Language V2 or Portfolio Realism should come next.
-2. Keep the default workflow centered on one manifest, one conclusion, and one
-   recorded decision.
-3. Add example research libraries so a junior researcher can follow successful,
-   mixed, and rejected experiments.
-4. Continue hardening setup, tests, and maintenance docs before expanding into
-   larger automation.
+1. Build Milestone 17: local-agent advisor support.
+2. Add a health/smoke command so humans, Codex, and local agents can prove the
+   repo is runnable before giving research advice.
+3. Define the strict agent context and recommendation schema.
+4. Add deterministic `agent suggest`, then a local OpenAI-compatible model
+   adapter.
+5. Reassess Strategy Language V2 versus Portfolio Realism after the advisor loop
+   can recommend bounded next experiments from saved artifacts.

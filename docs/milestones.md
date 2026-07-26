@@ -379,7 +379,32 @@ Delivered work:
 - Stale or missing artifact warnings that point back to the canonical
   conclusion.
 
-## Milestone 17: Strategy Language V2
+## Milestone 17: Local Agent Advisor
+
+Status: proposed.
+
+Goal: add a local-agent advisor loop that can read the current experiment state,
+recommend the next research step, explain why, and stop.
+
+Detailed plan:
+[milestone-17-local-agent-advisor.md](milestone-17-local-agent-advisor.md)
+
+Planned work:
+
+- `quant-lab doctor` for setup and environment checks.
+- A strict agent context contract that starts from `session_manifest.json`.
+- A strict `agent_recommendation.v1` output schema.
+- Deterministic `quant-lab agent suggest` before model integration.
+- Local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
+  similar endpoints.
+- Human-gated `agent cycle` with explicit step limits and stop conditions.
+
+Exit criteria:
+
+- A local agent can recommend the next experiment or analysis step from saved
+  artifacts without taking ownership of source-code edits or unbounded runs.
+
+## Milestone 18: Strategy Language V2
 
 Status: proposed.
 
@@ -393,7 +418,7 @@ Planned work:
 - Stops, exits, holding-period rules, and cooldowns.
 - Migration docs from v1 to v2.
 
-## Milestone 18: Portfolio Realism
+## Milestone 19: Portfolio Realism
 
 Status: proposed.
 
@@ -406,7 +431,7 @@ Planned work:
 - Simple volatility-aware allocation options.
 - Better blended portfolio benchmarks.
 
-## Milestone 19: CLI UX And Configuration Polish
+## Milestone 20: CLI UX And Configuration Polish
 
 Status: proposed.
 
@@ -415,11 +440,10 @@ Goal: make normal use less verbose without hiding assumptions.
 Planned work:
 
 - Project config defaults.
-- `quant-lab doctor`.
 - Better command help and beginner-facing errors.
 - Current quickstart cleanup.
 
-## Milestone 20: Example Research Library
+## Milestone 21: Example Research Library
 
 Status: proposed.
 
@@ -432,7 +456,7 @@ Planned work:
 - Rejected idea example.
 - Data-quality warning example.
 
-## Milestone 21: Test, Packaging, And Maintenance Hardening
+## Milestone 22: Test, Packaging, And Maintenance Hardening
 
 Status: proposed.
 
@@ -474,9 +498,10 @@ Milestones 15 and 16 now provide the default workflow, canonical conclusion,
 and resumable session manifest foundation.
 
 Reason: the project can now turn many saved artifacts into one obvious
-orientation file and one obvious conclusion file. The next highest-risk gap is
-choosing which research surface to broaden without weakening that workflow.
+orientation file and one obvious conclusion file. The next highest-value gap is
+letting a local agent use those artifacts to recommend the next experiment
+without owning the repo or running unbounded loops.
 
-From here, follow the readiness roadmap: reassess Strategy Language V2 versus
-Portfolio Realism, then continue through CLI polish, example workflows, and
-maintenance hardening.
+From here, follow the readiness roadmap: build Milestone 17 local-agent advisor
+support, then reassess Strategy Language V2 versus Portfolio Realism, then
+continue through CLI polish, example workflows, and maintenance hardening.

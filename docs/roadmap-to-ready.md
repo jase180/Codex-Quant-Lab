@@ -25,6 +25,8 @@ For this project, "pretty ready" means:
   benchmark underperformance.
 - Strategy and portfolio research share the same mental model.
 - Common research loops are documented with copyable commands.
+- A local agent can recommend the next experiment from saved artifacts without
+  taking over the repo.
 - The codebase is still small enough for Codex and a junior engineer to extend.
 - Tests cover the important behavior paths, not just happy-path demos.
 
@@ -36,7 +38,8 @@ It does **not** mean:
 - intraday simulation,
 - options/futures support,
 - a hosted web app,
-- or statistical proof that a strategy works.
+- statistical proof that a strategy works,
+- or an autonomous code-editing research bot.
 
 Those can come later, but they should not be smuggled into the local research
 foundation.
@@ -189,7 +192,39 @@ Why this comes next:
   The manifest should preserve continuity before the strategy language becomes
   more expressive.
 
-### Milestone 17: Strategy Language V2
+### Milestone 17: Local Agent Advisor
+
+Status: proposed.
+
+Purpose: let a local agent read the current research state, recommend the next
+experiment or analysis step, explain why, and stop.
+
+Deliverables:
+
+- `quant-lab doctor` for dependency, import, artifact-directory, and data-cache
+  checks.
+- A local-agent context contract rooted in `session_manifest.json`.
+- A strict `agent_recommendation.v1` schema.
+- Deterministic `quant-lab agent suggest` that works without a model.
+- A local OpenAI-compatible model adapter for Ollama, LM Studio, llama.cpp, or
+  similar endpoints.
+- Human-gated `agent cycle` with explicit step limits, stop conditions, and no
+  source-code edits.
+
+Exit criteria:
+
+- A local agent can recommend the next experiment from saved artifacts while
+  leaving a validated recommendation artifact and stopping before unapproved
+  action.
+
+Why this comes next:
+
+- The lab now has durable plans, conclusions, run metadata, and session
+  manifests. That is enough structure for a useful research advisor. The next
+  risk is not lack of indicators; it is making sure the advisor is bounded,
+  inspectable, and honest about weak evidence.
+
+### Milestone 18: Strategy Language V2
 
 Status: proposed.
 
@@ -214,9 +249,10 @@ Exit criteria:
 Why this waits:
 
 - More expressive strategies are useful, but they become dangerous if the lab
-  does not first improve trust, interpretation, and robustness.
+  does not first define the agent boundary that will recommend future research
+  steps.
 
-### Milestone 18: Portfolio Realism
+### Milestone 19: Portfolio Realism
 
 Status: proposed.
 
@@ -239,11 +275,11 @@ Exit criteria:
 Why this comes after strategy language:
 
 - Strategy and portfolio logic should mature together, but portfolio realism can
-  stay simpler until the evidence workflow is stronger.
+  stay simpler until the agent and strategy-contract foundations are stronger.
 
 ## Phase 4: Make It Comfortable To Use
 
-### Milestone 19: CLI UX And Configuration Polish
+### Milestone 20: CLI UX And Configuration Polish
 
 Status: proposed.
 
@@ -254,8 +290,6 @@ Deliverables:
 - Project-level config file for default artifact directories, cost preset,
   benchmark, and cache path.
 - Clearer command grouping and help text.
-- `quant-lab doctor` for environment, dependency, data-cache, and artifact
-  checks.
 - Better error messages for common beginner mistakes.
 - README quickstart that matches the current command surface.
 
@@ -269,7 +303,7 @@ Why this waits:
 - UX polish should stabilize around the real workflows, not around early command
   shapes that may still change.
 
-### Milestone 20: Example Research Library
+### Milestone 21: Example Research Library
 
 Status: proposed.
 
@@ -295,7 +329,7 @@ Why this matters:
 
 ## Phase 5: Hardening
 
-### Milestone 21: Test, Packaging, And Maintenance Hardening
+### Milestone 22: Test, Packaging, And Maintenance Hardening
 
 Status: proposed.
 
@@ -322,7 +356,7 @@ Why this is a milestone, not a chore:
 
 ## Pretty Ready Exit Criteria
 
-The project is "pretty ready" after Milestone 21 if:
+The project is "pretty ready" after Milestone 22 if:
 
 - A full sample strategy workflow can be run from fresh setup docs.
 - A full sample portfolio workflow can be run from fresh setup docs.
@@ -330,6 +364,7 @@ The project is "pretty ready" after Milestone 21 if:
 - A saved result can be inspected, compared, verified, and summarized from the
   CLI.
 - The user can generate variations and batches without hidden optimization.
+- A local agent can recommend bounded next experiments from saved state.
 - Common false-confidence traps are called out in reports.
 - The codebase has clear module boundaries and a passing test suite.
 
@@ -340,9 +375,10 @@ a proof of concept. It is a small, honest, local research environment.
 
 1. Milestones 15 and 16 are complete enough to make saved research readable and
    resumable.
-2. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
-3. Build Milestones 17 and 18.
-4. Polish setup, examples, and maintenance through Milestones 19 through 21.
+2. Build Milestone 17 so local-agent recommendations have a strict contract.
+3. Reassess whether Strategy Language V2 or Portfolio Realism is more urgent.
+4. Build Milestones 18 and 19.
+5. Polish setup, examples, and maintenance through Milestones 20 through 22.
 
 This order keeps the project honest: first trust inputs, then trust
 interpretation, then challenge robustness, then broaden the research surface,
