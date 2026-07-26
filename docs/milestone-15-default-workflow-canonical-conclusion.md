@@ -57,7 +57,7 @@ obvious conclusion artifact.
 
 ### 1. One Default Workflow
 
-Status: planned.
+Status: README default path implemented; deeper workflow pruning still planned.
 
 Rewrite the first user-facing path around one plain workflow:
 
@@ -175,7 +175,7 @@ Acceptance criteria:
 
 ### 4. Human-Facing Report Hierarchy
 
-Status: planned.
+Status: README hierarchy implemented; report cross-linking still planned.
 
 Reduce noise by defining a report hierarchy instead of deleting artifacts.
 
@@ -282,7 +282,8 @@ Acceptance criteria:
 
 ## Build Order
 
-1. Plan and document the default workflow and report hierarchy.
+1. Plan and document the default workflow and report hierarchy. (Initial README
+   pass done.)
 2. Define the canonical conclusion JSON shape and human Markdown layout.
 3. Add the deterministic conclusion model and formatter. (Done.)
 4. Add the deterministic conclusion CLI command. (Done.)

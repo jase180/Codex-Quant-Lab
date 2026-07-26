@@ -7,6 +7,75 @@ The current project is intentionally modest: it is not a production trading
 system, and it is not trying to predict markets. It is a learning and research
 tool that makes backtest assumptions visible.
 
+## Default Workflow
+
+Start with one research question and one strategy. The default path is:
+
+```text
+strategy -> one baseline run -> trust check -> optional sweep -> conclusion -> decision
+```
+
+Use the guided workflow when you want the lab to keep the files and commands
+organized:
+
+```bash
+quant-lab research-plan init \
+  --title "QQQ SMA crossover trust check" \
+  --hypothesis "A daily SMA crossover may reduce drawdown versus buy-and-hold." \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --symbol QQQ \
+  --cost-preset retail-liquid \
+  --out artifacts/research/qqq_sma_trust
+```
+
+Then run the printed `next_command`. After each major step, ask:
+
+```bash
+quant-lab research-plan next \
+  --plan artifacts/research/qqq_sma_trust/research_plan.json
+```
+
+The guided plan recommends the next conservative action: baseline, data-trust
+review, sweep, validation, evidence summary, robustness checks, canonical
+conclusion, decision draft, or done.
+
+If you are returning to an experiment, read this first:
+
+```text
+artifacts/research/<experiment>/experiment_conclusion.md
+```
+
+If you are using Codex or a local agent to continue a cycle, have it read this
+first:
+
+```text
+artifacts/research/<experiment>/experiment_conclusion.json
+```
+
+For the full walkthrough, see [docs/research-workflow.md](docs/research-workflow.md).
+For a copyable skeptical example, see
+[docs/trustworthy-example-workflow.md](docs/trustworthy-example-workflow.md).
+
+## Report Hierarchy
+
+The lab writes many files, but they should not all compete for attention.
+
+Read in this order:
+
+1. Main conclusion:
+   `experiment_conclusion.md`
+2. Supporting interpretation:
+   `evidence_summary.md`, robustness reports, data-trust reports, portfolio
+   summaries
+3. Raw audit files:
+   `run_metadata.json`, `portfolio_metadata.json`, `metrics.json`,
+   `trades.csv`, `equity_curve.csv`, charts, research index rows
+
+Raw files stay available so results are auditable. The conclusion exists so a
+human, future Codex session, or local agent does not need to reread every raw
+artifact before deciding what happened.
+
 ## What Works Today
 
 - Fetch daily market data with `yfinance`.
@@ -29,6 +98,7 @@ tool that makes backtest assumptions visible.
 - Write data-quality summaries for run inputs.
 - Compare strategy results with explicit benchmarks. Buy-and-hold is the
   default, and cash is available as a flat baseline.
+- Write canonical experiment conclusions for humans and local agents.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map
