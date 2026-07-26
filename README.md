@@ -691,6 +691,19 @@ prints a conservative evidence label, and shows recent linked runs. This is
 meant to happen before `draft-decision`, so the decision starts from a saved
 research note instead of a half-remembered terminal table.
 
+Write the canonical conclusion artifacts for the experiment:
+
+```bash
+quant-lab conclude-experiment \
+  --experiment-id EXP-001 \
+  --index-path artifacts/research_index.jsonl \
+  --out artifacts/research/qqq_sma_trust
+```
+
+This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
+`agent_context.md`. Read the Markdown first. Future Codex sessions or local
+agents should read the JSON before scanning raw run folders.
+
 Draft a conservative decision without writing to the registry:
 
 ```bash

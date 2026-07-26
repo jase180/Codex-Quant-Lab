@@ -464,6 +464,133 @@ class CliExperimentTests(unittest.TestCase):
             self.assertIn("# Portfolio Experiment Summary", markdown)
             self.assertIn("qqq_50_spy_50", markdown)
 
+    def test_conclude_experiment_writes_canonical_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            registry_path = temp_path / "experiments.jsonl"
+            index_path = temp_path / "research_index.jsonl"
+            output_dir = temp_path / "conclusion"
+            _write_index_fixture(index_path)
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                        "--strategy",
+                        "data/strategies/qqq.json",
+                        "--data",
+                        "data/cache/qqq.csv",
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "conclude-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--out",
+                        str(output_dir),
+                    ]
+                )
+
+            conclusion_json = output_dir / "experiment_conclusion.json"
+            conclusion_markdown = output_dir / "experiment_conclusion.md"
+            agent_context = output_dir / "agent_context.md"
+            payload = json.loads(conclusion_json.read_text(encoding="utf-8"))
+            markdown = conclusion_markdown.read_text(encoding="utf-8")
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Experiment conclusion written:", stdout.getvalue())
+            self.assertTrue(conclusion_json.exists())
+            self.assertTrue(conclusion_markdown.exists())
+            self.assertTrue(agent_context.exists())
+            self.assertEqual(payload["schema_version"], "experiment_conclusion.v1")
+            self.assertEqual(payload["experiment_id"], "EXP-002")
+            self.assertEqual(payload["confidence_label"], "weak")
+            self.assertIn("artifacts/qqq_run/run_metadata.json", markdown)
+            self.assertIn("experiment_conclusion.json", agent_context.read_text(encoding="utf-8"))
+
+    def test_conclude_experiment_refuses_to_overwrite_without_force(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            registry_path = temp_path / "experiments.jsonl"
+            index_path = temp_path / "research_index.jsonl"
+            output_dir = temp_path / "conclusion"
+            _write_index_fixture(index_path)
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "new-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--title",
+                        "QQQ idea",
+                        "--hypothesis",
+                        "A valid hypothesis.",
+                    ]
+                )
+                main(
+                    [
+                        "conclude-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--out",
+                        str(output_dir),
+                    ]
+                )
+
+            with self.assertRaisesRegex(FileExistsError, "pass --force"):
+                main(
+                    [
+                        "conclude-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--out",
+                        str(output_dir),
+                    ]
+                )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "conclude-experiment",
+                        "--experiments-path",
+                        str(registry_path),
+                        "--index-path",
+                        str(index_path),
+                        "--experiment-id",
+                        "EXP-002",
+                        "--out",
+                        str(output_dir),
+                        "--force",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("confidence:", stdout.getvalue())
+
     def test_draft_decision_prints_template_without_writing_registry(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)

@@ -5,6 +5,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .experiment_conclusion import (
+    build_experiment_conclusion,
+    save_experiment_conclusion_artifacts,
+)
 from .experiment_summary import (
     format_experiment_decision_draft,
     format_experiment_evidence_summary,
@@ -32,6 +36,7 @@ from .research_registry import (
     replace_experiment_record,
     update_experiment_record,
 )
+from .run_artifacts import current_git_commit
 
 
 def new_experiment_command(args: argparse.Namespace) -> int:
@@ -182,6 +187,29 @@ def summarize_portfolio_experiment_command(args: argparse.Namespace) -> int:
         print(f"Portfolio experiment summary written: {output_path}")
     else:
         print(summary)
+    return 0
+
+
+def conclude_experiment_command(args: argparse.Namespace) -> int:
+    records = load_experiments(args.experiments_path)
+    experiment = find_experiment(records, args.experiment_id)
+    index_records = load_research_index(args.index_path)
+    conclusion = build_experiment_conclusion(
+        experiment,
+        index_records,
+        generator_version=current_git_commit(),
+    )
+    artifact_paths = save_experiment_conclusion_artifacts(
+        conclusion,
+        args.out,
+        force=args.force,
+    )
+
+    print(f"Experiment conclusion written: {artifact_paths['markdown']}")
+    print(f"json: {artifact_paths['json']}")
+    print(f"agent_context: {artifact_paths['agent_context']}")
+    print(f"confidence: {conclusion.confidence_label}")
+    print(f"next: {conclusion.next_useful_tests[0].test if conclusion.next_useful_tests else '-'}")
     return 0
 
 

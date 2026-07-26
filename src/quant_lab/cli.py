@@ -16,6 +16,7 @@ from .cli_data import (
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .cli_experiments import (
+    conclude_experiment_command,
     decide_experiment_command,
     draft_decision_command,
     link_run_command,
@@ -707,6 +708,25 @@ def register_experiment_commands(subparsers) -> None:
         help="Maximum rows per ranked section. Defaults to 5.",
     )
     summarize_portfolio_experiment_parser.set_defaults(func=summarize_portfolio_experiment_command)
+
+    conclude_experiment_parser = subparsers.add_parser(
+        "conclude-experiment",
+        help="Write canonical conclusion artifacts for one experiment.",
+    )
+    add_experiment_registry_argument(conclude_experiment_parser)
+    add_index_argument(conclude_experiment_parser)
+    conclude_experiment_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
+    conclude_experiment_parser.add_argument(
+        "--out",
+        required=True,
+        help="Directory where experiment_conclusion files are written.",
+    )
+    conclude_experiment_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing conclusion artifacts.",
+    )
+    conclude_experiment_parser.set_defaults(func=conclude_experiment_command)
 
     draft_decision_parser = subparsers.add_parser(
         "draft-decision",

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+import json
+from pathlib import Path
 from typing import Any, Sequence
 
 from .evidence_labels import VALIDATION_RUN_TYPES, label_strategy_evidence
@@ -12,6 +14,9 @@ from .research_registry import ExperimentRecord
 
 EXPERIMENT_CONCLUSION_SCHEMA_VERSION = "experiment_conclusion.v1"
 CONCLUSION_GENERATOR_NAME = "quant-lab conclude-experiment"
+EXPERIMENT_CONCLUSION_JSON_FILENAME = "experiment_conclusion.json"
+EXPERIMENT_CONCLUSION_MARKDOWN_FILENAME = "experiment_conclusion.md"
+AGENT_CONTEXT_FILENAME = "agent_context.md"
 AGENT_INSTRUCTIONS = [
     "Read experiment_conclusion.json before scanning raw artifacts.",
     "Treat current_conclusion as provisional, not market truth.",
@@ -278,6 +283,42 @@ def format_agent_context(conclusion: ExperimentConclusion) -> str:
             "",
         ]
     )
+
+
+def save_experiment_conclusion_artifacts(
+    conclusion: ExperimentConclusion,
+    output_dir: str | Path,
+    *,
+    force: bool = False,
+) -> dict[str, str]:
+    destination = Path(output_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    artifact_paths = {
+        "json": destination / EXPERIMENT_CONCLUSION_JSON_FILENAME,
+        "markdown": destination / EXPERIMENT_CONCLUSION_MARKDOWN_FILENAME,
+        "agent_context": destination / AGENT_CONTEXT_FILENAME,
+    }
+
+    existing_paths = [path for path in artifact_paths.values() if path.exists()]
+    if existing_paths and not force:
+        raise FileExistsError(
+            f"conclusion artifact already exists: {existing_paths[0]}; pass --force to overwrite"
+        )
+
+    # The JSON artifact is the future-agent API, so keep it stable and easy to diff.
+    artifact_paths["json"].write_text(
+        json.dumps(conclusion.to_dict(), indent=2, sort_keys=False) + "\n",
+        encoding="utf-8",
+    )
+    artifact_paths["markdown"].write_text(
+        format_experiment_conclusion_markdown(conclusion),
+        encoding="utf-8",
+    )
+    artifact_paths["agent_context"].write_text(
+        format_agent_context(conclusion),
+        encoding="utf-8",
+    )
+    return {kind: str(path) for kind, path in artifact_paths.items()}
 
 
 def _linked_index_records(experiment: ExperimentRecord, index_records: list[dict]) -> list[dict]:

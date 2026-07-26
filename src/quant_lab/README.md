@@ -193,6 +193,21 @@ quant-lab summarize-sweep-guardrails \
 The report warns about broad grids, tiny trade counts, fragile parameter
 winners, and benchmark underperformance. It does not rerun or change the sweep.
 
+Write the canonical conclusion for one experiment:
+
+```bash
+quant-lab conclude-experiment \
+  --experiment-id EXP-001 \
+  --experiments-path artifacts/experiments.jsonl \
+  --index-path artifacts/research_index.jsonl \
+  --out artifacts/research/spy_trend
+```
+
+This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
+`agent_context.md`. Read `experiment_conclusion.md` first; the JSON and agent
+context files exist so future Codex or a local agent can continue the same
+research thread without rereading every raw artifact.
+
 Run a train/test sweep:
 
 ```bash
