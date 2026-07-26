@@ -67,13 +67,9 @@ artifacts/research/<experiment>/session_manifest.json
 artifacts/research/<experiment>/experiment_conclusion.json
 ```
 
-For install, smoke-test, and first-run commands, start with
-[docs/getting-running.md](docs/getting-running.md).
-
-For local-agent advisor boundaries and context files, see
-[docs/local-agent.md](docs/local-agent.md).
-For copyable local-agent dry-run commands, see
-[docs/local-agent-runbook.md](docs/local-agent-runbook.md).
+For command-oriented docs, start with the [runbook index](docs/runbooks.md).
+It points to setup, the default research workflow, local-agent dry runs, and
+portfolio workflows.
 
 For the full walkthrough, see [docs/research-workflow.md](docs/research-workflow.md).
 For a copyable skeptical example, see
@@ -140,6 +136,7 @@ data/
   portfolios/                   Example portfolio JSON files.
   strategies/                   Example strategy JSON files.
 docs/
+  runbooks.md                    Command-oriented runbook index.
   getting-running.md             Install, smoke-test, and first real run guide.
   local-agent.md                 Local-agent advisor contract and context flow.
   milestone-4-validation-realism.md  Detailed Milestone 4 plan.
@@ -177,6 +174,7 @@ data/cache/                     Ignored local market-data cache.
 More detailed module notes:
 
 - [docs/milestones.md](docs/milestones.md)
+- [docs/runbooks.md](docs/runbooks.md)
 - [docs/getting-running.md](docs/getting-running.md)
 - [docs/local-agent.md](docs/local-agent.md)
 - [docs/milestone-4-validation-realism.md](docs/milestone-4-validation-realism.md)
