@@ -104,9 +104,7 @@ def run_smoke_test(
     run_output = _run_baseline(plan)
     manifest = build_session_manifest_from_research_plan(plan_path)
     manifest_path, manifest_markdown_path = save_session_manifest(manifest)
-    agent_cycle = run_agent_cycle(manifest_path, dry_run=True) if include_agent_cycle else None
-    if agent_cycle is not None:
-        _validate_agent_cycle(agent_cycle)
+    agent_cycle = _run_optional_agent_cycle(manifest_path, include_agent_cycle=include_agent_cycle)
 
     next_command = manifest.commands[0].command if manifest.commands else "quant-lab session status --manifest " + manifest_path
     read_first = manifest_markdown_path
@@ -129,6 +127,14 @@ def run_smoke_test(
         agent_proposed_command=_normalize_command_paths(agent_cycle.proposed_command) if agent_cycle and agent_cycle.proposed_command else None,
         agent_stop_reason=agent_cycle.stop_reason if agent_cycle else None,
     )
+
+
+def _run_optional_agent_cycle(manifest_path: str | Path, *, include_agent_cycle: bool) -> AgentCycleResult | None:
+    if not include_agent_cycle:
+        return None
+    agent_cycle = run_agent_cycle(manifest_path, dry_run=True)
+    _validate_agent_cycle(agent_cycle)
+    return agent_cycle
 
 
 def format_smoke_test_result(result: SmokeTestResult) -> str:
