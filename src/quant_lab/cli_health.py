@@ -26,6 +26,7 @@ def smoke_test_command(args: argparse.Namespace) -> int:
         repo_root=args.repo_root,
         output_dir=args.out,
         force=args.force,
+        include_agent_cycle=args.agent_cycle,
     )
     if args.json:
         print(smoke_test_result_to_json(result))

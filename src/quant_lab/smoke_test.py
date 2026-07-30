@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from .agent_cycle import AgentCycleResult, run_agent_cycle
 from .cli_session import build_session_manifest_from_research_plan
 from .costs import resolve_cost_assumptions
 from .data_quality import build_data_quality_report
@@ -35,6 +36,11 @@ class SmokeTestResult:
     next_command: str
     read_first: str
     note: str
+    agent_cycle_json: str | None = None
+    agent_cycle_markdown: str | None = None
+    agent_recommended_action: str | None = None
+    agent_proposed_command: str | None = None
+    agent_stop_reason: str | None = None
 
 
 def run_smoke_test(
@@ -42,6 +48,7 @@ def run_smoke_test(
     repo_root: str | Path = ".",
     output_dir: str | Path = "artifacts/smoke-test",
     force: bool = False,
+    include_agent_cycle: bool = False,
 ) -> SmokeTestResult:
     """Run a tiny local workflow without internet or external services."""
 
@@ -97,6 +104,9 @@ def run_smoke_test(
     run_output = _run_baseline(plan)
     manifest = build_session_manifest_from_research_plan(plan_path)
     manifest_path, manifest_markdown_path = save_session_manifest(manifest)
+    agent_cycle = run_agent_cycle(manifest_path, dry_run=True) if include_agent_cycle else None
+    if agent_cycle is not None:
+        _validate_agent_cycle(agent_cycle)
 
     next_command = manifest.commands[0].command if manifest.commands else "quant-lab session status --manifest " + manifest_path
     read_first = manifest_markdown_path
@@ -113,6 +123,11 @@ def run_smoke_test(
         next_command=_normalize_command_paths(next_command),
         read_first=_display_path(read_first),
         note="This is a wiring check using a tiny tracked CSV, not research evidence.",
+        agent_cycle_json=_display_path(agent_cycle.cycle_json_path) if agent_cycle else None,
+        agent_cycle_markdown=_display_path(agent_cycle.cycle_markdown_path) if agent_cycle else None,
+        agent_recommended_action=agent_cycle.recommended_action if agent_cycle else None,
+        agent_proposed_command=_normalize_command_paths(agent_cycle.proposed_command) if agent_cycle and agent_cycle.proposed_command else None,
+        agent_stop_reason=agent_cycle.stop_reason if agent_cycle else None,
     )
 
 
@@ -129,6 +144,7 @@ def format_smoke_test_result(result: SmokeTestResult) -> str:
             f"read_first: {result.read_first}",
             "next_command:",
             result.next_command,
+            *_agent_cycle_lines(result),
             f"note: {result.note}",
         ]
     )
@@ -177,6 +193,26 @@ def _run_baseline(plan) -> RunArtifactResult:
         run_name=strategy_spec.name,
         research_note_path=None,
     )
+
+
+def _validate_agent_cycle(agent_cycle: AgentCycleResult) -> None:
+    if agent_cycle.recommended_action != "run_trust":
+        raise RuntimeError(f"expected agent smoke-test action run_trust, got {agent_cycle.recommended_action}")
+    if not agent_cycle.proposed_command or "summarize-run-trust" not in agent_cycle.proposed_command:
+        raise RuntimeError("expected agent smoke-test to propose summarize-run-trust")
+
+
+def _agent_cycle_lines(result: SmokeTestResult) -> list[str]:
+    if result.agent_cycle_json is None:
+        return []
+    return [
+        f"agent_cycle: {result.agent_cycle_json}",
+        f"agent_cycle_markdown: {result.agent_cycle_markdown}",
+        f"agent_recommended_action: {result.agent_recommended_action}",
+        "agent_proposed_command:",
+        result.agent_proposed_command or "-",
+        f"agent_stop_reason: {result.agent_stop_reason}",
+    ]
 
 
 def _display_path(path: str | Path) -> str:

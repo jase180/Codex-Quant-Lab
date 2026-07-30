@@ -100,6 +100,20 @@ class SmokeTestWorkflowTest(unittest.TestCase):
             self.assertIn("read_first", payload)
             self.assertIn("next_command", payload)
 
+    def test_smoke_test_can_verify_agent_dry_run_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write_smoke_repo(root)
+
+            result = run_smoke_test(repo_root=root, include_agent_cycle=True)
+
+            self.assertEqual("run_trust", result.agent_recommended_action)
+            self.assertIn("summarize-run-trust", result.agent_proposed_command)
+            self.assertIsNotNone(result.agent_cycle_json)
+            self.assertIsNotNone(result.agent_cycle_markdown)
+            self.assertTrue(Path(result.agent_cycle_json or "").exists())
+            self.assertTrue(Path(result.agent_cycle_markdown or "").exists())
+
     def test_smoke_test_human_output_points_to_read_first(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -110,3 +124,13 @@ class SmokeTestWorkflowTest(unittest.TestCase):
             self.assertIn("Quant Lab smoke-test: OK", output)
             self.assertIn("read_first:", output)
             self.assertIn("next_command:", output)
+
+    def test_smoke_test_human_output_includes_agent_cycle_when_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write_smoke_repo(root)
+
+            output = format_smoke_test_result(run_smoke_test(repo_root=root, include_agent_cycle=True))
+
+            self.assertIn("agent_cycle:", output)
+            self.assertIn("agent_recommended_action: run_trust", output)

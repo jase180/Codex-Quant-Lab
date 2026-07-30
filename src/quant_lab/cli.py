@@ -512,6 +512,11 @@ def register_health_commands(subparsers) -> None:
         help="Directory where smoke-test artifacts are written. Defaults to artifacts/smoke-test.",
     )
     smoke_parser.add_argument("--force", action="store_true", help="Replace the output directory if it already exists.")
+    smoke_parser.add_argument(
+        "--agent-cycle",
+        action="store_true",
+        help="Also verify the deterministic local-agent dry-run path.",
+    )
     smoke_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report.")
     smoke_parser.set_defaults(func=smoke_test_command)
 

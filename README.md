@@ -126,6 +126,8 @@ artifact before deciding what happened.
   recommendation, and proposed-command artifacts without executing commands.
 - Check local setup and dependency health with `quant-lab doctor`.
 - Run an offline end-to-end wiring check with `quant-lab smoke-test`.
+- Include deterministic local-agent dry-run verification in the smoke workflow
+  with `quant-lab smoke-test --agent-cycle`.
 - Follow a written research protocol in [AUTORESEARCH.md](AUTORESEARCH.md).
 
 ## Project Map

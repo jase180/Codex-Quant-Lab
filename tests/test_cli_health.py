@@ -128,3 +128,16 @@ class CliHealthTest(unittest.TestCase):
             self.assertEqual(0, exit_code)
             self.assertEqual("ok", payload["status"])
             self.assertIn("session_manifest", payload)
+
+    def test_smoke_test_agent_cycle_flag_prints_agent_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _write_smoke_repo(root)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["smoke-test", "--repo-root", str(root), "--agent-cycle"])
+
+            output = stdout.getvalue()
+            self.assertEqual(0, exit_code)
+            self.assertIn("agent_cycle:", output)
+            self.assertIn("agent_recommended_action: run_trust", output)

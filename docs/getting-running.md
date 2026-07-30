@@ -73,6 +73,16 @@ The smoke test creates a sample research plan, runs one baseline against the
 tracked sample CSV, refreshes a session manifest, and prints `read_first` plus
 the next recommended command.
 
+To also verify the deterministic local-agent dry-run path, add
+`--agent-cycle`:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli smoke-test --force --agent-cycle
+```
+
+This writes the same smoke artifacts plus an `agent_cycle` folder. It does not
+execute the proposed command.
+
 Build the local-agent context bundle from that manifest:
 
 Windows PowerShell:
