@@ -470,6 +470,12 @@ def register_data_commands(subparsers) -> None:
     new_strategy_parser.add_argument("--out", required=True, help="Path where the strategy JSON is written.")
     new_strategy_parser.add_argument("--strategy-id", default=None, help="Optional strategy_id override.")
     new_strategy_parser.add_argument("--name", default=None, help="Optional display name override.")
+    new_strategy_parser.add_argument(
+        "--length",
+        type=int,
+        default=None,
+        help="Indicator length for templates that support one lookback, such as sma-long-cash.",
+    )
     new_strategy_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
     new_strategy_parser.set_defaults(func=new_strategy_command)
 

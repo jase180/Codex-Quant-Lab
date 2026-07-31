@@ -308,10 +308,24 @@ quant-lab new-strategy \
   --out data/strategies/qqq_sma_crossover.json
 ```
 
+Create a simple long/cash trend rule, such as SPY close above/below its
+200-day SMA:
+
+```bash
+quant-lab new-strategy \
+  --template sma-long-cash \
+  --symbol SPY \
+  --length 200 \
+  --strategy-id spy_sma_200_long_cash \
+  --name "SPY 200-day SMA Long/Cash" \
+  --out data/strategies/spy_sma_200_long_cash.json
+```
+
 Available templates are:
 
 ```text
 sma-crossover
+sma-long-cash
 ema-trend-follow
 rsi-reversion
 breakout-trend

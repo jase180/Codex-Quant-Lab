@@ -116,12 +116,24 @@ quant-lab new-strategy \
   --out data/strategies/qqq_sma_crossover.json
 ```
 
+Create a one-indicator long/cash trend strategy:
+
+```bash
+quant-lab new-strategy \
+  --template sma-long-cash \
+  --symbol SPY \
+  --length 200 \
+  --strategy-id spy_sma_200_long_cash \
+  --name "SPY 200-day SMA Long/Cash" \
+  --out data/strategies/spy_sma_200_long_cash.json
+```
+
 `new-strategy` validates the generated payload with the same strict v1 parser
 used by backtests. It refuses to overwrite an existing file unless `--force` is
 provided.
 
-Built-in templates are `sma-crossover`, `ema-trend-follow`, `rsi-reversion`,
-and `breakout-trend`.
+Built-in templates are `sma-crossover`, `sma-long-cash`, `ema-trend-follow`,
+`rsi-reversion`, and `breakout-trend`.
 
 Fetch data:
 

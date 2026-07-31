@@ -20,7 +20,7 @@ class StrategyTemplateTests(unittest.TestCase):
     def test_available_templates_are_stable(self) -> None:
         self.assertEqual(
             available_strategy_templates(),
-            ("sma-crossover", "ema-trend-follow", "rsi-reversion", "breakout-trend"),
+            ("sma-crossover", "sma-long-cash", "ema-trend-follow", "rsi-reversion", "breakout-trend"),
         )
 
     def test_build_strategy_template_returns_valid_payload(self) -> None:
@@ -44,6 +44,34 @@ class StrategyTemplateTests(unittest.TestCase):
         self.assertEqual(spec.market.symbol, "SPY")
         self.assertEqual(spec.indicators[0].kind, "rolling_high")
         self.assertEqual(spec.indicators[1].kind, "rolling_low")
+
+    def test_build_sma_long_cash_template_defaults_to_200_day_rule(self) -> None:
+        payload = build_strategy_template("sma-long-cash", symbol="spy")
+
+        spec = parse_strategy(payload)
+        self.assertEqual(spec.strategy_id, "sma_long_cash")
+        self.assertEqual(spec.name, "SMA 200 Long/Cash Trend")
+        self.assertEqual(spec.market.symbol, "SPY")
+        self.assertEqual(spec.indicators[0].id, "sma_200")
+        self.assertEqual(spec.indicators[0].inputs["length"], 200)
+        self.assertEqual(spec.entry.conditions[0].operator, "gt")
+        self.assertEqual(spec.exit.conditions[0].operator, "lt")
+
+    def test_build_sma_long_cash_template_accepts_custom_length(self) -> None:
+        payload = build_strategy_template("sma-long-cash", symbol="QQQ", length=150)
+
+        spec = parse_strategy(payload)
+        self.assertEqual(spec.name, "SMA 150 Long/Cash Trend")
+        self.assertEqual(spec.indicators[0].id, "sma_150")
+        self.assertEqual(spec.indicators[0].inputs["length"], 150)
+
+    def test_length_is_rejected_for_templates_without_single_lookback(self) -> None:
+        with self.assertRaisesRegex(ValueError, "only supported for sma-long-cash"):
+            build_strategy_template("sma-crossover", symbol="SPY", length=200)
+
+    def test_length_must_be_positive(self) -> None:
+        with self.assertRaisesRegex(ValueError, "positive integer"):
+            build_strategy_template("sma-long-cash", symbol="SPY", length=0)
 
     def test_write_strategy_template_refuses_overwrite_without_force(self) -> None:
         payload = build_strategy_template("rsi-reversion", symbol="SPY")

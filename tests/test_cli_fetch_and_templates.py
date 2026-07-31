@@ -68,6 +68,7 @@ class CliFetchAndTemplateTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertIn("sma-crossover", stdout.getvalue())
+        self.assertIn("sma-long-cash", stdout.getvalue())
         self.assertIn("rsi-reversion", stdout.getvalue())
 
     def test_show_data_source_command_prints_csv_and_provenance_summary(self) -> None:
@@ -182,6 +183,40 @@ class CliFetchAndTemplateTests(unittest.TestCase):
                         str(output_path),
                     ]
                 )
+
+    def test_new_strategy_command_writes_sma_long_cash_template_with_length(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "spy_sma_200.json"
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "new-strategy",
+                        "--template",
+                        "sma-long-cash",
+                        "--symbol",
+                        "spy",
+                        "--strategy-id",
+                        "spy_sma_200_long_cash",
+                        "--name",
+                        "SPY 200-day long/cash",
+                        "--length",
+                        "200",
+                        "--out",
+                        str(output_path),
+                    ]
+                )
+
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(exit_code, 0)
+            self.assertIn("length: 200", stdout.getvalue())
+            self.assertEqual(payload["strategy_id"], "spy_sma_200_long_cash")
+            self.assertEqual(payload["name"], "SPY 200-day long/cash")
+            self.assertEqual(payload["market"]["symbol"], "SPY")
+            self.assertEqual(payload["indicators"][0]["id"], "sma_200")
+            self.assertEqual(payload["indicators"][0]["inputs"]["length"], 200)
+            self.assertEqual(payload["entry"]["conditions"][0]["operator"], "gt")
+            self.assertEqual(payload["exit"]["conditions"][0]["operator"], "lt")
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from .strategy_schema import parse_strategy
 
 TEMPLATE_NAMES = (
     "sma-crossover",
+    "sma-long-cash",
     "ema-trend-follow",
     "rsi-reversion",
     "breakout-trend",
@@ -27,16 +28,23 @@ def build_strategy_template(
     symbol: str,
     strategy_id: str | None = None,
     name: str | None = None,
+    length: int | None = None,
 ) -> dict[str, Any]:
     """Return a validated v1 strategy JSON payload from a named template."""
 
     if template_name == "sma-crossover":
+        _reject_unused_length(template_name, length)
         payload = _sma_crossover_template(symbol)
+    elif template_name == "sma-long-cash":
+        payload = _sma_long_cash_template(symbol, length=_template_length(length, default=200))
     elif template_name == "ema-trend-follow":
+        _reject_unused_length(template_name, length)
         payload = _ema_trend_follow_template(symbol)
     elif template_name == "rsi-reversion":
+        _reject_unused_length(template_name, length)
         payload = _rsi_reversion_template(symbol)
     elif template_name == "breakout-trend":
+        _reject_unused_length(template_name, length)
         payload = _breakout_trend_template(symbol)
     else:
         raise ValueError(f"Unknown strategy template: {template_name}")
@@ -104,6 +112,37 @@ def _sma_crossover_template(symbol: str) -> dict[str, Any]:
     }
 
 
+def _sma_long_cash_template(symbol: str, *, length: int) -> dict[str, Any]:
+    indicator_id = f"sma_{length}"
+    return {
+        "schema_version": "v1",
+        "strategy_id": "sma_long_cash",
+        "name": f"SMA {length} Long/Cash Trend",
+        "description": (
+            f"Enter when close is above the {length}-day SMA and exit to cash "
+            f"when close is below the {length}-day SMA."
+        ),
+        "strategy_type": "rule_based",
+        "position_mode": "long_only",
+        "market": {"symbol": symbol.upper(), "timeframe": "1d"},
+        "indicators": [
+            {"id": indicator_id, "kind": "sma", "inputs": {"source": "close", "length": length}},
+        ],
+        "entry": {
+            "when": "all",
+            "conditions": [
+                {"left": {"price": "close"}, "operator": "gt", "right": {"indicator": indicator_id}},
+            ],
+        },
+        "exit": {
+            "when": "all",
+            "conditions": [
+                {"left": {"price": "close"}, "operator": "lt", "right": {"indicator": indicator_id}},
+            ],
+        },
+    }
+
+
 def _ema_trend_follow_template(symbol: str) -> dict[str, Any]:
     return {
         "schema_version": "v1",
@@ -135,6 +174,18 @@ def _ema_trend_follow_template(symbol: str) -> dict[str, Any]:
             ],
         },
     }
+
+
+def _template_length(length: int | None, *, default: int) -> int:
+    resolved = default if length is None else length
+    if not isinstance(resolved, int) or resolved <= 0:
+        raise ValueError("template length must be a positive integer")
+    return resolved
+
+
+def _reject_unused_length(template_name: str, length: int | None) -> None:
+    if length is not None:
+        raise ValueError(f"--length is only supported for sma-long-cash, not {template_name}")
 
 
 def _rsi_reversion_template(symbol: str) -> dict[str, Any]:

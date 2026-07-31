@@ -66,10 +66,13 @@ def new_strategy_command(args: argparse.Namespace) -> int:
         symbol=args.symbol,
         strategy_id=args.strategy_id,
         name=args.name,
+        length=args.length,
     )
     output_path = write_strategy_template(payload, args.out, force=args.force)
     print(f"Strategy template written: {output_path}")
     print(f"template: {args.template}")
     print(f"strategy_id: {payload['strategy_id']}")
     print(f"symbol: {payload['market']['symbol']}")
+    if args.length is not None:
+        print(f"length: {args.length}")
     return 0
