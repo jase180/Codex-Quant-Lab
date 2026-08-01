@@ -178,6 +178,7 @@ class CliSessionTest(unittest.TestCase):
             temp_path = Path(tmpdir)
             output_dir = temp_path / "research" / "spy"
             index_path = temp_path / "research_index.jsonl"
+            experiments_path = temp_path / "experiments.jsonl"
             plan = create_research_plan(
                 title="SPY trend walkthrough",
                 hypothesis="Trend may reduce drawdown.",
@@ -185,6 +186,7 @@ class CliSessionTest(unittest.TestCase):
                 data_path="data/cache/SPY.csv",
                 symbol="SPY",
                 experiment_id="EXP-001",
+                experiments_path=experiments_path,
                 index_path=index_path,
                 output_dir=output_dir,
                 created_at_utc="2026-07-25T00:00:00Z",
@@ -224,6 +226,7 @@ class CliSessionTest(unittest.TestCase):
             temp_path = Path(tmpdir)
             output_dir = temp_path / "research" / "spy"
             index_path = temp_path / "research_index.jsonl"
+            experiments_path = temp_path / "experiments.jsonl"
             missing_metadata_path = output_dir / "baseline" / "run_metadata.json"
             plan = create_research_plan(
                 title="SPY trend walkthrough",
@@ -232,6 +235,7 @@ class CliSessionTest(unittest.TestCase):
                 data_path="data/cache/SPY.csv",
                 symbol="SPY",
                 experiment_id="EXP-001",
+                experiments_path=experiments_path,
                 index_path=index_path,
                 output_dir=output_dir,
                 created_at_utc="2026-07-25T00:00:00Z",

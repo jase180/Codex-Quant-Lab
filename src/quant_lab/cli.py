@@ -23,6 +23,7 @@ from .cli_agent import (
 from .cli_health import doctor_command, smoke_test_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
+from .default_experiment import run_default_experiment, validate_default_experiment_args
 from .cli_experiments import (
     conclude_experiment_command,
     decide_experiment_command,
@@ -96,6 +97,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_health_commands(subparsers)
     register_run_inspection_commands(subparsers)
     register_experiment_commands(subparsers)
+    register_default_experiment_commands(subparsers)
     register_research_plan_commands(subparsers)
     register_portfolio_plan_commands(subparsers)
     register_session_commands(subparsers)
@@ -838,6 +840,110 @@ def register_experiment_commands(subparsers) -> None:
     add_index_argument(draft_decision_parser)
     draft_decision_parser.add_argument("--experiment-id", required=True, help="Experiment id, such as EXP-001.")
     draft_decision_parser.set_defaults(func=draft_decision_command)
+
+
+def register_default_experiment_commands(subparsers) -> None:
+    experiment_parser = subparsers.add_parser(
+        "experiment",
+        help="Run higher-level experiment workflows.",
+    )
+    experiment_subparsers = experiment_parser.add_subparsers(dest="experiment_command", required=True)
+
+    run_default_parser = experiment_subparsers.add_parser(
+        "run-default",
+        help="Run the normal single-strategy workflow from baseline to conclusion.",
+    )
+    run_default_parser.add_argument("--title", required=True, help="Short experiment title.")
+    run_default_parser.add_argument("--hypothesis", required=True, help="Research hypothesis being tested.")
+    run_default_parser.add_argument("--strategy", required=True, help="Path to a v1 strategy JSON file.")
+    run_default_parser.add_argument("--data", required=True, help="Path to a daily OHLCV CSV file.")
+    run_default_parser.add_argument("--symbol", required=True, help="Market symbol, such as SPY or QQQ.")
+    run_default_parser.add_argument("--out", required=True, help="Directory where workflow artifacts are written.")
+    run_default_parser.add_argument(
+        "--experiment-id",
+        default=None,
+        help="Optional explicit id such as EXP-001. Defaults to the next local id.",
+    )
+    run_default_parser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Experiment tag. May be repeated or comma-separated.",
+    )
+    run_default_parser.add_argument(
+        "--param",
+        action="append",
+        required=True,
+        help="Parameter sweep in path=value1,value2 form. May be repeated.",
+    )
+    run_default_parser.add_argument("--train-end", required=True, help="Final train date for train/test validation.")
+    run_default_parser.add_argument("--test-start", required=True, help="First test date for train/test validation.")
+    run_default_parser.add_argument(
+        "--select-by",
+        choices=["total_return", "sharpe_ratio"],
+        default="sharpe_ratio",
+        help="Metric used to select the train winner. Defaults to sharpe_ratio.",
+    )
+    run_default_parser.add_argument(
+        "--date-window",
+        action="append",
+        required=True,
+        help="Date sensitivity window in start,end form. May be repeated.",
+    )
+    run_default_parser.add_argument(
+        "--cost-sensitivity-preset",
+        action="append",
+        default=[],
+        choices=sorted(COST_PRESETS),
+        help="Cost preset for cost sensitivity. Defaults to base preset plus stricter presets.",
+    )
+    run_default_parser.add_argument(
+        "--decision",
+        choices=["conservative", "continue", "none"],
+        default="conservative",
+        help="Whether to record a deterministic decision. Defaults to conservative.",
+    )
+    run_default_parser.add_argument(
+        "--initial-cash",
+        type=float,
+        default=100_000.0,
+        help="Starting portfolio cash. Defaults to 100000.",
+    )
+    run_default_parser.add_argument(
+        "--quantity",
+        type=float,
+        default=1.0,
+        help="Order quantity for fixed-shares sizing. Defaults to 1.",
+    )
+    run_default_parser.add_argument(
+        "--sizing",
+        choices=["fixed-shares", "percent-equity"],
+        default="percent-equity",
+        help="Position sizing mode. Defaults to percent-equity.",
+    )
+    run_default_parser.add_argument(
+        "--allocation",
+        type=float,
+        default=1.0,
+        help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
+    )
+    run_default_parser.add_argument("--run-name", default=None, help="Optional baseline report title.")
+    add_cost_arguments(run_default_parser)
+    add_benchmark_argument(run_default_parser)
+    add_experiment_registry_argument(run_default_parser)
+    add_index_argument(run_default_parser)
+    run_default_parser.set_defaults(func=run_default_experiment_command)
+
+
+def run_default_experiment_command(args: argparse.Namespace) -> int:
+    validate_default_experiment_args(args)
+    result = run_default_experiment(args)
+    print(f"Default experiment complete: {result.experiment_id}")
+    print(f"read_first: {result.read_first_path}")
+    print(f"conclusion: {result.conclusion_path}")
+    print(f"evidence_summary: {result.evidence_summary_path}")
+    print(f"decision: {result.decision_outcome or 'not recorded'}")
+    return 0
 
 
 def register_research_plan_commands(subparsers) -> None:

@@ -12,11 +12,40 @@ tool that makes backtest assumptions visible.
 Start with one research question and one strategy. The default path is:
 
 ```text
-strategy -> one baseline run -> trust check -> optional sweep -> conclusion -> decision
+strategy -> baseline -> trust check -> sweep -> train/test -> robustness -> conclusion -> decision
 ```
 
-Use the guided workflow when you want the lab to keep the files and commands
-organized:
+Use `experiment run-default` when you want the lab to run the normal
+single-strategy workflow for you while still writing every underlying artifact:
+
+```bash
+quant-lab experiment run-default \
+  --title "QQQ SMA crossover trust check" \
+  --hypothesis "A daily SMA crossover may reduce drawdown versus buy-and-hold." \
+  --strategy data/strategies/sma_crossover.json \
+  --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
+  --symbol QQQ \
+  --cost-preset retail-liquid \
+  --param sma_20.inputs.length=10,20,30 \
+  --param sma_50.inputs.length=50,100,150 \
+  --train-end 2020-12-31 \
+  --test-start 2021-01-01 \
+  --date-window 2015-01-02,2019-12-31 \
+  --date-window 2020-01-01,2025-12-30 \
+  --out artifacts/research/qqq_sma_trust
+```
+
+The command creates or reuses an experiment, runs the baseline, writes the
+run-trust report, runs the sweep and train/test validation, runs cost and date
+sensitivity, writes `evidence_summary.md`, writes `experiment_conclusion.md`,
+and records a conservative registry decision by default. Read this file first:
+
+```text
+artifacts/research/qqq_sma_trust/experiment_conclusion.md
+```
+
+Use the guided workflow when you want the lab to create the workspace and
+recommend one command at a time instead of executing the full default workflow:
 
 ```bash
 quant-lab research-plan init \
@@ -29,16 +58,12 @@ quant-lab research-plan init \
   --out artifacts/research/qqq_sma_trust
 ```
 
-Then run the printed `next_command`. After each major step, ask:
+After each major step, ask:
 
 ```bash
 quant-lab research-plan next \
   --plan artifacts/research/qqq_sma_trust/research_plan.json
 ```
-
-The guided plan recommends the next conservative action: baseline, data-trust
-review, sweep, validation, evidence summary, robustness checks, canonical
-conclusion, decision draft, or done.
 
 If you are returning to an experiment, orient from the session manifest first:
 
@@ -421,6 +446,31 @@ quant-lab summarize-portfolio-data-trust \
 
 The portfolio report verifies every symbol input and benchmark data when saved
 benchmark metadata is available.
+
+### Run The Default Experiment Workflow
+
+Use this when you already have one strategy file and one data file, and you
+want the normal research path to run end to end:
+
+```bash
+quant-lab experiment run-default \
+  --title "SPY 200-day SMA long/cash drawdown test" \
+  --hypothesis "A daily SPY 200-day moving-average long/cash strategy may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." \
+  --strategy artifacts/research/spy_200_sma_long_cash/spy_sma_200_long_cash.json \
+  --data data/cache/SPY_2015-01-01_2025-12-31.csv \
+  --symbol SPY \
+  --cost-preset retail-liquid \
+  --param sma_200.inputs.length=150,200,250 \
+  --train-end 2020-12-31 \
+  --test-start 2021-01-01 \
+  --date-window 2015-01-02,2019-12-31 \
+  --date-window 2020-01-01,2025-12-30 \
+  --out artifacts/research/spy_200_sma_long_cash_default
+```
+
+This writes the same underlying files as the manual workflow and adds
+`default_workflow_summary.md` as a map. The main read-first file remains
+`experiment_conclusion.md`.
 
 ### Start A Guided Research Plan
 

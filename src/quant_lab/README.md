@@ -41,6 +41,8 @@ It owns:
 - `research_index.py`: appends flat JSONL rows to the local research registry.
 - `research_plan_workflow.py`: shares research-plan recommendation logic,
   artifact-presence checks, and copyable command builders across CLI surfaces.
+- `default_experiment.py`: runs the normal single-strategy workflow from
+  baseline to conclusion without hiding the underlying artifacts.
 - `evidence_labels.py`: labels linked strategy evidence with conservative,
   explainable heuristics.
 - `experiment_conclusion.py`: builds the deterministic
@@ -181,6 +183,23 @@ Write a data trust report for a saved portfolio run:
 
 ```bash
 quant-lab summarize-portfolio-data-trust --metadata artifacts/research/qqq_spy/baseline/portfolio_metadata.json
+```
+
+Run the normal single-strategy workflow in one command:
+
+```bash
+quant-lab experiment run-default \
+  --title "SPY 200-day SMA long/cash drawdown test" \
+  --hypothesis "A daily SPY 200-day moving-average long/cash strategy may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." \
+  --strategy artifacts/research/spy_200_sma_long_cash/spy_sma_200_long_cash.json \
+  --data data/cache/SPY_2015-01-01_2025-12-31.csv \
+  --symbol SPY \
+  --param sma_200.inputs.length=150,200,250 \
+  --train-end 2020-12-31 \
+  --test-start 2021-01-01 \
+  --date-window 2015-01-02,2019-12-31 \
+  --date-window 2020-01-01,2025-12-30 \
+  --out artifacts/research/spy_200_sma_long_cash_default
 ```
 
 Run one strategy:
