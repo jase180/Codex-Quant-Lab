@@ -8,7 +8,12 @@ from typing import Callable
 from urllib import request
 from urllib.error import HTTPError, URLError
 
-from .agent_context import AgentContext, agent_context_to_json
+from .agent_context import (
+    AgentContext,
+    agent_context_to_json,
+    format_next_research_prompt_for_agent,
+    next_research_prompt_from_context,
+)
 from .agent_recommendation import (
     AGENT_RECOMMENDATION_SCHEMA_VERSION,
     ALLOWED_RECOMMENDED_ACTIONS,
@@ -94,6 +99,7 @@ def suggest_with_openai_compatible_provider(
 
 
 def build_agent_prompt(context: AgentContext) -> str:
+    next_research_prompt = next_research_prompt_from_context(context)
     return "\n".join(
         [
             "You are a bounded quant research advisor.",
@@ -101,6 +107,7 @@ def build_agent_prompt(context: AgentContext) -> str:
             "Do not include Markdown, prose, code fences, or extra keys.",
             "Do not edit source code. Do not run commands.",
             "Recommend the next experiment or analysis step and stop.",
+            "Prefer next_research_prompt when it exists; use the full context only to verify paths, commands, and risks.",
             "The JSON must validate as agent_recommendation.v1.",
             "",
             "Required keys:",
@@ -135,6 +142,9 @@ def build_agent_prompt(context: AgentContext) -> str:
             '  "do_not_repeat": ["One thing not to repeat."],',
             '  "confidence": "medium"',
             "}",
+            "",
+            "Preferred next-cycle research prompt:",
+            format_next_research_prompt_for_agent(next_research_prompt),
             "",
             "Context bundle JSON:",
             agent_context_to_json(context),

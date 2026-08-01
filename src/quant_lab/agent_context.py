@@ -136,6 +136,39 @@ def agent_context_to_json(context: AgentContext) -> str:
     return json.dumps(context.to_dict(), indent=2, sort_keys=True)
 
 
+def next_research_prompt_from_context(context: AgentContext) -> dict | None:
+    """Return the structured conclusion handoff if the context includes one."""
+
+    for file in context.files:
+        if file.kind != "experiment_conclusion_json" or not file.content:
+            continue
+        try:
+            payload = json.loads(file.content)
+        except json.JSONDecodeError:
+            return None
+        prompt = payload.get("next_research_prompt")
+        if isinstance(prompt, dict):
+            return prompt
+    return None
+
+
+def format_next_research_prompt_for_agent(prompt: dict | None) -> str:
+    if not prompt:
+        return "No structured next_research_prompt is available."
+    return json.dumps(prompt, indent=2, sort_keys=True)
+
+
+def next_research_prompt_items(prompt: dict | None, field_name: str) -> list[str]:
+    if not prompt:
+        return []
+    value = prompt.get(field_name)
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
 def _context_artifacts(manifest_path: Path, manifest: SessionManifest) -> list[SessionArtifact]:
     artifacts = [
         SessionArtifact(kind="session_manifest_json", path=str(manifest_path), role="main"),

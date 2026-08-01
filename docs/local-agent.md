@@ -75,6 +75,12 @@ If the provider is unreachable, returns invalid JSON, or returns JSON that does
 not validate as `agent_recommendation.v1`, the command saves the deterministic
 fallback recommendation and records the model failure as a risk.
 
+When `experiment_conclusion.json` contains `next_research_prompt`, both
+deterministic and model-backed recommendations should treat it as the first
+research handoff. The full context bundle is still used to verify paths,
+commands, warnings, and source artifacts, but the prompt is the concise answer
+to "what should the next cycle learn?"
+
 Complete sessions short-circuit to the deterministic `stop` recommendation
 before calling a model. A recorded decision is treated as authoritative state,
 not as something a local model should reinterpret.
@@ -160,6 +166,10 @@ For automation, prefer:
 2. `agent_context_bundle.json`
 3. `experiment_conclusion.json`, if present
 4. linked `run_metadata.json` files only when needed
+
+If `experiment_conclusion.json` includes `next_research_prompt`, use that field
+before scanning raw file contents. It carries the known result, promising
+signals, failures, constraints, and next experiment success criteria.
 
 ## Recommendation Contract
 

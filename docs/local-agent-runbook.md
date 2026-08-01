@@ -124,6 +124,7 @@ What it does:
 
 - creates a strict `agent_recommendation.v1` recommendation,
 - uses deterministic workflow rules,
+- uses `next_research_prompt` from `experiment_conclusion.json` when present,
 - never calls a model.
 
 This is the fallback path when model output is invalid.
@@ -142,6 +143,7 @@ This is the fallback path when model output is invalid.
 What it does:
 
 - sends the same context contract to Ollama,
+- spotlights `next_research_prompt` before the full context bundle,
 - requests structured `agent_recommendation.v1` JSON,
 - validates the model output,
 - falls back to deterministic advice if validation fails.

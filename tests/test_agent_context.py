@@ -10,6 +10,8 @@ from quant_lab.agent_context import (
     agent_context_to_json,
     build_agent_context,
     format_agent_context_markdown,
+    next_research_prompt_from_context,
+    next_research_prompt_items,
     save_agent_context,
 )
 from quant_lab.cli import main
@@ -124,6 +126,48 @@ class AgentContextTest(unittest.TestCase):
 
             self.assertEqual("agent_context.v1", json.loads(agent_context_to_json(context))["schema_version"])
             self.assertIn("## Operating Rules", format_agent_context_markdown(context))
+
+    def test_extracts_next_research_prompt_from_conclusion_json(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            plan_path = output_dir / "research_plan.json"
+            conclusion_md = output_dir / "experiment_conclusion.md"
+            conclusion_json = output_dir / "experiment_conclusion.json"
+            plan_path.write_text("{}\n", encoding="utf-8")
+            conclusion_md.write_text("# Experiment Conclusion\n", encoding="utf-8")
+            conclusion_json.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "experiment_conclusion.v1",
+                        "next_research_prompt": {
+                            "known_result": "The SMA branch failed buy-and-hold.",
+                            "constraints": ["Do not widen the SMA sweep."],
+                            "what_failed": ["Benchmark sensitivity was mixed."],
+                            "next_experiment_should": ["Explain the failure before a new run."],
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="Prompt context",
+                hypothesis="Context should expose conclusion prompt.",
+                plan_path=plan_path,
+                output_dir=output_dir,
+                conclusion_path=conclusion_md,
+                current_status="needs_decision",
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            manifest_path, _ = save_session_manifest(manifest)
+
+            context = build_agent_context(manifest_path)
+            prompt = next_research_prompt_from_context(context)
+
+            self.assertEqual("The SMA branch failed buy-and-hold.", prompt["known_result"])
+            self.assertEqual(["Do not widen the SMA sweep."], next_research_prompt_items(prompt, "constraints"))
 
     def test_cli_agent_context_writes_files_and_prints_next_command(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

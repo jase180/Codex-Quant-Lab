@@ -84,6 +84,51 @@ class AgentSuggestTest(unittest.TestCase):
             self.assertIsNone(recommendation.next_command)
             self.assertEqual("low", recommendation.confidence)
 
+    def test_suggest_prefers_next_research_prompt_when_present(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            plan_path = output_dir / "research_plan.json"
+            conclusion_md = output_dir / "experiment_conclusion.md"
+            conclusion_json = output_dir / "experiment_conclusion.json"
+            plan_path.write_text("{}\n", encoding="utf-8")
+            conclusion_md.write_text("# Experiment Conclusion\n", encoding="utf-8")
+            conclusion_json.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "experiment_conclusion.v1",
+                        "next_research_prompt": {
+                            "known_result": "This branch failed buy-and-hold.",
+                            "what_failed": ["Train/test selected run trailed the benchmark."],
+                            "constraints": ["Do not widen this SMA branch."],
+                            "next_experiment_should": ["Reformulate the hypothesis before more tests."],
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="Prompt suggest",
+                hypothesis="Suggestion should use conclusion prompt.",
+                plan_path=plan_path,
+                output_dir=output_dir,
+                commands=[SessionCommand(label="Recommended next step: draft_decision", command="quant-lab draft-decision --experiment-id EXP-001 --out decision.md")],
+                conclusion_path=conclusion_md,
+                current_status="needs_decision",
+                outstanding_next_steps=["draft_decision: Evidence is ready for a decision."],
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            manifest_path, _ = save_session_manifest(manifest)
+
+            recommendation = suggest_from_manifest(manifest_path)
+
+            self.assertEqual("decide", recommendation.recommended_action)
+            self.assertIn("Next research prompt says: Reformulate the hypothesis", recommendation.reason)
+            self.assertIn("Next research prompt warning: Train/test selected run trailed the benchmark.", recommendation.risks)
+            self.assertIn("Do not widen this SMA branch.", recommendation.do_not_repeat)
+
     def test_cli_agent_suggest_writes_artifacts_and_prints_summary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_dir = Path(tmpdir)

@@ -32,6 +32,43 @@ def _context_fixture(tmpdir: str):
     return build_agent_context(manifest_path)
 
 
+def _context_with_research_prompt_fixture(tmpdir: str):
+    output_dir = Path(tmpdir)
+    plan_path = output_dir / "research_plan.json"
+    conclusion_md = output_dir / "experiment_conclusion.md"
+    conclusion_json = output_dir / "experiment_conclusion.json"
+    plan_path.write_text("{}\n", encoding="utf-8")
+    conclusion_md.write_text("# Experiment Conclusion\n", encoding="utf-8")
+    conclusion_json.write_text(
+        (
+            '{"schema_version":"experiment_conclusion.v1",'
+            '"next_research_prompt":{'
+            '"known_result":"The trend branch failed buy-and-hold.",'
+            '"what_appears_promising":["It beat cash."],'
+            '"what_failed":["Train/test underperformed."],'
+            '"constraints":["Do not widen the same sweep."],'
+            '"next_experiment_should":["Reformulate the hypothesis first."]'
+            "}}\n"
+        ),
+        encoding="utf-8",
+    )
+    manifest = create_session_manifest(
+        session_id="session-001",
+        experiment_id="EXP-001",
+        title="Prompt provider test",
+        hypothesis="Provider should prefer prompt.",
+        plan_path=plan_path,
+        output_dir=output_dir,
+        conclusion_path=conclusion_md,
+        commands=[SessionCommand(label="Recommended next step: draft_decision", command="quant-lab draft-decision --experiment-id EXP-001 --out decision.md")],
+        current_status="needs_decision",
+        outstanding_next_steps=["draft_decision: Evidence is ready for a decision."],
+        created_at_utc="2026-07-25T00:00:00Z",
+    )
+    manifest_path, _ = save_session_manifest(manifest)
+    return build_agent_context(manifest_path)
+
+
 class AgentProviderTest(unittest.TestCase):
     def test_openai_compatible_provider_returns_valid_recommendation(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -175,6 +212,19 @@ class AgentProviderTest(unittest.TestCase):
             self.assertIn("return exactly one JSON object", prompt)
             self.assertIn("agent_recommendation.v1", prompt)
             self.assertIn("Provider test", prompt)
+
+    def test_prompt_spotlights_next_research_prompt_before_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            context = _context_with_research_prompt_fixture(tmpdir)
+
+            prompt = build_agent_prompt(context)
+
+            preferred_index = prompt.index("Preferred next-cycle research prompt:")
+            context_index = prompt.index("Context bundle JSON:")
+            self.assertLess(preferred_index, context_index)
+            self.assertIn("Prefer next_research_prompt when it exists", prompt)
+            self.assertIn("The trend branch failed buy-and-hold.", prompt)
+            self.assertIn("Reformulate the hypothesis first.", prompt)
 
     def test_response_schema_uses_recommendation_validator_constants(self) -> None:
         properties = AGENT_RECOMMENDATION_RESPONSE_FORMAT["json_schema"]["schema"]["properties"]

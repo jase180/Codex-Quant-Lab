@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .agent_context import AgentContext, build_agent_context
+from .agent_context import (
+    AgentContext,
+    build_agent_context,
+    next_research_prompt_from_context,
+    next_research_prompt_items,
+)
 from .agent_recommendation import AgentRecommendation, create_agent_recommendation, save_agent_recommendation
 from .agent_provider import (
     DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
@@ -70,13 +75,15 @@ def _deterministic_recommendation(manifest: SessionManifest, context: AgentConte
     recommended_step, reason = _recommended_step_and_reason(manifest)
     action = STEP_TO_ACTION.get(recommended_step, "needs_review")
     next_command = _next_command(manifest)
+    prompt = next_research_prompt_from_context(context)
+    reason = _reason_with_prompt(reason, prompt)
     if action == "stop":
         return create_agent_recommendation(
             recommended_action="stop",
             reason=reason or "The session is complete or has no remaining recommended command.",
             next_command=None,
             risks=[],
-            do_not_repeat=_do_not_repeat(action, manifest),
+            do_not_repeat=_do_not_repeat(action, manifest, context),
             confidence="high",
         )
     if action == "needs_review" or not next_command:
@@ -85,7 +92,7 @@ def _deterministic_recommendation(manifest: SessionManifest, context: AgentConte
             reason=reason or "The session does not contain a recognized next command.",
             next_command=None,
             risks=_risks(manifest, context),
-            do_not_repeat=_do_not_repeat(action, manifest),
+            do_not_repeat=_do_not_repeat(action, manifest, context),
             confidence="low",
         )
     return create_agent_recommendation(
@@ -93,7 +100,7 @@ def _deterministic_recommendation(manifest: SessionManifest, context: AgentConte
         reason=reason,
         next_command=next_command,
         risks=_risks(manifest, context),
-        do_not_repeat=_do_not_repeat(action, manifest),
+        do_not_repeat=_do_not_repeat(action, manifest, context),
         confidence=_confidence(action, manifest),
     )
 
@@ -140,6 +147,8 @@ def _next_command(manifest: SessionManifest) -> str | None:
 
 def _risks(manifest: SessionManifest, context: AgentContext) -> list[str]:
     risks = [warning.replace("\\", "/") for warning in manifest.warnings]
+    prompt = next_research_prompt_from_context(context)
+    risks.extend(f"Next research prompt warning: {item}" for item in next_research_prompt_items(prompt, "what_failed")[:3])
     for file in context.files:
         if not file.exists:
             risks.append(f"Referenced context file is missing: {file.path}")
@@ -150,13 +159,22 @@ def _risks(manifest: SessionManifest, context: AgentContext) -> list[str]:
     return risks
 
 
-def _do_not_repeat(action: str, manifest: SessionManifest) -> list[str]:
+def _do_not_repeat(action: str, manifest: SessionManifest, context: AgentContext) -> list[str]:
     items = ["Do not edit source code from an agent recommendation."]
     if action in {"sweep", "train_test", "robustness"}:
         items.append("Do not widen the experiment before required trust checks are complete.")
     if manifest.warnings:
         items.append("Do not ignore manifest warnings when interpreting the next result.")
+    prompt = next_research_prompt_from_context(context)
+    items.extend(next_research_prompt_items(prompt, "constraints")[:5])
     return items
+
+
+def _reason_with_prompt(reason: str, prompt: dict | None) -> str:
+    next_items = next_research_prompt_items(prompt, "next_experiment_should")
+    if not next_items:
+        return reason
+    return f"{reason} Next research prompt says: {next_items[0]}"
 
 
 def _confidence(action: str, manifest: SessionManifest) -> str:
