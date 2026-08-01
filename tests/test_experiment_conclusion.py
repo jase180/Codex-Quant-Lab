@@ -89,6 +89,7 @@ class ExperimentConclusionTest(unittest.TestCase):
                 "next_useful_tests",
                 "open_questions",
                 "source_artifacts",
+                "next_research_prompt",
                 "agent_instructions",
             ],
             list(conclusion.to_dict().keys()),
@@ -117,6 +118,10 @@ class ExperimentConclusionTest(unittest.TestCase):
         self.assertEqual("test_selected", conclusion.supporting_evidence[0].run_id)
         self.assertEqual("date_check", conclusion.contradicting_evidence[0].run_id)
         self.assertIn("contradicting evidence", " ".join(conclusion.do_not_repeat))
+        self.assertIn("The current evidence is mixed", conclusion.next_research_prompt.known_result)
+        self.assertTrue(conclusion.next_research_prompt.what_appears_promising)
+        self.assertTrue(conclusion.next_research_prompt.what_failed)
+        self.assertTrue(any("Change only one" in item for item in conclusion.next_research_prompt.constraints))
         source_paths = [artifact.path for artifact in conclusion.source_artifacts]
         self.assertIn("artifacts/research/spy/test_selected/run_metadata.json", source_paths)
         self.assertIn("artifacts/research/spy/date_check/run_metadata.json", source_paths)
@@ -215,6 +220,8 @@ class ExperimentConclusionTest(unittest.TestCase):
         agent_context = format_agent_context(conclusion)
         self.assertIn("experiment_conclusion.json", agent_context)
         self.assertIn(conclusion.current_conclusion, agent_context)
+        self.assertIn("Next research prompt:", agent_context)
+        self.assertIn("Next experiment should:", agent_context)
         for instruction in AGENT_INSTRUCTIONS:
             self.assertIn(instruction, agent_context)
 

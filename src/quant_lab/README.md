@@ -266,7 +266,9 @@ quant-lab conclude-experiment \
 This writes `experiment_conclusion.md`, `experiment_conclusion.json`, and
 `agent_context.md`. Read `experiment_conclusion.md` first; the JSON and agent
 context files exist so future Codex or a local agent can continue the same
-research thread without rereading every raw artifact.
+research thread without rereading every raw artifact. The conclusion includes a
+structured next-cycle research prompt that turns saved findings into bounded
+guidance for the next experiment.
 
 If `session_manifest.json` already exists in the same output directory,
 `conclude-experiment` updates it with the conclusion paths and the next

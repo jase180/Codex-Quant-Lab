@@ -78,6 +78,13 @@ future loaders unless a migration path exists.
   "next_useful_tests": [],
   "open_questions": [],
   "source_artifacts": [],
+  "next_research_prompt": {
+    "known_result": "The current evidence is mixed...",
+    "what_appears_promising": [],
+    "what_failed": [],
+    "constraints": [],
+    "next_experiment_should": []
+  },
   "agent_instructions": []
 }
 ```
@@ -247,6 +254,30 @@ Suggested `kind` values:
 - `portfolio_summary`
 - `manual_note`
 
+### `next_research_prompt`
+
+Structured handoff for Codex or a local agent when planning the next cycle.
+This is not a separate source of truth. It is a compact prompt derived from the
+same conclusion fields so the next agent can avoid repeating a dead branch or
+blindly widening a sweep.
+
+Fields:
+
+- `known_result`: the current conclusion in one plain-English statement.
+- `what_appears_promising`: linked evidence that still supports the idea.
+- `what_failed`: contradicting evidence and weak or missing robustness checks.
+- `constraints`: actions the next cycle should avoid or preserve.
+- `next_experiment_should`: bounded follow-up tests and success criteria.
+
+The prompt should inspire the next experiment while keeping the loop
+constrained:
+
+- one small hypothesis,
+- one meaningful research change at a time,
+- success criteria before execution,
+- explicit respect for realistic costs, benchmark comparison, no-lookahead, and
+  next-open fills.
+
 ### `agent_instructions`
 
 Instructions a local agent should follow before proposing the next cycle.
@@ -287,6 +318,8 @@ Default items:
 
 ## Source Artifacts
 
+## Next Research Prompt
+
 ## Agent Instructions
 ```
 
@@ -304,6 +337,20 @@ should be small and stable:
 Read first:
 - experiment_conclusion.json
 - experiment_conclusion.md
+
+Current conclusion:
+- <current_conclusion>
+
+Next research prompt:
+- Known result: <current_conclusion>
+- What appears promising:
+  - ...
+- What failed or remains weak:
+  - ...
+- Constraints:
+  - ...
+- Next experiment should:
+  - ...
 
 Rules:
 - Do not optimize to the best backtest row.

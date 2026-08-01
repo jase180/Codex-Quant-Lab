@@ -41,6 +41,7 @@ MARKDOWN_SECTION_ORDER = [
     "## Next Useful Tests",
     "## Open Questions",
     "## Source Artifacts",
+    "## Next Research Prompt",
     "## Agent Instructions",
 ]
 
@@ -115,6 +116,18 @@ class SourceArtifact:
 
 
 @dataclass(frozen=True)
+class NextResearchPrompt:
+    known_result: str
+    what_appears_promising: list[str]
+    what_failed: list[str]
+    constraints: list[str]
+    next_experiment_should: list[str]
+
+    def to_dict(self) -> dict[str, str | list[str]]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class ExperimentConclusion:
     schema_version: str
     experiment_id: str
@@ -130,6 +143,7 @@ class ExperimentConclusion:
     next_useful_tests: list[NextUsefulTest]
     open_questions: list[str]
     source_artifacts: list[SourceArtifact]
+    next_research_prompt: NextResearchPrompt
     agent_instructions: list[str]
 
     def to_dict(self) -> dict[str, Any]:
@@ -148,6 +162,7 @@ class ExperimentConclusion:
             "next_useful_tests": [item.to_dict() for item in self.next_useful_tests],
             "open_questions": list(self.open_questions),
             "source_artifacts": [item.to_dict() for item in self.source_artifacts],
+            "next_research_prompt": self.next_research_prompt.to_dict(),
             "agent_instructions": list(self.agent_instructions),
         }
 
@@ -175,6 +190,11 @@ def build_experiment_conclusion(
         default_label="Contradicting linked evidence",
         default_note="This linked run did not beat the benchmark on excess return.",
     )
+    current_conclusion = _current_conclusion(experiment, evidence_label.label, linked_records, robustness_notes)
+    do_not_repeat = _do_not_repeat(evidence_label.label, linked_records, robustness_notes)
+    next_useful_tests = _next_useful_tests(evidence_label.label, linked_records, robustness_notes)
+    open_questions = _open_questions(evidence_label.label, linked_records, robustness_notes)
+    source_artifacts = _source_artifacts(experiment, linked_records)
 
     return ExperimentConclusion(
         schema_version=EXPERIMENT_CONCLUSION_SCHEMA_VERSION,
@@ -194,14 +214,23 @@ def build_experiment_conclusion(
             data_path=experiment.data_path,
         ),
         confidence_label=evidence_label.label,
-        current_conclusion=_current_conclusion(experiment, evidence_label.label, linked_records, robustness_notes),
+        current_conclusion=current_conclusion,
         supporting_evidence=supporting_evidence,
         contradicting_evidence=contradicting_evidence,
         robustness_notes=robustness_notes,
-        do_not_repeat=_do_not_repeat(evidence_label.label, linked_records, robustness_notes),
-        next_useful_tests=_next_useful_tests(evidence_label.label, linked_records, robustness_notes),
-        open_questions=_open_questions(evidence_label.label, linked_records, robustness_notes),
-        source_artifacts=_source_artifacts(experiment, linked_records),
+        do_not_repeat=do_not_repeat,
+        next_useful_tests=next_useful_tests,
+        open_questions=open_questions,
+        source_artifacts=source_artifacts,
+        next_research_prompt=_next_research_prompt(
+            current_conclusion=current_conclusion,
+            supporting_evidence=supporting_evidence,
+            contradicting_evidence=contradicting_evidence,
+            robustness_notes=robustness_notes,
+            do_not_repeat=do_not_repeat,
+            next_useful_tests=next_useful_tests,
+            open_questions=open_questions,
+        ),
         agent_instructions=list(AGENT_INSTRUCTIONS),
     )
 
@@ -260,6 +289,10 @@ def format_experiment_conclusion_markdown(conclusion: ExperimentConclusion) -> s
         "",
         *_source_artifact_markdown(conclusion.source_artifacts),
         "",
+        "## Next Research Prompt",
+        "",
+        *_next_research_prompt_markdown(conclusion.next_research_prompt),
+        "",
         "## Agent Instructions",
         "",
         *_bullet_lines(conclusion.agent_instructions),
@@ -279,6 +312,9 @@ def format_agent_context(conclusion: ExperimentConclusion) -> str:
             "",
             "Current conclusion:",
             f"- {conclusion.current_conclusion}",
+            "",
+            "Next research prompt:",
+            *_next_research_prompt_markdown(conclusion.next_research_prompt),
             "",
             "Rules:",
             *_bullet_lines(conclusion.agent_instructions),
@@ -554,6 +590,59 @@ def _open_questions(
     return questions
 
 
+def _next_research_prompt(
+    *,
+    current_conclusion: str,
+    supporting_evidence: list[ConclusionEvidenceItem],
+    contradicting_evidence: list[ConclusionEvidenceItem],
+    robustness_notes: list[RobustnessConclusionNote],
+    do_not_repeat: list[str],
+    next_useful_tests: list[NextUsefulTest],
+    open_questions: list[str],
+) -> NextResearchPrompt:
+    # This is intentionally deterministic. A model can read it later, but the
+    # project itself decides the evidence-shaped boundaries of the next cycle.
+    return NextResearchPrompt(
+        known_result=current_conclusion,
+        what_appears_promising=_prompt_evidence_lines(supporting_evidence)
+        or ["No linked evidence currently supports the hypothesis."],
+        what_failed=_prompt_failure_lines(contradicting_evidence, robustness_notes),
+        constraints=do_not_repeat + [
+            "Change only one meaningful research idea per next experiment.",
+            "Define success criteria before running the next command.",
+            "Keep realistic costs, benchmark comparison, and next-open execution assumptions.",
+        ],
+        next_experiment_should=[
+            f"{test.test} Reason: {test.reason} Success criteria: {test.success_criteria}"
+            for test in next_useful_tests
+        ]
+        + [f"Resolve open question: {question}" for question in open_questions[:2]],
+    )
+
+
+def _prompt_evidence_lines(items: list[ConclusionEvidenceItem]) -> list[str]:
+    return [
+        f"`{item.run_type}/{item.run_id or '-'}` {item.metric} {_format_percent(item.value)}; source `{item.artifact_path or '-'}`."
+        for item in items
+    ]
+
+
+def _prompt_failure_lines(
+    contradicting_evidence: list[ConclusionEvidenceItem],
+    robustness_notes: list[RobustnessConclusionNote],
+) -> list[str]:
+    lines = [
+        f"`{item.run_type}/{item.run_id or '-'}` {item.metric} {_format_percent(item.value)}; source `{item.artifact_path or '-'}`."
+        for item in contradicting_evidence
+    ]
+    lines.extend(
+        f"`{note.check}` was `{note.status}`: {note.summary}"
+        for note in robustness_notes
+        if note.status in {"missing", "mixed", "failed"}
+    )
+    return lines or ["No specific failure is recorded yet; gather baseline evidence first."]
+
+
 def _source_artifacts(experiment: ExperimentRecord, records: list[dict]) -> list[SourceArtifact]:
     artifacts = [
         SourceArtifact(kind="experiment_registry", path=f"experiment:{experiment.experiment_id}", role="source")
@@ -611,8 +700,28 @@ def _source_artifact_markdown(artifacts: list[SourceArtifact]) -> list[str]:
     return [f"- `{artifact.kind}` `{artifact.path}` ({artifact.role})" for artifact in artifacts]
 
 
+def _next_research_prompt_markdown(prompt: NextResearchPrompt) -> list[str]:
+    return [
+        "Use this when planning the next experiment cycle.",
+        "",
+        f"- Known result: {prompt.known_result}",
+        "- What appears promising:",
+        *_indented_bullet_lines(prompt.what_appears_promising),
+        "- What failed or remains weak:",
+        *_indented_bullet_lines(prompt.what_failed),
+        "- Constraints:",
+        *_indented_bullet_lines(prompt.constraints),
+        "- Next experiment should:",
+        *_indented_bullet_lines(prompt.next_experiment_should),
+    ]
+
+
 def _bullet_lines(items: list[str]) -> list[str]:
     return [f"- {item}" for item in items] if items else ["- None"]
+
+
+def _indented_bullet_lines(items: list[str]) -> list[str]:
+    return [f"  - {item}" for item in items] if items else ["  - None"]
 
 
 def _first_artifact_path(records: list[dict]) -> str | None:
