@@ -50,6 +50,9 @@ Current behavior:
   count, fetch timestamp, CSV fingerprint, and price-adjustment policy:
   - `auto_adjust=True`
   - `actions=False`
+- `show-data-source`, single-run trust reports, and portfolio data trust
+  reports display the recorded price-adjustment policy when provenance is
+  available.
 
 Implication:
 
@@ -61,8 +64,11 @@ Implication:
 
 Current coverage:
 
-- Data fetch and provenance tests cover CSV shape, price-adjustment policy
-  metadata, provenance writing, and cache inspection.
+- Data fetch and provenance tests cover CSV shape, the actual
+  `yfinance.download` adjustment arguments, price-adjustment policy metadata,
+  provenance writing, and cache inspection.
+- Trust report tests cover showing the recorded adjustment policy in single-run
+  and portfolio evidence reports.
 - Run trust reports can verify that a later local CSV still matches the saved
   run fingerprint.
 
@@ -78,8 +84,8 @@ Status:
 - Acceptable for local research if conclusions say provider assumptions may
   matter.
 - Current improvement: fetched CSV provenance now records the adjusted-price
-  policy. Future improvement: add optional corporate-action checks against a
-  second source or manually verified events.
+  policy and trust reports surface it. Future improvement: add optional
+  corporate-action checks against a second source or manually verified events.
 
 ## Next-Open Fills
 

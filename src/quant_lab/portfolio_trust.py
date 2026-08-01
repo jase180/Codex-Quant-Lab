@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from .data_source import inspect_data_source
+from .data_source import format_price_adjustment_lines, inspect_data_source
 from .run_metadata import fingerprint_file
 from .trust_common import (
     classify_trust_warnings,
@@ -224,6 +224,8 @@ def _verification_section(check: dict[str, Any]) -> list[str]:
         provider = data_source.provenance.get("provider") if data_source.provenance else None
         if provider:
             lines.append(f"- Provider: {provider}")
+        if data_source.provenance:
+            lines.extend(f"- {line}" for line in format_price_adjustment_lines(data_source.provenance))
 
     lines.extend(["", "| Check | Status | Metadata | Current |", "| --- | --- | --- | --- |"])
     for check_name, item in check.get("checks", {}).items():

@@ -95,6 +95,10 @@ class RunInspectionTests(unittest.TestCase):
                         "data_end": "2026-01-02",
                         "fetched_at_utc": "2026-02-01T00:00:00Z",
                         "row_count": 2,
+                        "price_adjustment": {
+                            "auto_adjust": True,
+                            "actions": False,
+                        },
                     }
                 ),
                 encoding="utf-8",
@@ -117,6 +121,8 @@ class RunInspectionTests(unittest.TestCase):
             self.assertIn("Report role: supporting interpretation.", markdown)
             self.assertIn("Verification result: reproducible input file", markdown)
             self.assertIn("Provider: fixture", markdown)
+            self.assertIn("price_auto_adjust: True", markdown)
+            self.assertIn("price_actions: False", markdown)
             self.assertIn("Worst severity: none", markdown)
 
     def test_summarize_run_trust_warns_for_changed_data_and_missing_quality(self) -> None:

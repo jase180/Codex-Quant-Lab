@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 import json
 import hashlib
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -13,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from quant_lab.data_fetch import (
     build_market_data_provenance,
+    fetch_market_data,
     market_data_filename,
     normalize_ohlcv_frame,
     write_market_data_csv,
@@ -21,6 +24,32 @@ from quant_lab.data_fetch import (
 
 
 class DataFetchTests(unittest.TestCase):
+    def test_fetch_market_data_uses_adjusted_daily_yfinance_policy(self) -> None:
+        raw_data = pd.DataFrame(
+            [{"Open": 100, "High": 102, "Low": 99, "Close": 101, "Volume": 1000}],
+            index=pd.to_datetime(["2026-01-02"]),
+        )
+        raw_data.index.name = "Date"
+        calls = []
+
+        def fake_download(*args, **kwargs):
+            calls.append((args, kwargs))
+            return raw_data
+
+        fake_yfinance = types.SimpleNamespace(download=fake_download)
+
+        with patch.dict(sys.modules, {"yfinance": fake_yfinance}):
+            normalized = fetch_market_data("SPY", "2026-01-01", "2026-01-31")
+
+        self.assertEqual(normalized.iloc[0]["close"], 101)
+        self.assertEqual(calls[0][0], ("SPY",))
+        self.assertEqual(calls[0][1]["start"], "2026-01-01")
+        self.assertEqual(calls[0][1]["end"], "2026-01-31")
+        self.assertEqual(calls[0][1]["interval"], "1d")
+        self.assertEqual(calls[0][1]["auto_adjust"], True)
+        self.assertEqual(calls[0][1]["actions"], False)
+        self.assertEqual(calls[0][1]["progress"], False)
+
     def test_normalize_ohlcv_frame_handles_standard_yfinance_columns(self) -> None:
         raw_data = pd.DataFrame(
             [

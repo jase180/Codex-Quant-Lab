@@ -163,7 +163,7 @@ def format_data_source_inspection(inspection: DataSourceInspection) -> str:
                 f"actual_range: {provenance.get('data_start', 'unknown')} to {provenance.get('data_end', 'unknown')}",
                 f"fetched_at_utc: {provenance.get('fetched_at_utc', 'unknown')}",
                 f"provenance_rows: {provenance.get('row_count', 'unknown')}",
-                *_price_adjustment_lines(provenance),
+                *format_price_adjustment_lines(provenance),
             ]
         )
     elif not inspection.provenance_found:
@@ -233,7 +233,9 @@ def _symbol_from_filename(path: Path) -> str:
     return name.split("_", 1)[0].upper()
 
 
-def _price_adjustment_lines(provenance: dict[str, Any]) -> list[str]:
+def format_price_adjustment_lines(provenance: dict[str, Any]) -> list[str]:
+    """Render the provider adjustment policy recorded in market-data provenance."""
+
     adjustment = provenance.get("price_adjustment")
     if not isinstance(adjustment, dict):
         return ["price_adjustment: unknown"]

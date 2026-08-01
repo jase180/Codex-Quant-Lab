@@ -37,6 +37,8 @@ class PortfolioTrustTests(unittest.TestCase):
             self.assertIn("| QQQ | reproducible input file | none | 2 | 0 |", markdown)
             self.assertIn("### benchmark: SPY", markdown)
             self.assertIn("Provider: fixture", markdown)
+            self.assertIn("price_auto_adjust: True", markdown)
+            self.assertIn("price_actions: False", markdown)
 
     def test_summarize_portfolio_data_trust_warns_for_changed_symbol_data(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -138,6 +140,10 @@ def _write_provenance(path: Path, *, symbol: str) -> None:
                 "data_end": "2026-01-02",
                 "fetched_at_utc": "2026-02-01T00:00:00Z",
                 "row_count": 2,
+                "price_adjustment": {
+                    "auto_adjust": True,
+                    "actions": False,
+                },
             }
         ),
         encoding="utf-8",

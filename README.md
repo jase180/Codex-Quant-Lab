@@ -367,7 +367,9 @@ quant-lab show-data-source \
 
 This prints row count, actual date range, file fingerprint, provider, requested
 range, fetched timestamp, price-adjustment policy, and warnings such as missing
-provenance.
+provenance. Single-run and portfolio trust reports also include the recorded
+price-adjustment policy when a provenance sidecar is available, so the
+adjusted-price assumption travels with the run evidence.
 
 List cached CSV files without fetching new data:
 

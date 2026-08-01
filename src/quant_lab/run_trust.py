@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .data_source import inspect_data_source
+from .data_source import format_price_adjustment_lines, inspect_data_source
 from .run_inspection import verify_run_input_file
 from .trust_common import classify_trust_warnings, plain, read_json
 
@@ -125,6 +125,7 @@ def _render_run_trust_report(
                     f"- Actual range: {plain(provenance.get('data_start'))} to {plain(provenance.get('data_end'))}",
                     f"- Fetched at UTC: {plain(provenance.get('fetched_at_utc'))}",
                     f"- Provenance schema: {plain(provenance.get('provenance_schema_version'))}",
+                    *[f"- {line}" for line in format_price_adjustment_lines(provenance)],
                 ]
             )
 
