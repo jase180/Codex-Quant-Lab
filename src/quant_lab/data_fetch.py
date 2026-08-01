@@ -13,6 +13,8 @@ from .run_metadata import fingerprint_file
 
 
 OHLCV_COLUMNS = ["date", "open", "high", "low", "close", "volume"]
+YFINANCE_AUTO_ADJUST = True
+YFINANCE_ACTIONS = False
 
 
 def fetch_market_data(
@@ -38,8 +40,8 @@ def fetch_market_data(
         start=start,
         end=end,
         interval=interval,
-        auto_adjust=True,
-        actions=False,
+        auto_adjust=YFINANCE_AUTO_ADJUST,
+        actions=YFINANCE_ACTIONS,
         progress=False,
     )
     return normalize_ohlcv_frame(raw_data)
@@ -150,6 +152,14 @@ def build_market_data_provenance(
         "requested_start": requested_start,
         "requested_end": requested_end,
         "interval": interval,
+        "price_adjustment": {
+            "auto_adjust": YFINANCE_AUTO_ADJUST,
+            "actions": YFINANCE_ACTIONS,
+            "note": (
+                "Fetched OHLC prices are provider-adjusted when auto_adjust is true; "
+                "dividends and splits are not stored as separate action columns when actions is false."
+            ),
+        },
         "fetched_at_utc": fetched_at_utc or datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "csv_path": str(csv_path),
         "row_count": int(len(data)),

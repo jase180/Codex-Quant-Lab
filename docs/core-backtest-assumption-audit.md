@@ -47,7 +47,9 @@ Current behavior:
   - `close`
   - `volume`
 - Provenance sidecars record provider, requested range, actual range, row
-  count, fetch timestamp, and CSV fingerprint.
+  count, fetch timestamp, CSV fingerprint, and price-adjustment policy:
+  - `auto_adjust=True`
+  - `actions=False`
 
 Implication:
 
@@ -59,8 +61,8 @@ Implication:
 
 Current coverage:
 
-- Data fetch and provenance tests cover CSV shape, provenance writing, and
-  cache inspection.
+- Data fetch and provenance tests cover CSV shape, price-adjustment policy
+  metadata, provenance writing, and cache inspection.
 - Run trust reports can verify that a later local CSV still matches the saved
   run fingerprint.
 
@@ -75,8 +77,9 @@ Status:
 
 - Acceptable for local research if conclusions say provider assumptions may
   matter.
-- Future improvement: support explicit adjusted/unadjusted data mode metadata
-  and optional corporate-action checks.
+- Current improvement: fetched CSV provenance now records the adjusted-price
+  policy. Future improvement: add optional corporate-action checks against a
+  second source or manually verified events.
 
 ## Next-Open Fills
 
@@ -285,8 +288,8 @@ visible:
 ## Recommended Follow-Ups
 
 1. Add a small doc table showing warm-up behavior for each indicator.
-2. Add optional metadata naming whether a CSV is adjusted or unadjusted.
-3. Add a second-source/manual data verification path for important experiments.
+2. Add a second-source/manual data verification path for important experiments.
+3. Add a visible corporate-action check to the canonical SPY experiment.
 4. Consider a buy-and-hold benchmark entry timing option that buys at first next
    open for stricter execution symmetry.
 5. Keep core behavior unchanged until tests are written for any proposed

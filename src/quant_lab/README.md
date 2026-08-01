@@ -147,6 +147,9 @@ Inspect one cached CSV and its provenance sidecar:
 quant-lab show-data-source --data data/cache/QQQ_2015-01-01_2025-12-31.csv
 ```
 
+For data fetched through `quant-lab fetch`, the provenance sidecar records the
+current provider price policy: `auto_adjust=True` and `actions=False`.
+
 List cached CSV files and provenance status:
 
 ```bash

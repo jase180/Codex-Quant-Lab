@@ -351,11 +351,12 @@ data/cache/QQQ_2015-01-01_2025-12-31.csv
 data/cache/QQQ_2015-01-01_2025-12-31.provenance.json
 ```
 
-The fetch command currently uses adjusted daily prices from `yfinance`. Provider
-data can have outages, missing sessions, and corporate-action assumptions, so
-treat cached data as research input that may need verification. The provenance
-JSON records the provider, requested range, fetched timestamp, row count, actual
-data range, and CSV fingerprint.
+The fetch command currently uses adjusted daily prices from `yfinance` with
+`auto_adjust=True` and `actions=False`. Provider data can have outages, missing
+sessions, and corporate-action assumptions, so treat cached data as research
+input that may need verification. The provenance JSON records the provider,
+requested range, fetched timestamp, row count, actual data range, CSV
+fingerprint, and price-adjustment policy.
 
 Inspect a cached CSV and its provenance sidecar:
 
@@ -365,7 +366,8 @@ quant-lab show-data-source \
 ```
 
 This prints row count, actual date range, file fingerprint, provider, requested
-range, fetched timestamp, and warnings such as missing provenance.
+range, fetched timestamp, price-adjustment policy, and warnings such as missing
+provenance.
 
 List cached CSV files without fetching new data:
 

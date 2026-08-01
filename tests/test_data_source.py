@@ -111,8 +111,37 @@ class DataSourceTests(unittest.TestCase):
         self.assertIn("rows: 2", rendered)
         self.assertIn("date_range: 2026-01-02 to 2026-01-05", rendered)
         self.assertIn("provider: yfinance", rendered)
+        self.assertIn("price_auto_adjust: True", rendered)
+        self.assertIn("price_actions: False", rendered)
         self.assertIn("warnings: none", rendered)
         self.assertIn(provenance_payload["file_sha256"][:12], rendered)
+
+    def test_format_data_source_inspection_handles_old_provenance_without_adjustment_policy(self) -> None:
+        data = _sample_data()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_path = Path(write_market_data_csv(data, "SPY", "2026-01-01", "2026-01-31", temp_dir))
+            provenance_path = csv_path.with_suffix(".provenance.json")
+            provenance_path.write_text(
+                json.dumps(
+                    {
+                        "provenance_schema_version": "market_data_provenance.v1",
+                        "provider": "fixture",
+                        "symbol": "SPY",
+                        "requested_start": "2026-01-01",
+                        "requested_end": "2026-01-31",
+                        "data_start": "2026-01-02",
+                        "data_end": "2026-01-05",
+                        "fetched_at_utc": "2026-02-01T00:00:00Z",
+                        "row_count": 2,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            rendered = format_data_source_inspection(inspect_data_source(csv_path))
+
+        self.assertIn("price_adjustment: unknown", rendered)
 
     def test_list_data_cache_summarizes_csv_files(self) -> None:
         data = _sample_data()
