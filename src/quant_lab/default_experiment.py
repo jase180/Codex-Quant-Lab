@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,7 +26,7 @@ from .research_registry import (
     normalize_tags,
     replace_experiment_record,
 )
-from .robustness import run_cost_sensitivity, run_date_sensitivity
+from .robustness import run_benchmark_sensitivity, run_cost_sensitivity, run_date_sensitivity
 from .run_artifacts import current_git_commit
 from .run_trust import summarize_run_trust
 from .sweep_guardrails import summarize_sweep_guardrails
@@ -46,6 +48,7 @@ class DefaultExperimentResult:
     conclusion_path: str
     decision_outcome: str | None
     read_first_path: str
+    captured_output: str
 
 
 def run_default_experiment(args: argparse.Namespace) -> DefaultExperimentResult:
@@ -61,102 +64,124 @@ def run_default_experiment(args: argparse.Namespace) -> DefaultExperimentResult:
     experiment_id = _ensure_experiment(args)
     _write_research_plan(args, experiment_id)
 
-    baseline_dir = output_dir / "baseline"
-    run_command(
-        _namespace(
-            strategy=args.strategy,
-            data=args.data,
-            out=str(baseline_dir),
-            initial_cash=args.initial_cash,
-            quantity=args.quantity,
-            sizing=args.sizing,
-            allocation=args.allocation,
-            run_name=args.run_name,
-            benchmark=args.benchmark,
-            cost_preset=args.cost_preset,
-            commission_fixed=args.commission_fixed,
-            commission_rate=args.commission_rate,
-            slippage_bps=args.slippage_bps,
-            experiments_path=args.experiments_path,
-            experiment_id=experiment_id,
-            index_path=args.index_path,
-            note=f"Baseline for default workflow: {args.hypothesis}",
-            note_file=None,
-            command_tokens=_command_tokens("run-default", "baseline"),
+    captured_output = io.StringIO()
+    with contextlib.redirect_stdout(captured_output):
+        baseline_dir = output_dir / "baseline"
+        run_command(
+            _namespace(
+                strategy=args.strategy,
+                data=args.data,
+                out=str(baseline_dir),
+                initial_cash=args.initial_cash,
+                quantity=args.quantity,
+                sizing=args.sizing,
+                allocation=args.allocation,
+                run_name=args.run_name,
+                benchmark=args.benchmark,
+                cost_preset=args.cost_preset,
+                commission_fixed=args.commission_fixed,
+                commission_rate=args.commission_rate,
+                slippage_bps=args.slippage_bps,
+                experiments_path=args.experiments_path,
+                experiment_id=experiment_id,
+                index_path=args.index_path,
+                note=f"Baseline for default workflow: {args.hypothesis}",
+                note_file=None,
+                command_tokens=_command_tokens("run-default", "baseline"),
+            )
         )
-    )
-    baseline_metadata_path = baseline_dir / "run_metadata.json"
-    trust_report = summarize_run_trust(baseline_metadata_path)
+        baseline_metadata_path = baseline_dir / "run_metadata.json"
+        trust_report = summarize_run_trust(baseline_metadata_path)
 
-    sweep_dir = output_dir / "sweep_001"
-    sweep_command(
-        _sweep_args(
-            args,
-            experiment_id=experiment_id,
-            out=sweep_dir,
-            param=args.param,
-            note=f"Parameter sweep for default workflow: {args.hypothesis}",
+        sweep_dir = output_dir / "sweep_001"
+        sweep_command(
+            _sweep_args(
+                args,
+                experiment_id=experiment_id,
+                out=sweep_dir,
+                param=args.param,
+                note=f"Parameter sweep for default workflow: {args.hypothesis}",
+            )
         )
-    )
-    sweep_summary_path = sweep_dir / "summary.csv"
-    guardrail_report = summarize_sweep_guardrails(
-        summary_path=sweep_summary_path,
-        output_path=sweep_dir / "sweep_guardrails.md",
-    )
+        sweep_summary_path = sweep_dir / "summary.csv"
+        guardrail_report = summarize_sweep_guardrails(
+            summary_path=sweep_summary_path,
+            output_path=sweep_dir / "sweep_guardrails.md",
+        )
 
-    train_test_dir = output_dir / "train_test_001"
-    sweep_command(
-        _sweep_args(
-            args,
-            experiment_id=experiment_id,
-            out=train_test_dir,
-            param=args.param,
-            train_end=args.train_end,
-            test_start=args.test_start,
-            select_by=args.select_by,
-            note=f"Train/test validation for default workflow: {args.hypothesis}",
+        train_test_dir = output_dir / "train_test_001"
+        sweep_command(
+            _sweep_args(
+                args,
+                experiment_id=experiment_id,
+                out=train_test_dir,
+                param=args.param,
+                train_end=args.train_end,
+                test_start=args.test_start,
+                select_by=args.select_by,
+                note=f"Train/test validation for default workflow: {args.hypothesis}",
+            )
         )
-    )
-    train_test_summary_path = train_test_dir / "test_summary" / "summary.csv"
+        train_test_summary_path = train_test_dir / "test_summary" / "summary.csv"
 
-    cost_result = run_cost_sensitivity(
-        _namespace(
-            strategy=args.strategy,
-            data=args.data,
-            out=str(output_dir / "cost_sensitivity_001"),
-            initial_cash=args.initial_cash,
-            quantity=args.quantity,
-            sizing=args.sizing,
-            allocation=args.allocation,
-            benchmark=args.benchmark,
-            cost_preset=_cost_sensitivity_presets(args),
-            experiments_path=args.experiments_path,
-            experiment_id=experiment_id,
-            index_path=args.index_path,
-            command_tokens=_command_tokens("run-default", "cost-sensitivity"),
+        cost_result = run_cost_sensitivity(
+            _namespace(
+                strategy=args.strategy,
+                data=args.data,
+                out=str(output_dir / "cost_sensitivity_001"),
+                initial_cash=args.initial_cash,
+                quantity=args.quantity,
+                sizing=args.sizing,
+                allocation=args.allocation,
+                benchmark=args.benchmark,
+                cost_preset=_cost_sensitivity_presets(args),
+                experiments_path=args.experiments_path,
+                experiment_id=experiment_id,
+                index_path=args.index_path,
+                command_tokens=_command_tokens("run-default", "cost-sensitivity"),
+            )
         )
-    )
-    date_result = run_date_sensitivity(
-        _namespace(
-            strategy=args.strategy,
-            data=args.data,
-            out=str(output_dir / "date_sensitivity_001"),
-            initial_cash=args.initial_cash,
-            quantity=args.quantity,
-            sizing=args.sizing,
-            allocation=args.allocation,
-            benchmark=args.benchmark,
-            cost_preset=args.cost_preset,
-            commission_fixed=args.commission_fixed,
-            commission_rate=args.commission_rate,
-            slippage_bps=args.slippage_bps,
-            window=args.date_window,
-            experiments_path=args.experiments_path,
-            experiment_id=experiment_id,
-            index_path=args.index_path,
-            command_tokens=_command_tokens("run-default", "date-sensitivity"),
+        date_result = run_date_sensitivity(
+            _namespace(
+                strategy=args.strategy,
+                data=args.data,
+                out=str(output_dir / "date_sensitivity_001"),
+                initial_cash=args.initial_cash,
+                quantity=args.quantity,
+                sizing=args.sizing,
+                allocation=args.allocation,
+                benchmark=args.benchmark,
+                cost_preset=args.cost_preset,
+                commission_fixed=args.commission_fixed,
+                commission_rate=args.commission_rate,
+                slippage_bps=args.slippage_bps,
+                window=args.date_window,
+                experiments_path=args.experiments_path,
+                experiment_id=experiment_id,
+                index_path=args.index_path,
+                command_tokens=_command_tokens("run-default", "date-sensitivity"),
+            )
         )
-    )
+        benchmark_result = run_benchmark_sensitivity(
+            _namespace(
+                strategy=args.strategy,
+                data=args.data,
+                out=str(output_dir / "benchmark_sensitivity_001"),
+                initial_cash=args.initial_cash,
+                quantity=args.quantity,
+                sizing=args.sizing,
+                allocation=args.allocation,
+                benchmark=_benchmark_sensitivity_choices(args),
+                cost_preset=args.cost_preset,
+                commission_fixed=args.commission_fixed,
+                commission_rate=args.commission_rate,
+                slippage_bps=args.slippage_bps,
+                experiments_path=args.experiments_path,
+                experiment_id=experiment_id,
+                index_path=args.index_path,
+                command_tokens=_command_tokens("run-default", "benchmark-sensitivity"),
+            )
+        )
 
     evidence_summary_path, conclusion_path = _write_summary_and_conclusion(args, experiment_id)
     decision_outcome = None
@@ -174,9 +199,11 @@ def run_default_experiment(args: argparse.Namespace) -> DefaultExperimentResult:
         train_test_summary_path=train_test_summary_path,
         cost_report_path=Path(cost_result.report_path),
         date_report_path=Path(date_result.report_path),
+        benchmark_report_path=Path(benchmark_result.report_path),
         evidence_summary_path=Path(evidence_summary_path),
         conclusion_path=Path(conclusion_path),
         decision_outcome=decision_outcome,
+        captured_output=captured_output.getvalue(),
     )
     return DefaultExperimentResult(
         experiment_id=experiment_id,
@@ -189,6 +216,7 @@ def run_default_experiment(args: argparse.Namespace) -> DefaultExperimentResult:
         conclusion_path=str(conclusion_path),
         decision_outcome=decision_outcome,
         read_first_path=str(conclusion_path if Path(conclusion_path).exists() else workflow_summary_path),
+        captured_output=captured_output.getvalue(),
     )
 
 
@@ -327,9 +355,11 @@ def _write_workflow_summary(
     train_test_summary_path: Path,
     cost_report_path: Path,
     date_report_path: Path,
+    benchmark_report_path: Path,
     evidence_summary_path: Path,
     conclusion_path: Path,
     decision_outcome: str | None,
+    captured_output: str,
 ) -> str:
     path = Path(args.out) / "default_workflow_summary.md"
     lines = [
@@ -351,8 +381,18 @@ def _write_workflow_summary(
         f"- Train/test test summary: `{train_test_summary_path}`",
         f"- Cost sensitivity report: `{cost_report_path}`",
         f"- Date sensitivity report: `{date_report_path}`",
+        f"- Benchmark sensitivity report: `{benchmark_report_path}`",
         f"- Evidence summary: `{evidence_summary_path}`",
         f"- Experiment conclusion: `{conclusion_path}`",
+        "",
+        "## Captured Command Output",
+        "",
+        "The default workflow suppresses detailed child command output on stdout.",
+        "The captured output is saved here for auditability.",
+        "",
+        "```text",
+        captured_output.strip() or "No child command output captured.",
+        "```",
         "",
     ]
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -363,6 +403,10 @@ def _cost_sensitivity_presets(args: argparse.Namespace) -> list[str]:
     if args.cost_sensitivity_preset:
         return _ordered_unique(args.cost_sensitivity_preset)
     return _ordered_unique([args.cost_preset, "retail-conservative", "high-friction"])
+
+
+def _benchmark_sensitivity_choices(args: argparse.Namespace) -> list[str]:
+    return _ordered_unique([args.benchmark, "cash", "buy-and-hold"])
 
 
 def _decision_outcome(mode: str, evidence_label: str) -> str:

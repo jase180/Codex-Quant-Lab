@@ -202,6 +202,12 @@ quant-lab experiment run-default \
   --out artifacts/research/spy_200_sma_long_cash_default
 ```
 
+This runs baseline, data trust, sweep, train/test validation, cost sensitivity,
+date sensitivity, benchmark sensitivity, evidence summary, conclusion, and a
+conservative decision. Detailed child command output is saved in
+`default_workflow_summary.md`; the main read-first artifact is still
+`experiment_conclusion.md`.
+
 Run one strategy:
 
 ```bash

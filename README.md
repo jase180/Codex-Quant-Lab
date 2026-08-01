@@ -37,8 +37,11 @@ quant-lab experiment run-default \
 
 The command creates or reuses an experiment, runs the baseline, writes the
 run-trust report, runs the sweep and train/test validation, runs cost and date
-sensitivity, writes `evidence_summary.md`, writes `experiment_conclusion.md`,
-and records a conservative registry decision by default. Read this file first:
+sensitivity, runs benchmark sensitivity, writes `evidence_summary.md`, writes
+`experiment_conclusion.md`, and records a conservative registry decision by
+default. Detailed child command output is captured in
+`default_workflow_summary.md` instead of printed to the terminal. Read this file
+first:
 
 ```text
 artifacts/research/qqq_sma_trust/experiment_conclusion.md

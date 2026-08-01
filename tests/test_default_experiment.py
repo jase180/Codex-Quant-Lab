@@ -82,6 +82,7 @@ class DefaultExperimentWorkflowTests(unittest.TestCase):
             self.assertTrue((output_dir / "train_test_001" / "test_summary" / "summary.csv").exists())
             self.assertTrue((output_dir / "cost_sensitivity_001" / "cost_sensitivity_report.md").exists())
             self.assertTrue((output_dir / "date_sensitivity_001" / "date_sensitivity_report.md").exists())
+            self.assertTrue((output_dir / "benchmark_sensitivity_001" / "benchmark_sensitivity_report.md").exists())
             self.assertTrue((output_dir / "evidence_summary.md").exists())
             self.assertTrue((output_dir / "experiment_conclusion.md").exists())
             self.assertTrue((output_dir / "default_workflow_summary.md").exists())
@@ -89,8 +90,14 @@ class DefaultExperimentWorkflowTests(unittest.TestCase):
             experiment = json.loads(experiments_path.read_text(encoding="utf-8").splitlines()[-1])
             self.assertEqual(experiment["status"], "completed")
             self.assertIn(experiment["decision_record"]["outcome"], {"continue", "reject"})
-            self.assertIn("Default experiment complete: EXP-001", stdout.getvalue())
-            self.assertIn("read_first:", stdout.getvalue())
+            output = stdout.getvalue()
+            self.assertIn("Default experiment complete: EXP-001", output)
+            self.assertIn("read_first:", output)
+            self.assertNotIn("Run complete:", output)
+            workflow_summary = (output_dir / "default_workflow_summary.md").read_text(encoding="utf-8")
+            self.assertIn("Benchmark sensitivity report", workflow_summary)
+            self.assertIn("Captured Command Output", workflow_summary)
+            self.assertIn("Run complete:", workflow_summary)
 
 
 def _write_trending_data(path: Path) -> Path:
