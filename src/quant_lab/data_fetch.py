@@ -15,6 +15,7 @@ from .run_metadata import fingerprint_file
 OHLCV_COLUMNS = ["date", "open", "high", "low", "close", "volume"]
 YFINANCE_AUTO_ADJUST = True
 YFINANCE_ACTIONS = False
+YFINANCE_CACHE_DIR = Path("artifacts/yfinance-cache")
 
 
 def fetch_market_data(
@@ -35,6 +36,7 @@ def fetch_market_data(
             "yfinance is required for fetch. Install project dependencies with `python -m pip install -e .`."
         ) from exc
 
+    configure_yfinance_cache()
     raw_data = yf.download(
         symbol,
         start=start,
@@ -45,6 +47,18 @@ def fetch_market_data(
         progress=False,
     )
     return normalize_ohlcv_frame(raw_data)
+
+
+def configure_yfinance_cache(cache_dir: str | Path = YFINANCE_CACHE_DIR) -> None:
+    """Point yfinance's sqlite caches at a repo-local writable directory."""
+
+    destination = Path(cache_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    try:
+        from yfinance import cache as yf_cache
+    except Exception:
+        return
+    yf_cache.set_cache_location(str(destination))
 
 
 def normalize_ohlcv_frame(raw_data: pd.DataFrame) -> pd.DataFrame:

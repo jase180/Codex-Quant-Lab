@@ -156,6 +156,21 @@ List cached CSV files and provenance status:
 quant-lab list-data-cache --data-dir data/cache
 ```
 
+Audit adjusted prices against raw provider action rows:
+
+```bash
+quant-lab audit-adjusted-prices \
+  --symbol SPY \
+  --start 2024-03-01 \
+  --end 2024-04-15 \
+  --expected-dividend-date 2024-03-15 \
+  --out artifacts/data-audits/spy_2024_q1_dividend
+```
+
+This is provider-internal verification. It compares yfinance's
+`auto_adjust=True` close against the same provider's `Adj Close` field and
+records dividend/split rows for the audited window.
+
 Write a trust report for a saved strategy run:
 
 ```bash

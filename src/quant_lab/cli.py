@@ -7,6 +7,7 @@ import sys
 from typing import Sequence
 
 from .cli_data import (
+    audit_adjusted_prices_command,
     fetch_command,
     list_data_cache_command,
     list_strategy_templates_command,
@@ -449,6 +450,38 @@ def register_data_commands(subparsers) -> None:
         help="Directory containing cached OHLCV CSV files. Defaults to data/cache.",
     )
     list_data_cache_parser.set_defaults(func=list_data_cache_command)
+
+    audit_adjusted_parser = subparsers.add_parser(
+        "audit-adjusted-prices",
+        help="Compare provider adjusted prices against raw provider Adj Close and action rows.",
+    )
+    audit_adjusted_parser.add_argument("--symbol", required=True, help="Ticker symbol, such as SPY or QQQ.")
+    audit_adjusted_parser.add_argument("--start", required=True, help="Start date in YYYY-MM-DD format.")
+    audit_adjusted_parser.add_argument("--end", required=True, help="End date in YYYY-MM-DD format.")
+    audit_adjusted_parser.add_argument(
+        "--out",
+        required=True,
+        help="Directory where adjusted_price_audit artifacts are written.",
+    )
+    audit_adjusted_parser.add_argument(
+        "--expected-dividend-date",
+        action="append",
+        default=[],
+        help="Dividend date expected in provider action rows. May be repeated.",
+    )
+    audit_adjusted_parser.add_argument(
+        "--expected-split-date",
+        action="append",
+        default=[],
+        help="Split date expected in provider action rows. May be repeated.",
+    )
+    audit_adjusted_parser.add_argument(
+        "--tolerance",
+        type=float,
+        default=0.01,
+        help="Maximum allowed absolute close difference. Defaults to 0.01.",
+    )
+    audit_adjusted_parser.set_defaults(func=audit_adjusted_prices_command)
 
     template_list_parser = subparsers.add_parser(
         "list-strategy-templates",

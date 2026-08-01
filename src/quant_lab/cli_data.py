@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 
+from .adjusted_price_audit import fetch_yfinance_adjustment_sample, write_adjusted_price_audit
 from .data_source import (
     format_data_cache_inventory,
     format_data_source_inspection,
@@ -12,6 +13,34 @@ from .data_source import (
 )
 from .data_fetch import fetch_market_data, write_market_data_csv, write_market_data_provenance
 from .strategy_templates import available_strategy_templates, build_strategy_template, write_strategy_template
+
+
+def audit_adjusted_prices_command(args: argparse.Namespace) -> int:
+    comparison = fetch_yfinance_adjustment_sample(
+        symbol=args.symbol,
+        start=args.start,
+        end=args.end,
+    )
+    audit = write_adjusted_price_audit(
+        comparison=comparison,
+        symbol=args.symbol,
+        start=args.start,
+        end=args.end,
+        out_dir=args.out,
+        expected_dividend_dates=args.expected_dividend_date,
+        expected_split_dates=args.expected_split_date,
+        tolerance=args.tolerance,
+    )
+    print(f"Adjusted price audit written: {audit.markdown_path}")
+    print(f"result: {audit.result}")
+    print(f"rows_compared: {audit.compared_rows}")
+    print(f"max_close_difference: {audit.max_close_difference}")
+    print(f"comparison: {audit.comparison_path}")
+    if audit.warnings:
+        print("warnings:")
+        for warning in audit.warnings:
+            print(f"- {warning}")
+    return 0
 
 
 def fetch_command(args: argparse.Namespace) -> int:

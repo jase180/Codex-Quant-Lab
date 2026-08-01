@@ -53,6 +53,9 @@ Current behavior:
 - `show-data-source`, single-run trust reports, and portfolio data trust
   reports display the recorded price-adjustment policy when provenance is
   available.
+- `audit-adjusted-prices` can write a provider-internal audit for one
+  corporate-action window by downloading both adjusted OHLCV and raw OHLCV with
+  `Adj Close`, dividends, and splits.
 
 Implication:
 
@@ -69,6 +72,9 @@ Current coverage:
   provenance writing, and cache inspection.
 - Trust report tests cover showing the recorded adjustment policy in single-run
   and portfolio evidence reports.
+- Adjusted-price audit tests cover comparing `auto_adjust=True` close to the
+  provider's `Adj Close`, expected event-date checks, and the CLI command with a
+  mocked provider.
 - Run trust reports can verify that a later local CSV still matches the saved
   run fingerprint.
 
@@ -78,14 +84,17 @@ Known gap:
   second source.
 - The lab does not model dividends as cash distributions.
 - The lab does not preserve unadjusted OHLC plus corporate actions.
+- `audit-adjusted-prices` is provider-internal verification, not proof that
+  yfinance agrees with another vendor or official corporate-action source.
 
 Status:
 
 - Acceptable for local research if conclusions say provider assumptions may
   matter.
 - Current improvement: fetched CSV provenance now records the adjusted-price
-  policy and trust reports surface it. Future improvement: add optional
-  corporate-action checks against a second source or manually verified events.
+  policy, trust reports surface it, and `audit-adjusted-prices` can inspect a
+  known corporate-action window. Future improvement: add optional
+  second-source checks against another provider or manually verified events.
 
 ## Next-Open Fills
 

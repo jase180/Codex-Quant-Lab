@@ -380,6 +380,25 @@ quant-lab list-data-cache --data-dir data/cache
 The inventory shows each cached CSV's symbol, row count, date range, fingerprint
 prefix, provenance status, and duplicate-looking symbol/date ranges.
 
+Audit adjusted-price behavior for a known corporate-action window:
+
+```bash
+quant-lab audit-adjusted-prices \
+  --symbol SPY \
+  --start 2024-03-01 \
+  --end 2024-04-15 \
+  --expected-dividend-date 2024-03-15 \
+  --out artifacts/data-audits/spy_2024_q1_dividend
+```
+
+This downloads two `yfinance` views for the same symbol/date window: adjusted
+OHLCV and raw OHLCV with `Adj Close`, dividends, and splits. It writes
+`adjusted_price_audit.md`, `adjusted_price_audit.json`, and
+`adjusted_price_comparison.csv`. This is still provider-internal verification,
+not second-source validation, but it makes dividend/split rows visible and
+checks that the adjusted close used by `auto_adjust=True` matches the provider's
+`Adj Close` field within tolerance.
+
 ### Summarize Run Data Trust
 
 After a run exists, write a Markdown trust report from its metadata:
