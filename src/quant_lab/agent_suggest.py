@@ -32,6 +32,8 @@ STEP_TO_ACTION = {
     "robustness_parameter_neighborhood": "robustness",
     "conclude_experiment": "conclude",
     "draft_decision": "decide",
+    "research_design": "research_design",
+    "reformulate_hypothesis": "research_design",
     "done": "stop",
 }
 
@@ -85,6 +87,15 @@ def _deterministic_recommendation(manifest: SessionManifest, context: AgentConte
             risks=[],
             do_not_repeat=_do_not_repeat(action, manifest, context),
             confidence="high",
+        )
+    if action == "research_design":
+        return create_agent_recommendation(
+            recommended_action="research_design",
+            reason=reason or "The next step is to reformulate the research hypothesis before running commands.",
+            next_command=None,
+            risks=_risks(manifest, context),
+            do_not_repeat=_do_not_repeat(action, manifest, context),
+            confidence=_confidence(action, manifest),
         )
     if action == "needs_review" or not next_command:
         return create_agent_recommendation(

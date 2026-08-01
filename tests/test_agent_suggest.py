@@ -129,6 +129,50 @@ class AgentSuggestTest(unittest.TestCase):
             self.assertIn("Next research prompt warning: Train/test selected run trailed the benchmark.", recommendation.risks)
             self.assertIn("Do not widen this SMA branch.", recommendation.do_not_repeat)
 
+    def test_suggest_can_recommend_research_design_without_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            plan_path = output_dir / "research_plan.json"
+            conclusion_md = output_dir / "experiment_conclusion.md"
+            conclusion_json = output_dir / "experiment_conclusion.json"
+            plan_path.write_text("{}\n", encoding="utf-8")
+            conclusion_md.write_text("# Experiment Conclusion\n", encoding="utf-8")
+            conclusion_json.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "experiment_conclusion.v1",
+                        "next_research_prompt": {
+                            "known_result": "The prior branch failed.",
+                            "what_failed": ["Benchmark underperformance was not explained."],
+                            "constraints": ["Do not rerun the same strategy unchanged."],
+                            "next_experiment_should": ["Design one revised hypothesis with success criteria."],
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="Research design",
+                hypothesis="A rejected branch needs a revised hypothesis.",
+                plan_path=plan_path,
+                output_dir=output_dir,
+                conclusion_path=conclusion_md,
+                current_status="in_progress",
+                outstanding_next_steps=["reformulate_hypothesis: Choose one bounded next experiment from the rejected conclusion."],
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            manifest_path, _ = save_session_manifest(manifest)
+
+            recommendation = suggest_from_manifest(manifest_path)
+
+            self.assertEqual("research_design", recommendation.recommended_action)
+            self.assertIsNone(recommendation.next_command)
+            self.assertIn("Design one revised hypothesis", recommendation.reason)
+            self.assertIn("Do not rerun the same strategy unchanged.", recommendation.do_not_repeat)
+
     def test_cli_agent_suggest_writes_artifacts_and_prints_summary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_dir = Path(tmpdir)

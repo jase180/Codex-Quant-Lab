@@ -179,7 +179,7 @@ def _save_agent_cycle(result: AgentCycleResult, output_dir: str | Path) -> tuple
 
 
 def _stop_reason(context: AgentContext, recommendation: AgentRecommendation) -> str:
-    if recommendation.recommended_action in {"stop", "needs_review"}:
+    if recommendation.recommended_action in {"research_design", "stop", "needs_review"}:
         return f"Recommendation action is {recommendation.recommended_action}; human review required."
     if context.warnings:
         return "Dry run stopped before execution because the session manifest has warnings."

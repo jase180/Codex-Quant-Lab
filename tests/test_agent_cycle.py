@@ -63,6 +63,47 @@ class AgentCycleTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "dry-run only"):
                 run_agent_cycle(manifest_path, dry_run=False)
 
+    def test_cycle_treats_research_design_as_human_gated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            plan_path = output_dir / "research_plan.json"
+            conclusion_md = output_dir / "experiment_conclusion.md"
+            conclusion_json = output_dir / "experiment_conclusion.json"
+            plan_path.write_text("{}\n", encoding="utf-8")
+            conclusion_md.write_text("# Experiment Conclusion\n", encoding="utf-8")
+            conclusion_json.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "experiment_conclusion.v1",
+                        "next_research_prompt": {
+                            "known_result": "Rejected.",
+                            "next_experiment_should": ["Reformulate the hypothesis."],
+                        },
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            manifest = create_session_manifest(
+                session_id="session-001",
+                experiment_id="EXP-001",
+                title="Design cycle",
+                hypothesis="Need a revised hypothesis.",
+                plan_path=plan_path,
+                output_dir=output_dir,
+                conclusion_path=conclusion_md,
+                current_status="in_progress",
+                outstanding_next_steps=["reformulate_hypothesis: Design the next test."],
+                created_at_utc="2026-07-25T00:00:00Z",
+            )
+            manifest_path, _ = save_session_manifest(manifest)
+
+            result = run_agent_cycle(manifest_path, dry_run=True)
+
+            self.assertEqual("research_design", result.recommended_action)
+            self.assertIsNone(result.proposed_command)
+            self.assertIn("human review required", result.stop_reason)
+
     def test_cli_cycle_json_output_is_pure_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             manifest_path = _manifest_fixture(tmpdir)

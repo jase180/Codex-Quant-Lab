@@ -191,6 +191,10 @@ What it does:
 - records why it stopped,
 - stops before executing anything.
 
+If the recommendation action is `research_design`, the cycle is doing its job:
+the agent is advising on the next hypothesis or experiment design, not running a
+new backtest.
+
 ## 9. Compare The Advice
 
 Check these three outputs:

@@ -49,6 +49,15 @@ class AgentRecommendationTest(unittest.TestCase):
 
         self.assertIsNone(recommendation.next_command)
 
+    def test_research_design_action_does_not_require_command(self) -> None:
+        recommendation = create_agent_recommendation(
+            recommended_action="research_design",
+            reason="Reformulate the hypothesis before running more commands.",
+            confidence="medium",
+        )
+
+        self.assertIsNone(recommendation.next_command)
+
     def test_rejects_unknown_action_confidence_and_non_quant_lab_command(self) -> None:
         with self.assertRaisesRegex(ValueError, "recommended_action"):
             create_agent_recommendation(

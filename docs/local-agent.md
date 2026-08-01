@@ -197,11 +197,15 @@ Allowed actions will be intentionally small and workflow-shaped, such as:
 - `robustness`
 - `conclude`
 - `decide`
+- `research_design`
 - `stop`
 - `needs_review`
 
 Runnable actions require `next_command`, and `next_command` must start with
-`quant-lab `. `stop` and `needs_review` do not require a command.
+`quant-lab `. `research_design`, `stop`, and `needs_review` do not require a
+command. `research_design` means the agent should help reformulate the next
+hypothesis or experiment design from saved evidence, then stop before running
+anything.
 
 Allowed confidence values are:
 

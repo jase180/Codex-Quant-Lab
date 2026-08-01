@@ -22,11 +22,12 @@ ALLOWED_RECOMMENDED_ACTIONS = {
     "robustness",
     "conclude",
     "decide",
+    "research_design",
     "stop",
     "needs_review",
 }
 CONFIDENCE_VALUES = {"low", "medium", "high"}
-COMMAND_REQUIRED_ACTIONS = ALLOWED_RECOMMENDED_ACTIONS - {"stop", "needs_review"}
+COMMAND_REQUIRED_ACTIONS = ALLOWED_RECOMMENDED_ACTIONS - {"research_design", "stop", "needs_review"}
 RECOMMENDATION_KEYS = {
     "schema_version",
     "recommended_action",
