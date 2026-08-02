@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Iterable, Literal
 
 from backtester_core.data import MarketBar
 from backtester_core.strategy import Strategy
 
-from .strategy_schema import Condition, ConditionSet, StrategySpec, ValueRef
+from .strategy_schema import Condition, ConditionSet, RiskControlSpec, StrategySpec, ValueRef
 
 
 Number = float | int
@@ -123,6 +124,44 @@ class IndicatorState:
         return 100 - (100 / (1 + relative_strength))
 
 
+class VolatilityTargetControl:
+    """Close-based realized-volatility allocation scaler."""
+
+    def __init__(
+        self,
+        *,
+        lookback: int,
+        target_annual_vol: float,
+        min_allocation: float,
+        max_allocation: float,
+    ) -> None:
+        self.lookback = int(lookback)
+        self.target_annual_vol = float(target_annual_vol)
+        self.min_allocation = float(min_allocation)
+        self.max_allocation = float(max_allocation)
+        self._previous_close: float | None = None
+        self._returns: list[float] = []
+        self.current_allocation = self.max_allocation
+
+    def update(self, close: float) -> float:
+        if self._previous_close is not None and self._previous_close > 0:
+            self._returns.append((float(close) / self._previous_close) - 1)
+        self._previous_close = float(close)
+
+        if len(self._returns) < self.lookback:
+            self.current_allocation = self.max_allocation
+            return self.current_allocation
+
+        realized_vol = _sample_standard_deviation(self._returns[-self.lookback :]) * math.sqrt(252)
+        if realized_vol <= 0:
+            self.current_allocation = self.max_allocation
+            return self.current_allocation
+
+        raw_allocation = self.target_annual_vol / realized_vol
+        self.current_allocation = min(self.max_allocation, max(self.min_allocation, raw_allocation))
+        return self.current_allocation
+
+
 class RuleBasedStrategy(Strategy):
     """Runs a validated v1 rule-based strategy spec against daily bars."""
 
@@ -156,6 +195,7 @@ class RuleBasedStrategy(Strategy):
             )
             for indicator in spec.indicators
         }
+        self._risk_controls = [_build_risk_control(control) for control in spec.risk_controls]
         self._previous_close: float | None = None
 
     def on_bar(self, bar: MarketBar):
@@ -173,6 +213,7 @@ class RuleBasedStrategy(Strategy):
             indicators=indicators,
             previous_indicators=previous_indicators,
         )
+        risk_allocation = self._risk_control_allocation(float(bar.close))
         self._previous_close = float(bar.close)
 
         if self.portfolio is None:
@@ -183,10 +224,17 @@ class RuleBasedStrategy(Strategy):
 
         if self.portfolio.position == 0 and evaluate_condition_set(self.spec.entry, context):
             if self.sizing == "percent-equity":
-                return [self.buy_with_cash_allocation(self.allocation)]
+                return [self.buy_with_cash_allocation(self.allocation * risk_allocation)]
             return [self.buy(quantity=self.order_quantity)]
 
         return []
+
+    def _risk_control_allocation(self, close: float) -> float:
+        if not self._risk_controls:
+            return 1.0
+        # Multiple risk controls are combined conservatively. Each control
+        # returns an allocation cap, and the strategy uses the tightest cap.
+        return min(control.update(close) for control in self._risk_controls)
 
 
 def evaluate_condition_set(condition_set: ConditionSet, context: EvaluationContext) -> bool:
@@ -284,6 +332,25 @@ def build_rule_based_strategy(
         sizing=sizing,
         allocation=allocation,
     )
+
+
+def _build_risk_control(control: RiskControlSpec) -> VolatilityTargetControl:
+    if control.kind == "volatility_target":
+        return VolatilityTargetControl(
+            lookback=int(control.params["lookback"]),
+            target_annual_vol=float(control.params["target_annual_vol"]),
+            min_allocation=float(control.params["min_allocation"]),
+            max_allocation=float(control.params["max_allocation"]),
+        )
+    raise ValueError(f"unsupported risk control kind: {control.kind}")
+
+
+def _sample_standard_deviation(values: list[float]) -> float:
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    variance = sum((value - mean) ** 2 for value in values) / (len(values) - 1)
+    return math.sqrt(variance)
 
 
 def indicator_values(kind: str, length: int, closes: Iterable[Number]) -> list[float | None]:

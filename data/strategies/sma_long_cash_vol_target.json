@@ -1,0 +1,59 @@
+{
+  "description": "Enter when close is above the 100-day SMA and exit to cash when close is below it. Scale percent-equity entries with a close-based volatility target.",
+  "entry": {
+    "conditions": [
+      {
+        "left": {
+          "price": "close"
+        },
+        "operator": "gt",
+        "right": {
+          "indicator": "sma_100"
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "exit": {
+    "conditions": [
+      {
+        "left": {
+          "price": "close"
+        },
+        "operator": "lt",
+        "right": {
+          "indicator": "sma_100"
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "indicators": [
+    {
+      "id": "sma_100",
+      "inputs": {
+        "length": 100,
+        "source": "close"
+      },
+      "kind": "sma"
+    }
+  ],
+  "market": {
+    "symbol": "SPY",
+    "timeframe": "1d"
+  },
+  "name": "SMA Long/Cash Volatility Target",
+  "position_mode": "long_only",
+  "risk_controls": [
+    {
+      "kind": "volatility_target",
+      "lookback": 20,
+      "max_allocation": 1.0,
+      "min_allocation": 0.25,
+      "target_annual_vol": 0.12
+    }
+  ],
+  "schema_version": "v1",
+  "strategy_id": "sma_long_cash_vol_target",
+  "strategy_type": "rule_based"
+}

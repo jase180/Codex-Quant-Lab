@@ -18,8 +18,9 @@ def _strategy_payload(
     entry_conditions,
     exit_conditions,
     exit_when="all",
+    risk_controls=None,
 ):
-    return {
+    payload = {
         "schema_version": "v1",
         "strategy_id": "test_strategy",
         "name": "Test Strategy",
@@ -31,6 +32,9 @@ def _strategy_payload(
         "entry": {"when": "all", "conditions": entry_conditions},
         "exit": {"when": exit_when, "conditions": exit_conditions},
     }
+    if risk_controls is not None:
+        payload["risk_controls"] = risk_controls
+    return payload
 
 
 class RuleBasedStrategyTests(unittest.TestCase):
@@ -220,6 +224,57 @@ class RuleBasedStrategyTests(unittest.TestCase):
         self.assertAlmostEqual(result.trades.iloc[0]["cash_after"], 500.0)
         self.assertEqual(result.trades.index[1], pd.Timestamp("2026-01-04"))
         self.assertEqual(result.final_position, 0)
+
+    def test_volatility_target_scales_percent_equity_entry_at_next_open(self) -> None:
+        spec = parse_strategy(
+            _strategy_payload(
+                indicators=[
+                    {"id": "sma_3", "kind": "sma", "inputs": {"source": "close", "length": 3}},
+                ],
+                entry_conditions=[
+                    {
+                        "left": {"price": "close"},
+                        "operator": "gt",
+                        "right": {"indicator": "sma_3"},
+                    }
+                ],
+                exit_conditions=[
+                    {
+                        "left": {"price": "close"},
+                        "operator": "lt",
+                        "right": {"value": 0},
+                    }
+                ],
+                risk_controls=[
+                    {
+                        "kind": "volatility_target",
+                        "lookback": 2,
+                        "target_annual_vol": 0.10,
+                        "min_allocation": 0.25,
+                        "max_allocation": 1.0,
+                    }
+                ],
+            )
+        )
+        data = pd.DataFrame(
+            [
+                {"date": "2026-01-01", "open": 100, "high": 100, "low": 100, "close": 100, "volume": 100},
+                {"date": "2026-01-02", "open": 200, "high": 200, "low": 200, "close": 200, "volume": 100},
+                {"date": "2026-01-03", "open": 100, "high": 100, "low": 100, "close": 100, "volume": 100},
+                {"date": "2026-01-04", "open": 200, "high": 200, "low": 200, "close": 200, "volume": 100},
+                {"date": "2026-01-05", "open": 100, "high": 100, "low": 100, "close": 100, "volume": 100},
+            ]
+        )
+
+        result = BacktestEngine(initial_cash=1_000).run(
+            data,
+            build_rule_based_strategy(spec, sizing="percent-equity", allocation=1.0),
+        )
+
+        self.assertEqual(result.trades.index[0], pd.Timestamp("2026-01-05"))
+        self.assertEqual(result.trades.iloc[0]["side"], "buy")
+        self.assertAlmostEqual(result.trades.iloc[0]["quantity"], 2.5)
+        self.assertAlmostEqual(result.trades.iloc[0]["cash_after"], 750.0)
 
 
 if __name__ == "__main__":

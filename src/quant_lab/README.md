@@ -446,6 +446,11 @@ The CLI supports:
 Percent-equity orders resolve at the next open, which keeps the same timing
 model as the rest of the backtester.
 
+Strategy JSON may include optional `risk_controls`. The first supported control
+is `volatility_target`, which scales percent-equity entry allocation from
+close-to-close realized volatility known at the signal close. It does not create
+signals, does not affect fixed-share sizing, and still fills at the next open.
+
 ## Transaction Costs
 
 `run` and `sweep` support simple cost assumptions:

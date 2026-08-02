@@ -44,6 +44,53 @@ class StrategySchemaTests(unittest.TestCase):
         self.assertEqual(strategy.indicators[0].kind, "rolling_high")
         self.assertEqual(strategy.indicators[1].kind, "rolling_low")
 
+    def test_parse_valid_vol_target_strategy_fixture(self) -> None:
+        strategy = load_strategy(FIXTURES_DIR / "sma_long_cash_vol_target.json")
+
+        self.assertEqual(strategy.strategy_id, "sma_long_cash_vol_target")
+        self.assertEqual("volatility_target", strategy.risk_controls[0].kind)
+        self.assertEqual(0.12, strategy.risk_controls[0].params["target_annual_vol"])
+
+    def test_parse_valid_volatility_target_risk_control(self) -> None:
+        payload = _minimal_strategy_payload()
+        payload["risk_controls"] = [
+            {
+                "kind": "volatility_target",
+                "lookback": 20,
+                "target_annual_vol": 0.12,
+                "min_allocation": 0.25,
+                "max_allocation": 1.0,
+            }
+        ]
+
+        strategy = parse_strategy(payload)
+
+        self.assertEqual("volatility_target", strategy.risk_controls[0].kind)
+        self.assertEqual(20, strategy.risk_controls[0].params["lookback"])
+        self.assertEqual(0.25, strategy.risk_controls[0].params["min_allocation"])
+
+    def test_invalid_volatility_target_risk_control_is_rejected(self) -> None:
+        payload = _minimal_strategy_payload()
+        payload["risk_controls"] = [
+            {
+                "kind": "volatility_target",
+                "lookback": 20,
+                "target_annual_vol": 0.12,
+                "min_allocation": 0.75,
+                "max_allocation": 0.25,
+            }
+        ]
+
+        with self.assertRaisesRegex(StrategySchemaError, "min_allocation"):
+            parse_strategy(payload)
+
+    def test_risk_controls_must_be_a_list_when_present(self) -> None:
+        payload = _minimal_strategy_payload()
+        payload["risk_controls"] = None
+
+        with self.assertRaisesRegex(StrategySchemaError, "risk_controls must be a list"):
+            parse_strategy(payload)
+
     def test_missing_required_field_raises_clear_error(self) -> None:
         payload = {
             "schema_version": "v1",
@@ -382,6 +429,27 @@ class StrategySchemaTests(unittest.TestCase):
         strategy = parse_strategy(raw)
 
         self.assertEqual(strategy.name, "Simple SMA Crossover")
+
+
+def _minimal_strategy_payload() -> dict:
+    return {
+        "schema_version": "v1",
+        "strategy_id": "minimal_strategy",
+        "name": "Minimal Strategy",
+        "description": "Minimal schema fixture.",
+        "strategy_type": "rule_based",
+        "position_mode": "long_only",
+        "market": {"symbol": "SPY", "timeframe": "1d"},
+        "indicators": [{"id": "sma_2", "kind": "sma", "inputs": {"source": "close", "length": 2}}],
+        "entry": {
+            "when": "all",
+            "conditions": [{"left": {"price": "close"}, "operator": "gt", "right": {"indicator": "sma_2"}}],
+        },
+        "exit": {
+            "when": "all",
+            "conditions": [{"left": {"price": "close"}, "operator": "lt", "right": {"indicator": "sma_2"}}],
+        },
+    }
 
 
 if __name__ == "__main__":

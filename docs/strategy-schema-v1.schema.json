@@ -84,6 +84,12 @@
     },
     "exit": {
       "$ref": "#/$defs/conditionSet"
+    },
+    "risk_controls": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/riskControl"
+      }
     }
   },
   "$defs": {
@@ -154,5 +160,44 @@
           }
         }
       ]
+    },
+    "riskControl": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "lookback",
+            "target_annual_vol",
+            "min_allocation",
+            "max_allocation"
+          ],
+          "properties": {
+            "kind": {
+              "const": "volatility_target"
+            },
+            "lookback": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "target_annual_vol": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "min_allocation": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "max_allocation": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
     }
   }
+}

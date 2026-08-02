@@ -191,6 +191,7 @@ docs/
   roadmap-to-ready.md         Long-range roadmap to a more mature lab.
   milestones.md                  Project milestone plan.
   research-workflow.md           End-to-end research workflow.
+  risk-control-strategy-layer.md Risk-control strategy design note.
   strategy-schema.md            Strategy schema notes.
 src/
   backtester_core/              Backtest engine, portfolio, execution, data validation.

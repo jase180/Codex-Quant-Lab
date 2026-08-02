@@ -34,6 +34,7 @@ Each strategy document is a JSON object with these top-level fields:
 - `indicators`: array of declared indicators
 - `entry`: condition set for opening a position
 - `exit`: condition set for closing a position
+- `risk_controls`: optional array of deterministic allocation controls
 
 ### Indicators
 
@@ -93,6 +94,36 @@ Supported operators:
 - `crosses_above`
 - `crosses_below`
 
+### Risk controls
+
+Risk controls are optional. They do not create entry or exit signals. They only
+scale the allocation used by percent-equity entry orders after an entry signal
+has already fired.
+
+The first supported control is `volatility_target`:
+
+```json
+{
+  "kind": "volatility_target",
+  "lookback": 20,
+  "target_annual_vol": 0.12,
+  "min_allocation": 0.25,
+  "max_allocation": 1.0
+}
+```
+
+Semantics:
+
+- realized volatility is computed from close-to-close returns available at the
+  signal close,
+- the scaled allocation is attached to the order that fills on the next open,
+- allocation is clamped between `min_allocation` and `max_allocation`,
+- fixed-share sizing ignores risk controls in v1,
+- multiple controls are combined conservatively by using the smallest allocation
+  cap.
+
+This keeps risk controls close-based and avoids same-bar lookahead.
+
 ## Rejected inputs
 
 Validation should fail fast and clearly for:
@@ -104,6 +135,9 @@ Validation should fail fast and clearly for:
 - malformed value refs that include multiple keys or non-numeric constants
 - direct price refs other than `close`
 - indicator inputs with non-`close` sources
+- unknown risk control kinds
+- volatility-target controls with non-positive lookbacks, non-positive target
+  volatility, invalid allocation bounds, or `min_allocation > max_allocation`
 
 ## Why this is LLM-friendly later
 

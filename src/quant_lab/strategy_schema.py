@@ -11,6 +11,7 @@ from typing import Any, Literal
 _ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 _ALLOWED_INDICATORS = {"sma", "ema", "rsi", "rolling_high", "rolling_low"}
 _ALLOWED_SIGNAL_PRICE_FIELDS = {"close"}
+_ALLOWED_RISK_CONTROLS = {"volatility_target"}
 _ALLOWED_OPERATORS = {
     "gt",
     "gte",
@@ -60,6 +61,12 @@ class ConditionSet:
 
 
 @dataclass(frozen=True)
+class RiskControlSpec:
+    kind: Literal["volatility_target"]
+    params: dict[str, Any]
+
+
+@dataclass(frozen=True)
 class StrategySpec:
     schema_version: Literal["v1"]
     strategy_id: str
@@ -71,6 +78,7 @@ class StrategySpec:
     indicators: list[IndicatorSpec]
     entry: ConditionSet
     exit: ConditionSet
+    risk_controls: list[RiskControlSpec]
 
 
 def load_strategy(path: str | Path) -> StrategySpec:
@@ -111,6 +119,7 @@ def parse_strategy(payload: dict[str, Any]) -> StrategySpec:
     indicator_ids = {indicator.id for indicator in indicators}
     entry = _parse_condition_set(_require_mapping(payload, "entry"), indicator_ids, "entry")
     exit_rules = _parse_condition_set(_require_mapping(payload, "exit"), indicator_ids, "exit")
+    risk_controls = _parse_risk_controls(payload["risk_controls"] if "risk_controls" in payload else [])
 
     _reject_unknown_keys(
         payload,
@@ -125,6 +134,7 @@ def parse_strategy(payload: dict[str, Any]) -> StrategySpec:
             "indicators",
             "entry",
             "exit",
+            "risk_controls",
         },
         context="strategy",
     )
@@ -140,6 +150,7 @@ def parse_strategy(payload: dict[str, Any]) -> StrategySpec:
         indicators=indicators,
         entry=entry,
         exit=exit_rules,
+        risk_controls=risk_controls,
     )
 
 
@@ -211,6 +222,48 @@ def _parse_condition_set(
     ]
     _reject_unknown_keys(payload, {"when", "conditions"}, context)
     return ConditionSet(when=when, conditions=conditions)
+
+
+def _parse_risk_controls(payload: Any) -> list[RiskControlSpec]:
+    if not isinstance(payload, list):
+        raise StrategySchemaError("strategy.risk_controls must be a list.")
+
+    controls: list[RiskControlSpec] = []
+    for index, raw_control in enumerate(payload):
+        context = f"risk_controls[{index}]"
+        if not isinstance(raw_control, dict):
+            raise StrategySchemaError(f"{context} must be an object.")
+        kind = _require_literal(raw_control, "kind", _ALLOWED_RISK_CONTROLS, context)
+        if kind == "volatility_target":
+            control = _parse_volatility_target(raw_control, context)
+        else:
+            raise StrategySchemaError(f"{context}.kind must be one of {sorted(_ALLOWED_RISK_CONTROLS)}.")
+        controls.append(control)
+    return controls
+
+
+def _parse_volatility_target(payload: dict[str, Any], context: str) -> RiskControlSpec:
+    lookback = _require_positive_int(payload, "lookback", context)
+    target_annual_vol = _require_positive_number(payload, "target_annual_vol", context)
+    min_allocation = _require_bounded_allocation(payload, "min_allocation", context)
+    max_allocation = _require_bounded_allocation(payload, "max_allocation", context)
+    if min_allocation > max_allocation:
+        raise StrategySchemaError(f"{context}.min_allocation must be less than or equal to max_allocation.")
+
+    _reject_unknown_keys(
+        payload,
+        {"kind", "lookback", "target_annual_vol", "min_allocation", "max_allocation"},
+        context,
+    )
+    return RiskControlSpec(
+        kind="volatility_target",
+        params={
+            "lookback": lookback,
+            "target_annual_vol": target_annual_vol,
+            "min_allocation": min_allocation,
+            "max_allocation": max_allocation,
+        },
+    )
 
 
 def _parse_condition(payload: Any, indicator_ids: set[str], context: str) -> Condition:
@@ -289,6 +342,27 @@ def _require_literal(
     value = payload.get(key)
     if value not in allowed:
         raise StrategySchemaError(f"{context}.{key} must be one of {sorted(allowed)}.")
+    return value
+
+
+def _require_positive_int(payload: dict[str, Any], key: str, context: str) -> int:
+    value = payload.get(key)
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise StrategySchemaError(f"{context}.{key} must be a positive integer.")
+    return value
+
+
+def _require_positive_number(payload: dict[str, Any], key: str, context: str) -> float:
+    value = payload.get(key)
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+        raise StrategySchemaError(f"{context}.{key} must be a positive number.")
+    return float(value)
+
+
+def _require_bounded_allocation(payload: dict[str, Any], key: str, context: str) -> float:
+    value = _require_positive_number(payload, key, context)
+    if value > 1:
+        raise StrategySchemaError(f"{context}.{key} must be at most 1.")
     return value
 
 
