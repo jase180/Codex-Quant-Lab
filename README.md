@@ -192,6 +192,7 @@ docs/
   roadmap-to-ready.md         Long-range roadmap to a more mature lab.
   milestones.md                  Project milestone plan.
   research-workflow.md           End-to-end research workflow.
+  spy-vol-target-drawdown-control-experiment.md  Vol-target SPY result handoff.
   risk-control-strategy-layer.md Risk-control strategy design note.
   strategy-schema.md            Strategy schema notes.
 src/
