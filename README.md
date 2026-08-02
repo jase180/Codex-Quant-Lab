@@ -167,34 +167,14 @@ data/
   portfolios/                   Example portfolio JSON files.
   strategies/                   Example strategy JSON files.
 docs/
-  runbooks.md                    Command-oriented runbook index.
-  getting-running.md             Install, smoke-test, and first real run guide.
-  local-agent.md                 Local-agent advisor contract and context flow.
-  milestone-4-validation-realism.md  Detailed Milestone 4 plan.
-  milestone-5-strategy-research-depth.md  Detailed Milestone 5 plan.
-  milestone-7-guided-research-workflow.md  Planned guided workflow.
-  milestone-8-portfolio-multi-asset-research.md  Completed portfolio workflow.
-  milestone-9-portfolio-usability-research-loops.md  Completed portfolio usability.
-  milestone-10-portfolio-research-depth.md  Completed portfolio research depth.
-  milestone-11-research-automation-guardrails.md  Completed automation guardrails.
-  milestone-12-data-source-trust.md  Completed data/source trust workflow.
-  milestone-13-evidence-decision-quality.md  Completed evidence interpretation.
-  milestone-14-backtest-realism-robustness.md  Completed robustness checks.
-  milestone-15-default-workflow-canonical-conclusion.md  Default workflow and conclusions.
-  milestone-15-state-review.md  Current Milestone 15 state review.
-  milestone-16-session-manifests.md  Completed workflow resume/session manifests.
-  milestone-17-local-agent-advisor.md  Planned local-agent experiment advisor.
-  local-agent-runbook.md       Copyable local-agent dry-run command runbook.
-  core-backtest-assumption-audit.md  Current simulation assumption audit.
-  experiment-conclusion-schema.md  Planned conclusion JSON and Markdown shape.
-  maintenance-cli-workflow-organization.md  Completed code organization pass.
-  portfolio-workflow.md       End-to-end portfolio workflow.
-  roadmap-to-ready.md         Long-range roadmap to a more mature lab.
-  milestones.md                  Project milestone plan.
-  research-workflow.md           End-to-end research workflow.
-  spy-vol-target-drawdown-control-experiment.md  Vol-target SPY result handoff.
-  risk-control-strategy-layer.md Risk-control strategy design note.
+  README.md                     Documentation index by task and topic.
+  runbooks.md                   Command-oriented runbook index.
+  getting-running.md            Install, smoke-test, and first real run guide.
+  research-workflow.md          End-to-end research workflow.
   strategy-schema.md            Strategy schema notes.
+  roadmap-to-ready.md           Long-range roadmap to a more mature lab.
+  spy-*.md                      Tracked SPY experiment handoffs.
+  milestone-*.md                Historical milestone plans and reviews.
 src/
   backtester_core/              Backtest engine, portfolio, execution, data validation.
   quant_lab/                    Strategy schema, executable rules, CLI, data fetch.
@@ -204,36 +184,10 @@ artifacts/                      Ignored local run outputs.
 data/cache/                     Ignored local market-data cache.
 ```
 
-More detailed module notes:
-
-- [docs/milestones.md](docs/milestones.md)
-- [docs/runbooks.md](docs/runbooks.md)
-- [docs/getting-running.md](docs/getting-running.md)
-- [docs/local-agent.md](docs/local-agent.md)
-- [docs/milestone-4-validation-realism.md](docs/milestone-4-validation-realism.md)
-- [docs/milestone-5-strategy-research-depth.md](docs/milestone-5-strategy-research-depth.md)
-- [docs/milestone-7-guided-research-workflow.md](docs/milestone-7-guided-research-workflow.md)
-- [docs/milestone-8-portfolio-multi-asset-research.md](docs/milestone-8-portfolio-multi-asset-research.md)
-- [docs/milestone-9-portfolio-usability-research-loops.md](docs/milestone-9-portfolio-usability-research-loops.md)
-- [docs/milestone-10-portfolio-research-depth.md](docs/milestone-10-portfolio-research-depth.md)
-- [docs/milestone-11-research-automation-guardrails.md](docs/milestone-11-research-automation-guardrails.md)
-- [docs/milestone-12-data-source-trust.md](docs/milestone-12-data-source-trust.md)
-- [docs/milestone-13-evidence-decision-quality.md](docs/milestone-13-evidence-decision-quality.md)
-- [docs/milestone-14-backtest-realism-robustness.md](docs/milestone-14-backtest-realism-robustness.md)
-- [docs/milestone-15-default-workflow-canonical-conclusion.md](docs/milestone-15-default-workflow-canonical-conclusion.md)
-- [docs/milestone-15-state-review.md](docs/milestone-15-state-review.md)
-- [docs/milestone-16-session-manifests.md](docs/milestone-16-session-manifests.md)
-- [docs/milestone-17-local-agent-advisor.md](docs/milestone-17-local-agent-advisor.md)
-- [docs/core-backtest-assumption-audit.md](docs/core-backtest-assumption-audit.md)
-- [docs/spy-long-cash-trend-experiment.md](docs/spy-long-cash-trend-experiment.md)
-- [docs/experiment-conclusion-schema.md](docs/experiment-conclusion-schema.md)
-- [docs/maintenance-cli-workflow-organization.md](docs/maintenance-cli-workflow-organization.md)
-- [docs/portfolio-workflow.md](docs/portfolio-workflow.md)
-- [docs/roadmap-to-ready.md](docs/roadmap-to-ready.md)
-- [docs/research-workflow.md](docs/research-workflow.md)
-- [src/backtester_core/README.md](src/backtester_core/README.md)
-- [src/quant_lab/README.md](src/quant_lab/README.md)
-- [src/metrics_reporting/README.md](src/metrics_reporting/README.md)
+Detailed docs are organized by task in [docs/README.md](docs/README.md).
+Module-level notes live in [src/backtester_core/README.md](src/backtester_core/README.md),
+[src/quant_lab/README.md](src/quant_lab/README.md), and
+[src/metrics_reporting/README.md](src/metrics_reporting/README.md).
 
 ## Setup
 

@@ -5,6 +5,8 @@ you want to do, but not which document has the commands.
 
 ## Start Here
 
+- [Documentation Index](README.md): docs organized by task, current research
+  state, local-agent work, milestones, and reference material.
 - [Getting Running](getting-running.md): install checks, dependency health,
   `doctor`, and the offline smoke test.
 - [Research Workflow](research-workflow.md): the default one-strategy research
@@ -37,6 +39,15 @@ Current boundary:
   mature instead of merely useful.
 - [Milestone 17 Local-Agent Advisor](milestone-17-local-agent-advisor.md):
   current local-agent advisor plan.
+
+## Current SPY Research Handoffs
+
+- [SPY Long/Cash Trend Experiment](spy-long-cash-trend-experiment.md):
+  original 200-day SMA long/cash result.
+- [SPY Drawdown-Control Next Experiment](spy-drawdown-control-next-experiment.md):
+  revised drawdown-control test and rejection.
+- [SPY Volatility-Target Drawdown-Control Experiment](spy-vol-target-drawdown-control-experiment.md):
+  latest risk-control test; drawdown improved, return retention failed.
 
 ## Useful First Commands
 
