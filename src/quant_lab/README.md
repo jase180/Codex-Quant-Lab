@@ -480,11 +480,12 @@ Run and sweep artifacts also include two PNG charts:
 - `equity_curve.png`: strategy equity compared with the selected benchmark.
 - `drawdown.png`: strategy drawdown compared with the selected benchmark.
 
-Each run directory also includes `run_metadata.json`. The metadata file uses a
-versioned nested schema so future fields can be added without changing the
-basic structure. It records command tokens, strategy metadata, data range,
-sizing, cost assumptions, benchmark choice, Git commit, sweep parameters, and
-artifact paths.
+Each run directory also includes `strategy.json` and `run_metadata.json`.
+`strategy.json` is a normalized copy of the exact strategy payload passed to
+the run. The metadata file uses a versioned nested schema so future fields can
+be added without changing the basic structure. It records command tokens,
+strategy metadata, data range, sizing, cost assumptions, benchmark choice, Git
+commit, sweep parameters, and artifact paths.
 
 Each run directory also includes `data_quality.json`, and `report.md` includes a
 data-quality section. The report warns about suspicious-but-possibly-valid input

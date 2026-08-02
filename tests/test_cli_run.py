@@ -34,7 +34,8 @@ class CliRunTests(unittest.TestCase):
             index_path = temp_path / "research_index.jsonl"
             experiments_path = temp_path / "experiments.jsonl"
 
-            strategy_path.write_text(json.dumps(_strategy_payload()), encoding="utf-8")
+            strategy_payload = _strategy_payload()
+            strategy_path.write_text(json.dumps(strategy_payload), encoding="utf-8")
             _write_ohlcv_fixture(data_path)
 
             with contextlib.redirect_stdout(io.StringIO()):
@@ -83,6 +84,7 @@ class CliRunTests(unittest.TestCase):
             self.assertTrue((output_dir / "drawdown.png").exists())
             self.assertTrue((output_dir / "data_quality.json").exists())
             self.assertTrue((output_dir / "research_warnings.json").exists())
+            self.assertTrue((output_dir / "strategy.json").exists())
             self.assertTrue((output_dir / "run_metadata.json").exists())
             metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["metadata_schema_version"], "run_metadata.v1")
@@ -99,7 +101,10 @@ class CliRunTests(unittest.TestCase):
             self.assertIn("metrics", metadata["artifacts"])
             self.assertIn("data_quality", metadata["artifacts"])
             self.assertIn("research_warnings", metadata["artifacts"])
+            self.assertEqual(metadata["artifacts"]["strategy"], str(output_dir / "strategy.json"))
             self.assertEqual(metadata["artifacts"]["research_index"], str(index_path))
+            saved_strategy = json.loads((output_dir / "strategy.json").read_text(encoding="utf-8"))
+            self.assertEqual(saved_strategy, strategy_payload)
             index_rows = _read_jsonl(index_path)
             self.assertEqual(len(index_rows), 1)
             self.assertEqual(index_rows[0]["index_schema_version"], "research_index.v1")

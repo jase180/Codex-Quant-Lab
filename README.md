@@ -142,7 +142,8 @@ artifact before deciding what happened.
 - Run simple static-weight multi-symbol portfolio backtests.
 - Plan dry-run batches of portfolio candidate runs before executing them.
 - Track research hypotheses in a local experiment registry.
-- Save reports, metrics, equity curves, drawdown charts, trades, and sweep summaries.
+- Save reports, metrics, equity curves, drawdown charts, trades, strategy copies,
+  and sweep summaries.
 - Save optional research notes beside run and sweep artifacts.
 - Write data-quality summaries for run inputs.
 - Compare strategy results with explicit benchmarks. Buy-and-hold is the

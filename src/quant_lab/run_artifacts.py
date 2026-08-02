@@ -114,6 +114,7 @@ def run_single_backtest(
     data: pd.DataFrame,
     data_quality,
     strategy_spec,
+    strategy_payload: dict | None = None,
     output_dir: str | Path,
     run_name: str,
     research_note_path: str | None = None,
@@ -132,6 +133,7 @@ def run_single_backtest(
         benchmark_display_name=benchmark.display_name,
         output_dir=output_dir,
         run_name=run_name,
+        strategy_payload=strategy_payload,
         research_note_path=research_note_path,
     )
     persist_run_record(

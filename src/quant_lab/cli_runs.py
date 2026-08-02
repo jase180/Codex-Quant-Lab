@@ -10,7 +10,7 @@ from .costs import CostAssumptions, resolve_cost_assumptions
 from .data_quality import build_data_quality_report
 from .research_index import format_index_csv, filter_index_records, format_index_table, load_research_index, sort_index_records
 from .research_registry import require_experiment
-from .run_artifacts import run_single_backtest
+from .run_artifacts import load_strategy_payload, run_single_backtest
 from .run_config import RunExecutionConfig
 from .run_notes import load_research_note, save_research_note
 from .strategy_schema import load_strategy
@@ -29,6 +29,7 @@ def run_command(args: argparse.Namespace) -> int:
     args.cost_assumptions = resolve_cli_costs(args)
     require_experiment(args.experiments_path, args.experiment_id)
     config = RunExecutionConfig.from_args(args)
+    strategy_payload = load_strategy_payload(args.strategy)
     strategy_spec = load_strategy(args.strategy)
     data = pd.read_csv(args.data)
     data_quality = build_data_quality_report(data)
@@ -40,6 +41,7 @@ def run_command(args: argparse.Namespace) -> int:
         data=data,
         data_quality=data_quality,
         strategy_spec=strategy_spec,
+        strategy_payload=strategy_payload,
         output_dir=args.out,
         run_name=run_name,
         research_note_path=research_note_path,
