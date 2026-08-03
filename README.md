@@ -26,6 +26,12 @@ quant-lab experiment run-default \
   --data data/cache/QQQ_2015-01-01_2025-12-31.csv \
   --symbol QQQ \
   --cost-preset retail-liquid \
+  --intended-benefit "lower drawdown with acceptable return retention" \
+  --primary-metric max_drawdown \
+  --minimum-acceptable-performance "Retain at least 80% of benchmark CAGR and reduce max drawdown by at least 25% relative." \
+  --tradeoff "May underperform buy-and-hold total return during strong bull markets." \
+  --success-criterion '{"name":"return_retention","metric":"cagr","comparison":"strategy_vs_benchmark_ratio","operator":">=","threshold":0.8}' \
+  --success-criterion '{"name":"drawdown_reduction","metric":"max_drawdown","comparison":"relative_reduction_vs_benchmark","operator":">=","threshold":0.25}' \
   --param sma_20.inputs.length=10,20,30 \
   --param sma_50.inputs.length=50,100,150 \
   --train-end 2020-12-31 \
@@ -46,6 +52,16 @@ first:
 ```text
 artifacts/research/qqq_sma_trust/experiment_conclusion.md
 ```
+
+Every conclusion separates two questions:
+
+- `Research-system status`: did the repo measure the experiment honestly and
+  reproducibly?
+- `Strategy-hypothesis status`: did the strategy meet the prespecified
+  investment objective?
+
+A strategy can be rejected while the research system is `valid`. That is a good
+negative result, not a repo failure.
 
 Use the guided workflow when you want the lab to create the workspace and
 recommend one command at a time instead of executing the full default workflow:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import io
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from .evidence_labels import label_strategy_evidence
 from .experiment_conclusion import build_experiment_conclusion, save_experiment_conclusion_artifacts
 from .experiment_summary import format_experiment_evidence_summary, save_experiment_evidence_summary
 from .research_index import load_research_index
-from .research_plan import create_research_plan, save_research_plan
+from .research_plan import create_research_plan, load_research_plan, research_plan_json_path, save_research_plan
 from .research_registry import (
     append_experiment_record,
     create_experiment_decision,
@@ -260,6 +261,11 @@ def _write_research_plan(args: argparse.Namespace, experiment_id: str) -> None:
         commission_fixed=args.commission_fixed,
         commission_rate=args.commission_rate,
         slippage_bps=args.slippage_bps,
+        intended_benefit=args.intended_benefit,
+        primary_metric=args.primary_metric,
+        minimum_acceptable_performance=args.minimum_acceptable_performance,
+        important_tradeoffs=args.tradeoff,
+        success_criteria=_parse_success_criteria(args.success_criterion),
         tags=args.tag,
     )
     save_research_plan(plan)
@@ -314,6 +320,7 @@ def _write_summary_and_conclusion(args: argparse.Namespace, experiment_id: str) 
         experiment,
         index_records,
         generator_version=current_git_commit(),
+        investment_objective=load_research_plan(research_plan_json_path(args.out)).investment_objective,
     )
     artifact_paths = save_experiment_conclusion_artifacts(conclusion, args.out, force=True)
     return evidence_summary_path, artifact_paths["markdown"]
@@ -482,6 +489,16 @@ def _namespace(**kwargs) -> argparse.Namespace:
 
 def _command_tokens(*parts: str) -> list[str]:
     return ["quant-lab", *parts]
+
+
+def _parse_success_criteria(values: list[str]) -> list[dict]:
+    criteria: list[dict] = []
+    for value in values:
+        payload = json.loads(value)
+        if not isinstance(payload, dict):
+            raise ValueError("--success-criterion must be a JSON object")
+        criteria.append(payload)
+    return criteria
 
 
 def validate_default_experiment_args(args: argparse.Namespace) -> None:

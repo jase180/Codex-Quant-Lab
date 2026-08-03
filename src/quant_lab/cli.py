@@ -909,6 +909,7 @@ def register_default_experiment_commands(subparsers) -> None:
         default="conservative",
         help="Whether to record a deterministic decision. Defaults to conservative.",
     )
+    add_investment_objective_arguments(run_default_parser)
     run_default_parser.add_argument(
         "--initial-cash",
         type=float,
@@ -1004,6 +1005,7 @@ def register_research_plan_commands(subparsers) -> None:
         default=1.0,
         help="Cash fraction to invest for percent-equity buys. Defaults to 1.0.",
     )
+    add_investment_objective_arguments(init_parser)
     add_cost_arguments(init_parser)
     add_benchmark_argument(init_parser)
     add_experiment_registry_argument(init_parser)
@@ -1513,6 +1515,36 @@ def add_benchmark_argument(parser: argparse.ArgumentParser) -> None:
         choices=["buy-and-hold", "cash"],
         default="buy-and-hold",
         help="Benchmark used in reports, summaries, charts, and metadata. Defaults to buy-and-hold.",
+    )
+
+
+def add_investment_objective_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--intended-benefit",
+        default=None,
+        help="Prespecified investment benefit, such as lower drawdown or return retention.",
+    )
+    parser.add_argument(
+        "--primary-metric",
+        default=None,
+        help="Primary metric used for strategy-hypothesis status, such as max_drawdown or cagr.",
+    )
+    parser.add_argument(
+        "--minimum-acceptable-performance",
+        default=None,
+        help="Plain-English prespecified minimum acceptable strategy performance.",
+    )
+    parser.add_argument(
+        "--tradeoff",
+        action="append",
+        default=[],
+        help="Important accepted trade-off. May be repeated.",
+    )
+    parser.add_argument(
+        "--success-criterion",
+        action="append",
+        default=[],
+        help="Success criterion JSON object with name, metric, comparison, operator, and threshold.",
     )
 
 

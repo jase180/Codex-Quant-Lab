@@ -8,6 +8,7 @@ from quant_lab.experiment_conclusion import (
     format_agent_context,
     format_experiment_conclusion_markdown,
 )
+from quant_lab.research_plan import InvestmentObjective, SuccessCriterion
 from quant_lab.research_registry import EXPERIMENT_SCHEMA_VERSION, ExperimentRecord
 
 
@@ -80,6 +81,8 @@ class ExperimentConclusionTest(unittest.TestCase):
                 "generated_at_utc",
                 "generator",
                 "experiment",
+                "research_system_status",
+                "strategy_hypothesis_status",
                 "confidence_label",
                 "current_conclusion",
                 "supporting_evidence",
@@ -94,6 +97,79 @@ class ExperimentConclusionTest(unittest.TestCase):
             ],
             list(conclusion.to_dict().keys()),
         )
+
+    def test_distinguishes_valid_research_system_from_rejected_strategy(self):
+        records = [
+            _index_record(
+                run_id="test_selected",
+                run_type="test_selected_run",
+                excess_total_return=-0.57,
+                metadata_path="artifacts/research/spy/test_selected/run_metadata.json",
+                created_at_utc="2026-07-25T01:00:00Z",
+            )
+            | {
+                "data_start": "2021-01-04",
+                "data_end": "2025-12-30",
+                "benchmark_name": "buy-and-hold",
+                "cost_preset": "retail-liquid",
+                "sizing": "percent-equity",
+                "cagr": 0.07,
+                "benchmark_cagr": 0.10,
+                "max_drawdown": -0.20,
+                "benchmark_max_drawdown": -0.30,
+            },
+            _index_record(
+                run_id="cost_check",
+                run_type="cost_sensitivity_run",
+                excess_total_return=-0.60,
+                metadata_path="artifacts/research/spy/cost/run_metadata.json",
+            ),
+            _index_record(
+                run_id="date_check",
+                run_type="date_sensitivity_run",
+                excess_total_return=-0.50,
+                metadata_path="artifacts/research/spy/date/run_metadata.json",
+            ),
+            _index_record(
+                run_id="benchmark_check",
+                run_type="benchmark_sensitivity_run",
+                excess_total_return=-0.55,
+                metadata_path="artifacts/research/spy/benchmark/run_metadata.json",
+            ),
+        ]
+        objective = InvestmentObjective(
+            intended_benefit="lower drawdown with acceptable return retention",
+            benchmark="buy-and-hold",
+            primary_metric="max_drawdown",
+            minimum_acceptable_performance="Retain 80% of benchmark CAGR and reduce max drawdown by 25%.",
+            important_tradeoffs=["May lag raw SPY total return."],
+            success_criteria=[
+                SuccessCriterion(
+                    name="return_retention",
+                    metric="cagr",
+                    comparison="strategy_vs_benchmark_ratio",
+                    operator=">=",
+                    threshold=0.8,
+                ),
+                SuccessCriterion(
+                    name="drawdown_reduction",
+                    metric="max_drawdown",
+                    comparison="relative_reduction_vs_benchmark",
+                    operator=">=",
+                    threshold=0.25,
+                ),
+            ],
+        )
+
+        conclusion = build_experiment_conclusion(_experiment(), records, investment_objective=objective)
+        markdown = format_experiment_conclusion_markdown(conclusion)
+
+        self.assertEqual("valid", conclusion.research_system_status.status)
+        self.assertEqual("partially_supported", conclusion.strategy_hypothesis_status.status)
+        self.assertIn("## Research-System Status", markdown)
+        self.assertIn("## Strategy-Hypothesis Status", markdown)
+        self.assertIn("`return_retention`: `fail`", markdown)
+        self.assertIn("`drawdown_reduction`: `pass`", markdown)
 
     def test_builds_mixed_conclusion_with_supporting_and_contradicting_evidence(self):
         records = [

@@ -28,6 +28,38 @@ DEFAULT_RECOMMENDED_STEPS = (
 
 
 @dataclass(frozen=True)
+class SuccessCriterion:
+    name: str
+    metric: str
+    comparison: str
+    operator: str
+    threshold: float | str | list[str]
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class InvestmentObjective:
+    intended_benefit: str
+    benchmark: str
+    primary_metric: str
+    minimum_acceptable_performance: str
+    important_tradeoffs: list[str] = field(default_factory=list)
+    success_criteria: list[SuccessCriterion] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "intended_benefit": self.intended_benefit,
+            "benchmark": self.benchmark,
+            "primary_metric": self.primary_metric,
+            "minimum_acceptable_performance": self.minimum_acceptable_performance,
+            "important_tradeoffs": list(self.important_tradeoffs),
+            "success_criteria": [criterion.to_dict() for criterion in self.success_criteria],
+        }
+
+
+@dataclass(frozen=True)
 class ResearchPlan:
     """Durable local state for one guided research question.
 
@@ -56,6 +88,7 @@ class ResearchPlan:
     commission_fixed: float | None = None
     commission_rate: float | None = None
     slippage_bps: float | None = None
+    investment_objective: InvestmentObjective | None = None
     recommended_steps: list[str] = field(default_factory=lambda: list(DEFAULT_RECOMMENDED_STEPS))
     tags: list[str] = field(default_factory=list)
     created_at_utc: str = field(default_factory=utc_now_iso)
@@ -84,6 +117,11 @@ def create_research_plan(
     commission_fixed: float | None = None,
     commission_rate: float | None = None,
     slippage_bps: float | None = None,
+    intended_benefit: str | None = None,
+    primary_metric: str | None = None,
+    minimum_acceptable_performance: str | None = None,
+    important_tradeoffs: Iterable[str] | None = None,
+    success_criteria: Iterable[SuccessCriterion | dict] | None = None,
     tags: Iterable[str] | None = None,
     recommended_steps: Iterable[str] = DEFAULT_RECOMMENDED_STEPS,
     created_at_utc: str | None = None,
@@ -108,6 +146,14 @@ def create_research_plan(
         commission_fixed=float(commission_fixed) if commission_fixed is not None else None,
         commission_rate=float(commission_rate) if commission_rate is not None else None,
         slippage_bps=float(slippage_bps) if slippage_bps is not None else None,
+        investment_objective=create_investment_objective(
+            intended_benefit=intended_benefit,
+            benchmark=benchmark,
+            primary_metric=primary_metric,
+            minimum_acceptable_performance=minimum_acceptable_performance,
+            important_tradeoffs=important_tradeoffs or [],
+            success_criteria=success_criteria or [],
+        ),
         recommended_steps=normalize_recommended_steps(recommended_steps),
         tags=normalize_plan_tags(tags or []),
         created_at_utc=created_at_utc or utc_now_iso(),
@@ -124,6 +170,45 @@ def normalize_plan_tags(tags: Iterable[str]) -> list[str]:
             if cleaned and cleaned not in normalized:
                 normalized.append(cleaned)
     return normalized
+
+
+def create_investment_objective(
+    *,
+    intended_benefit: str | None,
+    benchmark: str,
+    primary_metric: str | None,
+    minimum_acceptable_performance: str | None,
+    important_tradeoffs: Iterable[str],
+    success_criteria: Iterable[SuccessCriterion | dict],
+) -> InvestmentObjective | None:
+    tradeoff_values = list(important_tradeoffs)
+    criterion_values = list(success_criteria)
+    if not any([intended_benefit, primary_metric, minimum_acceptable_performance, tradeoff_values, criterion_values]):
+        return None
+    criteria = [
+        criterion if isinstance(criterion, SuccessCriterion) else success_criterion_from_dict(criterion)
+        for criterion in criterion_values
+    ]
+    return InvestmentObjective(
+        intended_benefit=(intended_benefit or "Not prespecified.").strip(),
+        benchmark=benchmark,
+        primary_metric=(primary_metric or "Not prespecified.").strip(),
+        minimum_acceptable_performance=(
+            minimum_acceptable_performance or "Not prespecified; strategy status should be inconclusive."
+        ).strip(),
+        important_tradeoffs=[str(tradeoff).strip() for tradeoff in tradeoff_values if str(tradeoff).strip()],
+        success_criteria=criteria,
+    )
+
+
+def success_criterion_from_dict(payload: dict) -> SuccessCriterion:
+    return SuccessCriterion(
+        name=str(payload.get("name", "")),
+        metric=str(payload.get("metric", "")),
+        comparison=str(payload.get("comparison", "")),
+        operator=str(payload.get("operator", "")),
+        threshold=payload.get("threshold"),
+    )
 
 
 def validate_research_plan(plan: ResearchPlan) -> None:
@@ -145,6 +230,32 @@ def validate_research_plan(plan: ResearchPlan) -> None:
         raise ValueError(f"unsupported research plan schema: {plan.schema_version}")
     if not plan.recommended_steps:
         raise ValueError("research plan recommended_steps must not be empty")
+    if plan.investment_objective is not None:
+        validate_investment_objective(plan.investment_objective)
+
+
+def validate_investment_objective(objective: InvestmentObjective) -> None:
+    validate_required_text_fields(
+        {
+            "intended_benefit": objective.intended_benefit,
+            "benchmark": objective.benchmark,
+            "primary_metric": objective.primary_metric,
+            "minimum_acceptable_performance": objective.minimum_acceptable_performance,
+        },
+        context="investment objective",
+    )
+    for criterion in objective.success_criteria:
+        validate_required_text_fields(
+            {
+                "criterion name": criterion.name,
+                "criterion metric": criterion.metric,
+                "criterion comparison": criterion.comparison,
+                "criterion operator": criterion.operator,
+            },
+            context="success criterion",
+        )
+        if criterion.threshold is None:
+            raise ValueError("success criterion threshold must not be null")
 
 
 def research_plan_json_path(output_dir: str | Path) -> Path:
@@ -189,12 +300,31 @@ def load_research_plan(plan_path: str | Path) -> ResearchPlan:
         commission_fixed=optional_float(payload.get("commission_fixed")),
         commission_rate=optional_float(payload.get("commission_rate")),
         slippage_bps=optional_float(payload.get("slippage_bps")),
+        investment_objective=investment_objective_from_dict(payload.get("investment_objective")),
         recommended_steps=[str(step) for step in payload.get("recommended_steps", [])],
         tags=[str(tag) for tag in payload.get("tags", [])],
         created_at_utc=str(payload.get("created_at_utc", "")),
     )
     validate_research_plan(plan)
     return plan
+
+
+def investment_objective_from_dict(payload: object) -> InvestmentObjective | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, dict):
+        raise ValueError("investment_objective must be an object or null")
+    return InvestmentObjective(
+        intended_benefit=str(payload.get("intended_benefit", "")),
+        benchmark=str(payload.get("benchmark", "")),
+        primary_metric=str(payload.get("primary_metric", "")),
+        minimum_acceptable_performance=str(payload.get("minimum_acceptable_performance", "")),
+        important_tradeoffs=[str(item) for item in payload.get("important_tradeoffs", [])],
+        success_criteria=[
+            success_criterion_from_dict(item)
+            for item in payload.get("success_criteria", [])
+        ],
+    )
 
 
 def render_research_plan_markdown(plan: ResearchPlan) -> str:
@@ -205,6 +335,10 @@ def render_research_plan_markdown(plan: ResearchPlan) -> str:
 ## Hypothesis
 
 {plan.hypothesis}
+
+## Investment Objective
+
+{_render_investment_objective(plan.investment_objective)}
 
 ## Inputs
 
@@ -243,3 +377,35 @@ This plan organizes research. It does not prove a trading edge. Treat every
 result as local evidence tied to the selected data, strategy, costs, benchmark,
 and date range.
 """
+
+
+def _render_investment_objective(objective: InvestmentObjective | None) -> str:
+    if objective is None:
+        return "\n".join(
+            [
+                "- Intended benefit: `not_prespecified`",
+                "- Primary metric: `not_prespecified`",
+                "- Minimum acceptable performance: `not_prespecified`",
+                "- Success criteria: `not_prespecified`",
+            ]
+        )
+    tradeoffs = "\n".join(f"  - {item}" for item in objective.important_tradeoffs) or "  - none"
+    criteria = "\n".join(
+        (
+            f"  - `{criterion.name}`: `{criterion.metric}` "
+            f"{criterion.comparison} {criterion.operator} `{criterion.threshold}`"
+        )
+        for criterion in objective.success_criteria
+    ) or "  - none"
+    return "\n".join(
+        [
+            f"- Intended benefit: {objective.intended_benefit}",
+            f"- Benchmark: `{objective.benchmark}`",
+            f"- Primary metric: `{objective.primary_metric}`",
+            f"- Minimum acceptable performance: {objective.minimum_acceptable_performance}",
+            "- Important trade-offs:",
+            tradeoffs,
+            "- Success criteria:",
+            criteria,
+        ]
+    )

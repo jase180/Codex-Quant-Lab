@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from .research_index import filter_index_records, load_research_index
@@ -61,6 +62,11 @@ def research_plan_init_command(args: argparse.Namespace) -> int:
         commission_fixed=args.commission_fixed,
         commission_rate=args.commission_rate,
         slippage_bps=args.slippage_bps,
+        intended_benefit=args.intended_benefit,
+        primary_metric=args.primary_metric,
+        minimum_acceptable_performance=args.minimum_acceptable_performance,
+        important_tradeoffs=args.tradeoff,
+        success_criteria=_parse_success_criteria(args.success_criterion),
         tags=args.tag,
     )
     json_path, markdown_path = save_research_plan(plan)
@@ -72,6 +78,16 @@ def research_plan_init_command(args: argparse.Namespace) -> int:
     print("next_command:")
     print(baseline_command)
     return 0
+
+
+def _parse_success_criteria(values: list[str]) -> list[dict]:
+    criteria: list[dict] = []
+    for value in values:
+        payload = json.loads(value)
+        if not isinstance(payload, dict):
+            raise ValueError("--success-criterion must be a JSON object")
+        criteria.append(payload)
+    return criteria
 
 
 def research_plan_next_command(args: argparse.Namespace) -> int:

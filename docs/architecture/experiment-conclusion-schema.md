@@ -69,6 +69,17 @@ future loaders unless a migration path exists.
     "strategy_path": "data/strategies/qqq_sma_crossover.json",
     "data_path": "data/cache/QQQ_2015-01-01_2025-12-31.csv"
   },
+  "research_system_status": {
+    "status": "valid",
+    "summary": "The experiment measured the strategy honestly and reproducibly.",
+    "checks": [],
+    "caveats": []
+  },
+  "strategy_hypothesis_status": {
+    "status": "rejected",
+    "summary": "The strategy failed the prespecified measurable criteria.",
+    "criteria_results": []
+  },
   "confidence_label": "mixed",
   "current_conclusion": "The current evidence is mixed...",
   "supporting_evidence": [],
@@ -112,6 +123,55 @@ rows, before any CLI command or local agent touches the prose.
 
 Copies the experiment identity fields needed for orientation. This is not a
 replacement for the experiment registry; it is a snapshot for quick reading.
+
+### `research_system_status`
+
+Answers whether the repo workflow produced trustworthy evidence.
+
+Allowed `status` values:
+
+- `valid`
+- `valid_with_caveats`
+- `invalid`
+
+This status is about the measurement system, not the investment idea. A
+strategy can fail while this field remains `valid`.
+
+Expected checks include:
+
+- data and benchmark alignment,
+- no-lookahead assumption preserved,
+- next-open execution used,
+- costs and sizing recorded,
+- strategy and input artifacts saved,
+- validation completed,
+- robustness completed.
+
+### `strategy_hypothesis_status`
+
+Answers whether the strategy met the prespecified investment objective.
+
+Allowed `status` values:
+
+- `supported`
+- `partially_supported`
+- `rejected`
+- `inconclusive`
+
+This status must be based on criteria written before execution when available.
+Do not define strategy success as beating total return by default. Valid
+objectives include lower drawdown, risk-adjusted return, return retention,
+diversification, lower exposure, or better behavior during equity declines.
+
+Example interpretation:
+
+```text
+Research-system status: valid
+Strategy-hypothesis status: rejected
+
+The repo successfully tested the idea, but the strategy failed its predefined
+investment criteria.
+```
 
 ### `confidence_label`
 

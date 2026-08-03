@@ -23,6 +23,11 @@ Write the hypothesis and pass/fail idea before running anything:
 Hypothesis: a daily SPY close-above-200-day-SMA long/cash rule may reduce
 max drawdown versus buy-and-hold while retaining enough total return to be
 useful after realistic costs.
+
+Prespecified criteria:
+- retain at least 80% of buy-and-hold CAGR,
+- reduce maximum drawdown by at least 25% relative,
+- remain acceptable after retail-liquid costs.
 ```
 
 ## 2. Fetch Or Choose Data
@@ -77,6 +82,12 @@ quant-lab experiment run-default \
   --data data/cache/SPY_2015-01-01_2025-12-31.csv \
   --symbol SPY \
   --cost-preset retail-liquid \
+  --intended-benefit "lower drawdown with acceptable return retention" \
+  --primary-metric max_drawdown \
+  --minimum-acceptable-performance "Retain at least 80% of buy-and-hold CAGR and reduce max drawdown by at least 25% relative." \
+  --tradeoff "May underperform SPY total return during strong bull markets." \
+  --success-criterion '{"name":"return_retention","metric":"cagr","comparison":"strategy_vs_benchmark_ratio","operator":">=","threshold":0.8}' \
+  --success-criterion '{"name":"drawdown_reduction","metric":"max_drawdown","comparison":"relative_reduction_vs_benchmark","operator":">=","threshold":0.25}' \
   --param sma_200.inputs.length=150,200,250 \
   --train-end 2020-12-31 \
   --test-start 2021-01-01 \
@@ -104,6 +115,21 @@ Read this first:
 
 ```text
 artifacts/research/spy_200_sma_long_cash_default/experiment_conclusion.md
+```
+
+The conclusion reports two independent outcomes:
+
+- `Research-system status`: whether the repo measured the experiment honestly
+  and reproducibly.
+- `Strategy-hypothesis status`: whether the strategy met the prespecified
+  investment criteria.
+
+A valid negative result is possible and useful:
+
+```text
+Research-system status: valid
+Strategy-hypothesis status: rejected
+Interpretation: the repo worked; the strategy failed its investment objective.
 ```
 
 Then inspect supporting files only as needed:

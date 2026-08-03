@@ -19,7 +19,7 @@ from .portfolio_experiment_summary import (
     save_portfolio_experiment_summary,
 )
 from .research_index import load_research_index
-from .research_plan import load_research_plan
+from .research_plan import load_research_plan, research_plan_json_path
 from .research_plan_workflow import build_draft_decision_command_from_plan
 from .research_registry import (
     append_experiment_record,
@@ -210,6 +210,7 @@ def conclude_experiment_command(args: argparse.Namespace) -> int:
         experiment,
         index_records,
         generator_version=current_git_commit(),
+        investment_objective=_load_investment_objective(args.out),
     )
     artifact_paths = save_experiment_conclusion_artifacts(
         conclusion,
@@ -227,6 +228,13 @@ def conclude_experiment_command(args: argparse.Namespace) -> int:
         updated_manifest = _update_session_manifest_after_conclusion(manifest_path, artifact_paths)
         print(f"session_manifest: {updated_manifest}")
     return 0
+
+
+def _load_investment_objective(output_dir: str | Path):
+    plan_path = research_plan_json_path(output_dir)
+    if not plan_path.exists():
+        return None
+    return load_research_plan(plan_path).investment_objective
 
 
 def draft_decision_command(args: argparse.Namespace) -> int:

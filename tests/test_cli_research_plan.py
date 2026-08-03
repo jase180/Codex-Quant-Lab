@@ -46,6 +46,16 @@ class CliResearchPlanTests(unittest.TestCase):
                         str(index_path),
                         "--cost-preset",
                         "retail-liquid",
+                        "--intended-benefit",
+                        "lower drawdown with acceptable return retention",
+                        "--primary-metric",
+                        "max_drawdown",
+                        "--minimum-acceptable-performance",
+                        "Retain 80% of benchmark CAGR and reduce max drawdown by 25%.",
+                        "--tradeoff",
+                        "May lag SPY total return in strong bull markets.",
+                        "--success-criterion",
+                        '{"name":"return_retention","metric":"cagr","comparison":"strategy_vs_benchmark_ratio","operator":">=","threshold":0.8}',
                     ]
                 )
 
@@ -61,6 +71,8 @@ class CliResearchPlanTests(unittest.TestCase):
             self.assertEqual(plan["index_path"], str(index_path))
             self.assertEqual(plan["cost_preset"], "retail-liquid")
             self.assertEqual(plan["sizing"], "percent-equity")
+            self.assertEqual(plan["investment_objective"]["primary_metric"], "max_drawdown")
+            self.assertEqual(plan["investment_objective"]["success_criteria"][0]["name"], "return_retention")
 
             experiment = json.loads(experiments_path.read_text(encoding="utf-8").strip())
             self.assertEqual(experiment["experiment_id"], "EXP-001")
@@ -79,6 +91,9 @@ class CliResearchPlanTests(unittest.TestCase):
             self.assertIn("--cost-preset retail-liquid", output)
             self.assertIn("--index-path", output)
             self.assertIn(str(index_path), output)
+            markdown = (output_dir / "research_plan.md").read_text(encoding="utf-8")
+            self.assertIn("## Investment Objective", markdown)
+            self.assertIn("lower drawdown", markdown)
 
     def test_research_plan_init_can_reference_existing_experiment(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

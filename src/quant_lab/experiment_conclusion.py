@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from .evidence_labels import VALIDATION_RUN_TYPES, label_strategy_evidence
+from .research_plan import InvestmentObjective
 from .research_registry import ExperimentRecord
 
 
@@ -24,6 +25,7 @@ AGENT_INSTRUCTIONS = [
     "Propose small falsifiable next tests, not broad optimization.",
     "Cite source_artifacts when making claims.",
     "Preserve no-lookahead and next-open-fill assumptions.",
+    "Do not treat a rejected strategy hypothesis as a failed research system.",
 ]
 ROBUSTNESS_RUN_TYPES = {
     "cost_sensitivity": "cost_sensitivity_run",
@@ -32,6 +34,8 @@ ROBUSTNESS_RUN_TYPES = {
 }
 MARKDOWN_SECTION_ORDER = [
     "## Current Conclusion",
+    "## Research-System Status",
+    "## Strategy-Hypothesis Status",
     "## Confidence",
     "## What Was Tested",
     "## What Supports This",
@@ -116,6 +120,57 @@ class SourceArtifact:
 
 
 @dataclass(frozen=True)
+class StatusCheck:
+    name: str
+    status: str
+    evidence: str
+
+    def to_dict(self) -> dict[str, str]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ResearchSystemStatus:
+    status: str
+    summary: str
+    checks: list[StatusCheck]
+    caveats: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "summary": self.summary,
+            "checks": [check.to_dict() for check in self.checks],
+            "caveats": list(self.caveats),
+        }
+
+
+@dataclass(frozen=True)
+class StrategyCriterionResult:
+    name: str
+    passed: bool | None
+    expected: str
+    observed: str
+
+    def to_dict(self) -> dict[str, bool | str | None]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class StrategyHypothesisStatus:
+    status: str
+    summary: str
+    criteria_results: list[StrategyCriterionResult]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "summary": self.summary,
+            "criteria_results": [result.to_dict() for result in self.criteria_results],
+        }
+
+
+@dataclass(frozen=True)
 class NextResearchPrompt:
     known_result: str
     what_appears_promising: list[str]
@@ -134,6 +189,8 @@ class ExperimentConclusion:
     generated_at_utc: str
     generator: ConclusionGenerator
     experiment: ConclusionExperimentSnapshot
+    research_system_status: ResearchSystemStatus
+    strategy_hypothesis_status: StrategyHypothesisStatus
     confidence_label: str
     current_conclusion: str
     supporting_evidence: list[ConclusionEvidenceItem]
@@ -153,6 +210,8 @@ class ExperimentConclusion:
             "generated_at_utc": self.generated_at_utc,
             "generator": self.generator.to_dict(),
             "experiment": self.experiment.to_dict(),
+            "research_system_status": self.research_system_status.to_dict(),
+            "strategy_hypothesis_status": self.strategy_hypothesis_status.to_dict(),
             "confidence_label": self.confidence_label,
             "current_conclusion": self.current_conclusion,
             "supporting_evidence": [item.to_dict() for item in self.supporting_evidence],
@@ -173,6 +232,7 @@ def build_experiment_conclusion(
     *,
     generated_at_utc: str | None = None,
     generator_version: str = "unknown",
+    investment_objective: InvestmentObjective | None = None,
 ) -> ExperimentConclusion:
     """Build a deterministic conclusion draft from linked experiment evidence."""
 
@@ -191,6 +251,12 @@ def build_experiment_conclusion(
         default_note="This linked run did not beat the benchmark on excess return.",
     )
     current_conclusion = _current_conclusion(experiment, evidence_label.label, linked_records, robustness_notes)
+    research_system_status = _research_system_status(linked_records, robustness_notes)
+    strategy_hypothesis_status = _strategy_hypothesis_status(
+        linked_records,
+        investment_objective=investment_objective,
+        legacy_evidence_label=evidence_label.label,
+    )
     do_not_repeat = _do_not_repeat(evidence_label.label, linked_records, robustness_notes)
     next_useful_tests = _next_useful_tests(evidence_label.label, linked_records, robustness_notes)
     open_questions = _open_questions(evidence_label.label, linked_records, robustness_notes)
@@ -213,6 +279,8 @@ def build_experiment_conclusion(
             strategy_path=experiment.strategy_path,
             data_path=experiment.data_path,
         ),
+        research_system_status=research_system_status,
+        strategy_hypothesis_status=strategy_hypothesis_status,
         confidence_label=evidence_label.label,
         current_conclusion=current_conclusion,
         supporting_evidence=supporting_evidence,
@@ -224,6 +292,8 @@ def build_experiment_conclusion(
         source_artifacts=source_artifacts,
         next_research_prompt=_next_research_prompt(
             current_conclusion=current_conclusion,
+            research_system_status=research_system_status,
+            strategy_hypothesis_status=strategy_hypothesis_status,
             supporting_evidence=supporting_evidence,
             contradicting_evidence=contradicting_evidence,
             robustness_notes=robustness_notes,
@@ -246,6 +316,22 @@ def format_experiment_conclusion_markdown(conclusion: ExperimentConclusion) -> s
         "## Current Conclusion",
         "",
         conclusion.current_conclusion,
+        "",
+        "## Research-System Status",
+        "",
+        f"- Status: `{conclusion.research_system_status.status}`",
+        f"- Summary: {conclusion.research_system_status.summary}",
+        "- Checks:",
+        *_status_check_markdown(conclusion.research_system_status.checks),
+        "- Caveats:",
+        *_indented_bullet_lines(conclusion.research_system_status.caveats),
+        "",
+        "## Strategy-Hypothesis Status",
+        "",
+        f"- Status: `{conclusion.strategy_hypothesis_status.status}`",
+        f"- Summary: {conclusion.strategy_hypothesis_status.summary}",
+        "- Criteria:",
+        *_criterion_result_markdown(conclusion.strategy_hypothesis_status.criteria_results),
         "",
         "## Confidence",
         "",
@@ -312,6 +398,8 @@ def format_agent_context(conclusion: ExperimentConclusion) -> str:
             "",
             "Current conclusion:",
             f"- {conclusion.current_conclusion}",
+            f"- Research-system status: `{conclusion.research_system_status.status}`",
+            f"- Strategy-hypothesis status: `{conclusion.strategy_hypothesis_status.status}`",
             "",
             "Next research prompt:",
             *_next_research_prompt_markdown(conclusion.next_research_prompt),
@@ -458,6 +546,167 @@ def _robustness_note(check: str, run_type: str, records: list[dict]) -> Robustne
     )
 
 
+def _research_system_status(
+    records: list[dict],
+    robustness_notes: list[RobustnessConclusionNote],
+) -> ResearchSystemStatus:
+    checks = [
+        _status_check(
+            "linked_evidence_exists",
+            bool(records),
+            "At least one linked research-index row was found." if records else "No linked research-index rows were found.",
+        ),
+        _status_check(
+            "data_and_benchmark_aligned",
+            any(record.get("data_start") and record.get("data_end") and record.get("benchmark_name") for record in records),
+            "Linked rows include data range and benchmark fields.",
+        ),
+        _status_check(
+            "no_lookahead_assumption_preserved",
+            bool(records),
+            "v1 strategy/backtester path uses bar t signals with bar t+1 open fills; see engine tests.",
+        ),
+        _status_check(
+            "next_open_execution_used",
+            bool(records),
+            "Run artifacts were produced through the shared next-open execution path.",
+        ),
+        _status_check(
+            "costs_and_sizing_recorded",
+            any(record.get("cost_preset") is not None and record.get("sizing") is not None for record in records),
+            "Linked rows include cost preset and sizing fields.",
+        ),
+        _status_check(
+            "strategy_and_input_saved",
+            any(record.get("metadata_path") for record in records),
+            "Linked rows point to run_metadata.json artifacts.",
+        ),
+        _status_check(
+            "validation_completed",
+            any(str(record.get("run_type")) in VALIDATION_RUN_TYPES for record in records),
+            "At least one train/test or walk-forward validation row is linked.",
+        ),
+        _status_check(
+            "robustness_completed",
+            all(note.status != "missing" for note in robustness_notes if note.check != "parameter_neighborhood"),
+            "Cost, date, and benchmark sensitivity checks are present.",
+        ),
+    ]
+    failed = [check for check in checks if check.status == "fail"]
+    caveats = [check.evidence for check in failed]
+    if not records:
+        status = "invalid"
+        summary = "No linked evidence exists, so the experiment has not measured the strategy yet."
+    elif failed:
+        status = "valid_with_caveats"
+        summary = "The experiment produced evidence, but some workflow checks are missing or incomplete."
+    else:
+        status = "valid"
+        summary = "The experiment measured the strategy honestly and reproducibly with the planned validation checks."
+    return ResearchSystemStatus(status=status, summary=summary, checks=checks, caveats=caveats)
+
+
+def _status_check(name: str, passed: bool, evidence: str) -> StatusCheck:
+    return StatusCheck(name=name, status="pass" if passed else "fail", evidence=evidence)
+
+
+def _strategy_hypothesis_status(
+    records: list[dict],
+    *,
+    investment_objective: InvestmentObjective | None,
+    legacy_evidence_label: str,
+) -> StrategyHypothesisStatus:
+    if not records:
+        return StrategyHypothesisStatus(
+            status="inconclusive",
+            summary="No linked strategy evidence exists yet.",
+            criteria_results=[],
+        )
+    if investment_objective is None or not investment_objective.success_criteria:
+        return StrategyHypothesisStatus(
+            status="inconclusive",
+            summary=(
+                "No prespecified measurable success criteria were found. "
+                f"Legacy evidence label is `{legacy_evidence_label}`, but strategy status should not be finalized from ad hoc criteria."
+            ),
+            criteria_results=[],
+        )
+
+    record = _representative_strategy_record(records)
+    criteria_results = [_evaluate_success_criterion(record, criterion) for criterion in investment_objective.success_criteria]
+    known_results = [result for result in criteria_results if result.passed is not None]
+    if not known_results:
+        status = "inconclusive"
+        summary = "The prespecified criteria could not be evaluated from current linked run fields."
+    elif all(result.passed for result in known_results) and len(known_results) == len(criteria_results):
+        status = "supported"
+        summary = "The strategy met all prespecified measurable criteria."
+    elif any(result.passed for result in known_results):
+        status = "partially_supported"
+        summary = "The strategy met some prespecified criteria but failed or could not evaluate others."
+    else:
+        status = "rejected"
+        summary = "The strategy failed the prespecified measurable criteria."
+    return StrategyHypothesisStatus(status=status, summary=summary, criteria_results=criteria_results)
+
+
+def _representative_strategy_record(records: list[dict]) -> dict:
+    validation_records = [record for record in records if str(record.get("run_type")) in VALIDATION_RUN_TYPES]
+    if validation_records:
+        return sorted(validation_records, key=lambda record: str(record.get("created_at_utc", "")), reverse=True)[0]
+    baseline_records = [record for record in records if str(record.get("run_type")) == "run"]
+    return (baseline_records or records)[0]
+
+
+def _evaluate_success_criterion(record: dict, criterion) -> StrategyCriterionResult:
+    observed_value = _criterion_observed_value(record, criterion.metric, criterion.comparison)
+    expected = f"{criterion.metric} {criterion.comparison} {criterion.operator} {criterion.threshold}"
+    if observed_value is None:
+        return StrategyCriterionResult(
+            name=criterion.name,
+            passed=None,
+            expected=expected,
+            observed="Could not evaluate from linked run fields.",
+        )
+    passed = _compare_observed(observed_value, criterion.operator, criterion.threshold)
+    return StrategyCriterionResult(
+        name=criterion.name,
+        passed=passed,
+        expected=expected,
+        observed=f"{observed_value:.4f}",
+    )
+
+
+def _criterion_observed_value(record: dict, metric: str, comparison: str) -> float | None:
+    if comparison == "strategy_vs_benchmark_ratio":
+        strategy_value = _optional_numeric(record.get(metric))
+        benchmark_value = _optional_numeric(record.get(f"benchmark_{metric}"))
+        if strategy_value is None or benchmark_value in {None, 0}:
+            return None
+        return strategy_value / float(benchmark_value)
+    if comparison == "relative_reduction_vs_benchmark":
+        strategy_value = _optional_numeric(record.get(metric))
+        benchmark_value = _optional_numeric(record.get(f"benchmark_{metric}"))
+        if strategy_value is None or benchmark_value in {None, 0}:
+            return None
+        return (abs(float(benchmark_value)) - abs(strategy_value)) / abs(float(benchmark_value))
+    if comparison == "absolute":
+        return _optional_numeric(record.get(metric))
+    return None
+
+
+def _compare_observed(value: float, operator: str, threshold) -> bool | None:
+    if operator == ">=":
+        return value >= float(threshold)
+    if operator == ">":
+        return value > float(threshold)
+    if operator == "<=":
+        return value <= float(threshold)
+    if operator == "<":
+        return value < float(threshold)
+    return None
+
+
 def _current_conclusion(
     experiment: ExperimentRecord,
     confidence_label: str,
@@ -467,7 +716,10 @@ def _current_conclusion(
     if not records:
         return f"No linked evidence exists yet for {experiment.experiment_id}. Run a baseline before drawing conclusions."
     if confidence_label == "rejected":
-        return "The current linked evidence does not support the hypothesis. Stop repeating this branch unless the hypothesis changes."
+        return (
+            "The research system produced a usable measurement, but the tested strategy did not satisfy the current "
+            "strategy evidence hurdle. Treat this as a valid negative result unless a correctness caveat says otherwise."
+        )
     if confidence_label == "weak":
         return "The current evidence is weak or exploratory. Add validation and missing robustness checks before trusting the idea."
     if confidence_label == "mixed":
@@ -593,6 +845,8 @@ def _open_questions(
 def _next_research_prompt(
     *,
     current_conclusion: str,
+    research_system_status: ResearchSystemStatus,
+    strategy_hypothesis_status: StrategyHypothesisStatus,
     supporting_evidence: list[ConclusionEvidenceItem],
     contradicting_evidence: list[ConclusionEvidenceItem],
     robustness_notes: list[RobustnessConclusionNote],
@@ -603,7 +857,10 @@ def _next_research_prompt(
     # This is intentionally deterministic. A model can read it later, but the
     # project itself decides the evidence-shaped boundaries of the next cycle.
     return NextResearchPrompt(
-        known_result=current_conclusion,
+        known_result=(
+            f"{current_conclusion} Research-system status: {research_system_status.status}. "
+            f"Strategy-hypothesis status: {strategy_hypothesis_status.status}."
+        ),
         what_appears_promising=_prompt_evidence_lines(supporting_evidence)
         or ["No linked evidence currently supports the hypothesis."],
         what_failed=_prompt_failure_lines(contradicting_evidence, robustness_notes),
@@ -672,6 +929,22 @@ def _evidence_markdown(items: list[ConclusionEvidenceItem]) -> list[str]:
         )
         for item in items
     ]
+
+
+def _status_check_markdown(checks: list[StatusCheck]) -> list[str]:
+    if not checks:
+        return ["  - none"]
+    return [f"  - `{check.name}`: `{check.status}`. {check.evidence}" for check in checks]
+
+
+def _criterion_result_markdown(results: list[StrategyCriterionResult]) -> list[str]:
+    if not results:
+        return ["  - none"]
+    lines: list[str] = []
+    for result in results:
+        status = "unknown" if result.passed is None else ("pass" if result.passed else "fail")
+        lines.append(f"  - `{result.name}`: `{status}`. Expected: {result.expected}. Observed: {result.observed}")
+    return lines
 
 
 def _robustness_markdown(notes: list[RobustnessConclusionNote]) -> list[str]:
