@@ -427,7 +427,7 @@ The default single-strategy workflow can run as one command through `experiment 
 2. Reproducibility metadata is strong for a small project. `src/quant_lab/run_metadata.py` fingerprints raw data bytes and stores command tokens, costs, sizing, benchmark, git commit, and artifact paths in `run_metadata.json`; `verify-run` tests changed/missing data cases.
 3. Reports are auditable back to raw files. `src/quant_lab/run_artifacts.py` writes metrics, equity curve, trades, charts, data quality, warnings, saved strategy payloads, metadata, and research index rows from one execution path.
 4. The guided workflow is conservative. `src/quant_lab/research_plan_workflow.py` asks for baseline, trust report, sweep, validation, evidence summary, robustness, conclusion, and decision rather than jumping straight from a good run to a decision.
-5. The project has a real offline health path. `quant-lab doctor` and `quant-lab smoke-test --agent-cycle` are implemented and tested; the latest full suite passed `381` tests, and the real smoke command verifies agent dry-run wiring without executing proposed commands.
+5. The project has a real offline health path. `quant-lab doctor` and `quant-lab smoke-test --agent-cycle` are implemented and tested; the latest full suite passed `383` tests, and the real smoke command verifies agent dry-run wiring without executing proposed commands.
 
 ## 9. Current Weaknesses
 
@@ -597,7 +597,7 @@ This walkthrough uses only current capabilities.
 ## 11. Test and Correctness Status
 
 - Command used: `.\.venv-win\Scripts\python.exe -m unittest discover -s tests`
-- Passed tests: `381`
+- Passed tests: `383`
 - Failed tests: `0`
 - Skipped tests: `0` observed in unittest output.
 - Test duration: `18.168s`
@@ -614,7 +614,7 @@ Coverage assessment:
 - Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; a real SPY 2024 dividend-window audit passed with `0.0` max close difference against yfinance raw `Adj Close` and `0.0` max adjusted-OHLC difference against raw OHLC multiplied by the provider adjustment ratio.
 - Dividends: not directly modeled as cash flows; the SPY 2024 audit found the expected 2024 dividend dates in provider action rows, confirmed the manually supplied expected dividend amounts within tolerance, and confirmed adjusted close consistency for that window.
 - Splits: not directly modeled or tested; assumed folded into adjusted OHLC by provider.
-- Benchmark alignment: directly tested for buy-and-hold/cash metrics and portfolio benchmark date alignment; single-symbol benchmark starts from the input series.
+- Benchmark alignment: directly tested for buy-and-hold/cash metrics, generated benchmark assumption fields, report-visible benchmark assumptions, and portfolio benchmark date alignment; single-symbol buy-and-hold starts from the first input close.
 - Indicator warm-up: directly tested for incremental indicators returning `None` before enough data and no trades during unavailable indicator periods.
 - Train/test separation: tests reject overlapping dates and cover selected train winner rerun on test data; correctness still depends on user-chosen split dates.
 - Walk-forward selection: tests cover explicit windows and overlapping-window rejection; no automated economic validation of chosen windows.

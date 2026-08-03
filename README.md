@@ -529,7 +529,11 @@ distance is not meaningful.
 initial cash. Buy-and-hold is the default benchmark. Use `--benchmark cash` when
 you want a flat cash baseline instead. The PNG charts plot the strategy beside
 the selected benchmark so the path of returns and drawdowns is easier to inspect
-than raw CSV rows.
+than raw CSV rows. Single-run reports and `run_metadata.json` also record the
+benchmark assumptions. The default buy-and-hold benchmark is fully invested at
+the first input close, marks at each later close, does not pay transaction
+costs, and treats dividends as embedded only when the input price series is
+adjusted.
 
 The cost flags are optional. `--commission-fixed` charges a flat amount per
 fill, `--commission-rate` charges a fraction of trade value, and

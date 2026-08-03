@@ -13,6 +13,25 @@ BENCHMARK_DISPLAY_NAMES = {
     "cash": "Cash",
 }
 
+BENCHMARK_ASSUMPTIONS = {
+    "buy-and-hold": {
+        "construction": "fully_invested_first_close",
+        "price_column": "close",
+        "entry_timing": "first_input_close",
+        "mark_timing": "each_input_close",
+        "cost_treatment": "no_transaction_costs",
+        "dividend_treatment": "embedded_when_input_prices_are_adjusted",
+    },
+    "cash": {
+        "construction": "flat_cash_curve",
+        "price_column": "none",
+        "entry_timing": "not_applicable",
+        "mark_timing": "each_input_date",
+        "cost_treatment": "no_transaction_costs",
+        "dividend_treatment": "not_applicable",
+    },
+}
+
 
 @dataclass(frozen=True)
 class BenchmarkResult:
@@ -25,6 +44,7 @@ class BenchmarkResult:
 
     name: str
     display_name: str
+    assumptions: dict[str, str]
     curve: list[dict[str, float | str]]
     metrics: RunMetrics
 
@@ -105,9 +125,16 @@ def build_benchmark(data: pd.DataFrame, initial_cash: float, benchmark_name: str
     return BenchmarkResult(
         name=benchmark_name,
         display_name=BENCHMARK_DISPLAY_NAMES[benchmark_name],
+        assumptions=benchmark_assumptions(benchmark_name),
         curve=curve,
         metrics=build_metrics_summary(curve),
     )
+
+
+def benchmark_assumptions(benchmark_name: str) -> dict[str, str]:
+    if benchmark_name not in BENCHMARK_ASSUMPTIONS:
+        raise ValueError(f"Unknown benchmark: {benchmark_name}")
+    return dict(BENCHMARK_ASSUMPTIONS[benchmark_name])
 
 
 def benchmark_summary_fields(
@@ -132,8 +159,21 @@ def benchmark_report_section(
     metrics: RunMetrics,
     strategy_total_return: float,
     benchmark_display_name: str,
+    assumptions: dict[str, str] | None = None,
 ) -> str:
     excess_return = excess_total_return(strategy_total_return, metrics.total_return)
+    assumptions_section = ""
+    if assumptions:
+        assumptions_section = f"""
+## Benchmark Assumptions
+
+- Construction: `{assumptions['construction']}`
+- Price column: `{assumptions['price_column']}`
+- Entry timing: `{assumptions['entry_timing']}`
+- Mark timing: `{assumptions['mark_timing']}`
+- Cost treatment: `{assumptions['cost_treatment']}`
+- Dividend treatment: `{assumptions['dividend_treatment']}`
+"""
     return f"""## Benchmark: {benchmark_display_name}
 
 | Metric | Value |
@@ -144,7 +184,7 @@ def benchmark_report_section(
 | Sharpe Ratio | {_format_optional_num(metrics.sharpe_ratio)} |
 | Max Drawdown | {metrics.max_drawdown:.2%} |
 | Excess Total Return | {excess_return:.2%} |
-"""
+{assumptions_section}"""
 
 
 def append_benchmark_section(
@@ -152,11 +192,12 @@ def append_benchmark_section(
     metrics: RunMetrics,
     strategy_total_return: float,
     benchmark_display_name: str,
+    assumptions: dict[str, str] | None = None,
 ) -> str:
     return (
         report.rstrip()
         + "\n\n"
-        + benchmark_report_section(metrics, strategy_total_return, benchmark_display_name)
+        + benchmark_report_section(metrics, strategy_total_return, benchmark_display_name, assumptions)
         + "\n\n"
         + chart_artifacts_section()
     )

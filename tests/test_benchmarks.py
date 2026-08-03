@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from quant_lab.benchmarks import (  # noqa: E402
     append_benchmark_section,
+    benchmark_assumptions,
     build_benchmark,
     buy_and_hold_equity_curve,
     buy_and_hold_metrics,
@@ -103,7 +104,17 @@ class BenchmarkTests(unittest.TestCase):
 
         self.assertEqual(benchmark.name, "cash")
         self.assertEqual(benchmark.display_name, "Cash")
+        self.assertEqual(benchmark.assumptions["construction"], "flat_cash_curve")
         self.assertEqual(benchmark.metrics.total_return, 0.0)
+
+    def test_benchmark_assumptions_describe_buy_and_hold_economics(self) -> None:
+        assumptions = benchmark_assumptions("buy-and-hold")
+
+        self.assertEqual(assumptions["construction"], "fully_invested_first_close")
+        self.assertEqual(assumptions["price_column"], "close")
+        self.assertEqual(assumptions["entry_timing"], "first_input_close")
+        self.assertEqual(assumptions["cost_treatment"], "no_transaction_costs")
+        self.assertEqual(assumptions["dividend_treatment"], "embedded_when_input_prices_are_adjusted")
 
     def test_excess_total_return(self) -> None:
         self.assertAlmostEqual(excess_total_return(0.2, 0.15), 0.05)
@@ -123,11 +134,14 @@ class BenchmarkTests(unittest.TestCase):
             metrics,
             strategy_total_return=0.25,
             benchmark_display_name="Buy And Hold",
+            assumptions=benchmark_assumptions("buy-and-hold"),
         )
 
         self.assertIn("## Benchmark: Buy And Hold", report)
         self.assertIn("| Total Return | 50.00% |", report)
         self.assertIn("| Excess Total Return | -25.00% |", report)
+        self.assertIn("## Benchmark Assumptions", report)
+        self.assertIn("- Entry timing: `first_input_close`", report)
 
 
 if __name__ == "__main__":

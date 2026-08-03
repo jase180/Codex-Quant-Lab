@@ -22,7 +22,13 @@ from backtester_core import (
 )
 from metrics_reporting import save_drawdown_chart, save_equity_curve_chart
 
-from .benchmarks import append_benchmark_section, benchmark_summary_fields, build_benchmark, excess_total_return
+from .benchmarks import (
+    append_benchmark_section,
+    benchmark_assumptions,
+    benchmark_summary_fields,
+    build_benchmark,
+    excess_total_return,
+)
 from .data_quality import append_data_quality_section, save_data_quality_report
 from .research_index import append_research_index_record, build_run_index_record
 from .research_registry import link_run_metadata_path
@@ -77,6 +83,7 @@ def save_backtest_artifacts(
     benchmark_curve,
     benchmark_metrics,
     benchmark_display_name: str,
+    benchmark_assumption_fields: dict[str, str],
     data_quality,
     output_dir: str | Path,
     run_name: str,
@@ -90,6 +97,7 @@ def save_backtest_artifacts(
         benchmark_metrics,
         result.total_return,
         benchmark_display_name,
+        benchmark_assumption_fields,
     )
     report = append_data_quality_section(report, data_quality)
     report = append_research_warnings_section(report, research_warnings)
@@ -147,6 +155,7 @@ def run_single_backtest(
         artifact_paths=executed.artifact_paths,
         metrics=executed.metrics,
         benchmark_metrics=benchmark.metrics,
+        benchmark_assumption_fields=benchmark.assumptions,
         output_dir=output_dir,
         trade_count=len(executed.result.trades),
         strategy_total_return=executed.result.total_return,
@@ -209,6 +218,7 @@ def run_sweep_variant(
         artifact_paths=executed.artifact_paths,
         metrics=executed.metrics,
         benchmark_metrics=benchmark_metrics,
+        benchmark_assumption_fields=benchmark_assumptions(config.benchmark),
         output_dir=run_dir,
         trade_count=len(executed.result.trades),
         strategy_total_return=executed.result.total_return,
@@ -252,6 +262,7 @@ def execute_and_save_backtest(
         benchmark_curve=benchmark_curve,
         benchmark_metrics=benchmark_metrics,
         benchmark_display_name=benchmark_display_name,
+        benchmark_assumption_fields=benchmark_assumptions(config.benchmark),
         data_quality=data_quality,
         output_dir=output_dir,
         run_name=run_name,
@@ -277,6 +288,7 @@ def persist_run_record(
     artifact_paths: dict[str, str],
     metrics,
     benchmark_metrics,
+    benchmark_assumption_fields: dict[str, str],
     output_dir: str | Path,
     trade_count: int,
     strategy_total_return: float,
@@ -291,6 +303,7 @@ def persist_run_record(
         run_id=run_id,
         parameters=parameters,
         artifacts=artifact_paths,
+        benchmark_assumption_fields=benchmark_assumption_fields,
     )
     artifact_paths["metadata"] = save_run_metadata(metadata, output_dir)
     link_run_metadata_path(
@@ -397,6 +410,7 @@ def build_run_metadata(
     run_id: str | None,
     parameters: dict[str, str | int | float],
     artifacts: dict[str, str],
+    benchmark_assumption_fields: dict[str, str],
 ) -> RunMetadata:
     if "date" in data.columns and not data.empty:
         data_dates = pd.to_datetime(data["date"])
@@ -442,6 +456,12 @@ def build_run_metadata(
         benchmark=BenchmarkMetadata(
             name=config.benchmark,
             display_name=config.benchmark.replace("-", " ").title(),
+            construction=benchmark_assumption_fields["construction"],
+            price_column=benchmark_assumption_fields["price_column"],
+            entry_timing=benchmark_assumption_fields["entry_timing"],
+            mark_timing=benchmark_assumption_fields["mark_timing"],
+            cost_treatment=benchmark_assumption_fields["cost_treatment"],
+            dividend_treatment=benchmark_assumption_fields["dividend_treatment"],
         ),
         environment=EnvironmentMetadata(git_commit=current_git_commit()),
         experiment_id=config.experiment_id,

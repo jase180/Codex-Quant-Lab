@@ -98,6 +98,13 @@ class CliRunTests(unittest.TestCase):
             self.assertEqual(metadata["data"]["quality_severity"], "warning")
             self.assertEqual(metadata["sizing"]["initial_cash"], 1000.0)
             self.assertEqual(metadata["costs"]["slippage_bps"], 0.0)
+            self.assertEqual(metadata["benchmark"]["construction"], "fully_invested_first_close")
+            self.assertEqual(metadata["benchmark"]["entry_timing"], "first_input_close")
+            self.assertEqual(metadata["benchmark"]["cost_treatment"], "no_transaction_costs")
+            self.assertEqual(
+                metadata["benchmark"]["dividend_treatment"],
+                "embedded_when_input_prices_are_adjusted",
+            )
             self.assertIn("metrics", metadata["artifacts"])
             self.assertIn("data_quality", metadata["artifacts"])
             self.assertIn("research_warnings", metadata["artifacts"])
@@ -117,6 +124,8 @@ class CliRunTests(unittest.TestCase):
             report = (output_dir / "report.md").read_text(encoding="utf-8")
             self.assertIn("CLI Smoke", report)
             self.assertIn("## Benchmark: Buy And Hold", report)
+            self.assertIn("## Benchmark Assumptions", report)
+            self.assertIn("- Entry timing: `first_input_close`", report)
             self.assertIn("## Data Quality", report)
             self.assertIn("## Research Warnings", report)
             self.assertIn("equity_curve.png", report)

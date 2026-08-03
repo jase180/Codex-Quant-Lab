@@ -443,6 +443,8 @@ before running `decide-experiment`.
 For any promising result, answer:
 
 - Did the strategy beat buy-and-hold on the same dates?
+- Did you read the generated benchmark assumptions, especially first-close
+  entry, no benchmark costs, and adjusted-price dividend treatment?
 - Would the interpretation change against `--benchmark cash`?
 - Is the result driven by one or two trades?
 - Are costs and slippage included?

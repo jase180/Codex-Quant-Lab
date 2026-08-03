@@ -52,6 +52,12 @@ class CostMetadata:
 class BenchmarkMetadata:
     name: str
     display_name: str
+    construction: str
+    price_column: str
+    entry_timing: str
+    mark_timing: str
+    cost_treatment: str
+    dividend_treatment: str
 
 
 @dataclass(frozen=True)

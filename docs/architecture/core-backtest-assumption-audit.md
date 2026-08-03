@@ -186,6 +186,10 @@ Current behavior:
 - With the default fetched CSV, buy-and-hold uses the provider-adjusted close
   series. That makes it a total-return-style comparison to the same adjusted
   price series used by strategy signals and marks.
+- `report.md` includes a `Benchmark Assumptions` section beside the benchmark
+  metrics.
+- `run_metadata.json` stores the benchmark construction, price column, entry
+  timing, mark timing, cost treatment, and dividend treatment.
 
 Implication:
 
@@ -201,6 +205,8 @@ Current coverage:
 - Benchmark tests cover buy-and-hold and cash curve behavior.
 - Benchmark tests cover that buy-and-hold total return follows the input close
   series exactly, which is the adjusted close series for default fetched data.
+- Benchmark tests cover the machine-readable assumption fields and the
+  generated report assumption block.
 - Run and sweep tests check benchmark fields in reports, summaries, metadata,
   and research index rows.
 
