@@ -180,7 +180,7 @@ Goal: document one complete research loop.
 Suggested doc:
 
 ```text
-docs/research-workflow.md
+docs/runbooks/research-workflow.md
 ```
 
 It should show:
@@ -204,7 +204,7 @@ Acceptance criteria:
 2. `compare-runs --metadata`
 3. `list-runs --strategy-id`
 4. `list-runs --csv`
-5. `docs/research-workflow.md`
+5. `docs/runbooks/research-workflow.md`
 
 ## Design Principles
 

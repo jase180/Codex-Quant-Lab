@@ -3,7 +3,7 @@
 This project treats a local agent as an experiment advisor, not as the owner of
 the repo.
 
-For copyable commands, use [local-agent-runbook.md](local-agent-runbook.md).
+For copyable commands, use [local-agent-runbook.md](../runbooks/local-agent-runbook.md).
 
 The agent should read the current research state, recommend the next experiment
 or analysis step, explain why, and stop. It should not freely edit source code,

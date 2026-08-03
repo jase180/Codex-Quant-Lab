@@ -1,4 +1,4 @@
-# Project State For Review
+﻿# Project State For Review
 
 Inspected code/research state: `bca10d7e9b38dd809573dc4c16f0dcea046a531b`
 
@@ -20,7 +20,7 @@ The project can express this as a v1 JSON rule strategy that enters when SPY clo
 ### Required Steps
 
 1. Data preparation.
-   - Entry point: `quant-lab fetch`
+   - Entry point: `quant-lab fetch`.
    - Command:
      ```powershell
      .\.venv-win\Scripts\python.exe -m quant_lab.cli fetch `
@@ -31,7 +31,7 @@ The project can express this as a v1 JSON rule strategy that enters when SPY clo
      ```
    - Input: ticker/date range.
    - Output: `data/cache/SPY_2015-01-01_2025-12-31.csv` plus `data/cache/SPY_2015-01-01_2025-12-31.provenance.json`.
-   - Read next: `quant-lab show-data-source --data data\cache\SPY_2015-01-01_2025-12-31.csv`.
+   - Read next: optional `quant-lab show-data-source --data data\cache\SPY_2015-01-01_2025-12-31.csv`.
 
 2. Strategy definition.
    - Entry point: `quant-lab new-strategy`.
@@ -45,91 +45,39 @@ The project can express this as a v1 JSON rule strategy that enters when SPY clo
        --name "SPY 200-day SMA long/cash" `
        --out artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json
      ```
-   - Input: template name, symbol, length, strategy id/name, and output path.
-   - Output: a strict strategy spec consumed by `src/quant_lab/strategy_schema.py` and `src/quant_lab/rule_based_strategy.py`.
-   - Read next: the strategy JSON and `docs/strategy-schema.md`.
+   - Input: template name, symbol, SMA length, strategy id/name, and output path.
+   - Output: a strict strategy JSON consumed by `src/quant_lab/strategy_schema.py` and `src/quant_lab/rule_based_strategy.py`.
+   - Read next: the generated strategy JSON and `docs/architecture/strategy-schema.md`.
 
-3. Research plan.
-   - Entry point: `quant-lab research-plan init`
+3. Default experiment workflow.
+   - Entry point: `quant-lab experiment run-default`.
    - Command:
      ```powershell
-     .\.venv-win\Scripts\python.exe -m quant_lab.cli research-plan init `
-       --title "SPY 200-day long/cash trend" `
-       --hypothesis "A daily SPY close-above-200-day-SMA long/cash rule may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." `
+     .\.venv-win\Scripts\python.exe -m quant_lab.cli experiment run-default `
+       --title "SPY 200-day SMA long/cash drawdown test" `
+       --hypothesis "A daily SPY 200-day moving-average long/cash strategy may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." `
        --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
        --data data\cache\SPY_2015-01-01_2025-12-31.csv `
        --symbol SPY `
        --cost-preset retail-liquid `
-       --out artifacts\research\spy_200d_long_cash
+       --param sma_200.inputs.length=150,200,250 `
+       --train-end 2020-12-31 `
+       --test-start 2021-01-01 `
+       --date-window 2015-01-02,2019-12-31 `
+       --date-window 2020-01-01,2025-12-30 `
+       --out artifacts\research\spy_200d_long_cash_default
      ```
-   - Input: hypothesis, strategy path, data path, costs, benchmark default.
-   - Output: `research_plan.json`, `research_plan.md`, `experiments.jsonl`, and `research_index.jsonl`.
-   - Read next: the printed `next_command`, then `research_plan.md`.
+   - Input: hypothesis, strategy JSON, OHLCV CSV, cost preset, benchmark default, one controlled parameter neighborhood, train/test split, and date windows.
+   - Output: baseline run, trust report, sweep, train/test validation, cost/date/benchmark sensitivity, `evidence_summary.md`, `experiment_conclusion.md/json`, `default_workflow_summary.md`, and a conservative decision.
+   - Read next: `artifacts/research/spy_200d_long_cash_default/experiment_conclusion.md`.
 
-4. Baseline run.
-   - Entry point: `quant-lab run`, usually copied from `research-plan init` or `research-plan next`.
-   - Command:
-     ```powershell
-     .\.venv-win\Scripts\python.exe -m quant_lab.cli run `
-       --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-       --data data\cache\SPY_2015-01-01_2025-12-31.csv `
-       --out artifacts\research\spy_200d_long_cash\baseline `
-       --initial-cash 100000 `
-       --sizing percent-equity `
-       --allocation 1.0 `
-       --benchmark buy-and-hold `
-       --cost-preset retail-liquid `
-       --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-       --experiment-id EXP-001 `
-       --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl `
-       --note "Baseline for SPY 200-day long/cash trend hypothesis."
-     ```
-   - Input: strategy JSON, OHLCV CSV, cost model, benchmark, experiment/index paths.
-   - Output: `report.md`, `metrics.json`, `equity_curve.csv`, `trades.csv`, charts, `data_quality.json`, `research_warnings.json`, `run_metadata.json`, appended research index row, linked experiment record.
-   - Read next: `artifacts/research/spy_200d_long_cash/baseline/report.md`, then `run_metadata.json`.
+4. Supporting inspection.
+   - Entry points: `show-run`, `compare-runs`, `summarize-run-trust`, `session refresh`, and direct artifact reads.
+   - Input: generated metadata paths and session/conclusion artifacts.
+   - Output: no new core evidence unless a report command is explicitly run.
+   - Read next: supporting files only when the conclusion raises a question, especially `baseline/report.md`, `baseline/run_metadata.json`, `sweep_001/research.md`, and robustness reports.
 
-5. Trust check.
-   - Entry point: `quant-lab summarize-run-trust`
-   - Command:
-     ```powershell
-     .\.venv-win\Scripts\python.exe -m quant_lab.cli summarize-run-trust `
-       --metadata artifacts\research\spy_200d_long_cash\baseline\run_metadata.json
-     ```
-   - Input: baseline `run_metadata.json`.
-   - Output: `baseline/run_trust_report.md`.
-   - Read next: `run_trust_report.md`.
-
-6. Workflow resume.
-   - Entry point: `quant-lab session refresh`
-   - Command:
-     ```powershell
-     .\.venv-win\Scripts\python.exe -m quant_lab.cli session refresh `
-       --plan artifacts\research\spy_200d_long_cash\research_plan.json
-     ```
-   - Input: research plan and known artifacts.
-   - Output: `session_manifest.json` and `session_manifest.md`.
-   - Read next: `session_manifest.md`.
-
-7. Experiment-level conclusion.
-   - Entry points: `quant-lab summarize-experiment`, then `quant-lab conclude-experiment`.
-   - Commands:
-     ```powershell
-     .\.venv-win\Scripts\python.exe -m quant_lab.cli summarize-experiment `
-       --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-       --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl `
-       --experiment-id EXP-001 `
-       --out artifacts\research\spy_200d_long_cash\evidence_summary.md
-
-     .\.venv-win\Scripts\python.exe -m quant_lab.cli conclude-experiment `
-       --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-       --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl `
-       --experiment-id EXP-001 `
-       --out artifacts\research\spy_200d_long_cash `
-       --force
-     ```
-   - Input: experiment registry and research index rows.
-   - Output: `evidence_summary.md`, `experiment_conclusion.md`, `experiment_conclusion.json`, `agent_context.md`.
-   - Read next: `experiment_conclusion.md` as the full-experiment source of truth.
+The old manual chain still exists, but it is now the advanced path. The first walkthrough should not require users to manually operate `research-plan init`, `run`, `summarize-run-trust`, `summarize-experiment`, and `conclude-experiment` unless they need step-by-step control.
 
 ### Optional Validation Steps
 
@@ -159,7 +107,7 @@ The project can express this as a v1 JSON rule strategy that enters when SPY clo
 
 ### Strategy Definition
 
-- Source files: `src/quant_lab/strategy_schema.py`, `src/quant_lab/strategy_templates.py`, `data/strategies/*.json`, `docs/strategy-schema.md`.
+- Source files: `src/quant_lab/strategy_schema.py`, `src/quant_lab/strategy_templates.py`, `data/strategies/*.json`, `docs/architecture/strategy-schema.md`.
 - Owns: strict v1 JSON parsing, allowed indicators/operators/value references, starter templates.
 - Information flow: JSON is parsed into `StrategySpec`, validated for unknown fields and indicator references, then passed to `build_rule_based_strategy()`.
 - Dependents: single-run backtests, sweeps, robustness checks, research plans, smoke tests.
@@ -463,13 +411,13 @@ The default single-strategy workflow can run as one command through `experiment 
 
 - Strategy-layer risk controls were added. `risk_controls` now supports a strict `volatility_target` control in v1 strategy JSON, and `data/strategies/sma_long_cash_vol_target.json` records the first SPY example. User problem solved: test risk controls in the backtester/strategy layer before asking an agent to invent them. Complexity impact: adds a real strategy feature, but the schema stays narrow and deterministic.
 - Normal single runs now save `strategy.json` beside the rest of the run artifacts and record it in `run_metadata.json`. User problem solved: one run is now self-contained enough to audit the exact strategy payload later. Complexity impact: net simplification for reproducibility.
-- A real SPY volatility-target drawdown-control experiment was run and documented in `docs/spy-vol-target-drawdown-control-experiment.md`. User problem solved: the new risk-control feature was tested end to end instead of only proven by unit tests. Complexity impact: reduces research ambiguity by rejecting this exact 12% vol-target branch.
+- A real SPY volatility-target drawdown-control experiment was run and documented in `docs/experiments/spy-vol-target-drawdown-control-experiment.md`. User problem solved: the new risk-control feature was tested end to end instead of only proven by unit tests. Complexity impact: reduces research ambiguity by rejecting this exact 12% vol-target branch.
 - Local-agent advisor path was added: `agent context`, `agent suggest`, `agent cycle --dry-run`, and `agent validate-recommendation` now create strict context/recommendation/cycle artifacts. User problem solved: let a local model recommend the next experiment step without taking over execution. Complexity impact: useful but definitely another layer; dry-run boundary prevents it from becoming dangerous.
 - OpenAI-compatible model provider support was added for Ollama-like endpoints. User problem solved: integrate a local model such as `llama3.1:8b`. Complexity impact: adds provider/prompt/schema validation code, justified if local agent iteration is a real goal.
 - Model recommendation validation was hardened, including fallback to deterministic advice on invalid model output and command/action mismatch rejection. User problem solved: reduce bad local-model suggestions. Complexity impact: reduces operational risk more than it adds complexity.
 - Complete sessions now short-circuit to deterministic `stop` before model calls. User problem solved: avoid wasting model calls and avoid re-opening completed work. Complexity impact: simplifies behavior for done sessions.
 - `doctor` and `smoke-test` were added, then `smoke-test --agent-cycle` was added. User problem solved: prove the environment and workflow wiring without internet. Complexity impact: net simplification for onboarding; smoke test is beginning to own orchestration, but current refactor keeps it manageable.
-- Runbook docs were added/organized: `docs/runbooks.md`, `docs/local-agent-runbook.md`, and README links. User problem solved: a future user/Codex session can find commands without reading the whole README. Complexity impact: reduces human complexity, adds some doc duplication that must stay synchronized.
+- Runbook docs were added/organized: `docs/runbooks/runbooks.md`, `docs/runbooks/local-agent-runbook.md`, and README links. User problem solved: a future user/Codex session can find commands without reading the whole README. Complexity impact: reduces human complexity, adds some doc duplication that must stay synchronized.
 - Recent cleanup refactored CLI agent summary printing and isolated optional smoke-test agent verification. User problem solved: keep fast-moving agent code maintainable. Complexity impact: small reduction.
 
 ## 8. Current Strengths
@@ -498,7 +446,7 @@ This walkthrough uses only current capabilities.
      --symbol SPY `
      --start 2015-01-01 `
      --end 2025-12-31 `
-     --out data\cache
+     --out data/cache
    ```
    Creates normalized adjusted daily OHLCV CSV and provenance sidecar.
 
@@ -520,7 +468,7 @@ This walkthrough uses only current capabilities.
      --title "SPY 200-day long/cash trend" `
      --hypothesis "A daily SPY close-above-200-day-SMA long/cash rule may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." `
      --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data\cache\SPY_2015-01-01_2025-12-31.csv `
+     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
      --symbol SPY `
      --cost-preset retail-liquid `
      --out artifacts\research\spy_200d_long_cash
@@ -530,7 +478,7 @@ This walkthrough uses only current capabilities.
    ```powershell
    .\.venv-win\Scripts\python.exe -m quant_lab.cli run `
      --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data\cache\SPY_2015-01-01_2025-12-31.csv `
+     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
      --out artifacts\research\spy_200d_long_cash\baseline `
      --initial-cash 100000 `
      --sizing percent-equity `
@@ -555,7 +503,7 @@ This walkthrough uses only current capabilities.
    ```powershell
    .\.venv-win\Scripts\python.exe -m quant_lab.cli robustness cost-sensitivity `
      --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data\cache\SPY_2015-01-01_2025-12-31.csv `
+     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
      --out artifacts\research\spy_200d_long_cash\robustness\costs `
      --sizing percent-equity `
      --allocation 1.0 `
@@ -573,7 +521,7 @@ This walkthrough uses only current capabilities.
    ```powershell
    .\.venv-win\Scripts\python.exe -m quant_lab.cli robustness date-sensitivity `
      --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data\cache\SPY_2015-01-01_2025-12-31.csv `
+     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
      --out artifacts\research\spy_200d_long_cash\robustness\dates `
      --window 2015-01-01,2019-12-31 `
      --window 2020-01-01,2025-12-31 `
@@ -591,7 +539,7 @@ This walkthrough uses only current capabilities.
    ```powershell
    .\.venv-win\Scripts\python.exe -m quant_lab.cli sweep `
      --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data\cache\SPY_2015-01-01_2025-12-31.csv `
+     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
      --out artifacts\research\spy_200d_long_cash\train_test_001 `
      --param sma_200.inputs.length=150,175,200,225,250 `
      --train-end 2019-12-31 `
@@ -611,7 +559,7 @@ This walkthrough uses only current capabilities.
    ```powershell
    .\.venv-win\Scripts\python.exe -m quant_lab.cli sweep `
      --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data\cache\SPY_2015-01-01_2025-12-31.csv `
+     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
      --out artifacts\research\spy_200d_long_cash\walk_forward_001 `
      --param sma_200.inputs.length=150,175,200,225,250 `
      --walk-forward-window 2015-01-01,2017-12-31,2018-01-01,2019-12-31 `
@@ -696,3 +644,4 @@ Do not infer market correctness from the test count. The suite strongly checks d
    - A partial-exposure SPY trend experiment, because the latest SMA long/cash and SMA plus 12% volatility-target tests both reduced drawdown but failed return-retention thresholds.
 10. Is the project ready for further feature development, or should development pause for consolidation?
     - Pause briefly for consolidation. The core is useful; the next work should simplify the default workflow and audit corporate-action assumptions before adding more research features.
+

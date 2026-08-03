@@ -5,7 +5,7 @@ plain: each milestone should leave the project more useful for actual research,
 not just more complex.
 
 For the longer roadmap from the current working proof of concept to a more
-dependable small research lab, see [roadmap-to-ready.md](roadmap-to-ready.md).
+dependable small research lab, see [roadmap-to-ready.md](../architecture/roadmap-to-ready.md).
 
 ## Current Status
 
@@ -81,7 +81,7 @@ Delivered:
 - `quant-lab compare-runs --metadata` compares two or more runs in one table.
 - `quant-lab list-runs` supports strategy id filtering, run-type filtering, and
   CSV output.
-- [research-workflow.md](research-workflow.md) documents the full research loop.
+- [research-workflow.md](../runbooks/research-workflow.md) documents the full research loop.
 
 Exit criteria:
 
@@ -199,7 +199,7 @@ Delivered:
 - Portfolio metadata with per-symbol data fingerprints.
 - Portfolio benchmark comparisons on the same aligned date range.
 - `quant-lab portfolio-run`.
-- [portfolio-workflow.md](portfolio-workflow.md).
+- [portfolio-workflow.md](../portfolio/portfolio-workflow.md).
 
 Exit criteria:
 
@@ -396,7 +396,7 @@ Planned work:
 - `quant-lab smoke-test` for an offline end-to-end wiring check.
   Delivered.
 - A strict agent context contract that starts from `session_manifest.json`.
-  Delivered with `docs/local-agent.md` and `quant-lab agent context`.
+  Delivered with `docs/architecture/local-agent.md` and `quant-lab agent context`.
 - A strict `agent_recommendation.v1` output schema.
   Delivered with `quant-lab agent validate-recommendation`.
 - Deterministic `quant-lab agent suggest` before model integration.
@@ -489,7 +489,7 @@ Planned work:
 Status: complete.
 
 Detailed note:
-[maintenance-cli-workflow-organization.md](maintenance-cli-workflow-organization.md)
+[maintenance-cli-workflow-organization.md](../architecture/maintenance-cli-workflow-organization.md)
 
 Goal: make the codebase easier to extend before starting larger product work.
 

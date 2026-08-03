@@ -168,7 +168,7 @@ Goal: make the guided workflow easy to learn.
 Acceptance criteria:
 
 - README lists the guided workflow command.
-- `docs/research-workflow.md` explains when to use the guided workflow versus
+- `docs/runbooks/research-workflow.md` explains when to use the guided workflow versus
   manual commands.
 - The docs keep the skeptical framing: the workflow organizes research; it does
   not prove a trading edge.

@@ -219,27 +219,43 @@ After the smoke path works, fetch real market data:
   --out data\cache
 ```
 
-Then create a real guided plan:
+Then create a real strategy and run the default experiment workflow:
 
 ```powershell
-.\.venv-win\Scripts\python.exe -m quant_lab.cli research-plan init `
-  --title "QQQ SMA crossover trust check" `
-  --hypothesis "A daily SMA crossover may reduce drawdown versus buy-and-hold." `
-  --strategy data\strategies\sma_crossover.json `
+.\.venv-win\Scripts\python.exe -m quant_lab.cli new-strategy `
+  --template sma-long-cash `
+  --symbol QQQ `
+  --length 200 `
+  --strategy-id qqq_sma_200_long_cash `
+  --name "QQQ 200-day SMA long/cash" `
+  --out artifacts\research\qqq_sma_200_long_cash\strategy.json
+```
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli experiment run-default `
+  --title "QQQ 200-day SMA long/cash trust check" `
+  --hypothesis "A daily QQQ 200-day SMA long/cash rule may reduce drawdown versus QQQ buy-and-hold after realistic costs." `
+  --strategy artifacts\research\qqq_sma_200_long_cash\strategy.json `
   --data data\cache\QQQ_2015-01-01_2025-12-31.csv `
   --symbol QQQ `
   --cost-preset retail-liquid `
-  --out artifacts\research\qqq_sma_trust
+  --param sma_200.inputs.length=150,200,250 `
+  --train-end 2020-12-31 `
+  --test-start 2021-01-01 `
+  --date-window 2015-01-02,2019-12-31 `
+  --date-window 2020-01-01,2025-12-30 `
+  --out artifacts\research\qqq_sma_200_long_cash
 ```
 
-From there, run:
+Read first:
 
-```powershell
-.\.venv-win\Scripts\python.exe -m quant_lab.cli research-plan next `
-  --plan artifacts\research\qqq_sma_trust\research_plan.json
+```text
+artifacts/research/qqq_sma_200_long_cash/experiment_conclusion.md
 ```
 
-and follow the recommended command one step at a time.
+The lower-level `research-plan`, `run`, `sweep`, `summarize-run-trust`, and
+`conclude-experiment` commands still exist for advanced/manual work, but
+`experiment run-default` is the normal front door.
 
 ## Refactor Gate
 

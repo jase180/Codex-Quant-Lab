@@ -95,13 +95,13 @@ artifacts/research/<experiment>/session_manifest.json
 artifacts/research/<experiment>/experiment_conclusion.json
 ```
 
-For command-oriented docs, start with the [runbook index](docs/runbooks.md).
+For command-oriented docs, start with the [runbook index](docs/runbooks/runbooks.md).
 It points to setup, the default research workflow, local-agent dry runs, and
 portfolio workflows.
 
-For the full walkthrough, see [docs/research-workflow.md](docs/research-workflow.md).
+For the full walkthrough, see [docs/runbooks/research-workflow.md](docs/runbooks/research-workflow.md).
 For a copyable skeptical example, see
-[docs/trustworthy-example-workflow.md](docs/trustworthy-example-workflow.md).
+[docs/runbooks/trustworthy-example-workflow.md](docs/runbooks/trustworthy-example-workflow.md).
 
 ## Report Hierarchy
 
@@ -168,13 +168,11 @@ data/
   strategies/                   Example strategy JSON files.
 docs/
   README.md                     Documentation index by task and topic.
-  runbooks.md                   Command-oriented runbook index.
-  getting-running.md            Install, smoke-test, and first real run guide.
-  research-workflow.md          End-to-end research workflow.
-  strategy-schema.md            Strategy schema notes.
-  roadmap-to-ready.md           Long-range roadmap to a more mature lab.
-  spy-*.md                      Tracked SPY experiment handoffs.
-  milestone-*.md                Historical milestone plans and reviews.
+  runbooks/                     Setup, default workflow, and command runbooks.
+  experiments/                  Tracked SPY experiment and audit handoffs.
+  architecture/                 Strategy schema, audits, agent design, roadmap.
+  milestones/                   Historical milestone plans and reviews.
+  portfolio/                    Portfolio-specific workflow docs.
 src/
   backtester_core/              Backtest engine, portfolio, execution, data validation.
   quant_lab/                    Strategy schema, executable rules, CLI, data fetch.
@@ -193,7 +191,7 @@ Module-level notes live in [src/backtester_core/README.md](src/backtester_core/R
 
 Python 3.10+ is required. In this checkout, prefer WSL for Python commands.
 For the most practical setup path, including Windows PowerShell commands and an
-offline smoke workflow, see [docs/getting-running.md](docs/getting-running.md).
+offline smoke workflow, see [docs/runbooks/getting-running.md](docs/runbooks/getting-running.md).
 
 ```bash
 python3 -m venv .venv
@@ -267,10 +265,10 @@ The v1 schema supports:
 - comparison operators like `gt`, `gte`, `lt`, `lte`, `eq`
 - crossover operators like `crosses_above` and `crosses_below`
 
-Schema details are in [docs/strategy-schema.md](docs/strategy-schema.md).
+Schema details are in [docs/architecture/strategy-schema.md](docs/architecture/strategy-schema.md).
 
 For one copyable skeptical research loop, see
-[docs/trustworthy-example-workflow.md](docs/trustworthy-example-workflow.md).
+[docs/runbooks/trustworthy-example-workflow.md](docs/runbooks/trustworthy-example-workflow.md).
 
 ## CLI Usage
 
@@ -720,7 +718,7 @@ The portfolio command loads every symbol CSV from the portfolio spec, aligns
 dates by intersection, rebalances static target weights, compares against the
 configured buy-and-hold benchmark, writes portfolio artifacts, and appends a
 `portfolio_run` row to the research index. See
-[docs/portfolio-workflow.md](docs/portfolio-workflow.md).
+[docs/portfolio/portfolio-workflow.md](docs/portfolio/portfolio-workflow.md).
 
 Inspect a saved portfolio run:
 

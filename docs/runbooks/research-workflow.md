@@ -13,18 +13,117 @@ For a copyable command sequence with the trust checks included, see
 Example:
 
 ```text
-Does a daily SMA crossover on QQQ improve risk-adjusted returns compared with
-buy-and-hold over the same data range?
+Does a daily SPY 200-day SMA long/cash rule improve drawdown-adjusted
+performance versus SPY buy-and-hold after realistic costs?
 ```
 
-Write the hypothesis before running the sweep:
+Write the hypothesis and pass/fail idea before running anything:
 
 ```text
-Hypothesis: faster moving-average windows may reduce drawdown, but may also
-underperform buy-and-hold if they exit during strong trends.
+Hypothesis: a daily SPY close-above-200-day-SMA long/cash rule may reduce
+max drawdown versus buy-and-hold while retaining enough total return to be
+useful after realistic costs.
 ```
 
-Recommended guided start:
+## 2. Fetch Or Choose Data
+
+Fetch fresh data:
+
+```bash
+quant-lab fetch \
+  --symbol SPY \
+  --start 2015-01-01 \
+  --end 2025-12-31 \
+  --out data/cache
+```
+
+Or use an existing cached file:
+
+```text
+data/cache/SPY_2015-01-01_2025-12-31.csv
+```
+
+Market data is research input, not ground truth. Provider adjustments, missing
+sessions, outages, and corporate actions can change conclusions.
+
+## 3. Create The Strategy
+
+Generate the basic SPY SMA long/cash strategy directly:
+
+```bash
+quant-lab new-strategy \
+  --template sma-long-cash \
+  --symbol SPY \
+  --length 200 \
+  --strategy-id spy_sma_200_long_cash \
+  --name "SPY 200-day SMA long/cash" \
+  --out artifacts/research/spy_200_sma_long_cash/spy_sma_200_long_cash.json
+```
+
+Read the generated JSON before running it. The strategy should have one
+`sma_200` indicator, enter when close is above that SMA, and exit when close is
+below it.
+
+## 4. Run The Default Experiment Workflow
+
+For normal one-strategy research, use `experiment run-default` first. It is the
+front door.
+
+```bash
+quant-lab experiment run-default \
+  --title "SPY 200-day SMA long/cash drawdown test" \
+  --hypothesis "A daily SPY 200-day moving-average long/cash strategy may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." \
+  --strategy artifacts/research/spy_200_sma_long_cash/spy_sma_200_long_cash.json \
+  --data data/cache/SPY_2015-01-01_2025-12-31.csv \
+  --symbol SPY \
+  --cost-preset retail-liquid \
+  --param sma_200.inputs.length=150,200,250 \
+  --train-end 2020-12-31 \
+  --test-start 2021-01-01 \
+  --date-window 2015-01-02,2019-12-31 \
+  --date-window 2020-01-01,2025-12-30 \
+  --out artifacts/research/spy_200_sma_long_cash_default
+```
+
+This one command runs:
+
+```text
+baseline run
+run trust report
+parameter sweep
+train/test validation
+cost sensitivity
+date sensitivity
+benchmark sensitivity
+evidence summary
+experiment conclusion
+conservative decision
+```
+
+Read this first:
+
+```text
+artifacts/research/spy_200_sma_long_cash_default/experiment_conclusion.md
+```
+
+Then inspect supporting files only as needed:
+
+```text
+default_workflow_summary.md
+baseline/report.md
+baseline/run_metadata.json
+sweep_001/research.md
+train_test_001/research.md
+cost_sensitivity_001/cost_sensitivity_report.md
+date_sensitivity_001/date_sensitivity_report.md
+```
+
+## Advanced Manual Workflow
+
+Use the lower-level commands when you need to inspect or customize one step at
+a time. They are the maintenance entrance, not the normal front door.
+
+### Create A Guided Plan
 
 ```bash
 quant-lab research-plan init \
@@ -39,69 +138,14 @@ quant-lab research-plan init \
   --out artifacts/research/sma_qqq_2015_2025
 ```
 
-This creates:
-
-```text
-artifacts/research/sma_qqq_2015_2025/research_plan.json
-artifacts/research/sma_qqq_2015_2025/research_plan.md
-```
-
-It also creates or references an experiment id and prints the next baseline
-`quant-lab run` command. Copy that command when you are ready to run the
-baseline. The guided plan organizes the workflow, but it does not hide or
-auto-run the underlying commands.
-
-After each major step, ask the plan for the next recommended command:
+Ask the plan for the next recommended command:
 
 ```bash
 quant-lab research-plan next \
   --plan artifacts/research/sma_qqq_2015_2025/research_plan.json
 ```
 
-The recommendation is intentionally conservative. It looks at linked run index
-rows and moves from baseline to sweep, then train/test validation, evidence
-summary, robustness checks, and a canonical conclusion before the final
-decision draft. It prints placeholders for sweep parameters and split dates
-when those still require human judgment.
-
-Manual alternative: create an experiment record directly for the hypothesis:
-
-```bash
-quant-lab new-experiment \
-  --title "QQQ SMA crossover research" \
-  --hypothesis "Faster moving-average windows may reduce drawdown, but may also underperform buy-and-hold during strong trends." \
-  --tag QQQ \
-  --tag sma \
-  --strategy data/strategies/sma_crossover.json \
-  --data data/cache/QQQ_2015-01-01_2025-12-31.csv
-```
-
-Both paths produce or use an id such as `EXP-001`. Use that id on related `run`
-and `sweep` commands so generated `run_metadata.json` files are linked back to
-the experiment automatically.
-
-## 2. Fetch Or Choose Data
-
-Fetch fresh data:
-
-```bash
-quant-lab fetch \
-  --symbol QQQ \
-  --start 2015-01-01 \
-  --end 2025-12-31 \
-  --out data/cache
-```
-
-Or use an existing cached file:
-
-```text
-data/cache/QQQ_2015-01-01_2025-12-31.csv
-```
-
-Market data is research input, not ground truth. Provider adjustments, missing
-sessions, outages, and corporate actions can change conclusions.
-
-## 3. Run A Baseline
+### Run A Baseline
 
 Run the unmodified strategy before changing parameters:
 
@@ -154,7 +198,7 @@ fingerprint and summarizes source/provenance plus data-quality warnings. This
 does not prove the strategy works; it only makes the input data easier to
 explain before more runs depend on it.
 
-## 4. Run A Controlled Sweep
+### Run A Controlled Sweep
 
 Change a small set of parameters, and keep the data, sizing, commission, and
 slippage assumptions the same as the baseline:
@@ -187,7 +231,7 @@ After the sweep, read `research.md` before picking a winner. It includes a
 top-runs table and a parameter-stability heuristic. `supported` is better than
 `isolated`, but none of these labels prove an edge.
 
-## 5. Find Candidate Runs
+### Find Candidate Runs
 
 List the best QQQ runs by Sharpe ratio:
 

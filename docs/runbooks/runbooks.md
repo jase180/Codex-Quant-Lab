@@ -5,7 +5,7 @@ you want to do, but not which document has the commands.
 
 ## Start Here
 
-- [Documentation Index](README.md): docs organized by task, current research
+- [Documentation Index](../README.md): docs organized by task, current research
   state, local-agent work, milestones, and reference material.
 - [Getting Running](getting-running.md): install checks, dependency health,
   `doctor`, and the offline smoke test.
@@ -16,7 +16,7 @@ you want to do, but not which document has the commands.
 
 ## Local-Agent Advisor
 
-- [Local Agent](local-agent.md): the advisor contract, boundaries, context
+- [Local Agent](../architecture/local-agent.md): the advisor contract, boundaries, context
   bundle, recommendation schema, and deferred execution rule.
 - [Local Agent Runbook](local-agent-runbook.md): copyable commands for
   deterministic and Ollama-backed dry-run recommendations.
@@ -29,26 +29,26 @@ Current boundary:
 
 ## Portfolio Research
 
-- [Portfolio Workflow](portfolio-workflow.md): static-weight portfolio
+- [Portfolio Workflow](../portfolio/portfolio-workflow.md): static-weight portfolio
   definitions, candidate planning, and multi-symbol run artifacts.
 
 ## Planning And Status
 
-- [Milestones](milestones.md): the full project milestone log.
-- [Roadmap To Ready](roadmap-to-ready.md): what remains before the lab feels
+- [Milestones](../milestones/milestones.md): the full project milestone log.
+- [Roadmap To Ready](../architecture/roadmap-to-ready.md): what remains before the lab feels
   mature instead of merely useful.
-- [Milestone 17 Local-Agent Advisor](milestone-17-local-agent-advisor.md):
+- [Milestone 17 Local-Agent Advisor](../milestones/milestone-17-local-agent-advisor.md):
   current local-agent advisor plan.
 
 ## Current SPY Research Handoffs
 
-- [SPY Long/Cash Trend Experiment](spy-long-cash-trend-experiment.md):
+- [SPY Long/Cash Trend Experiment](../experiments/spy-long-cash-trend-experiment.md):
   original 200-day SMA long/cash result.
-- [SPY Drawdown-Control Next Experiment](spy-drawdown-control-next-experiment.md):
+- [SPY Drawdown-Control Next Experiment](../experiments/spy-drawdown-control-next-experiment.md):
   revised drawdown-control test and rejection.
-- [SPY Volatility-Target Drawdown-Control Experiment](spy-vol-target-drawdown-control-experiment.md):
+- [SPY Volatility-Target Drawdown-Control Experiment](../experiments/spy-vol-target-drawdown-control-experiment.md):
   latest risk-control test; drawdown improved, return retention failed.
-- [SPY 2024 Adjusted-Price Audit](spy-2024-adjusted-price-audit.md):
+- [SPY 2024 Adjusted-Price Audit](../experiments/spy-2024-adjusted-price-audit.md):
   provider-internal audit of 2024 SPY dividend rows and adjusted close behavior.
 
 ## Useful First Commands

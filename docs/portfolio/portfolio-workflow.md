@@ -62,7 +62,7 @@ provided.
 
 Start with:
 
-[data/portfolios/qqq_spy_static_60_40.json](../data/portfolios/qqq_spy_static_60_40.json)
+[data/portfolios/qqq_spy_static_60_40.json](../../data/portfolios/qqq_spy_static_60_40.json)
 
 The important fields are:
 

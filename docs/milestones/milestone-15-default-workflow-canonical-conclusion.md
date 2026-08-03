@@ -113,7 +113,7 @@ agent_instructions
 ```
 
 Detailed schema and Markdown layout:
-[experiment-conclusion-schema.md](experiment-conclusion-schema.md)
+[../architecture/experiment-conclusion-schema.md](../architecture/experiment-conclusion-schema.md)
 
 The first implementation should produce these fields deterministically from the
 experiment registry and research index. A local agent can later edit prose or
@@ -241,7 +241,7 @@ Acceptance criteria:
 - Do not hide uncertainty; name it in the default workflow.
 
 Audit doc:
-[core-backtest-assumption-audit.md](core-backtest-assumption-audit.md)
+[../architecture/core-backtest-assumption-audit.md](../architecture/core-backtest-assumption-audit.md)
 
 ### 6. One Complete Real Experiment
 
@@ -273,7 +273,7 @@ Acceptance criteria:
 - The example becomes the recommended walkthrough for new users.
 
 Experiment note:
-[spy-long-cash-trend-experiment.md](spy-long-cash-trend-experiment.md)
+[../experiments/spy-long-cash-trend-experiment.md](../experiments/spy-long-cash-trend-experiment.md)
 
 ### 7. Session Manifest, After The Conclusion Shape Is Clear
 

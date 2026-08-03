@@ -274,7 +274,7 @@ Delivered implementation:
 - `quant-lab portfolio-run` executes the portfolio spec, saves artifacts,
   appends a `portfolio_run` row to the research index, and links the metadata
   path to an experiment when `--experiment-id` is provided.
-- [portfolio-workflow.md](portfolio-workflow.md) documents fetch, portfolio
+- [../portfolio/portfolio-workflow.md](../portfolio/portfolio-workflow.md) documents fetch, portfolio
   spec review, run, output inspection, benchmark comparison, and assumptions.
 - README links the portfolio workflow and includes a copyable `portfolio-run`
   command.

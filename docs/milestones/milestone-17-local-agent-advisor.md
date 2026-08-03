@@ -78,7 +78,7 @@ Goal: define exactly what the agent reads.
 
 Planned work:
 
-- Document the required context files in `docs/local-agent.md`. Delivered.
+- Document the required context files in `docs/architecture/local-agent.md`. Delivered.
 - Build a context assembler that starts from `session_manifest.json`. Delivered
   with `quant-lab agent context`.
 - Include only the current plan, current recommendation, latest relevant
