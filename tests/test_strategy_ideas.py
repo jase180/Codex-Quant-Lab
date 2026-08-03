@@ -134,6 +134,39 @@ class StrategyIdeasTest(unittest.TestCase):
         self.assertIn("## Draft Experiment Config", output)
         self.assertIn("No executable strategy JSON was created", output)
 
+    def test_cli_ideas_suggest_prints_clean_message_when_catalog_is_exhausted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            catalog_dir = Path(tmpdir) / "catalog"
+            conclusions_dir = Path(tmpdir) / "research"
+            catalog_dir.mkdir()
+            (conclusions_dir / "exp").mkdir(parents=True)
+            _write_json(catalog_dir / "mean.json", _catalog_entry("mean_reversion", variant_id="rsi_pullback"))
+            _write_json(
+                conclusions_dir / "exp" / "experiment_conclusion.json",
+                {
+                    "schema_version": "experiment_conclusion.v1",
+                    "experiment": {"hypothesis": "mean reversion rsi pullback failed"},
+                    "do_not_repeat": ["Do not rerun the same strategy unchanged."],
+                    "next_research_prompt": {"constraints": []},
+                },
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "ideas",
+                        "suggest",
+                        "--catalog-dir",
+                        str(catalog_dir),
+                        "--conclusions-dir",
+                        str(conclusions_dir),
+                    ]
+                )
+
+        self.assertEqual(1, exit_code)
+        self.assertIn("No strategy idea suggestion", stdout.getvalue())
+        self.assertNotIn("Traceback", stdout.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
