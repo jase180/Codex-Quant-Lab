@@ -53,6 +53,9 @@ Current boundary:
 - [SPY 2024 Adjusted-Price Audit](../experiments/spy-2024-adjusted-price-audit.md):
   audit of 2024 SPY adjusted OHLC behavior and manually supplied dividend
   amounts.
+- [SPY Benchmark Entry-Timing Audit](../experiments/spy-benchmark-entry-timing-audit.md):
+  audit showing the SPY long/cash rejection survives a next-open benchmark
+  entry check.
 
 ## Useful First Commands
 

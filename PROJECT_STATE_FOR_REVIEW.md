@@ -614,7 +614,7 @@ Coverage assessment:
 - Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; a real SPY 2024 dividend-window audit passed with `0.0` max close difference against yfinance raw `Adj Close` and `0.0` max adjusted-OHLC difference against raw OHLC multiplied by the provider adjustment ratio.
 - Dividends: not directly modeled as cash flows; the SPY 2024 audit found the expected 2024 dividend dates in provider action rows, confirmed the manually supplied expected dividend amounts within tolerance, and confirmed adjusted close consistency for that window.
 - Splits: not directly modeled or tested; assumed folded into adjusted OHLC by provider.
-- Benchmark alignment: directly tested for buy-and-hold/cash metrics, generated benchmark assumption fields, report-visible benchmark assumptions, and portfolio benchmark date alignment; single-symbol buy-and-hold starts from the first input close.
+- Benchmark alignment: directly tested for buy-and-hold/cash metrics, generated benchmark assumption fields, report-visible benchmark assumptions, and portfolio benchmark date alignment; single-symbol buy-and-hold starts from the first input close. A tracked SPY benchmark entry-timing audit found that switching linked `EXP-003` buy-and-hold comparisons to next-open entry would not change any excess-return sign.
 - Indicator warm-up: directly tested for incremental indicators returning `None` before enough data and no trades during unavailable indicator periods.
 - Train/test separation: tests reject overlapping dates and cover selected train winner rerun on test data; correctness still depends on user-chosen split dates.
 - Walk-forward selection: tests cover explicit windows and overlapping-window rejection; no automated economic validation of chosen windows.
@@ -640,7 +640,7 @@ Do not infer market correctness from the test count. The suite strongly checks d
 7. What should not be removed?
    - `run_metadata.json`, `research_index.jsonl`, `experiment_conclusion.json/md`, next-open execution tests, data fingerprints, trust reports, and explicit benchmark/cost assumptions.
 8. What is the single highest-priority correctness audit?
-   - Second-source corporate-action validation: the SPY 2024 adjusted-OHLC dividend audit passed against manually supplied expected dividend amounts, but the lab still needs either another provider or broader known-event coverage before treating adjusted-price behavior as fully de-risked.
+   - Broader corporate-action validation: the SPY 2024 adjusted-OHLC dividend audit passed against manually supplied expected dividend amounts, and the SPY benchmark entry-timing audit did not change the failed conclusion. The lab still needs either another provider or broader known-event coverage before treating adjusted-price behavior as fully de-risked.
 9. What is the single best next real experiment?
    - A partial-exposure SPY trend experiment, because the latest SMA long/cash and SMA plus 12% volatility-target tests both reduced drawdown but failed return-retention thresholds.
 10. Is the project ready for further feature development, or should development pause for consolidation?

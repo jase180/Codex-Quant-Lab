@@ -222,6 +222,11 @@ Status:
 
 - Acceptable as a simple comparison hurdle, but conclusions should avoid
   treating benchmark excess return as a precise live-tradable spread.
+- The SPY 200-day SMA long/cash benchmark entry-timing audit found that a
+  next-open buy-and-hold entry would not change any linked `EXP-003`
+  buy-and-hold excess-return sign. Keep the current benchmark for now; revisit
+  execution-symmetric benchmark support only when a future result is close
+  enough for a 1-3 percentage-point benchmark construction difference to matter.
 
 ## Indicator Warm-Up And Signal Inputs
 

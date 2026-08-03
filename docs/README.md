@@ -28,6 +28,9 @@ current workflow docs and the latest experiment handoffs.
 - [SPY 2024 Adjusted-Price Audit](experiments/spy-2024-adjusted-price-audit.md):
   adjusted-price and manually supplied dividend-amount audit for the cached SPY
   data policy.
+- [SPY Benchmark Entry-Timing Audit](experiments/spy-benchmark-entry-timing-audit.md):
+  checks whether first-close buy-and-hold entry affects the SPY long/cash
+  conclusion.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on
