@@ -14,6 +14,8 @@ current workflow docs and the latest experiment handoffs.
   including risk controls.
 - [Core Backtest Assumption Audit](architecture/core-backtest-assumption-audit.md): current
   execution, data, benchmark, and realism assumptions.
+- [Research Guardrails](architecture/research-guardrails.md): constraints that
+  prevent feature churn and research overfitting.
 
 ## Current Research State
 
@@ -27,6 +29,8 @@ current workflow docs and the latest experiment handoffs.
   provider-internal dividend-window audit for the cached SPY data policy.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
+- [Research Guardrails](architecture/research-guardrails.md): current freeze on
+  new strategy features and agent expansion without a prewritten hypothesis.
 - [Roadmap To Ready](architecture/roadmap-to-ready.md): longer-range plan to make the lab
   feel mature.
 

@@ -13,6 +13,8 @@ you want to do, but not which document has the commands.
   loop from plan creation through conclusion.
 - [Trustworthy Example Workflow](trustworthy-example-workflow.md): a copyable
   skeptical example that keeps one experiment narrow.
+- [Research Guardrails](../architecture/research-guardrails.md): when not to
+  add new strategy features or agent capabilities.
 
 ## Local-Agent Advisor
 
