@@ -679,20 +679,56 @@ def _evaluate_success_criterion(record: dict, criterion) -> StrategyCriterionRes
 
 def _criterion_observed_value(record: dict, metric: str, comparison: str) -> float | None:
     if comparison == "strategy_vs_benchmark_ratio":
-        strategy_value = _optional_numeric(record.get(metric))
-        benchmark_value = _optional_numeric(record.get(f"benchmark_{metric}"))
+        strategy_value = _record_metric(record, metric)
+        benchmark_value = _record_metric(record, f"benchmark_{metric}")
         if strategy_value is None or benchmark_value in {None, 0}:
             return None
         return strategy_value / float(benchmark_value)
     if comparison == "relative_reduction_vs_benchmark":
-        strategy_value = _optional_numeric(record.get(metric))
-        benchmark_value = _optional_numeric(record.get(f"benchmark_{metric}"))
+        strategy_value = _record_metric(record, metric)
+        benchmark_value = _record_metric(record, f"benchmark_{metric}")
         if strategy_value is None or benchmark_value in {None, 0}:
             return None
         return (abs(float(benchmark_value)) - abs(strategy_value)) / abs(float(benchmark_value))
     if comparison == "absolute":
-        return _optional_numeric(record.get(metric))
+        return _record_metric(record, metric)
     return None
+
+
+def _record_metric(record: dict, field: str) -> float | None:
+    value = _optional_numeric(record.get(field))
+    if value is not None:
+        return value
+    if field == "benchmark_cagr":
+        return _benchmark_cagr_from_record(record)
+    return None
+
+
+def _benchmark_cagr_from_record(record: dict) -> float | None:
+    benchmark_total_return = _optional_numeric(record.get("benchmark_total_return"))
+    row_count = _metadata_row_count(record)
+    if benchmark_total_return is None or row_count is None or row_count < 2:
+        return None
+    elapsed_days = row_count - 1
+    return (1 + benchmark_total_return) ** (252 / elapsed_days) - 1
+
+
+def _metadata_row_count(record: dict) -> int | None:
+    metadata_path = _optional_str(record.get("metadata_path"))
+    if metadata_path is None:
+        return None
+    path = Path(metadata_path)
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    row_count = payload.get("data", {}).get("row_count")
+    try:
+        return int(row_count)
+    except (TypeError, ValueError):
+        return None
 
 
 def _compare_observed(value: float, operator: str, threshold) -> bool | None:

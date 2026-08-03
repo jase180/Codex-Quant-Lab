@@ -31,6 +31,9 @@ current workflow docs and the latest experiment handoffs.
 - [SPY Benchmark Entry-Timing Audit](experiments/spy-benchmark-entry-timing-audit.md):
   checks whether first-close buy-and-hold entry affects the SPY long/cash
   conclusion.
+- [SPY Two-Status Conclusion Refresh](experiments/spy-two-status-conclusion-refresh.md):
+  first real conclusion using separate research-system and strategy-hypothesis
+  statuses.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on
