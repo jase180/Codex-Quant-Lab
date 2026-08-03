@@ -26,7 +26,8 @@ current workflow docs and the latest experiment handoffs.
 - [SPY Volatility-Target Drawdown-Control Experiment](experiments/spy-vol-target-drawdown-control-experiment.md):
   latest risk-control result handoff.
 - [SPY 2024 Adjusted-Price Audit](experiments/spy-2024-adjusted-price-audit.md):
-  provider-internal dividend-window audit for the cached SPY data policy.
+  adjusted-price and manually supplied dividend-amount audit for the cached SPY
+  data policy.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

@@ -472,6 +472,12 @@ def register_data_commands(subparsers) -> None:
         help="Dividend date expected in provider action rows. May be repeated.",
     )
     audit_adjusted_parser.add_argument(
+        "--expected-dividend",
+        action="append",
+        default=[],
+        help="Expected dividend in YYYY-MM-DD=amount form. May be repeated.",
+    )
+    audit_adjusted_parser.add_argument(
         "--expected-split-date",
         action="append",
         default=[],

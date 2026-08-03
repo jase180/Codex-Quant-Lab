@@ -25,6 +25,7 @@ class AdjustedPriceAudit:
     max_close_difference: float | None
     max_ohlc_difference: float | None
     missing_expected_dividends: list[str]
+    dividend_amount_mismatches: list[dict[str, float | str]]
     missing_expected_splits: list[str]
     event_rows: int
     result: str
@@ -153,6 +154,7 @@ def write_adjusted_price_audit(
     end: str,
     out_dir: str | Path,
     expected_dividend_dates: list[str] | None = None,
+    expected_dividend_amounts: dict[str, float] | None = None,
     expected_split_dates: list[str] | None = None,
     tolerance: float = 0.01,
     provider: str = "yfinance",
@@ -163,6 +165,7 @@ def write_adjusted_price_audit(
     normalized_symbol = symbol.strip().upper()
     fetched_at = fetched_at_utc or datetime.now(UTC).isoformat().replace("+00:00", "Z")
     expected_dividends = expected_dividend_dates or []
+    expected_amounts = expected_dividend_amounts or {}
     expected_splits = expected_split_dates or []
 
     comparison_path = destination / "adjusted_price_comparison.csv"
@@ -172,6 +175,11 @@ def write_adjusted_price_audit(
 
     max_difference = _max_close_difference(comparison)
     missing_dividends = _missing_event_dates(comparison, "dividend", expected_dividends)
+    dividend_amount_mismatches = _dividend_amount_mismatches(
+        comparison=comparison,
+        expected_amounts=expected_amounts,
+        tolerance=tolerance,
+    )
     missing_splits = _missing_event_dates(comparison, "stock_split", expected_splits)
     event_rows = _event_row_count(comparison)
     max_ohlc_difference = _max_ohlc_difference(comparison)
@@ -180,9 +188,11 @@ def write_adjusted_price_audit(
         max_ohlc_difference=max_ohlc_difference,
         tolerance=tolerance,
         missing_dividends=missing_dividends,
+        dividend_amount_mismatches=dividend_amount_mismatches,
         missing_splits=missing_splits,
         event_rows=event_rows,
         expected_dividends=expected_dividends,
+        expected_dividend_amounts=expected_amounts,
         expected_splits=expected_splits,
     )
     result = "pass" if not warnings else "warning"
@@ -199,8 +209,12 @@ def write_adjusted_price_audit(
         "max_ohlc_difference": max_ohlc_difference,
         "tolerance": tolerance,
         "expected_dividend_dates": expected_dividends,
+        "expected_dividend_amounts": [
+            {"date": date, "amount": amount} for date, amount in sorted(expected_amounts.items())
+        ],
         "expected_split_dates": expected_splits,
         "missing_expected_dividends": missing_dividends,
+        "dividend_amount_mismatches": dividend_amount_mismatches,
         "missing_expected_splits": missing_splits,
         "event_rows": event_rows,
         "result": result,
@@ -221,6 +235,7 @@ def write_adjusted_price_audit(
         max_close_difference=max_difference,
         max_ohlc_difference=max_ohlc_difference,
         missing_expected_dividends=missing_dividends,
+        dividend_amount_mismatches=dividend_amount_mismatches,
         missing_expected_splits=missing_splits,
         event_rows=event_rows,
         result=result,
@@ -255,7 +270,9 @@ def _render_audit_markdown(payload: dict[str, Any]) -> str:
             "## Expected Events",
             "",
             f"- Expected dividend dates: {_list_or_none(payload['expected_dividend_dates'])}",
+            f"- Expected dividend amounts: {_format_expected_amounts(payload['expected_dividend_amounts'])}",
             f"- Missing expected dividends: {_list_or_none(payload['missing_expected_dividends'])}",
+            f"- Dividend amount mismatches: {_format_amount_mismatches(payload['dividend_amount_mismatches'])}",
             f"- Expected split dates: {_list_or_none(payload['expected_split_dates'])}",
             f"- Missing expected splits: {_list_or_none(payload['missing_expected_splits'])}",
             "",
@@ -315,6 +332,31 @@ def _missing_event_dates(comparison: pd.DataFrame, column: str, expected_dates: 
     return [date for date in expected_dates if date not in event_dates]
 
 
+def _dividend_amount_mismatches(
+    *,
+    comparison: pd.DataFrame,
+    expected_amounts: dict[str, float],
+    tolerance: float,
+) -> list[dict[str, float | str]]:
+    mismatches: list[dict[str, float | str]] = []
+    indexed = comparison.set_index(comparison["date"].astype(str), drop=False)
+    for date, expected_amount in sorted(expected_amounts.items()):
+        if date not in indexed.index:
+            continue
+        actual_amount = float(indexed.loc[date, "dividend"])
+        difference = abs(actual_amount - expected_amount)
+        if difference > tolerance:
+            mismatches.append(
+                {
+                    "date": date,
+                    "expected": expected_amount,
+                    "actual": actual_amount,
+                    "difference": difference,
+                }
+            )
+    return mismatches
+
+
 def _event_row_count(comparison: pd.DataFrame) -> int:
     return int(((comparison["dividend"] != 0) | (comparison["stock_split"] != 0)).sum())
 
@@ -325,9 +367,11 @@ def _audit_warnings(
     max_ohlc_difference: float | None,
     tolerance: float,
     missing_dividends: list[str],
+    dividend_amount_mismatches: list[dict[str, float | str]],
     missing_splits: list[str],
     event_rows: int,
     expected_dividends: list[str],
+    expected_dividend_amounts: dict[str, float],
     expected_splits: list[str],
 ) -> list[str]:
     warnings: list[str] = []
@@ -341,12 +385,29 @@ def _audit_warnings(
         warnings.append(f"auto-adjusted OHLC differs from raw OHLC adjusted by Adj Close ratio by more than {tolerance}")
     if missing_dividends:
         warnings.append(f"missing expected dividend dates: {', '.join(missing_dividends)}")
+    if dividend_amount_mismatches:
+        mismatch_dates = ", ".join(str(mismatch["date"]) for mismatch in dividend_amount_mismatches)
+        warnings.append(f"dividend amount mismatches on expected dates: {mismatch_dates}")
     if missing_splits:
         warnings.append(f"missing expected split dates: {', '.join(missing_splits)}")
-    if (expected_dividends or expected_splits) and event_rows == 0:
+    if (expected_dividends or expected_dividend_amounts or expected_splits) and event_rows == 0:
         warnings.append("no corporate-action rows found in the audited window")
     return warnings
 
 
 def _list_or_none(values: list[str]) -> str:
     return ", ".join(values) if values else "None"
+
+
+def _format_expected_amounts(values: list[dict[str, float | str]]) -> str:
+    if not values:
+        return "None"
+    return ", ".join(f"{item['date']}={item['amount']}" for item in values)
+
+
+def _format_amount_mismatches(values: list[dict[str, float | str]]) -> str:
+    if not values:
+        return "None"
+    return ", ".join(
+        f"{item['date']} expected {item['expected']} actual {item['actual']}" for item in values
+    )

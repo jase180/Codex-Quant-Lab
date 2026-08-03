@@ -66,6 +66,35 @@ class AdjustedPriceAuditTests(unittest.TestCase):
         self.assertTrue(comparison_exists)
         self.assertIn("missing expected dividend dates", audit.warnings[0])
 
+    def test_write_adjusted_price_audit_records_dividend_amount_mismatches(self) -> None:
+        adjusted = _adjusted_frame(close_values=[99.5, 100.25])
+        raw = _raw_action_frame(adj_close_values=[99.5, 100.25], dividends=[0.0, 0.5])
+        comparison = build_adjusted_price_comparison(adjusted=adjusted, raw=raw)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            audit = write_adjusted_price_audit(
+                comparison=comparison,
+                symbol="SPY",
+                start="2026-01-01",
+                end="2026-01-31",
+                out_dir=temp_dir,
+                expected_dividend_dates=["2026-01-05"],
+                expected_dividend_amounts={"2026-01-05": 0.75},
+                tolerance=0.01,
+                fetched_at_utc="2026-02-01T00:00:00Z",
+            )
+
+            payload = json.loads(Path(audit.json_path).read_text(encoding="utf-8"))
+            markdown = Path(audit.markdown_path).read_text(encoding="utf-8")
+
+        self.assertEqual(audit.result, "warning")
+        self.assertEqual(
+            payload["dividend_amount_mismatches"],
+            [{"actual": 0.5, "date": "2026-01-05", "difference": 0.25, "expected": 0.75}],
+        )
+        self.assertTrue(any("dividend amount mismatches" in warning for warning in audit.warnings))
+        self.assertIn("Expected dividend amounts", markdown)
+
     def test_write_adjusted_price_audit_warns_when_adjusted_ohlc_does_not_match_ratio(self) -> None:
         adjusted = _adjusted_frame(close_values=[50.0, 100.25], ratios=[0.6, 1.0])
         raw = _raw_action_frame(adj_close_values=[50.0, 100.25], dividends=[0.0, 0.5])
@@ -112,6 +141,8 @@ class AdjustedPriceAuditTests(unittest.TestCase):
                             temp_dir,
                             "--expected-dividend-date",
                             "2026-01-05",
+                            "--expected-dividend",
+                            "2026-01-05=0.5",
                         ]
                     )
 
@@ -127,6 +158,7 @@ class AdjustedPriceAuditTests(unittest.TestCase):
         self.assertTrue(markdown_exists)
         self.assertIn("result: pass", stdout.getvalue())
         self.assertIn("max_ohlc_difference: 0.0", stdout.getvalue())
+        self.assertIn("dividend_amount_mismatches: 0", stdout.getvalue())
 
 
 def _adjusted_frame(*, close_values: list[float], ratios: list[float] | None = None) -> pd.DataFrame:

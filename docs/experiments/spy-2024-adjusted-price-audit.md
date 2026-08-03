@@ -10,7 +10,8 @@ are ignored by Git; this tracked note preserves the result and its limits.
 
 Do the provider-adjusted SPY prices used by the lab line up with the same
 provider's raw `Adj Close` field, raw OHLC adjusted by the provider adjustment
-ratio, and visible dividend rows around known 2024 SPY distribution dates?
+ratio, and visible dividend rows around known 2024 SPY distribution dates and
+amounts?
 
 This matters because the lab fetches daily prices with:
 
@@ -20,18 +21,20 @@ This matters because the lab fetches daily prices with:
 That means dividends and splits are reflected indirectly through adjusted OHLCV
 prices, not stored as explicit cash-flow or split events in the cached run data.
 
-## External Event Dates Used
+## External Events Used
 
-Expected 2024 SPY ex-dividend dates:
+Expected 2024 SPY ex-dividend events:
 
-- `2024-03-15`
-- `2024-06-21`
-- `2024-09-20`
-- `2024-12-20`
+- `2024-03-15=1.595`
+- `2024-06-21=1.759`
+- `2024-09-20=1.746`
+- `2024-12-20=1.966`
 
-These dates were cross-checked against public SPY distribution listings before
-running the audit. The yfinance audit itself remains provider-internal because
-it compares yfinance adjusted data to yfinance raw/action data.
+These dates and amounts were cross-checked against public SPY distribution
+listings before running the audit. The adjusted-price reconstruction itself
+remains provider-internal because it compares yfinance adjusted data to
+yfinance raw/action data, but the dividend amount check gives the audit a
+manual second-source anchor.
 
 ## Command
 
@@ -40,11 +43,11 @@ it compares yfinance adjusted data to yfinance raw/action data.
   --symbol SPY `
   --start 2024-01-01 `
   --end 2025-01-10 `
-  --out artifacts\data-audits\spy_2024_dividends_ohlc `
-  --expected-dividend-date 2024-03-15 `
-  --expected-dividend-date 2024-06-21 `
-  --expected-dividend-date 2024-09-20 `
-  --expected-dividend-date 2024-12-20
+  --out artifacts\data-audits\spy_2024_dividends_external_amounts `
+  --expected-dividend 2024-03-15=1.595 `
+  --expected-dividend 2024-06-21=1.759 `
+  --expected-dividend 2024-09-20=1.746 `
+  --expected-dividend 2024-12-20=1.966
 ```
 
 The command needed normal network access to yfinance. A sandboxed attempt
@@ -53,9 +56,9 @@ escalation.
 
 ## Generated Artifacts
 
-- `artifacts/data-audits/spy_2024_dividends_ohlc/adjusted_price_audit.md`
-- `artifacts/data-audits/spy_2024_dividends_ohlc/adjusted_price_audit.json`
-- `artifacts/data-audits/spy_2024_dividends_ohlc/adjusted_price_comparison.csv`
+- `artifacts/data-audits/spy_2024_dividends_external_amounts/adjusted_price_audit.md`
+- `artifacts/data-audits/spy_2024_dividends_external_amounts/adjusted_price_audit.json`
+- `artifacts/data-audits/spy_2024_dividends_external_amounts/adjusted_price_comparison.csv`
 
 ## Result
 
@@ -67,6 +70,7 @@ Audit result: `pass`
 - Tolerance: `0.01`
 - Corporate-action rows found: `4`
 - Missing expected dividends: none
+- Dividend amount mismatches: none
 - Missing expected splits: none
 - Warnings: none
 
@@ -86,13 +90,15 @@ window. The adjusted close returned by `auto_adjust=True` matched yfinance's raw
 `Adj Close` field exactly on all compared rows. The adjusted open/high/low/close
 also matched raw OHLC multiplied by the provider's `Adj Close / Close`
 adjustment ratio, and the expected 2024 dividend dates appeared as action rows
-in the raw/action view.
+in the raw/action view with the expected dividend amounts.
 
 This does not prove every SPY backtest result is economically correct. It is
-still not a second-source validation, and the backtester still does not model
-dividends as separate cash payments. The result says the provider views are
-internally consistent for this audited window, and that next-open fills on the
-default fetched data use adjusted opens from the same adjusted OHLC series.
+still not a fully automated second-source validation, and the backtester still
+does not model dividends as separate cash payments. The result says the
+provider views are internally consistent for this audited window, that the
+provider action rows matched manually verified dividend amounts, and that
+next-open fills on the default fetched data use adjusted opens from the same
+adjusted OHLC series.
 
 ## Carry-Forward Judgment
 

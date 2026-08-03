@@ -165,13 +165,15 @@ quant-lab audit-adjusted-prices \
   --symbol SPY \
   --start 2024-03-01 \
   --end 2024-04-15 \
-  --expected-dividend-date 2024-03-15 \
+  --expected-dividend 2024-03-15=1.595 \
   --out artifacts/data-audits/spy_2024_q1_dividend
 ```
 
 This is provider-internal verification. It compares yfinance's
 `auto_adjust=True` close against the same provider's `Adj Close` field and
-records dividend/split rows for the audited window.
+records dividend/split rows for the audited window. When you pass
+`--expected-dividend YYYY-MM-DD=amount`, it also compares the provider's raw
+dividend action amount to the manually supplied expected amount.
 
 Write a trust report for a saved strategy run:
 

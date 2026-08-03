@@ -57,7 +57,9 @@ Current behavior:
   corporate-action window by downloading both adjusted OHLCV and raw OHLCV with
   `Adj Close`, dividends, and splits. It compares adjusted close to raw
   `Adj Close` and compares adjusted open/high/low/close to raw OHLC multiplied
-  by the raw `Adj Close / Close` adjustment ratio.
+  by the raw `Adj Close / Close` adjustment ratio. It can also accept manually
+  supplied expected dividend amounts in `YYYY-MM-DD=amount` form and compare
+  those amounts to the provider's raw dividend action rows.
 
 Implication:
 
@@ -77,14 +79,17 @@ Current coverage:
 - Adjusted-price audit tests cover comparing `auto_adjust=True` close to the
   provider's `Adj Close`, comparing adjusted open/high/low/close to raw OHLC
   adjusted by the provider's `Adj Close / Close` ratio, expected event-date
-  checks, and the CLI command with a mocked provider.
+  checks, expected dividend-amount mismatch warnings, and the CLI command with
+  a mocked provider.
 - Run trust reports can verify that a later local CSV still matches the saved
   run fingerprint.
 
 Known gap:
 
-- The lab does not independently verify dividend or split adjustments against a
-  second source.
+- The lab does not automatically fetch a second source for dividend or split
+  events. Important experiments can now pass manually verified dividend amounts
+  into `audit-adjusted-prices`, but the human or Codex still has to source
+  those values.
 - The lab does not model dividends as cash distributions.
 - The lab does not preserve unadjusted OHLC plus corporate actions.
 - `audit-adjusted-prices` is provider-internal verification, not proof that
@@ -96,9 +101,9 @@ Status:
   matter.
 - Current improvement: fetched CSV provenance now records the adjusted-price
   policy, trust reports surface it, and `audit-adjusted-prices` can inspect a
-  known corporate-action window across adjusted OHLC. Future improvement: add
-  optional second-source checks against another provider or manually verified
-  events.
+  known corporate-action window across adjusted OHLC and manually supplied
+  dividend amounts. Future improvement: add optional second-source checks
+  against another provider.
 
 ## Next-Open Fills
 
@@ -322,7 +327,8 @@ visible:
 ## Recommended Follow-Ups
 
 1. Add a small doc table showing warm-up behavior for each indicator.
-2. Add a second-source/manual data verification path for important experiments.
+2. Add an automated second-source data verification path for important
+   experiments.
 3. Add a visible corporate-action check to the canonical SPY experiment.
 4. Consider a buy-and-hold benchmark entry timing option that buys at first next
    open for stricter execution symmetry.

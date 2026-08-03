@@ -7,7 +7,7 @@ final commit hash is reported in the commit history rather than embedded here.
 
 ## 1. Executive Summary
 
-Codex-Quant-Lab is now a local Python daily-data quant research lab, not a trading system. It can fetch adjusted daily OHLCV data, validate simple JSON strategies, run long-only backtests with next-open fills, save auditable artifacts, run sweeps and robustness checks, and organize results into experiment-level summaries and conclusions. The intended user is a hands-on researcher or engineer who wants disciplined small experiments without building a full research platform. The normal workflow is hypothesis -> default experiment workflow -> baseline run -> trust/robustness/validation -> canonical experiment conclusion -> decision. The most mature path is single-symbol rule-based strategy research; portfolio support exists but is more advanced and noisier. The project has useful guardrails around data fingerprints, benchmark comparison, transaction costs, warnings, saved strategy payloads, and explicit human review. Recent work added local-agent advisor scaffolding and the first strategy-layer risk control, but agent execution remains dry-run and human-gated. The biggest remaining weakness is information design: the system writes many overlapping human-facing reports, and a reviewer must know that `experiment_conclusion.md` is the intended experiment-level source of truth. A second weakness is that findings are saved and summarized, but they are not automatically converted into a reusable knowledge base that constrains future experiments unless a human, Codex, or local agent reads the conclusion/manifest. Correctness is supported by tests, but adjusted-price/corporate-action assumptions still depend heavily on `yfinance` behavior and should be audited directly.
+Codex-Quant-Lab is now a local Python daily-data quant research lab, not a trading system. It can fetch adjusted daily OHLCV data, validate simple JSON strategies, run long-only backtests with next-open fills, save auditable artifacts, run sweeps and robustness checks, and organize results into experiment-level summaries and conclusions. The intended user is a hands-on researcher or engineer who wants disciplined small experiments without building a full research platform. The normal workflow is hypothesis -> default experiment workflow -> baseline run -> trust/robustness/validation -> canonical experiment conclusion -> decision. The most mature path is single-symbol rule-based strategy research; portfolio support exists but is more advanced and noisier. The project has useful guardrails around data fingerprints, benchmark comparison, transaction costs, warnings, saved strategy payloads, and explicit human review. Recent work added local-agent advisor scaffolding and the first strategy-layer risk control, but agent execution remains dry-run and human-gated. The biggest remaining weakness is information design: the system writes many overlapping human-facing reports, and a reviewer must know that `experiment_conclusion.md` is the intended experiment-level source of truth. A second weakness is that findings are saved and summarized, but they are not automatically converted into a reusable knowledge base that constrains future experiments unless a human, Codex, or local agent reads the conclusion/manifest. Correctness is supported by tests, but adjusted-price/corporate-action assumptions still depend heavily on `yfinance` behavior; the current SPY audit now checks manually supplied dividend amounts, but not an automated independent provider.
 
 ## 2. Current End-to-End Workflow
 
@@ -369,7 +369,7 @@ Main entry points:
 - `smoke-test`: offline wiring check; `--agent-cycle` verifies deterministic local-agent dry-run.
 - `show-data-source`: data/provenance inspection; requires data path.
 - `list-data-cache`: cache inventory.
-- `audit-adjusted-prices`: focused adjusted-price/corporate-action audit against expected events.
+- `audit-adjusted-prices`: focused adjusted-price/corporate-action audit against expected events and manually supplied dividend amounts.
 - `verify-run`: fingerprint verification; requires run metadata.
 - `summarize-run-trust`: data trust report; requires run metadata.
 - `summarize-sweep-guardrails`: sweep warning report; requires sweep summary.
@@ -434,7 +434,7 @@ The default single-strategy workflow can run as one command through `experiment 
 1. Information-design problem: too many human-facing reports. `report.md`, `run_trust_report.md`, `research.md`, `sweep_guardrails.md`, robustness reports, `evidence_summary.md`, `experiment_conclusion.md`, `session_manifest.md`, and agent Markdown files all compete unless the reader already knows the hierarchy.
 2. Architecture/usability problem: workflow automation is split between one-command default flow and many lower-level commands. `experiment run-default` is coherent, but `research-plan next` and advanced workflows still require users to pass paths/ids/metadata; this is transparent but verbose.
 3. Missing research capability: prior conclusions are not automatically reusable across experiments. `experiment_conclusion.json` stores do-not-repeat and next-useful-test fields, but new plans/runs do not query a cross-experiment knowledge base.
-4. Correctness problem: adjusted prices, dividends, and splits are not directly modeled by the engine. Fetch uses `yfinance` `auto_adjust=True` and `actions=False`; the 2024 SPY dividend window now has a provider-internal adjusted OHLC audit, but there is still no independent second-source validation.
+4. Correctness problem: adjusted prices, dividends, and splits are not directly modeled by the engine. Fetch uses `yfinance` `auto_adjust=True` and `actions=False`; the 2024 SPY dividend window now has an adjusted OHLC audit with manually supplied expected dividend amounts, but there is still no automated independent provider comparison.
 5. Missing research capability: risk controls are still narrow. The strategy schema supports `volatility_target`, but it does not yet support partial-exposure regimes, drawdown stops, trailing exits, cooldowns, or stacked controls with rich reporting.
 
 ## 10. One Concrete Experiment Walkthrough
@@ -612,7 +612,7 @@ Coverage assessment:
 - Commissions: directly tested in portfolio accounting, execution model, CLI cost options, and cost presets.
 - Slippage: directly tested in execution model and CLI cost option paths.
 - Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; a real SPY 2024 dividend-window audit passed with `0.0` max close difference against yfinance raw `Adj Close` and `0.0` max adjusted-OHLC difference against raw OHLC multiplied by the provider adjustment ratio.
-- Dividends: not directly modeled as cash flows; the SPY 2024 audit found the expected 2024 dividend dates in provider action rows and confirmed adjusted close consistency for that window.
+- Dividends: not directly modeled as cash flows; the SPY 2024 audit found the expected 2024 dividend dates in provider action rows, confirmed the manually supplied expected dividend amounts within tolerance, and confirmed adjusted close consistency for that window.
 - Splits: not directly modeled or tested; assumed folded into adjusted OHLC by provider.
 - Benchmark alignment: directly tested for buy-and-hold/cash metrics and portfolio benchmark date alignment; single-symbol benchmark starts from the input series.
 - Indicator warm-up: directly tested for incremental indicators returning `None` before enough data and no trades during unavailable indicator periods.
@@ -640,7 +640,7 @@ Do not infer market correctness from the test count. The suite strongly checks d
 7. What should not be removed?
    - `run_metadata.json`, `research_index.jsonl`, `experiment_conclusion.json/md`, next-open execution tests, data fingerprints, trust reports, and explicit benchmark/cost assumptions.
 8. What is the single highest-priority correctness audit?
-   - Second-source corporate-action validation: the provider-internal SPY 2024 adjusted-OHLC dividend audit passed, but the lab still needs either another provider or a broader known-event test before treating adjusted-price behavior as fully de-risked.
+   - Second-source corporate-action validation: the SPY 2024 adjusted-OHLC dividend audit passed against manually supplied expected dividend amounts, but the lab still needs either another provider or broader known-event coverage before treating adjusted-price behavior as fully de-risked.
 9. What is the single best next real experiment?
    - A partial-exposure SPY trend experiment, because the latest SMA long/cash and SMA plus 12% volatility-target tests both reduced drawdown but failed return-retention thresholds.
 10. Is the project ready for further feature development, or should development pause for consolidation?

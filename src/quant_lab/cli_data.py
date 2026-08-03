@@ -16,6 +16,11 @@ from .strategy_templates import available_strategy_templates, build_strategy_tem
 
 
 def audit_adjusted_prices_command(args: argparse.Namespace) -> int:
+    expected_dividend_amounts = _parse_expected_dividend_amounts(args.expected_dividend)
+    expected_dividend_dates = _merge_dates(
+        args.expected_dividend_date,
+        list(expected_dividend_amounts),
+    )
     comparison = fetch_yfinance_adjustment_sample(
         symbol=args.symbol,
         start=args.start,
@@ -27,7 +32,8 @@ def audit_adjusted_prices_command(args: argparse.Namespace) -> int:
         start=args.start,
         end=args.end,
         out_dir=args.out,
-        expected_dividend_dates=args.expected_dividend_date,
+        expected_dividend_dates=expected_dividend_dates,
+        expected_dividend_amounts=expected_dividend_amounts,
         expected_split_dates=args.expected_split_date,
         tolerance=args.tolerance,
     )
@@ -36,12 +42,43 @@ def audit_adjusted_prices_command(args: argparse.Namespace) -> int:
     print(f"rows_compared: {audit.compared_rows}")
     print(f"max_close_difference: {audit.max_close_difference}")
     print(f"max_ohlc_difference: {audit.max_ohlc_difference}")
+    print(f"dividend_amount_mismatches: {len(audit.dividend_amount_mismatches)}")
     print(f"comparison: {audit.comparison_path}")
     if audit.warnings:
         print("warnings:")
         for warning in audit.warnings:
             print(f"- {warning}")
     return 0
+
+
+def _parse_expected_dividend_amounts(values: list[str]) -> dict[str, float]:
+    expected_amounts: dict[str, float] = {}
+    for value in values:
+        if "=" not in value:
+            raise ValueError("Expected dividend amounts must use YYYY-MM-DD=amount format.")
+        date, amount_text = value.split("=", 1)
+        if not date:
+            raise ValueError("Expected dividend amount is missing a date.")
+        try:
+            amount = float(amount_text)
+        except ValueError as exc:
+            raise ValueError(f"Expected dividend amount for {date} is not numeric: {amount_text}") from exc
+        if amount <= 0:
+            raise ValueError(f"Expected dividend amount for {date} must be positive.")
+        expected_amounts[date] = amount
+    return expected_amounts
+
+
+def _merge_dates(primary_dates: list[str], secondary_dates: list[str]) -> list[str]:
+    # Preserve user order while removing duplicates, so reports stay predictable.
+    merged: list[str] = []
+    seen: set[str] = set()
+    for date in [*primary_dates, *secondary_dates]:
+        if date in seen:
+            continue
+        seen.add(date)
+        merged.append(date)
+    return merged
 
 
 def fetch_command(args: argparse.Namespace) -> int:

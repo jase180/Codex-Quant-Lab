@@ -370,7 +370,7 @@ quant-lab audit-adjusted-prices \
   --symbol SPY \
   --start 2024-03-01 \
   --end 2024-04-15 \
-  --expected-dividend-date 2024-03-15 \
+  --expected-dividend 2024-03-15=1.595 \
   --out artifacts/data-audits/spy_2024_q1_dividend
 ```
 
@@ -378,9 +378,10 @@ This downloads two `yfinance` views for the same symbol/date window: adjusted
 OHLCV and raw OHLCV with `Adj Close`, dividends, and splits. It writes
 `adjusted_price_audit.md`, `adjusted_price_audit.json`, and
 `adjusted_price_comparison.csv`. This is still provider-internal verification,
-not second-source validation, but it makes dividend/split rows visible and
-checks that the adjusted close used by `auto_adjust=True` matches the provider's
-`Adj Close` field within tolerance.
+not automated second-source validation, but it makes dividend/split rows
+visible, compares manually supplied expected dividend amounts to provider action
+rows, and checks that the adjusted close used by `auto_adjust=True` matches the
+provider's `Adj Close` field within tolerance.
 
 ### Summarize Run Data Trust
 
