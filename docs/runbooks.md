@@ -48,6 +48,8 @@ Current boundary:
   revised drawdown-control test and rejection.
 - [SPY Volatility-Target Drawdown-Control Experiment](spy-vol-target-drawdown-control-experiment.md):
   latest risk-control test; drawdown improved, return retention failed.
+- [SPY 2024 Adjusted-Price Audit](spy-2024-adjusted-price-audit.md):
+  provider-internal audit of 2024 SPY dividend rows and adjusted close behavior.
 
 ## Useful First Commands
 

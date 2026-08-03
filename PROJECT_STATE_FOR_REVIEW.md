@@ -485,7 +485,7 @@ The default single-strategy workflow can run as one command through `experiment 
 1. Information-design problem: too many human-facing reports. `report.md`, `run_trust_report.md`, `research.md`, `sweep_guardrails.md`, robustness reports, `evidence_summary.md`, `experiment_conclusion.md`, `session_manifest.md`, and agent Markdown files all compete unless the reader already knows the hierarchy.
 2. Architecture/usability problem: workflow automation is split between one-command default flow and many lower-level commands. `experiment run-default` is coherent, but `research-plan next` and advanced workflows still require users to pass paths/ids/metadata; this is transparent but verbose.
 3. Missing research capability: prior conclusions are not automatically reusable across experiments. `experiment_conclusion.json` stores do-not-repeat and next-useful-test fields, but new plans/runs do not query a cross-experiment knowledge base.
-4. Correctness problem: adjusted prices, dividends, and splits are not directly modeled by the engine. Fetch uses `yfinance` `auto_adjust=True` and `actions=False`; that may be acceptable for daily total-return-ish price series, but dividends/splits behavior needs an explicit audit against known events.
+4. Correctness problem: adjusted prices, dividends, and splits are not directly modeled by the engine. Fetch uses `yfinance` `auto_adjust=True` and `actions=False`; the 2024 SPY dividend window now has a provider-internal audit, but there is still no independent second-source validation.
 5. Missing research capability: risk controls are still narrow. The strategy schema supports `volatility_target`, but it does not yet support partial-exposure regimes, drawdown stops, trailing exits, cooldowns, or stacked controls with rich reporting.
 
 ## 10. One Concrete Experiment Walkthrough
@@ -662,8 +662,8 @@ Coverage assessment:
 - Percent-equity sizing: directly tested in core execution, rule strategy, and CLI run tests.
 - Commissions: directly tested in portfolio accounting, execution model, CLI cost options, and cost presets.
 - Slippage: directly tested in execution model and CLI cost option paths.
-- Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; no direct test against known dividend/split events.
-- Dividends: not directly modeled or tested; assumed folded into adjusted OHLC by provider.
+- Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; a real SPY 2024 dividend-window audit passed with `0.0` max close difference against yfinance raw `Adj Close`.
+- Dividends: not directly modeled as cash flows; the SPY 2024 audit found the expected 2024 dividend dates in provider action rows and confirmed adjusted close consistency for that window.
 - Splits: not directly modeled or tested; assumed folded into adjusted OHLC by provider.
 - Benchmark alignment: directly tested for buy-and-hold/cash metrics and portfolio benchmark date alignment; single-symbol benchmark starts from the input series.
 - Indicator warm-up: directly tested for incremental indicators returning `None` before enough data and no trades during unavailable indicator periods.
@@ -691,7 +691,7 @@ Do not infer market correctness from the test count. The suite strongly checks d
 7. What should not be removed?
    - `run_metadata.json`, `research_index.jsonl`, `experiment_conclusion.json/md`, next-open execution tests, data fingerprints, trust reports, and explicit benchmark/cost assumptions.
 8. What is the single highest-priority correctness audit?
-   - Adjusted price/corporate-action handling: verify dividends and splits against known SPY events and decide whether `auto_adjust=True` is sufficient for the intended research claims.
+   - Second-source corporate-action validation: the provider-internal SPY 2024 dividend audit passed, but the lab still needs either another provider or a broader known-event test before treating adjusted-price behavior as fully de-risked.
 9. What is the single best next real experiment?
    - A partial-exposure SPY trend experiment, because the latest SMA long/cash and SMA plus 12% volatility-target tests both reduced drawdown but failed return-retention thresholds.
 10. Is the project ready for further feature development, or should development pause for consolidation?
