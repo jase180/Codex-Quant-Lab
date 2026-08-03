@@ -21,6 +21,7 @@ from .cli_agent import (
     agent_validate_recommendation_command,
 )
 from .cli_health import doctor_command, smoke_test_command
+from .cli_ideas import ideas_suggest_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .default_experiment import run_default_experiment, validate_default_experiment_args
@@ -102,6 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_portfolio_plan_commands(subparsers)
     register_session_commands(subparsers)
     register_agent_commands(subparsers)
+    register_ideas_commands(subparsers)
     register_robustness_commands(subparsers)
     register_sweep_commands(subparsers)
     register_sweep_guardrail_commands(subparsers)
@@ -1209,6 +1211,30 @@ def add_agent_provider_arguments(parser: argparse.ArgumentParser) -> None:
         default=60.0,
         help="Provider request timeout in seconds. Defaults to 60.",
     )
+
+
+def register_ideas_commands(subparsers) -> None:
+    ideas_parser = subparsers.add_parser(
+        "ideas",
+        help="Suggest the next conceptual strategy idea from the catalog and prior conclusions.",
+    )
+    ideas_subparsers = ideas_parser.add_subparsers(dest="ideas_command", required=True)
+
+    suggest_parser = ideas_subparsers.add_parser(
+        "suggest",
+        help="Propose one hypothesis and draft experiment config without creating strategy JSON.",
+    )
+    suggest_parser.add_argument(
+        "--catalog-dir",
+        default="data/strategy_catalog",
+        help="Directory containing conceptual strategy catalog JSON files. Defaults to data/strategy_catalog.",
+    )
+    suggest_parser.add_argument(
+        "--conclusions-dir",
+        default="artifacts/research",
+        help="Directory searched recursively for experiment_conclusion.json files. Defaults to artifacts/research.",
+    )
+    suggest_parser.set_defaults(func=ideas_suggest_command)
 
 
 def register_sweep_commands(subparsers) -> None:

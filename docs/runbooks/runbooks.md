@@ -91,6 +91,12 @@ Ask for the next deterministic workflow step:
   --plan artifacts\research\<experiment>\research_plan.json
 ```
 
+Ask for a conceptual next strategy idea before creating executable JSON:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli ideas suggest
+```
+
 Run a safe local-agent dry run:
 
 ```powershell

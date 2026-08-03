@@ -12,6 +12,8 @@ current workflow docs and the latest experiment handoffs.
 - [Research Workflow](runbooks/research-workflow.md): end-to-end strategy research flow.
 - [Strategy Schema](architecture/strategy-schema.md): strict v1 JSON strategy format,
   including risk controls.
+- Conceptual strategy catalog: `data/strategy_catalog/*.json` describes idea
+  families before they become executable strategy files.
 - [Core Backtest Assumption Audit](architecture/core-backtest-assumption-audit.md): current
   execution, data, benchmark, and realism assumptions.
 - [Research Guardrails](architecture/research-guardrails.md): constraints that

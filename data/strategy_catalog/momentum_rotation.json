@@ -1,0 +1,68 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "momentum_rotation",
+  "name": "Momentum Rotation",
+  "rationale": "Momentum-rotation rules rank multiple assets by recent relative strength and allocate to the strongest assets.",
+  "expected_benefit": "Potential diversification and better participation in leadership trends than a single-asset strategy.",
+  "failure_modes": [
+    "Overfitting ranking windows and rebalance schedules.",
+    "Crowded leadership reversals.",
+    "Higher turnover than buy-and-hold.",
+    "Misleading results if cross-asset calendars, dividends, or benchmark alignment are inconsistent."
+  ],
+  "required_project_capabilities": [
+    "multi-asset daily OHLCV data",
+    "cross-sectional ranking",
+    "scheduled rebalancing",
+    "portfolio allocation logic",
+    "portfolio benchmark comparison",
+    "turnover-aware cost handling",
+    "walk-forward validation"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "top_n_relative_strength",
+      "name": "Top-N relative strength rotation",
+      "description": "Rank assets by trailing return and hold the top N assets until the next rebalance date.",
+      "matching_terms": [
+        "momentum rotation",
+        "relative strength",
+        "top n",
+        "cross-sectional momentum"
+      ],
+      "hypothesis_template": "A monthly top-N relative-strength rotation may improve risk-adjusted return versus a static benchmark portfolio without excessive turnover.",
+      "primary_metric": "sharpe",
+      "benchmark": "static portfolio benchmark",
+      "minimum_acceptable_performance": "Improve Sharpe versus a prespecified static benchmark while keeping turnover and drawdown within predefined limits.",
+      "success_criteria": [
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        },
+        {
+          "name": "drawdown_control",
+          "metric": "max_drawdown",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": "<=",
+          "threshold": 0.0
+        }
+      ],
+      "engine_can_currently_execute": false
+    }
+  ],
+  "suggested_validation": [
+    "Define the asset universe before seeing results.",
+    "Define ranking lookback, rebalance frequency, and top-N count before running.",
+    "Use walk-forward validation and avoid broad parameter sweeps.",
+    "Audit calendar alignment and missing data handling before trusting results."
+  ],
+  "references": [
+    "Jegadeesh and Titman, Returns to Buying Winners and Selling Losers",
+    "Faber, A Quantitative Approach to Tactical Asset Allocation"
+  ],
+  "engine_can_currently_execute": false,
+  "execution_notes": "The current portfolio engine supports static weights, but not dynamic cross-sectional ranking or scheduled rotation."
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "mean_reversion",
+  "name": "Mean Reversion",
+  "rationale": "Mean-reversion rules test whether short-term downside extensions tend to rebound enough to compensate for timing risk and trading costs.",
+  "expected_benefit": "Potentially improved risk-adjusted return or lower exposure by buying weakness and exiting after recovery instead of staying fully invested.",
+  "failure_modes": [
+    "Catching falling markets where oversold readings keep getting worse.",
+    "High turnover and cost drag.",
+    "Small edges disappearing after slippage and commissions.",
+    "Strong dependence on the chosen exit rule."
+  ],
+  "required_project_capabilities": [
+    "daily OHLCV data",
+    "RSI indicator",
+    "threshold entry and exit rules",
+    "next-open market fills",
+    "long/cash position state",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "rsi_pullback_long_cash",
+      "name": "RSI pullback long/cash",
+      "description": "Enter long after RSI falls below an oversold threshold and exit when RSI recovers above a neutral threshold.",
+      "matching_terms": [
+        "rsi reversion",
+        "rsi pullback",
+        "mean reversion",
+        "oversold"
+      ],
+      "hypothesis_template": "A daily RSI pullback strategy may improve risk-adjusted return versus buy-and-hold by concentrating exposure after short-term oversold conditions.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe versus buy-and-hold while retaining at least 70% of benchmark CAGR after realistic costs.",
+      "success_criteria": [
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        },
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.7
+        }
+      ],
+      "engine_can_currently_execute": true
+    }
+  ],
+  "suggested_validation": [
+    "Predefine one RSI length and one entry/exit threshold pair before running.",
+    "Compare against buy-and-hold and cash benchmarks.",
+    "Run cost sensitivity because turnover may be high.",
+    "Run date sensitivity across trending and choppy market regimes."
+  ],
+  "references": [
+    "Connors and Alvarez, Short Term Trading Strategies That Work",
+    "Academic and practitioner literature on short-horizon reversal effects"
+  ],
+  "engine_can_currently_execute": true,
+  "execution_notes": "The engine can execute simple daily RSI long/cash variants. It does not currently support limit orders, pairs, intraday fills, or volatility-scaled entries for this family."
+}

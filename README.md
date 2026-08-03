@@ -15,6 +15,19 @@ Start with one research question and one strategy. The default path is:
 strategy -> baseline -> trust check -> sweep -> train/test -> robustness -> conclusion -> decision
 ```
 
+If you want help choosing the next research idea before creating executable
+strategy JSON, use the conceptual strategy catalog:
+
+```bash
+quant-lab ideas suggest
+```
+
+This reads `data/strategy_catalog/*.json` and prior
+`artifacts/research/**/experiment_conclusion.json` files, excludes matching
+`do_not_repeat` ideas, and prints one proposed hypothesis, success criteria, and
+a draft experiment config. It does not create executable strategy JSON; convert
+the chosen idea only after human approval.
+
 Use `experiment run-default` when you want the lab to run the normal
 single-strategy workflow for you while still writing every underlying artifact:
 
@@ -146,6 +159,9 @@ artifact before deciding what happened.
 - Fetch daily market data with `yfinance`.
 - Cache normalized OHLCV CSV files locally.
 - Define rule-based strategies in strict JSON.
+- Read a conceptual strategy catalog before generating executable strategy JSON.
+- Suggest one next research idea with `quant-lab ideas suggest`, using prior
+  conclusions and `do_not_repeat` constraints.
 - Create valid starter strategy JSON from built-in templates.
 - Create valid starter portfolio JSON from built-in templates.
 - Execute SMA, EMA, RSI, rolling-high, and rolling-low based long-only strategies.

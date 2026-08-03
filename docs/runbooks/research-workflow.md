@@ -74,6 +74,18 @@ below it.
 For normal one-strategy research, use `experiment run-default` first. It is the
 front door.
 
+If the next strategy idea is not chosen yet, start one step earlier:
+
+```bash
+quant-lab ideas suggest
+```
+
+This command reads prior `experiment_conclusion.json` files and the conceptual
+strategy catalog in `data/strategy_catalog/`. It suggests one hypothesis,
+success criteria, and a draft experiment config, but it does not create
+executable strategy JSON. That keeps idea selection separate from implementation
+until a human approves the next test.
+
 ```bash
 quant-lab experiment run-default \
   --title "SPY 200-day SMA long/cash drawdown test" \

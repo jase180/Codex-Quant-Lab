@@ -1,0 +1,94 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "trend_following",
+  "name": "Trend Following",
+  "rationale": "Trend-following rules try to participate in persistent uptrends and reduce exposure during sustained declines.",
+  "expected_benefit": "Lower drawdown and calmer equity curves than buy-and-hold, with the explicit trade-off that total return may lag during strong bull markets.",
+  "failure_modes": [
+    "Whipsaw losses during sideways markets.",
+    "Late re-entry after fast rebounds.",
+    "Underperformance when the benchmark spends long periods above the trend filter.",
+    "False comfort if adjusted-price and benchmark economics are inconsistent."
+  ],
+  "required_project_capabilities": [
+    "daily OHLCV data",
+    "moving-average indicators",
+    "next-open market fills",
+    "long/cash position state",
+    "buy-and-hold benchmark comparison",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "sma_long_cash",
+      "name": "Single-asset SMA long/cash",
+      "description": "Hold the asset when close is above a long simple moving average and move to cash when close is below it.",
+      "matching_terms": [
+        "sma long cash",
+        "long/cash",
+        "200-day sma",
+        "200 day moving average",
+        "trend strategy"
+      ],
+      "hypothesis_template": "A daily 200-day SMA trend strategy may reduce maximum drawdown versus buy-and-hold while retaining most long-term growth.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Retain at least 80% of benchmark CAGR while reducing max drawdown by at least 25% relative after realistic costs.",
+      "success_criteria": [
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.8
+        },
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.25
+        }
+      ],
+      "engine_can_currently_execute": true
+    },
+    {
+      "variant_id": "breakout_long_cash",
+      "name": "Rolling breakout long/cash",
+      "description": "Enter after price breaks above a rolling high and exit after it breaks below a rolling low or trend filter.",
+      "matching_terms": [
+        "breakout",
+        "rolling high",
+        "rolling low"
+      ],
+      "hypothesis_template": "A daily breakout trend strategy may capture persistent upside moves while avoiding some large declines.",
+      "primary_metric": "risk_adjusted_return",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve risk-adjusted return without materially increasing max drawdown after realistic costs.",
+      "success_criteria": [
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
+      ],
+      "engine_can_currently_execute": true
+    }
+  ],
+  "suggested_validation": [
+    "Run one baseline against buy-and-hold.",
+    "Run cost sensitivity with realistic liquid ETF assumptions.",
+    "Run date-window sensitivity across preselected market regimes.",
+    "Run train/test or walk-forward validation before accepting any tuned parameter."
+  ],
+  "references": [
+    "Hurst, Ooi, and Pedersen, A Century of Evidence on Trend-Following Investing",
+    "Moskowitz, Ooi, and Pedersen, Time Series Momentum"
+  ],
+  "engine_can_currently_execute": true,
+  "execution_notes": "The engine can execute daily long/cash SMA, EMA, and rolling breakout variants. It does not currently support shorting or intraday stop execution."
+}

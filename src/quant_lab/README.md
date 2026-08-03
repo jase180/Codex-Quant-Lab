@@ -39,6 +39,8 @@ It owns:
   portfolio runs.
 - `portfolio_batch.py`: writes dry-run manifests for batches of portfolio specs.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
+- `strategy_ideas.py`: loads `data/strategy_catalog/*.json`, reads prior
+  `experiment_conclusion.json` files, and drafts one non-executable next idea.
 - `research_plan_workflow.py`: shares research-plan recommendation logic,
   artifact-presence checks, and copyable command builders across CLI surfaces.
 - `default_experiment.py`: runs the normal single-strategy workflow from
@@ -61,6 +63,7 @@ It owns:
   focused robustness report for nearby numeric parameter values.
 - `robustness.py`: reruns strategy setups under controlled sensitivity checks
   and writes robustness summaries.
+- `cli_ideas.py`: CLI handler for conceptual next-strategy suggestions.
 - `cli.py`: registers the `quant-lab` command tree and delegates workflow
   behavior to smaller CLI handler modules.
 
