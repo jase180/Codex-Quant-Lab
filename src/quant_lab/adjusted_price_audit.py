@@ -23,6 +23,7 @@ class AdjustedPriceAudit:
     rows: int
     compared_rows: int
     max_close_difference: float | None
+    max_ohlc_difference: float | None
     missing_expected_dividends: list[str]
     missing_expected_splits: list[str]
     event_rows: int
@@ -80,18 +81,25 @@ def build_adjusted_price_comparison(*, adjusted: pd.DataFrame, raw: pd.DataFrame
 
     adjusted_frame = _flatten_provider_columns(adjusted)
     raw_frame = _flatten_provider_columns(raw)
-    _require_columns(adjusted_frame, ["Close"], "adjusted")
-    _require_columns(raw_frame, ["Close", "Adj Close"], "raw/action")
+    ohlc_columns = ["Open", "High", "Low", "Close"]
+    _require_columns(adjusted_frame, ohlc_columns, "adjusted")
+    _require_columns(raw_frame, [*ohlc_columns, "Adj Close"], "raw/action")
 
     comparison = pd.DataFrame(
         {
             "date": _date_strings(adjusted_frame.index),
+            "auto_adjust_open": pd.to_numeric(adjusted_frame["Open"], errors="raise").to_numpy(),
+            "auto_adjust_high": pd.to_numeric(adjusted_frame["High"], errors="raise").to_numpy(),
+            "auto_adjust_low": pd.to_numeric(adjusted_frame["Low"], errors="raise").to_numpy(),
             "auto_adjust_close": pd.to_numeric(adjusted_frame["Close"], errors="raise").to_numpy(),
         }
     )
     raw_comparison = pd.DataFrame(
         {
             "date": _date_strings(raw_frame.index),
+            "raw_open": pd.to_numeric(raw_frame["Open"], errors="raise").to_numpy(),
+            "raw_high": pd.to_numeric(raw_frame["High"], errors="raise").to_numpy(),
+            "raw_low": pd.to_numeric(raw_frame["Low"], errors="raise").to_numpy(),
             "raw_close": pd.to_numeric(raw_frame["Close"], errors="raise").to_numpy(),
             "adj_close": pd.to_numeric(raw_frame["Adj Close"], errors="raise").to_numpy(),
             "dividend": _numeric_or_zero(raw_frame, "Dividends"),
@@ -102,12 +110,32 @@ def build_adjusted_price_comparison(*, adjusted: pd.DataFrame, raw: pd.DataFrame
     if merged.empty:
         raise ValueError("Adjusted and raw/action market data have no overlapping dates.")
 
+    merged["adjustment_ratio"] = merged["adj_close"] / merged["raw_close"]
+    for column in ["open", "high", "low", "close"]:
+        raw_column = f"raw_{column}"
+        expected_column = f"expected_adjusted_{column}"
+        adjusted_column = f"auto_adjust_{column}"
+        difference_column = f"{column}_difference"
+        merged[expected_column] = merged[raw_column] * merged["adjustment_ratio"]
+        merged[difference_column] = (merged[adjusted_column] - merged[expected_column]).abs()
+
     merged["close_difference"] = (merged["auto_adjust_close"] - merged["adj_close"]).abs()
     return merged.loc[
         :,
         [
             "date",
+            "adjustment_ratio",
+            "auto_adjust_open",
+            "expected_adjusted_open",
+            "open_difference",
+            "auto_adjust_high",
+            "expected_adjusted_high",
+            "high_difference",
+            "auto_adjust_low",
+            "expected_adjusted_low",
+            "low_difference",
             "auto_adjust_close",
+            "expected_adjusted_close",
             "adj_close",
             "raw_close",
             "close_difference",
@@ -146,8 +174,10 @@ def write_adjusted_price_audit(
     missing_dividends = _missing_event_dates(comparison, "dividend", expected_dividends)
     missing_splits = _missing_event_dates(comparison, "stock_split", expected_splits)
     event_rows = _event_row_count(comparison)
+    max_ohlc_difference = _max_ohlc_difference(comparison)
     warnings = _audit_warnings(
         max_difference=max_difference,
+        max_ohlc_difference=max_ohlc_difference,
         tolerance=tolerance,
         missing_dividends=missing_dividends,
         missing_splits=missing_splits,
@@ -166,6 +196,7 @@ def write_adjusted_price_audit(
         "rows": int(len(comparison)),
         "compared_rows": int(comparison["close_difference"].notna().sum()),
         "max_close_difference": max_difference,
+        "max_ohlc_difference": max_ohlc_difference,
         "tolerance": tolerance,
         "expected_dividend_dates": expected_dividends,
         "expected_split_dates": expected_splits,
@@ -188,6 +219,7 @@ def write_adjusted_price_audit(
         rows=int(payload["rows"]),
         compared_rows=int(payload["compared_rows"]),
         max_close_difference=max_difference,
+        max_ohlc_difference=max_ohlc_difference,
         missing_expected_dividends=missing_dividends,
         missing_expected_splits=missing_splits,
         event_rows=event_rows,
@@ -215,6 +247,7 @@ def _render_audit_markdown(payload: dict[str, Any]) -> str:
             f"- Result: {payload['result']}",
             f"- Rows compared: {payload['compared_rows']}",
             f"- Max close difference: {payload['max_close_difference']}",
+            f"- Max OHLC difference: {payload['max_ohlc_difference']}",
             f"- Tolerance: {payload['tolerance']}",
             f"- Corporate-action rows: {payload['event_rows']}",
             f"- Comparison CSV: `{payload['comparison_path']}`",
@@ -270,6 +303,13 @@ def _max_close_difference(comparison: pd.DataFrame) -> float | None:
     return float(comparison["close_difference"].max())
 
 
+def _max_ohlc_difference(comparison: pd.DataFrame) -> float | None:
+    if comparison.empty:
+        return None
+    difference_columns = ["open_difference", "high_difference", "low_difference", "close_difference"]
+    return float(comparison.loc[:, difference_columns].max().max())
+
+
 def _missing_event_dates(comparison: pd.DataFrame, column: str, expected_dates: list[str]) -> list[str]:
     event_dates = set(comparison.loc[comparison[column] != 0, "date"].astype(str))
     return [date for date in expected_dates if date not in event_dates]
@@ -282,6 +322,7 @@ def _event_row_count(comparison: pd.DataFrame) -> int:
 def _audit_warnings(
     *,
     max_difference: float | None,
+    max_ohlc_difference: float | None,
     tolerance: float,
     missing_dividends: list[str],
     missing_splits: list[str],
@@ -294,6 +335,10 @@ def _audit_warnings(
         warnings.append("no comparable adjusted close rows")
     elif max_difference > tolerance:
         warnings.append(f"auto-adjusted close differs from Adj Close by more than {tolerance}")
+    if max_ohlc_difference is None:
+        warnings.append("no comparable adjusted OHLC rows")
+    elif max_ohlc_difference > tolerance:
+        warnings.append(f"auto-adjusted OHLC differs from raw OHLC adjusted by Adj Close ratio by more than {tolerance}")
     if missing_dividends:
         warnings.append(f"missing expected dividend dates: {', '.join(missing_dividends)}")
     if missing_splits:

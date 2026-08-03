@@ -55,7 +55,9 @@ Current behavior:
   available.
 - `audit-adjusted-prices` can write a provider-internal audit for one
   corporate-action window by downloading both adjusted OHLCV and raw OHLCV with
-  `Adj Close`, dividends, and splits.
+  `Adj Close`, dividends, and splits. It compares adjusted close to raw
+  `Adj Close` and compares adjusted open/high/low/close to raw OHLC multiplied
+  by the raw `Adj Close / Close` adjustment ratio.
 
 Implication:
 
@@ -73,8 +75,9 @@ Current coverage:
 - Trust report tests cover showing the recorded adjustment policy in single-run
   and portfolio evidence reports.
 - Adjusted-price audit tests cover comparing `auto_adjust=True` close to the
-  provider's `Adj Close`, expected event-date checks, and the CLI command with a
-  mocked provider.
+  provider's `Adj Close`, comparing adjusted open/high/low/close to raw OHLC
+  adjusted by the provider's `Adj Close / Close` ratio, expected event-date
+  checks, and the CLI command with a mocked provider.
 - Run trust reports can verify that a later local CSV still matches the saved
   run fingerprint.
 
@@ -93,8 +96,9 @@ Status:
   matter.
 - Current improvement: fetched CSV provenance now records the adjusted-price
   policy, trust reports surface it, and `audit-adjusted-prices` can inspect a
-  known corporate-action window. Future improvement: add optional
-  second-source checks against another provider or manually verified events.
+  known corporate-action window across adjusted OHLC. Future improvement: add
+  optional second-source checks against another provider or manually verified
+  events.
 
 ## Next-Open Fills
 
@@ -104,12 +108,17 @@ Current behavior:
 - Those pending orders are filled on bar `t+1` using that next bar's `open`.
 - Portfolio history is recorded after queued fills and marked at the same day's
   `close`.
+- When the input CSV was fetched with the default policy, both the fill `open`
+  and mark-to-market `close` are provider-adjusted prices.
 
 Implication:
 
 - Strategy signals can use bar `t` close data without pretending they traded at
   that already-known close.
 - Gaps between signal close and next open are included in the result.
+- Fills are internally coherent with the adjusted series because the strategy,
+  execution price, mark-to-market price, and buy-and-hold benchmark all use the
+  same adjusted OHLC data. They are not literal historical raw exchange prints.
 
 Current coverage:
 
@@ -169,16 +178,24 @@ Current behavior:
   each later `close`.
 - Cash benchmark stays flat over the same dates.
 - Strategy excess return is `strategy_total_return - benchmark_total_return`.
+- With the default fetched CSV, buy-and-hold uses the provider-adjusted close
+  series. That makes it a total-return-style comparison to the same adjusted
+  price series used by strategy signals and marks.
 
 Implication:
 
 - Strategy fills use next opens, but buy-and-hold benchmark enters at first
   close. This is simple and reproducible, but not identical execution timing.
 - Benchmark comparison is aligned to the strategy input rows.
+- Because the benchmark uses adjusted close values, dividend effects embedded
+  in the provider adjustment are reflected through the adjusted price path, not
+  through explicit dividend cash payments.
 
 Current coverage:
 
 - Benchmark tests cover buy-and-hold and cash curve behavior.
+- Benchmark tests cover that buy-and-hold total return follows the input close
+  series exactly, which is the adjusted close series for default fetched data.
 - Run and sweep tests check benchmark fields in reports, summaries, metadata,
   and research index rows.
 
@@ -186,6 +203,8 @@ Known gap:
 
 - Buy-and-hold does not currently pay transaction costs.
 - Buy-and-hold entry timing is first close, not first next open.
+- Buy-and-hold does not model dividend cash flows separately from adjusted
+  prices.
 - There is no blended or multi-benchmark strategy baseline yet.
 
 Status:

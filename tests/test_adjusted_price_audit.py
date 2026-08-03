@@ -23,12 +23,17 @@ from quant_lab.cli import main  # noqa: E402
 
 class AdjustedPriceAuditTests(unittest.TestCase):
     def test_build_adjusted_price_comparison_matches_auto_adjusted_close_to_adj_close(self) -> None:
-        adjusted = _adjusted_frame(close_values=[99.5, 100.25])
-        raw = _raw_action_frame(adj_close_values=[99.5, 100.25], dividends=[0.0, 0.5])
+        adjusted = _adjusted_frame(close_values=[50.0, 100.25], ratios=[0.5, 1.0])
+        raw = _raw_action_frame(adj_close_values=[50.0, 100.25], dividends=[0.0, 0.5])
 
         comparison = build_adjusted_price_comparison(adjusted=adjusted, raw=raw)
 
         self.assertEqual(list(comparison["date"]), ["2026-01-02", "2026-01-05"])
+        self.assertEqual(float(comparison.iloc[0]["adjustment_ratio"]), 0.5)
+        self.assertEqual(float(comparison.iloc[0]["expected_adjusted_open"]), 50.0)
+        self.assertEqual(float(comparison.iloc[0]["open_difference"]), 0.0)
+        self.assertEqual(float(comparison.iloc[0]["high_difference"]), 0.0)
+        self.assertEqual(float(comparison.iloc[0]["low_difference"]), 0.0)
         self.assertEqual(float(comparison.iloc[1]["dividend"]), 0.5)
         self.assertEqual(float(comparison["close_difference"].max()), 0.0)
 
@@ -53,11 +58,32 @@ class AdjustedPriceAuditTests(unittest.TestCase):
             comparison_exists = Path(audit.comparison_path).exists()
 
         self.assertEqual(audit.result, "warning")
+        self.assertEqual(audit.max_ohlc_difference, 0.0)
         self.assertEqual(payload["symbol"], "SPY")
+        self.assertEqual(payload["max_ohlc_difference"], 0.0)
         self.assertEqual(payload["missing_expected_dividends"], ["2026-01-12"])
         self.assertEqual(payload["missing_expected_splits"], ["2026-01-12"])
         self.assertTrue(comparison_exists)
         self.assertIn("missing expected dividend dates", audit.warnings[0])
+
+    def test_write_adjusted_price_audit_warns_when_adjusted_ohlc_does_not_match_ratio(self) -> None:
+        adjusted = _adjusted_frame(close_values=[50.0, 100.25], ratios=[0.6, 1.0])
+        raw = _raw_action_frame(adj_close_values=[50.0, 100.25], dividends=[0.0, 0.5])
+        comparison = build_adjusted_price_comparison(adjusted=adjusted, raw=raw)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            audit = write_adjusted_price_audit(
+                comparison=comparison,
+                symbol="SPY",
+                start="2026-01-01",
+                end="2026-01-31",
+                out_dir=temp_dir,
+                fetched_at_utc="2026-02-01T00:00:00Z",
+            )
+
+        self.assertEqual(audit.result, "warning")
+        self.assertGreater(audit.max_ohlc_difference, 0.01)
+        self.assertTrue(any("auto-adjusted OHLC differs" in warning for warning in audit.warnings))
 
     def test_audit_adjusted_prices_command_writes_report_with_mocked_yfinance(self) -> None:
         calls = []
@@ -100,14 +126,16 @@ class AdjustedPriceAuditTests(unittest.TestCase):
         self.assertEqual(calls[1][1]["actions"], True)
         self.assertTrue(markdown_exists)
         self.assertIn("result: pass", stdout.getvalue())
+        self.assertIn("max_ohlc_difference: 0.0", stdout.getvalue())
 
 
-def _adjusted_frame(*, close_values: list[float]) -> pd.DataFrame:
+def _adjusted_frame(*, close_values: list[float], ratios: list[float] | None = None) -> pd.DataFrame:
+    adjustment_ratios = ratios or [value / 100.0 for value in close_values]
     frame = pd.DataFrame(
         {
-            "Open": [value - 0.5 for value in close_values],
-            "High": [value + 1.0 for value in close_values],
-            "Low": [value - 1.0 for value in close_values],
+            "Open": [100.0 * ratio for ratio in adjustment_ratios],
+            "High": [101.0 * ratio for ratio in adjustment_ratios],
+            "Low": [99.0 * ratio for ratio in adjustment_ratios],
             "Close": close_values,
             "Volume": [1000] * len(close_values),
         },

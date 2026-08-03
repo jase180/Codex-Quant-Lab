@@ -35,6 +35,7 @@ def audit_adjusted_prices_command(args: argparse.Namespace) -> int:
     print(f"result: {audit.result}")
     print(f"rows_compared: {audit.compared_rows}")
     print(f"max_close_difference: {audit.max_close_difference}")
+    print(f"max_ohlc_difference: {audit.max_ohlc_difference}")
     print(f"comparison: {audit.comparison_path}")
     if audit.warnings:
         print("warnings:")

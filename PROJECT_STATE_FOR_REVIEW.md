@@ -427,14 +427,14 @@ The default single-strategy workflow can run as one command through `experiment 
 2. Reproducibility metadata is strong for a small project. `src/quant_lab/run_metadata.py` fingerprints raw data bytes and stores command tokens, costs, sizing, benchmark, git commit, and artifact paths in `run_metadata.json`; `verify-run` tests changed/missing data cases.
 3. Reports are auditable back to raw files. `src/quant_lab/run_artifacts.py` writes metrics, equity curve, trades, charts, data quality, warnings, saved strategy payloads, metadata, and research index rows from one execution path.
 4. The guided workflow is conservative. `src/quant_lab/research_plan_workflow.py` asks for baseline, trust report, sweep, validation, evidence summary, robustness, conclusion, and decision rather than jumping straight from a good run to a decision.
-5. The project has a real offline health path. `quant-lab doctor` and `quant-lab smoke-test --agent-cycle` are implemented and tested; the latest full suite passed `379` tests, and the real smoke command verifies agent dry-run wiring without executing proposed commands.
+5. The project has a real offline health path. `quant-lab doctor` and `quant-lab smoke-test --agent-cycle` are implemented and tested; the latest full suite passed `381` tests, and the real smoke command verifies agent dry-run wiring without executing proposed commands.
 
 ## 9. Current Weaknesses
 
 1. Information-design problem: too many human-facing reports. `report.md`, `run_trust_report.md`, `research.md`, `sweep_guardrails.md`, robustness reports, `evidence_summary.md`, `experiment_conclusion.md`, `session_manifest.md`, and agent Markdown files all compete unless the reader already knows the hierarchy.
 2. Architecture/usability problem: workflow automation is split between one-command default flow and many lower-level commands. `experiment run-default` is coherent, but `research-plan next` and advanced workflows still require users to pass paths/ids/metadata; this is transparent but verbose.
 3. Missing research capability: prior conclusions are not automatically reusable across experiments. `experiment_conclusion.json` stores do-not-repeat and next-useful-test fields, but new plans/runs do not query a cross-experiment knowledge base.
-4. Correctness problem: adjusted prices, dividends, and splits are not directly modeled by the engine. Fetch uses `yfinance` `auto_adjust=True` and `actions=False`; the 2024 SPY dividend window now has a provider-internal audit, but there is still no independent second-source validation.
+4. Correctness problem: adjusted prices, dividends, and splits are not directly modeled by the engine. Fetch uses `yfinance` `auto_adjust=True` and `actions=False`; the 2024 SPY dividend window now has a provider-internal adjusted OHLC audit, but there is still no independent second-source validation.
 5. Missing research capability: risk controls are still narrow. The strategy schema supports `volatility_target`, but it does not yet support partial-exposure regimes, drawdown stops, trailing exits, cooldowns, or stacked controls with rich reporting.
 
 ## 10. One Concrete Experiment Walkthrough
@@ -597,10 +597,10 @@ This walkthrough uses only current capabilities.
 ## 11. Test and Correctness Status
 
 - Command used: `.\.venv-win\Scripts\python.exe -m unittest discover -s tests`
-- Passed tests: `379`
+- Passed tests: `381`
 - Failed tests: `0`
 - Skipped tests: `0` observed in unittest output.
-- Test duration: `21.786s`
+- Test duration: `18.168s`
 
 Coverage assessment:
 
@@ -611,7 +611,7 @@ Coverage assessment:
 - Percent-equity sizing: directly tested in core execution, rule strategy, and CLI run tests.
 - Commissions: directly tested in portfolio accounting, execution model, CLI cost options, and cost presets.
 - Slippage: directly tested in execution model and CLI cost option paths.
-- Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; a real SPY 2024 dividend-window audit passed with `0.0` max close difference against yfinance raw `Adj Close`.
+- Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; a real SPY 2024 dividend-window audit passed with `0.0` max close difference against yfinance raw `Adj Close` and `0.0` max adjusted-OHLC difference against raw OHLC multiplied by the provider adjustment ratio.
 - Dividends: not directly modeled as cash flows; the SPY 2024 audit found the expected 2024 dividend dates in provider action rows and confirmed adjusted close consistency for that window.
 - Splits: not directly modeled or tested; assumed folded into adjusted OHLC by provider.
 - Benchmark alignment: directly tested for buy-and-hold/cash metrics and portfolio benchmark date alignment; single-symbol benchmark starts from the input series.
@@ -640,7 +640,7 @@ Do not infer market correctness from the test count. The suite strongly checks d
 7. What should not be removed?
    - `run_metadata.json`, `research_index.jsonl`, `experiment_conclusion.json/md`, next-open execution tests, data fingerprints, trust reports, and explicit benchmark/cost assumptions.
 8. What is the single highest-priority correctness audit?
-   - Second-source corporate-action validation: the provider-internal SPY 2024 dividend audit passed, but the lab still needs either another provider or a broader known-event test before treating adjusted-price behavior as fully de-risked.
+   - Second-source corporate-action validation: the provider-internal SPY 2024 adjusted-OHLC dividend audit passed, but the lab still needs either another provider or a broader known-event test before treating adjusted-price behavior as fully de-risked.
 9. What is the single best next real experiment?
    - A partial-exposure SPY trend experiment, because the latest SMA long/cash and SMA plus 12% volatility-target tests both reduced drawdown but failed return-retention thresholds.
 10. Is the project ready for further feature development, or should development pause for consolidation?

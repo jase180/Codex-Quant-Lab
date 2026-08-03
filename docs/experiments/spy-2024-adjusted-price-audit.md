@@ -9,8 +9,8 @@ are ignored by Git; this tracked note preserves the result and its limits.
 ## Question
 
 Do the provider-adjusted SPY prices used by the lab line up with the same
-provider's raw `Adj Close` field and visible dividend rows around known 2024
-SPY distribution dates?
+provider's raw `Adj Close` field, raw OHLC adjusted by the provider adjustment
+ratio, and visible dividend rows around known 2024 SPY distribution dates?
 
 This matters because the lab fetches daily prices with:
 
@@ -40,7 +40,7 @@ it compares yfinance adjusted data to yfinance raw/action data.
   --symbol SPY `
   --start 2024-01-01 `
   --end 2025-01-10 `
-  --out artifacts\data-audits\spy_2024_dividends `
+  --out artifacts\data-audits\spy_2024_dividends_ohlc `
   --expected-dividend-date 2024-03-15 `
   --expected-dividend-date 2024-06-21 `
   --expected-dividend-date 2024-09-20 `
@@ -53,9 +53,9 @@ escalation.
 
 ## Generated Artifacts
 
-- `artifacts/data-audits/spy_2024_dividends/adjusted_price_audit.md`
-- `artifacts/data-audits/spy_2024_dividends/adjusted_price_audit.json`
-- `artifacts/data-audits/spy_2024_dividends/adjusted_price_comparison.csv`
+- `artifacts/data-audits/spy_2024_dividends_ohlc/adjusted_price_audit.md`
+- `artifacts/data-audits/spy_2024_dividends_ohlc/adjusted_price_audit.json`
+- `artifacts/data-audits/spy_2024_dividends_ohlc/adjusted_price_comparison.csv`
 
 ## Result
 
@@ -63,6 +63,7 @@ Audit result: `pass`
 
 - Rows compared: `257`
 - Max close difference: `0.0`
+- Max OHLC difference: `0.0`
 - Tolerance: `0.01`
 - Corporate-action rows found: `4`
 - Missing expected dividends: none
@@ -82,13 +83,16 @@ Event rows found:
 
 This supports the current cached SPY data policy for the audited 2024 dividend
 window. The adjusted close returned by `auto_adjust=True` matched yfinance's raw
-`Adj Close` field exactly on all compared rows, and the expected 2024 dividend
-dates appeared as action rows in the raw/action view.
+`Adj Close` field exactly on all compared rows. The adjusted open/high/low/close
+also matched raw OHLC multiplied by the provider's `Adj Close / Close`
+adjustment ratio, and the expected 2024 dividend dates appeared as action rows
+in the raw/action view.
 
 This does not prove every SPY backtest result is economically correct. It is
 still not a second-source validation, and the backtester still does not model
 dividends as separate cash payments. The result says the provider views are
-internally consistent for this audited window.
+internally consistent for this audited window, and that next-open fills on the
+default fetched data use adjusted opens from the same adjusted OHLC series.
 
 ## Carry-Forward Judgment
 

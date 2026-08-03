@@ -48,6 +48,31 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(metrics.ending_equity, 1_500.0)
         self.assertAlmostEqual(metrics.total_return, 0.5)
 
+    def test_buy_and_hold_benchmark_uses_adjusted_close_series_economics(self) -> None:
+        data = pd.DataFrame(
+            [
+                {
+                    "date": "2026-01-01",
+                    "open": 95.0,
+                    "high": 105.0,
+                    "low": 90.0,
+                    "close": 100.0,
+                },
+                {
+                    "date": "2026-01-02",
+                    "open": 47.5,
+                    "high": 52.5,
+                    "low": 45.0,
+                    "close": 50.0,
+                },
+            ]
+        )
+
+        metrics = buy_and_hold_metrics(data, initial_cash=1_000)
+
+        self.assertEqual(metrics.ending_equity, 500.0)
+        self.assertAlmostEqual(metrics.total_return, -0.5)
+
     def test_cash_equity_curve_stays_flat(self) -> None:
         data = pd.DataFrame(
             [
