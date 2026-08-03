@@ -217,6 +217,46 @@ class ExperimentConclusionTest(unittest.TestCase):
         self.assertFalse(result.passed)
         self.assertNotIn("Could not evaluate", result.observed)
 
+    def test_strategy_status_evaluates_strategy_vs_benchmark_sharpe_delta(self):
+        records = [
+            _index_record(
+                run_id="test_selected",
+                run_type="test_selected_run",
+                excess_total_return=-0.02,
+                metadata_path="artifacts/research/spy/test_selected/run_metadata.json",
+            )
+            | {
+                "data_start": "2026-01-01",
+                "data_end": "2026-12-31",
+                "benchmark_name": "buy-and-hold",
+                "cost_preset": "retail-liquid",
+                "sizing": "percent-equity",
+                "sharpe_ratio": 0.8,
+                "benchmark_sharpe_ratio": 0.5,
+            }
+        ]
+        objective = InvestmentObjective(
+            intended_benefit="improved risk-adjusted return",
+            benchmark="buy-and-hold",
+            primary_metric="sharpe",
+            minimum_acceptable_performance="Improve Sharpe versus buy-and-hold.",
+            success_criteria=[
+                SuccessCriterion(
+                    name="risk_adjusted_return",
+                    metric="sharpe",
+                    comparison="strategy_vs_benchmark_delta",
+                    operator=">",
+                    threshold=0.0,
+                )
+            ],
+        )
+
+        conclusion = build_experiment_conclusion(_experiment(), records, investment_objective=objective)
+
+        result = conclusion.strategy_hypothesis_status.criteria_results[0]
+        self.assertTrue(result.passed)
+        self.assertEqual("0.3000", result.observed)
+
     def test_builds_mixed_conclusion_with_supporting_and_contradicting_evidence(self):
         records = [
             _index_record(

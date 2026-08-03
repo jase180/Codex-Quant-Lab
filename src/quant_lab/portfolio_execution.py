@@ -137,6 +137,7 @@ def _build_portfolio_index_record(
         trade_count=trade_count,
         benchmark_name=f"buy-and-hold-{benchmark.symbol.lower()}",
         benchmark_total_return=benchmark.total_return,
+        benchmark_sharpe_ratio=benchmark.sharpe_ratio,
         benchmark_max_drawdown=benchmark.max_drawdown,
         excess_total_return=benchmark.excess_total_return,
         sizing="static-weights",

@@ -684,6 +684,12 @@ def _criterion_observed_value(record: dict, metric: str, comparison: str) -> flo
         if strategy_value is None or benchmark_value in {None, 0}:
             return None
         return strategy_value / float(benchmark_value)
+    if comparison == "strategy_vs_benchmark_delta":
+        strategy_value = _record_metric(record, metric)
+        benchmark_value = _record_metric(record, f"benchmark_{metric}")
+        if strategy_value is None or benchmark_value is None:
+            return None
+        return strategy_value - float(benchmark_value)
     if comparison == "relative_reduction_vs_benchmark":
         strategy_value = _record_metric(record, metric)
         benchmark_value = _record_metric(record, f"benchmark_{metric}")
@@ -696,12 +702,21 @@ def _criterion_observed_value(record: dict, metric: str, comparison: str) -> flo
 
 
 def _record_metric(record: dict, field: str) -> float | None:
+    field = _metric_field_alias(field)
     value = _optional_numeric(record.get(field))
     if value is not None:
         return value
     if field == "benchmark_cagr":
         return _benchmark_cagr_from_record(record)
     return None
+
+
+def _metric_field_alias(field: str) -> str:
+    if field == "sharpe":
+        return "sharpe_ratio"
+    if field == "benchmark_sharpe":
+        return "benchmark_sharpe_ratio"
+    return field
 
 
 def _benchmark_cagr_from_record(record: dict) -> float | None:

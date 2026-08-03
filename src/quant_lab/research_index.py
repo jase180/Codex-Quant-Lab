@@ -41,6 +41,7 @@ class RunIndexRecord:
     trade_count: int
     benchmark_name: str
     benchmark_total_return: float
+    benchmark_sharpe_ratio: float | None
     benchmark_max_drawdown: float
     excess_total_return: float
     sizing: str
@@ -88,6 +89,7 @@ def build_run_index_record(
         trade_count=trade_count,
         benchmark_name=metadata.benchmark.name,
         benchmark_total_return=benchmark_metrics.total_return,
+        benchmark_sharpe_ratio=benchmark_metrics.sharpe_ratio,
         benchmark_max_drawdown=benchmark_metrics.max_drawdown,
         excess_total_return=excess_return,
         sizing=metadata.sizing.mode,

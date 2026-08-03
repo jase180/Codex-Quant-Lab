@@ -289,6 +289,7 @@ class CliRunTests(unittest.TestCase):
             self.assertEqual(metadata["benchmark"]["display_name"], "Cash")
             self.assertEqual(index_rows[0]["benchmark_name"], "cash")
             self.assertEqual(index_rows[0]["benchmark_total_return"], 0.0)
+            self.assertEqual(index_rows[0]["benchmark_sharpe_ratio"], 0.0)
             self.assertIn("## Benchmark: Cash", report)
 
     def test_run_command_saves_research_note(self) -> None:

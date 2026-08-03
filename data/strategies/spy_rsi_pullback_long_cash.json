@@ -1,0 +1,50 @@
+{
+  "description": "Enter when RSI is oversold and exit when momentum normalizes.",
+  "entry": {
+    "conditions": [
+      {
+        "left": {
+          "indicator": "rsi_14"
+        },
+        "operator": "lt",
+        "right": {
+          "value": 30
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "exit": {
+    "conditions": [
+      {
+        "left": {
+          "indicator": "rsi_14"
+        },
+        "operator": "gte",
+        "right": {
+          "value": 55
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "indicators": [
+    {
+      "id": "rsi_14",
+      "inputs": {
+        "length": 14,
+        "source": "close"
+      },
+      "kind": "rsi"
+    }
+  ],
+  "market": {
+    "symbol": "SPY",
+    "timeframe": "1d"
+  },
+  "name": "SPY RSI pullback long/cash",
+  "position_mode": "long_only",
+  "schema_version": "v1",
+  "strategy_id": "spy_rsi_pullback_long_cash",
+  "strategy_type": "rule_based"
+}
