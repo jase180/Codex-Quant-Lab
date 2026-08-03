@@ -1,0 +1,73 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "cross_asset_regime",
+  "name": "Cross-Asset Regime",
+  "rationale": "Cross-asset regime rules use another market, such as bonds, volatility, credit, or rates, to condition equity exposure.",
+  "expected_benefit": "Better behavior during equity declines if external markets provide useful stress signals.",
+  "failure_modes": [
+    "Spurious relationships between markets.",
+    "Calendar alignment and missing-data errors.",
+    "Regime signals that lag the equity move."
+  ],
+  "required_project_capabilities": [
+    "multi-symbol signal inputs",
+    "cross-asset indicator references",
+    "calendar alignment",
+    "benchmark consistency checks"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "bond_trend_equity_filter",
+      "name": "Bond-trend equity filter",
+      "description": "Condition equity exposure on the trend of a bond ETF or Treasury proxy.",
+      "matching_terms": ["bond trend", "treasury filter", "cross asset"],
+      "hypothesis_template": "A bond-trend regime filter may improve equity drawdown behavior during rate-sensitive stress periods.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 75% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "vix_proxy_equity_filter",
+      "name": "Volatility-proxy equity filter",
+      "description": "Reduce equity exposure when a volatility proxy enters a stressed regime.",
+      "matching_terms": ["vix proxy", "volatility proxy", "stress filter"],
+      "hypothesis_template": "A volatility-proxy equity filter may reduce crash exposure without overly reducing normal-market exposure.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative and avoid worse Sharpe.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "credit_spread_proxy_filter",
+      "name": "Credit-spread proxy filter",
+      "description": "Use risky-credit versus Treasury behavior as an equity-risk signal.",
+      "matching_terms": ["credit spread", "hyg", "lqd", "credit proxy"],
+      "hypothesis_template": "A credit-stress proxy may identify equity-risk-off regimes before price-only equity filters react.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown without failing return retention below 70% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.7}
+      ],
+      "engine_can_currently_execute": false
+    }
+  ],
+  "suggested_validation": [
+    "Audit calendar alignment before any performance interpretation.",
+    "Use a single external signal first.",
+    "Prespecify whether the objective is drawdown control or return enhancement."
+  ],
+  "references": [
+    "Risk-on/risk-off regime-filter practitioner literature",
+    "Cross-asset macro timing research"
+  ],
+  "engine_can_currently_execute": false,
+  "execution_notes": "The current single-strategy schema cannot reference another symbol as a signal input."
+}

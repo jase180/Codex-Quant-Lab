@@ -1,0 +1,74 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "portfolio_allocation",
+  "name": "Portfolio Allocation",
+  "rationale": "Static allocation rules test whether simple diversification beats single-asset exposure on risk-adjusted terms.",
+  "expected_benefit": "Lower drawdown and smoother returns through diversification rather than timing.",
+  "failure_modes": [
+    "Diversification disappears during crises.",
+    "Static weights can underperform concentrated equity exposure.",
+    "Benchmark choice can dominate the interpretation."
+  ],
+  "required_project_capabilities": [
+    "multi-symbol portfolio data",
+    "static weights",
+    "portfolio benchmark comparison",
+    "per-symbol data trust"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "equal_weight_two_asset",
+      "name": "Equal-weight two-asset portfolio",
+      "description": "Hold two assets at fixed equal weights.",
+      "matching_terms": ["equal weight", "static allocation", "two asset"],
+      "hypothesis_template": "A static two-asset equal-weight portfolio may reduce drawdown versus SPY buy-and-hold while retaining acceptable growth.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 70% of SPY benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+      ],
+      "engine_can_currently_execute": true
+    },
+    {
+      "variant_id": "equity_bond_60_40",
+      "name": "Equity/bond 60/40",
+      "description": "Hold a fixed 60% equity and 40% bond allocation.",
+      "matching_terms": ["60 40", "equity bond", "static portfolio"],
+      "hypothesis_template": "A simple 60/40 equity-bond portfolio may improve drawdown-adjusted performance versus SPY buy-and-hold.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative while retaining at least 60% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25},
+        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.6}
+      ],
+      "engine_can_currently_execute": true
+    },
+    {
+      "variant_id": "three_asset_static_defensive",
+      "name": "Three-asset static defensive mix",
+      "description": "Hold equities, bonds, and cash-like exposure at fixed weights.",
+      "matching_terms": ["three asset", "defensive mix", "static defensive"],
+      "hypothesis_template": "A static defensive multi-asset mix may reduce drawdown enough to justify lower raw return versus SPY.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 30% relative while retaining at least 50% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.3}
+      ],
+      "engine_can_currently_execute": true
+    }
+  ],
+  "suggested_validation": [
+    "Use portfolio workflow, not single-strategy workflow.",
+    "Audit every symbol's data and shared date range.",
+    "Compare to both SPY and a matched static benchmark when available."
+  ],
+  "references": [
+    "Classic balanced portfolio research",
+    "Diversification and asset-allocation practitioner literature"
+  ],
+  "engine_can_currently_execute": true,
+  "execution_notes": "The portfolio engine supports static weights, but ideas suggest currently emits a generic draft config rather than a portfolio plan."
+}

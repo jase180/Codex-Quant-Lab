@@ -84,7 +84,9 @@ This command reads prior `experiment_conclusion.json` files and the conceptual
 strategy catalog in `data/strategy_catalog/`. It suggests one hypothesis,
 success criteria, and a draft experiment config, but it does not create
 executable strategy JSON. That keeps idea selection separate from implementation
-until a human approves the next test.
+until a human approves the next test. The catalog can contain many ideas that
+are not yet executable; use `engine_can_currently_execute` to tell concept from
+current engine support.
 
 ```bash
 quant-lab experiment run-default \

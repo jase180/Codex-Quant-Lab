@@ -28,6 +28,11 @@ This reads `data/strategy_catalog/*.json` and prior
 a draft experiment config. It does not create executable strategy JSON; convert
 the chosen idea only after human approval.
 
+The catalog is intentionally broader than the executable strategy folder. It now
+contains at least 30 canonical variants, but only variants marked executable
+should be promoted into runnable strategy or portfolio files without adding
+engine support first.
+
 Use `experiment run-default` when you want the lab to run the normal
 single-strategy workflow for you while still writing every underlying artifact:
 

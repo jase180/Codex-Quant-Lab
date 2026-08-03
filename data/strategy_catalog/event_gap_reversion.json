@@ -1,0 +1,73 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "event_gap_reversion",
+  "name": "Event And Gap Reversion",
+  "rationale": "Gap and event-style rules test whether large overnight or single-day moves mean-revert after delayed execution.",
+  "expected_benefit": "Potential short-horizon opportunity after sharp moves, with explicit attention to execution realism.",
+  "failure_modes": [
+    "Gap moves can continue instead of reverting.",
+    "Daily bars may hide intraday risk.",
+    "Entry timing can make the signal untradeable after next-open delay."
+  ],
+  "required_project_capabilities": [
+    "prior-close references",
+    "gap calculations",
+    "holding-period exits",
+    "next-open execution audit"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "large_down_gap_reversion",
+      "name": "Large down-gap reversion",
+      "description": "Enter after a large overnight down gap and exit after a fixed recovery condition.",
+      "matching_terms": ["down gap", "gap reversion"],
+      "hypothesis_template": "A large down-gap reversion rule may capture panic overreaction after delayed next-open execution.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe after costs and show acceptable worst trade behavior.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "large_up_gap_fade",
+      "name": "Large up-gap fade",
+      "description": "Avoid or fade exposure after unusually large up gaps.",
+      "matching_terms": ["up gap", "gap fade"],
+      "hypothesis_template": "A large up-gap fade may avoid buying short-term exhaustion after unusually strong overnight moves.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe while retaining at least 60% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "large_down_day_recovery",
+      "name": "Large down-day recovery",
+      "description": "Enter after a large close-to-close down day and exit after recovery.",
+      "matching_terms": ["large down day", "close to close reversion"],
+      "hypothesis_template": "A large down-day recovery rule may capture short-term reversal after broad selloffs.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe and keep max drawdown no worse than buy-and-hold.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": false
+    }
+  ],
+  "suggested_validation": [
+    "Audit next-open fill realism carefully.",
+    "Track trade count and worst trade.",
+    "Do not trust results if signals are too sparse."
+  ],
+  "references": [
+    "Short-term reversal and gap-trading practitioner literature",
+    "Execution realism notes for daily-bar systems"
+  ],
+  "engine_can_currently_execute": false,
+  "execution_notes": "The current strategy schema lacks prior-close arithmetic, gap calculations, and fixed holding-period exits."
+}

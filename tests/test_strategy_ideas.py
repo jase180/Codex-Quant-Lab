@@ -61,6 +61,22 @@ def _write_json(path: Path, payload: dict) -> None:
 
 
 class StrategyIdeasTest(unittest.TestCase):
+    def test_tracked_strategy_catalog_has_broad_idea_library(self) -> None:
+        catalog_dir = Path(__file__).resolve().parents[1] / "data" / "strategy_catalog"
+
+        entries = load_strategy_catalog(catalog_dir)
+        variant_count = sum(len(entry.canonical_variants) for entry in entries)
+        executable_variant_count = sum(
+            1
+            for entry in entries
+            for variant in entry.canonical_variants
+            if variant.get("engine_can_currently_execute")
+        )
+
+        self.assertGreaterEqual(len(entries), 10)
+        self.assertGreaterEqual(variant_count, 30)
+        self.assertGreaterEqual(executable_variant_count, 5)
+
     def test_load_strategy_catalog_requires_conceptual_fields(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             catalog_dir = Path(tmpdir)

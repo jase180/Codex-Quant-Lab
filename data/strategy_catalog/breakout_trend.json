@@ -1,0 +1,77 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "breakout_trend",
+  "name": "Breakout Trend",
+  "rationale": "Breakout rules test whether new highs or lows contain enough persistence to justify entering after confirmation rather than predicting reversals.",
+  "expected_benefit": "Potential upside participation with explicit exits when price loses recent support.",
+  "failure_modes": [
+    "False breakouts in choppy markets.",
+    "Late entries after large moves.",
+    "High turnover when channels are too short."
+  ],
+  "required_project_capabilities": [
+    "daily OHLCV data",
+    "rolling-high and rolling-low indicators",
+    "next-open market fills",
+    "long/cash position state",
+    "cost and date sensitivity"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "donchian_20_10_long_cash",
+      "name": "Donchian 20/10 long/cash",
+      "description": "Enter after close breaks above a 20-day high and exit after close breaks below a 10-day low.",
+      "matching_terms": ["donchian", "20 day high", "10 day low", "breakout"],
+      "hypothesis_template": "A daily Donchian 20/10 breakout rule may improve risk-adjusted return versus buy-and-hold by entering only after confirmed upside persistence.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe versus buy-and-hold and retain at least 70% of benchmark CAGR after realistic costs.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0},
+        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.7}
+      ],
+      "engine_can_currently_execute": true
+    },
+    {
+      "variant_id": "donchian_55_20_long_cash",
+      "name": "Donchian 55/20 long/cash",
+      "description": "Use a slower breakout entry and medium exit channel to reduce whipsaws.",
+      "matching_terms": ["55 day high", "20 day low", "turtle breakout"],
+      "hypothesis_template": "A slower daily Donchian 55/20 breakout rule may reduce whipsaw losses versus a short channel while still participating in major SPY trends.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 70% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2},
+        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.7}
+      ],
+      "engine_can_currently_execute": true
+    },
+    {
+      "variant_id": "breakout_with_volatility_target",
+      "name": "Breakout with volatility target",
+      "description": "Combine a breakout entry/exit rule with a volatility-target risk control.",
+      "matching_terms": ["breakout volatility target", "donchian vol target"],
+      "hypothesis_template": "A breakout rule with volatility targeting may keep drawdowns below buy-and-hold while retaining better growth than a pure cash-exit rule.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative and retain at least 70% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25},
+        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.7}
+      ],
+      "engine_can_currently_execute": true
+    }
+  ],
+  "suggested_validation": [
+    "Predefine one channel pair before running.",
+    "Run costs because breakout systems can trade repeatedly in ranges.",
+    "Use date-window sensitivity covering bullish and sideways markets."
+  ],
+  "references": [
+    "Donchian channel trend-following literature",
+    "Turtle trading breakout concepts"
+  ],
+  "engine_can_currently_execute": true,
+  "execution_notes": "The engine supports rolling-high and rolling-low conditions plus optional volatility targeting."
+}

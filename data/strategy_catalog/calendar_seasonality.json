@@ -1,0 +1,73 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "calendar_seasonality",
+  "name": "Calendar Seasonality",
+  "rationale": "Calendar rules test whether recurring date-based effects survive realistic costs and validation.",
+  "expected_benefit": "Potential return concentration with lower market exposure.",
+  "failure_modes": [
+    "Data-mined calendar effects that vanish out of sample.",
+    "Too few observations for reliable inference.",
+    "Rules that look good only in one market regime."
+  ],
+  "required_project_capabilities": [
+    "date-aware signal rules",
+    "month and weekday filters",
+    "scheduled entry and exit logic",
+    "validation over long histories"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "turn_of_month",
+      "name": "Turn-of-month equity exposure",
+      "description": "Hold the market only around the turn of each month.",
+      "matching_terms": ["turn of month", "month end", "calendar"],
+      "hypothesis_template": "A turn-of-month exposure rule may retain meaningful equity returns while reducing time in market.",
+      "primary_metric": "cagr",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Retain at least 50% of benchmark CAGR with materially lower exposure.",
+      "success_criteria": [
+        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.5}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "sell_in_may",
+      "name": "Sell-in-May seasonal filter",
+      "description": "Hold equities during historically stronger months and cash during historically weaker months.",
+      "matching_terms": ["sell in may", "seasonal filter"],
+      "hypothesis_template": "A prespecified seasonal equity filter may reduce drawdown without giving up too much long-term growth.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 70% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "weekday_reversal",
+      "name": "Weekday reversal",
+      "description": "Test one prespecified weekday entry/exit pattern.",
+      "matching_terms": ["weekday", "day of week"],
+      "hypothesis_template": "A single prespecified weekday reversal rule may improve returns relative to time in market.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe after realistic costs and remain stable across decades.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": false
+    }
+  ],
+  "suggested_validation": [
+    "Require a long sample because signals are sparse.",
+    "Do not search many date windows.",
+    "Use train/test by calendar era, not random splits."
+  ],
+  "references": [
+    "Academic literature on turn-of-month and seasonality effects",
+    "Practitioner calendar-anomaly research"
+  ],
+  "engine_can_currently_execute": false,
+  "execution_notes": "The current strategy schema does not support date/calendar conditions."
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "volatility_risk_filter",
+  "name": "Volatility Risk Filter",
+  "rationale": "Volatility filters test whether avoiding or reducing exposure during high-volatility regimes improves risk-adjusted returns.",
+  "expected_benefit": "Lower drawdown and smoother returns during stressed equity markets.",
+  "failure_modes": [
+    "Selling after volatility already spiked.",
+    "Missing sharp rebounds.",
+    "Overfitting volatility thresholds."
+  ],
+  "required_project_capabilities": [
+    "rolling realized volatility indicators",
+    "volatility threshold rules",
+    "partial or full cash exits",
+    "cost sensitivity"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "realized_volatility_cash_filter",
+      "name": "Realized-volatility cash filter",
+      "description": "Move to cash when realized volatility exceeds a prespecified threshold.",
+      "matching_terms": ["realized volatility", "volatility filter", "high volatility"],
+      "hypothesis_template": "A realized-volatility cash filter may reduce drawdowns by avoiding high-risk regimes.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative while retaining at least 70% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "volatility_target_only",
+      "name": "Volatility-target only",
+      "description": "Stay in the asset but scale exposure using a target-volatility risk control.",
+      "matching_terms": ["volatility target", "vol target", "risk control"],
+      "hypothesis_template": "A volatility-target-only overlay may improve drawdown-adjusted performance without binary cash exits.",
+      "primary_metric": "max_drawdown",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 75% of benchmark CAGR.",
+      "success_criteria": [
+        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2},
+        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.75}
+      ],
+      "engine_can_currently_execute": true
+    },
+    {
+      "variant_id": "low_volatility_entry_filter",
+      "name": "Low-volatility entry filter",
+      "description": "Allow entries only when realized volatility is below a threshold.",
+      "matching_terms": ["low volatility", "entry filter"],
+      "hypothesis_template": "A low-volatility entry filter may avoid unstable entry periods and improve Sharpe.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe versus buy-and-hold after realistic costs.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": false
+    }
+  ],
+  "suggested_validation": [
+    "Do not sweep many volatility thresholds initially.",
+    "Use stress periods and rebound periods as separate date windows.",
+    "Compare against both buy-and-hold and cash."
+  ],
+  "references": [
+    "Volatility-managed portfolios literature",
+    "Practitioner work on target-volatility overlays"
+  ],
+  "engine_can_currently_execute": true,
+  "execution_notes": "Only volatility-target overlays are currently executable. Volatility threshold indicators are not yet in the strategy schema."
+}

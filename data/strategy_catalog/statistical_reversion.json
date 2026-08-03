@@ -1,0 +1,73 @@
+{
+  "schema_version": "strategy_catalog_entry.v1",
+  "family_id": "statistical_reversion",
+  "name": "Statistical Reversion",
+  "rationale": "Statistical reversion rules test whether price deviations from a recent distribution revert enough to beat costs.",
+  "expected_benefit": "Potential short-horizon risk-adjusted return improvement with lower average exposure.",
+  "failure_modes": [
+    "Persistent trends can crush reversion entries.",
+    "Distribution assumptions can break during crises.",
+    "Costs can erase small edges."
+  ],
+  "required_project_capabilities": [
+    "rolling mean and standard deviation indicators",
+    "z-score or band conditions",
+    "turnover-aware costs",
+    "date sensitivity"
+  ],
+  "canonical_variants": [
+    {
+      "variant_id": "bollinger_band_reversion",
+      "name": "Bollinger Band reversion",
+      "description": "Enter after price closes below a lower band and exit after mean recovery.",
+      "matching_terms": ["bollinger", "band reversion", "z score"],
+      "hypothesis_template": "A Bollinger Band pullback rule may improve Sharpe by buying statistically stretched declines.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe and retain at least 60% of benchmark CAGR after realistic costs.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "moving_average_distance_reversion",
+      "name": "Moving-average distance reversion",
+      "description": "Enter when price is far below a moving average and exit near the average.",
+      "matching_terms": ["ma distance", "distance reversion"],
+      "hypothesis_template": "A moving-average distance reversion rule may improve returns by buying unusually deep pullbacks.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe with no worse max drawdown than buy-and-hold.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": false
+    },
+    {
+      "variant_id": "rolling_low_reversion",
+      "name": "Rolling-low reversion",
+      "description": "Enter near a rolling low and exit after a simple recovery condition.",
+      "matching_terms": ["rolling low reversion", "new low bounce"],
+      "hypothesis_template": "A rolling-low reversion rule may identify short-term capitulation without needing standard-deviation bands.",
+      "primary_metric": "sharpe",
+      "benchmark": "buy-and-hold",
+      "minimum_acceptable_performance": "Improve Sharpe versus buy-and-hold after realistic costs.",
+      "success_criteria": [
+        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+      ],
+      "engine_can_currently_execute": true
+    }
+  ],
+  "suggested_validation": [
+    "Use one entry threshold and one exit rule first.",
+    "Run cost sensitivity because average edge may be small.",
+    "Separate crisis periods from normal pullback periods."
+  ],
+  "references": [
+    "Bollinger Band practitioner literature",
+    "Short-horizon reversal research"
+  ],
+  "engine_can_currently_execute": true,
+  "execution_notes": "Rolling-low variants are executable. Bollinger/z-score variants need rolling standard deviation or arithmetic expression support."
+}
