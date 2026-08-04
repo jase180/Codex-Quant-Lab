@@ -60,9 +60,16 @@ escalation.
 - `artifacts/data-audits/spy_2024_dividends_external_amounts/adjusted_price_audit.json`
 - `artifacts/data-audits/spy_2024_dividends_external_amounts/adjusted_price_comparison.csv`
 
+Current audit artifacts include a `backtest_implications` block. That block is
+deliberately conservative: a passing provider-internal audit supports
+provider-adjusted daily research with caveats, but it does not prove independent
+vendor correctness or strategy success.
+
 ## Result
 
 Audit result: `pass`
+
+Backtest implication status: `valid_with_caveats`
 
 - Rows compared: `257`
 - Max close difference: `0.0`
@@ -99,6 +106,11 @@ provider views are internally consistent for this audited window, that the
 provider action rows matched manually verified dividend amounts, and that
 next-open fills on the default fetched data use adjusted opens from the same
 adjusted OHLC series.
+
+The benchmark implication is similarly scoped: buy-and-hold uses the same
+adjusted close series that strategy marks use, so comparisons are internally
+aligned to the input CSV. That makes the benchmark coherent for this lab's
+adjusted-series research, not a precise live-tradable implementation benchmark.
 
 ## Carry-Forward Judgment
 

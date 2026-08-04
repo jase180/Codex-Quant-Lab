@@ -61,6 +61,7 @@ class AdjustedPriceAuditTests(unittest.TestCase):
         self.assertEqual(audit.max_ohlc_difference, 0.0)
         self.assertEqual(payload["symbol"], "SPY")
         self.assertEqual(payload["max_ohlc_difference"], 0.0)
+        self.assertEqual(payload["backtest_implications"]["research_system_status"], "valid_with_caveats")
         self.assertEqual(payload["missing_expected_dividends"], ["2026-01-12"])
         self.assertEqual(payload["missing_expected_splits"], ["2026-01-12"])
         self.assertTrue(comparison_exists)
@@ -94,6 +95,8 @@ class AdjustedPriceAuditTests(unittest.TestCase):
         )
         self.assertTrue(any("dividend amount mismatches" in warning for warning in audit.warnings))
         self.assertIn("Expected dividend amounts", markdown)
+        self.assertIn("## Backtest Implications", markdown)
+        self.assertIn("not an automated independent second-source validation", markdown)
 
     def test_write_adjusted_price_audit_warns_when_adjusted_ohlc_does_not_match_ratio(self) -> None:
         adjusted = _adjusted_frame(close_values=[50.0, 100.25], ratios=[0.6, 1.0])
@@ -159,6 +162,31 @@ class AdjustedPriceAuditTests(unittest.TestCase):
         self.assertIn("result: pass", stdout.getvalue())
         self.assertIn("max_ohlc_difference: 0.0", stdout.getvalue())
         self.assertIn("dividend_amount_mismatches: 0", stdout.getvalue())
+
+    def test_write_adjusted_price_audit_records_conservative_backtest_implications_on_pass(self) -> None:
+        adjusted = _adjusted_frame(close_values=[99.5, 100.25])
+        raw = _raw_action_frame(adj_close_values=[99.5, 100.25], dividends=[0.0, 0.5])
+        comparison = build_adjusted_price_comparison(adjusted=adjusted, raw=raw)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            audit = write_adjusted_price_audit(
+                comparison=comparison,
+                symbol="SPY",
+                start="2026-01-01",
+                end="2026-01-31",
+                out_dir=temp_dir,
+                expected_dividend_amounts={"2026-01-05": 0.5},
+                fetched_at_utc="2026-02-01T00:00:00Z",
+            )
+
+            payload = json.loads(Path(audit.json_path).read_text(encoding="utf-8"))
+            markdown = Path(audit.markdown_path).read_text(encoding="utf-8")
+
+        implications = payload["backtest_implications"]
+        self.assertEqual(audit.result, "pass")
+        self.assertEqual(implications["research_system_status"], "valid_with_caveats")
+        self.assertIn("adjusted open", implications["execution_implication"])
+        self.assertIn("A passing audit does not prove", markdown)
 
 
 def _adjusted_frame(*, close_values: list[float], ratios: list[float] | None = None) -> pd.DataFrame:

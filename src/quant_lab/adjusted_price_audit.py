@@ -219,6 +219,7 @@ def write_adjusted_price_audit(
         "event_rows": event_rows,
         "result": result,
         "warnings": warnings,
+        "backtest_implications": _backtest_implications(result),
         "comparison_path": str(comparison_path),
     }
     json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -248,6 +249,7 @@ def write_adjusted_price_audit(
 
 def _render_audit_markdown(payload: dict[str, Any]) -> str:
     warnings = payload["warnings"] or ["None"]
+    implications = payload["backtest_implications"]
     return "\n".join(
         [
             "# Adjusted Price Audit",
@@ -279,6 +281,18 @@ def _render_audit_markdown(payload: dict[str, Any]) -> str:
             "## Warnings",
             "",
             *[f"- {warning}" for warning in warnings],
+            "",
+            "## Backtest Implications",
+            "",
+            f"- Research-system status: `{implications['research_system_status']}`",
+            f"- Audit scope: {implications['audit_scope']}",
+            f"- Price-series implication: {implications['price_series_implication']}",
+            f"- Benchmark implication: {implications['benchmark_implication']}",
+            f"- Execution implication: {implications['execution_implication']}",
+            "",
+            "## Limits",
+            "",
+            *[f"- {limitation}" for limitation in implications["limitations"]],
             "",
         ]
     )
@@ -393,6 +407,37 @@ def _audit_warnings(
     if (expected_dividends or expected_dividend_amounts or expected_splits) and event_rows == 0:
         warnings.append("no corporate-action rows found in the audited window")
     return warnings
+
+
+def _backtest_implications(result: str) -> dict[str, str | list[str]]:
+    """Describe what this provider audit does and does not justify.
+
+    The audit compares two yfinance views plus optional expected event inputs.
+    Future research conclusions need that scope in machine-readable form so a
+    passing audit is not confused with independent vendor reconciliation.
+    """
+
+    return {
+        "research_system_status": "valid_with_caveats",
+        "audit_scope": "provider_internal_adjusted_ohlc_with_optional_manual_expected_events",
+        "price_series_implication": (
+            "When this audit passes, provider-adjusted open/high/low/close are internally "
+            "consistent with raw OHLC adjusted by the provider Adj Close / Close ratio."
+        ),
+        "benchmark_implication": (
+            "The buy-and-hold benchmark uses the same adjusted close series as strategy "
+            "marks, so benchmark comparisons are internally aligned to the input CSV."
+        ),
+        "execution_implication": (
+            "Next-open fills use adjusted opens from the same adjusted OHLC series; they are "
+            "coherent for adjusted-series research but are not raw historical exchange prints."
+        ),
+        "limitations": [
+            "This is not an automated independent second-source validation.",
+            "Dividends and splits are not modeled as separate cash-flow or share-count events.",
+            "A passing audit does not prove a tested strategy achieved its investment objective.",
+        ],
+    }
 
 
 def _list_or_none(values: list[str]) -> str:

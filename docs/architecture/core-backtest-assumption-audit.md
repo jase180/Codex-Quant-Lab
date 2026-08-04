@@ -59,7 +59,11 @@ Current behavior:
   `Adj Close` and compares adjusted open/high/low/close to raw OHLC multiplied
   by the raw `Adj Close / Close` adjustment ratio. It can also accept manually
   supplied expected dividend amounts in `YYYY-MM-DD=amount` form and compare
-  those amounts to the provider's raw dividend action rows.
+  those amounts to the provider's raw dividend action rows. The audit output
+  now includes `backtest_implications`, a machine-readable scope block that
+  says whether the result supports provider-adjusted daily research, how it
+  applies to benchmark and next-open-fill economics, and what it does not
+  prove.
 
 Implication:
 
@@ -93,7 +97,9 @@ Known gap:
 - The lab does not model dividends as cash distributions.
 - The lab does not preserve unadjusted OHLC plus corporate actions.
 - `audit-adjusted-prices` is provider-internal verification, not proof that
-  yfinance agrees with another vendor or official corporate-action source.
+  yfinance agrees with another vendor or official corporate-action source. Even
+  a passing audit is treated as `valid_with_caveats` for research-system status
+  because it confirms internal data consistency, not full economic truth.
 
 Status:
 
@@ -102,8 +108,8 @@ Status:
 - Current improvement: fetched CSV provenance now records the adjusted-price
   policy, trust reports surface it, and `audit-adjusted-prices` can inspect a
   known corporate-action window across adjusted OHLC and manually supplied
-  dividend amounts. Future improvement: add optional second-source checks
-  against another provider.
+  dividend amounts while writing conservative backtest implications. Future
+  improvement: add optional second-source checks against another provider.
 
 ## Next-Open Fills
 
