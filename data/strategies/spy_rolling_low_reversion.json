@@ -1,0 +1,58 @@
+{
+  "description": "Enter when close breaks below the prior 20-close low and exit when close crosses above the 10-day SMA.",
+  "entry": {
+    "conditions": [
+      {
+        "left": {
+          "price": "close"
+        },
+        "operator": "lt",
+        "right": {
+          "indicator": "low_20"
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "exit": {
+    "conditions": [
+      {
+        "left": {
+          "price": "close"
+        },
+        "operator": "crosses_above",
+        "right": {
+          "indicator": "sma_10"
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "indicators": [
+    {
+      "id": "low_20",
+      "inputs": {
+        "length": 20,
+        "source": "close"
+      },
+      "kind": "rolling_low"
+    },
+    {
+      "id": "sma_10",
+      "inputs": {
+        "length": 10,
+        "source": "close"
+      },
+      "kind": "sma"
+    }
+  ],
+  "market": {
+    "symbol": "SPY",
+    "timeframe": "1d"
+  },
+  "name": "SPY Rolling-Low Reversion",
+  "position_mode": "long_only",
+  "schema_version": "v1",
+  "strategy_id": "spy_rolling_low_reversion",
+  "strategy_type": "rule_based"
+}

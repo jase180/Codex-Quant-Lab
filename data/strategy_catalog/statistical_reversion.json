@@ -47,9 +47,9 @@
     {
       "variant_id": "rolling_low_reversion",
       "name": "Rolling-low reversion",
-      "description": "Enter near a rolling low and exit after a simple recovery condition.",
+      "description": "Enter after close breaks below a prior rolling low and exit after a simple recovery condition.",
       "matching_terms": ["rolling low reversion", "new low bounce"],
-      "hypothesis_template": "A rolling-low reversion rule may identify short-term capitulation without needing standard-deviation bands.",
+      "hypothesis_template": "A daily rolling-low reversion rule may improve risk-adjusted return versus buy-and-hold by buying new short-term lows and exiting after recovery.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe versus buy-and-hold after realistic costs.",
@@ -69,5 +69,5 @@
     "Short-horizon reversal research"
   ],
   "engine_can_currently_execute": true,
-  "execution_notes": "Rolling-low variants are executable. Bollinger/z-score variants need rolling standard deviation or arithmetic expression support."
+  "execution_notes": "New-rolling-low variants are executable. The current schema cannot express arithmetic distance from a low, so near-low thresholds still need expression support."
 }
