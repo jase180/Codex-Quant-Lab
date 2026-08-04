@@ -40,6 +40,9 @@ current workflow docs and the latest experiment handoffs.
 - [SPY/TLT Static 60/40 Allocation Experiment](experiments/spy-tlt-static-60-40-allocation-experiment.md):
   portfolio diversification test; valid research system, rejected exact
   allocation hypothesis.
+- [SPY Rolling-Low Reversion Experiment](experiments/spy-rolling-low-reversion-experiment.md):
+  statistical-reversion result; valid research system, rejected executable
+  new-low variant.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on
