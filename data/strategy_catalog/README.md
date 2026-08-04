@@ -26,9 +26,11 @@ Current intended use:
 ```
 
 The command reads this catalog and prior
-`artifacts/research/**/experiment_conclusion.json` files. It excludes ideas that
-match `do_not_repeat`, ranks compatible families, and prints one proposed
-hypothesis plus a draft experiment config.
+`artifacts/research/**/experiment_conclusion.json` files, registry decisions in
+`artifacts/experiments.jsonl`, and tracked experiment handoffs in
+`docs/experiments/`. It excludes ideas that match `do_not_repeat` or rejected
+decision guidance, ranks compatible families, and prints one proposed hypothesis
+plus a draft experiment config.
 
 As of this catalog expansion, the library contains at least 30 canonical
 variants across trend, mean-reversion, breakout, volatility, calendar,

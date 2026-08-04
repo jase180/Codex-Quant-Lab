@@ -23,10 +23,11 @@ quant-lab ideas suggest
 ```
 
 This reads `data/strategy_catalog/*.json` and prior
-`artifacts/research/**/experiment_conclusion.json` files, excludes matching
-`do_not_repeat` ideas, and prints one proposed hypothesis, success criteria, and
-a draft experiment config. It does not create executable strategy JSON; convert
-the chosen idea only after human approval.
+`artifacts/research/**/experiment_conclusion.json` files, registry decisions,
+and tracked experiment handoffs, excludes matching `do_not_repeat` or rejected
+decision guidance, and prints one proposed hypothesis, success criteria, and a
+draft experiment config. It does not create executable strategy JSON; convert the
+chosen idea only after human approval.
 
 The catalog is intentionally broader than the executable strategy folder. It now
 contains at least 30 canonical variants, but only variants marked executable

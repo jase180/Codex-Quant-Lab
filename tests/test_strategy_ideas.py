@@ -60,6 +60,39 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload) + "\n", encoding="utf-8")
 
 
+def _experiment_record(
+    *,
+    experiment_id: str,
+    title: str,
+    hypothesis: str,
+    strategy_path: str,
+    rationale: str,
+    next_action: str,
+) -> dict:
+    return {
+        "experiment_schema_version": "experiment.v1",
+        "experiment_id": experiment_id,
+        "created_at_utc": "2026-08-04T00:00:00Z",
+        "title": title,
+        "hypothesis": hypothesis,
+        "status": "completed",
+        "tags": ["portfolio", "allocation"],
+        "strategy_path": strategy_path,
+        "data_path": "data/cache/SPY.csv",
+        "linked_runs": [],
+        "decision": f"reject: {rationale}",
+        "decision_record": {
+            "outcome": "reject",
+            "decided_at_utc": "2026-08-04T00:01:00Z",
+            "rationale": rationale,
+            "supporting_run": None,
+            "contradicting_run": None,
+            "next_action": next_action,
+        },
+        "notes": "Prespecified portfolio allocation test.",
+    }
+
+
 class StrategyIdeasTest(unittest.TestCase):
     def test_tracked_strategy_catalog_has_broad_idea_library(self) -> None:
         catalog_dir = Path(__file__).resolve().parents[1] / "data" / "strategy_catalog"
@@ -115,7 +148,12 @@ class StrategyIdeasTest(unittest.TestCase):
                 },
             )
 
-            suggestion = suggest_strategy_idea(catalog_dir=catalog_dir, conclusions_dir=conclusions_dir)
+            suggestion = suggest_strategy_idea(
+                catalog_dir=catalog_dir,
+                conclusions_dir=conclusions_dir,
+                experiments_path=root / "missing_experiments.jsonl",
+                handoffs_dir=root / "missing_handoffs",
+            )
 
         self.assertEqual("mean_reversion", suggestion.family.family_id)
         self.assertIn("trend_following", suggestion.excluded_families)
@@ -127,9 +165,13 @@ class StrategyIdeasTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             catalog_dir = Path(tmpdir) / "catalog"
             conclusions_dir = Path(tmpdir) / "research"
+            experiments_path = Path(tmpdir) / "experiments.jsonl"
+            handoffs_dir = Path(tmpdir) / "handoffs"
             catalog_dir.mkdir()
             conclusions_dir.mkdir()
+            handoffs_dir.mkdir()
             _write_json(catalog_dir / "mean.json", _catalog_entry("mean_reversion", variant_id="rsi_pullback"))
+            experiments_path.write_text("", encoding="utf-8")
 
             with contextlib.redirect_stdout(io.StringIO()) as stdout:
                 exit_code = main(
@@ -140,22 +182,75 @@ class StrategyIdeasTest(unittest.TestCase):
                         str(catalog_dir),
                         "--conclusions-dir",
                         str(conclusions_dir),
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--handoffs-dir",
+                        str(handoffs_dir),
                     ]
                 )
 
         output = stdout.getvalue()
         self.assertEqual(0, exit_code)
         self.assertIn("Selected family: Mean Reversion", output)
+        self.assertIn("Prior research records read: 0", output)
         self.assertIn("## Proposed Hypothesis", output)
         self.assertIn("## Draft Experiment Config", output)
         self.assertIn("No executable strategy JSON was created", output)
+
+    def test_suggest_excludes_portfolio_family_from_registry_decision_memory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            catalog_dir = root / "catalog"
+            conclusions_dir = root / "research"
+            handoffs_dir = root / "handoffs"
+            experiments_path = root / "experiments.jsonl"
+            catalog_dir.mkdir()
+            conclusions_dir.mkdir()
+            handoffs_dir.mkdir()
+            _write_json(
+                catalog_dir / "portfolio.json",
+                _catalog_entry(
+                    "portfolio_allocation",
+                    variant_id="equal_weight_two_asset",
+                    matching_terms=["portfolio allocation", "static allocation", "60 40"],
+                ),
+            )
+            _write_json(catalog_dir / "stat.json", _catalog_entry("statistical_reversion", variant_id="rolling_low_reversion"))
+            experiments_path.write_text(
+                json.dumps(
+                    _experiment_record(
+                        experiment_id="EXP-010",
+                        title="SPY TLT static 60/40 allocation test",
+                        hypothesis="A static 60% SPY and 40% TLT allocation may reduce max drawdown.",
+                        strategy_path="data/portfolios/spy_tlt_static_60_40.json",
+                        rationale="Strategy-hypothesis status is rejected for the exact static allocation.",
+                        next_action="Do not tune SPY/TLT weights immediately.",
+                    )
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            suggestion = suggest_strategy_idea(
+                catalog_dir=catalog_dir,
+                conclusions_dir=conclusions_dir,
+                experiments_path=experiments_path,
+                handoffs_dir=handoffs_dir,
+            )
+
+        self.assertEqual("statistical_reversion", suggestion.family.family_id)
+        self.assertIn("portfolio_allocation", suggestion.excluded_families)
 
     def test_cli_ideas_suggest_prints_clean_message_when_catalog_is_exhausted(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             catalog_dir = Path(tmpdir) / "catalog"
             conclusions_dir = Path(tmpdir) / "research"
+            experiments_path = Path(tmpdir) / "experiments.jsonl"
+            handoffs_dir = Path(tmpdir) / "handoffs"
             catalog_dir.mkdir()
+            handoffs_dir.mkdir()
             (conclusions_dir / "exp").mkdir(parents=True)
+            experiments_path.write_text("", encoding="utf-8")
             _write_json(catalog_dir / "mean.json", _catalog_entry("mean_reversion", variant_id="rsi_pullback"))
             _write_json(
                 conclusions_dir / "exp" / "experiment_conclusion.json",
@@ -176,6 +271,10 @@ class StrategyIdeasTest(unittest.TestCase):
                         str(catalog_dir),
                         "--conclusions-dir",
                         str(conclusions_dir),
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--handoffs-dir",
+                        str(handoffs_dir),
                     ]
                 )
 

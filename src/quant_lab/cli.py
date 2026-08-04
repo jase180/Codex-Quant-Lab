@@ -1234,6 +1234,16 @@ def register_ideas_commands(subparsers) -> None:
         default="artifacts/research",
         help="Directory searched recursively for experiment_conclusion.json files. Defaults to artifacts/research.",
     )
+    suggest_parser.add_argument(
+        "--experiments-path",
+        default="artifacts/experiments.jsonl",
+        help="Experiment registry JSONL path used for decision memory. Defaults to artifacts/experiments.jsonl.",
+    )
+    suggest_parser.add_argument(
+        "--handoffs-dir",
+        default="docs/experiments",
+        help="Directory of tracked experiment handoff Markdown files. Defaults to docs/experiments.",
+    )
     suggest_parser.set_defaults(func=ideas_suggest_command)
 
 

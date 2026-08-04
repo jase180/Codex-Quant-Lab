@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from .research_registry import load_experiments
+
 
 CATALOG_SCHEMA_VERSION = "strategy_catalog_entry.v1"
 REQUIRED_CATALOG_FIELDS = {
@@ -64,7 +66,7 @@ class StrategyIdeaSuggestion:
     reasons: list[str]
     rankings: list[RankedStrategyIdea]
     excluded_families: list[str]
-    prior_conclusion_count: int
+    prior_research_count: int
     draft_experiment_config: dict[str, Any]
 
 
@@ -104,18 +106,68 @@ def load_experiment_conclusions(conclusions_dir: str | Path) -> list[dict[str, A
     return conclusions
 
 
+def load_experiment_decisions(experiments_path: str | Path) -> list[dict[str, Any]]:
+    path = Path(experiments_path)
+    if not path.exists():
+        return []
+
+    decisions: list[dict[str, Any]] = []
+    for experiment in load_experiments(path):
+        if experiment.decision_record is None:
+            continue
+        decisions.append(
+            {
+                "schema_version": "experiment_decision_memory.v1",
+                "experiment_id": experiment.experiment_id,
+                "title": experiment.title,
+                "hypothesis": experiment.hypothesis,
+                "tags": experiment.tags,
+                "strategy_path": experiment.strategy_path,
+                "data_path": experiment.data_path,
+                "notes": experiment.notes,
+                "decision": experiment.decision,
+                "decision_record": experiment.decision_record.to_dict(),
+            }
+        )
+    return decisions
+
+
+def load_experiment_handoffs(handoffs_dir: str | Path) -> list[dict[str, Any]]:
+    root = Path(handoffs_dir)
+    if not root.exists():
+        return []
+
+    handoffs: list[dict[str, Any]] = []
+    for path in sorted(root.glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        handoffs.append(
+            {
+                "schema_version": "experiment_handoff_memory.v1",
+                "path": str(path),
+                "content": text,
+            }
+        )
+    return handoffs
+
+
 def suggest_strategy_idea(
     *,
     catalog_dir: str | Path = "data/strategy_catalog",
     conclusions_dir: str | Path = "artifacts/research",
+    experiments_path: str | Path = "artifacts/experiments.jsonl",
+    handoffs_dir: str | Path = "docs/experiments",
 ) -> StrategyIdeaSuggestion:
     catalog = load_strategy_catalog(catalog_dir)
-    conclusions = load_experiment_conclusions(conclusions_dir)
+    prior_research = [
+        *load_experiment_conclusions(conclusions_dir),
+        *load_experiment_decisions(experiments_path),
+        *load_experiment_handoffs(handoffs_dir),
+    ]
 
     scored: list[StrategyIdeaSuggestion] = []
     excluded_families: list[str] = []
     for entry in catalog:
-        if _matches_exclusion(entry, conclusions):
+        if _matches_exclusion(entry, prior_research):
             excluded_families.append(entry.family_id)
             continue
 
@@ -124,7 +176,7 @@ def suggest_strategy_idea(
             excluded_families.append(f"{entry.family_id} (not executable)")
             continue
 
-        score, reasons = _score_entry(entry, variant, conclusions)
+        score, reasons = _score_entry(entry, variant, prior_research)
         scored.append(
             StrategyIdeaSuggestion(
                 family=entry,
@@ -133,7 +185,7 @@ def suggest_strategy_idea(
                 reasons=reasons,
                 rankings=[],
                 excluded_families=[],
-                prior_conclusion_count=len(conclusions),
+                prior_research_count=len(prior_research),
                 draft_experiment_config=_draft_experiment_config(entry, variant),
             )
         )
@@ -161,7 +213,7 @@ def suggest_strategy_idea(
         reasons=selected.reasons,
         rankings=rankings,
         excluded_families=excluded_families,
-        prior_conclusion_count=selected.prior_conclusion_count,
+        prior_research_count=selected.prior_research_count,
         draft_experiment_config=selected.draft_experiment_config,
     )
 
@@ -185,7 +237,7 @@ def format_strategy_idea_suggestion(suggestion: StrategyIdeaSuggestion) -> str:
             "",
             f"Selected family: {suggestion.family.name} (`{suggestion.family.family_id}`)",
             f"Selected variant: {suggestion.variant['name']} (`{suggestion.variant['variant_id']}`)",
-            f"Prior conclusions read: {suggestion.prior_conclusion_count}",
+            f"Prior research records read: {suggestion.prior_research_count}",
             "",
             "## Why This Ranked First",
             reasons,
@@ -274,6 +326,13 @@ def _exclusion_text(conclusions: Iterable[dict[str, Any]]) -> str:
         prompt = conclusion.get("next_research_prompt", {})
         parts.extend(str(item) for item in prompt.get("constraints", []))
         parts.extend(str(item) for item in prompt.get("what_failed", []))
+        decision_record = conclusion.get("decision_record", {})
+        if isinstance(decision_record, dict):
+            parts.append(str(decision_record.get("rationale", "")))
+            parts.append(str(decision_record.get("next_action", "")))
+        content = conclusion.get("content")
+        if isinstance(content, str):
+            parts.append(_do_not_repeat_section(content))
     return " ".join(parts).lower()
 
 
@@ -282,7 +341,7 @@ def _matches_exclusion(entry: CatalogEntry, conclusions: Sequence[dict[str, Any]
         direct_exclusion = _exclusion_text([conclusion])
         if not direct_exclusion:
             continue
-        if any(term in direct_exclusion for term in _matching_terms(entry)):
+        if any(_term_matches(term, direct_exclusion) for term in _matching_terms(entry)):
             return True
         if _is_generic_repeat_warning(direct_exclusion) and _conclusion_mentions_entry(entry, conclusion):
             return True
@@ -295,12 +354,27 @@ def _matches_any_conclusion(entry: CatalogEntry, conclusions: Sequence[dict[str,
 
 def _conclusion_mentions_entry(entry: CatalogEntry, conclusion: dict[str, Any]) -> bool:
     corpus = json.dumps(conclusion, sort_keys=True).lower()
-    return any(term in corpus for term in _matching_terms(entry))
+    return any(_term_matches(term, corpus) for term in _matching_terms(entry))
 
 
 def _is_generic_repeat_warning(text: str) -> bool:
-    repeat_terms = ["do not rerun", "do not repeat", "unchanged", "same setup", "same strategy"]
+    repeat_terms = ["do not rerun", "do not repeat", "do not tune", "unchanged", "same setup", "same strategy"]
     return any(term in text for term in repeat_terms)
+
+
+def _do_not_repeat_section(markdown: str) -> str:
+    lines = markdown.splitlines()
+    captured: list[str] = []
+    in_section = False
+    for line in lines:
+        if line.startswith("## "):
+            if in_section:
+                break
+            in_section = line.strip().lower() == "## do not repeat"
+            continue
+        if in_section:
+            captured.append(line)
+    return "\n".join(captured)
 
 
 def _matching_terms(entry: CatalogEntry) -> list[str]:
@@ -310,3 +384,12 @@ def _matching_terms(entry: CatalogEntry) -> list[str]:
         terms.append(str(variant.get("name", "")).lower())
         terms.extend(str(term).lower() for term in variant.get("matching_terms", []))
     return [term for term in terms if term]
+
+
+def _term_matches(term: str, corpus: str) -> bool:
+    if term in corpus:
+        return True
+    words = [word for word in term.replace("_", " ").split() if len(word) > 2]
+    if len(words) < 2:
+        return False
+    return all(word in corpus for word in words)

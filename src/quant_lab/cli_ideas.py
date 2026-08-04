@@ -12,6 +12,8 @@ def ideas_suggest_command(args: argparse.Namespace) -> int:
         suggestion = suggest_strategy_idea(
             catalog_dir=args.catalog_dir,
             conclusions_dir=args.conclusions_dir,
+            experiments_path=args.experiments_path,
+            handoffs_dir=args.handoffs_dir,
         )
     except ValueError as exc:
         print(f"No strategy idea suggestion: {exc}")
