@@ -1,0 +1,25 @@
+{
+  "benchmark": {
+    "data": "../cache/SPY_2015-01-01_2025-12-31.csv",
+    "symbol": "SPY"
+  },
+  "description": "Static 60% SPY and 40% TLT allocation for diversification research versus SPY buy-and-hold.",
+  "name": "SPY TLT Static 60/40",
+  "portfolio_id": "spy_tlt_static_60_40",
+  "rebalance": {
+    "frequency": "monthly"
+  },
+  "schema_version": "portfolio_plan.v1",
+  "symbols": [
+    {
+      "data": "../cache/SPY_2015-01-01_2025-12-31.csv",
+      "symbol": "SPY",
+      "target_weight": 0.6
+    },
+    {
+      "data": "../cache/TLT_2015-01-01_2025-12-31.csv",
+      "symbol": "TLT",
+      "target_weight": 0.4
+    }
+  ]
+}
