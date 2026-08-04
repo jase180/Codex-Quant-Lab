@@ -20,44 +20,88 @@
       "variant_id": "realized_volatility_cash_filter",
       "name": "Realized-volatility cash filter",
       "description": "Move to cash when realized volatility exceeds a prespecified threshold.",
-      "matching_terms": ["realized volatility", "volatility filter", "high volatility"],
+      "matching_terms": [
+        "realized volatility",
+        "volatility filter",
+        "high volatility"
+      ],
       "hypothesis_template": "A realized-volatility cash filter may reduce drawdowns by avoiding high-risk regimes.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative while retaining at least 70% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.25
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_realized_volatility_indicator_before_strategy_json"
     },
     {
       "variant_id": "volatility_target_only",
       "name": "Volatility-target only",
       "description": "Stay in the asset but scale exposure using a target-volatility risk control.",
-      "matching_terms": ["volatility target", "vol target", "risk control"],
+      "matching_terms": [
+        "volatility target",
+        "vol target",
+        "risk control"
+      ],
       "hypothesis_template": "A volatility-target-only overlay may improve drawdown-adjusted performance without binary cash exits.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 75% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2},
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.75}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        },
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.75
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "secondary",
+      "capability_status": "executable_now",
+      "next_action": "run_only_with_revised_hypothesis"
     },
     {
       "variant_id": "low_volatility_entry_filter",
       "name": "Low-volatility entry filter",
       "description": "Allow entries only when realized volatility is below a threshold.",
-      "matching_terms": ["low volatility", "entry filter"],
+      "matching_terms": [
+        "low volatility",
+        "entry filter"
+      ],
       "hypothesis_template": "A low-volatility entry filter may avoid unstable entry periods and improve Sharpe.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe versus buy-and-hold after realistic costs.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_volatility_filter_condition_before_strategy_json"
     }
   ],
   "suggested_validation": [

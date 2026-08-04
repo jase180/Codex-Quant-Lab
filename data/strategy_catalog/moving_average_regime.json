@@ -20,46 +20,102 @@
       "variant_id": "ema_50_regime_filter",
       "name": "EMA 50 regime filter",
       "description": "Hold only when close is above a 50-day EMA.",
-      "matching_terms": ["ema 50", "regime filter", "moving average regime"],
+      "matching_terms": [
+        "ema 50",
+        "regime filter",
+        "moving average regime"
+      ],
       "hypothesis_template": "A 50-day EMA regime filter may react faster than a 200-day SMA and improve drawdown-adjusted performance without excessive turnover.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 75% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2},
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.75}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        },
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.75
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "secondary",
+      "capability_status": "executable_now",
+      "next_action": "run_after_human_approval"
     },
     {
       "variant_id": "ema_sma_confirmation",
       "name": "EMA/SMA confirmation regime",
       "description": "Require close above a medium EMA and a long SMA before holding risk.",
-      "matching_terms": ["ema sma confirmation", "dual regime"],
+      "matching_terms": [
+        "ema sma confirmation",
+        "dual regime"
+      ],
       "hypothesis_template": "A dual moving-average confirmation rule may reduce false positives versus a single trend filter.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe while retaining at least 70% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0},
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.7}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        },
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.7
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "later",
+      "capability_status": "executable_now",
+      "next_action": "defer_until_single_filter_results_need_confirmation_test"
     },
     {
       "variant_id": "ema_rsi_trend_confirmation",
       "name": "EMA plus RSI trend confirmation",
       "description": "Hold only when price is above an EMA and RSI confirms positive momentum.",
-      "matching_terms": ["ema rsi", "trend confirmation", "momentum confirmation"],
+      "matching_terms": [
+        "ema rsi",
+        "trend confirmation",
+        "momentum confirmation"
+      ],
       "hypothesis_template": "Combining a price regime filter with RSI momentum confirmation may avoid weak trend entries.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe and avoid worse max drawdown than buy-and-hold.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0},
-        {"name": "drawdown_not_worse", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        },
+        {
+          "name": "drawdown_not_worse",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "later",
+      "capability_status": "executable_now",
+      "next_action": "defer_until_mixed_signal_hypothesis_is_written"
     }
   ],
   "suggested_validation": [

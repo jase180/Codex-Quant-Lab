@@ -20,43 +20,79 @@
       "variant_id": "large_down_gap_reversion",
       "name": "Large down-gap reversion",
       "description": "Enter after a large overnight down gap and exit after a fixed recovery condition.",
-      "matching_terms": ["down gap", "gap reversion"],
+      "matching_terms": [
+        "down gap",
+        "gap reversion"
+      ],
       "hypothesis_template": "A large down-gap reversion rule may capture panic overreaction after delayed next-open execution.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe after costs and show acceptable worst trade behavior.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_gap_conditions_before_strategy_json"
     },
     {
       "variant_id": "large_up_gap_fade",
       "name": "Large up-gap fade",
       "description": "Avoid or fade exposure after unusually large up gaps.",
-      "matching_terms": ["up gap", "gap fade"],
+      "matching_terms": [
+        "up gap",
+        "gap fade"
+      ],
       "hypothesis_template": "A large up-gap fade may avoid buying short-term exhaustion after unusually strong overnight moves.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe while retaining at least 60% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_short_or_inverse_exposure_support_first"
     },
     {
       "variant_id": "large_down_day_recovery",
       "name": "Large down-day recovery",
       "description": "Enter after a large close-to-close down day and exit after recovery.",
-      "matching_terms": ["large down day", "close to close reversion"],
+      "matching_terms": [
+        "large down day",
+        "close to close reversion"
+      ],
       "hypothesis_template": "A large down-day recovery rule may capture short-term reversal after broad selloffs.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe and keep max drawdown no worse than buy-and-hold.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_daily_return_conditions_before_strategy_json"
     }
   ],
   "suggested_validation": [

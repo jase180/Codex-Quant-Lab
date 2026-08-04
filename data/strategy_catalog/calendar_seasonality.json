@@ -20,43 +20,80 @@
       "variant_id": "turn_of_month",
       "name": "Turn-of-month equity exposure",
       "description": "Hold the market only around the turn of each month.",
-      "matching_terms": ["turn of month", "month end", "calendar"],
+      "matching_terms": [
+        "turn of month",
+        "month end",
+        "calendar"
+      ],
       "hypothesis_template": "A turn-of-month exposure rule may retain meaningful equity returns while reducing time in market.",
       "primary_metric": "cagr",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Retain at least 50% of benchmark CAGR with materially lower exposure.",
       "success_criteria": [
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.5}
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.5
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_calendar_conditions_before_strategy_json"
     },
     {
       "variant_id": "sell_in_may",
       "name": "Sell-in-May seasonal filter",
       "description": "Hold equities during historically stronger months and cash during historically weaker months.",
-      "matching_terms": ["sell in may", "seasonal filter"],
+      "matching_terms": [
+        "sell in may",
+        "seasonal filter"
+      ],
       "hypothesis_template": "A prespecified seasonal equity filter may reduce drawdown without giving up too much long-term growth.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 70% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_calendar_conditions_before_strategy_json"
     },
     {
       "variant_id": "weekday_reversal",
       "name": "Weekday reversal",
       "description": "Test one prespecified weekday entry/exit pattern.",
-      "matching_terms": ["weekday", "day of week"],
+      "matching_terms": [
+        "weekday",
+        "day of week"
+      ],
       "hypothesis_template": "A single prespecified weekday reversal rule may improve returns relative to time in market.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe after realistic costs and remain stable across decades.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_calendar_conditions_before_strategy_json"
     }
   ],
   "suggested_validation": [

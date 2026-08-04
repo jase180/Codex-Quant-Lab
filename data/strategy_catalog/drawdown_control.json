@@ -20,44 +20,86 @@
       "variant_id": "vol_target_drawdown_overlay",
       "name": "Volatility-target drawdown overlay",
       "description": "Scale exposure with a volatility target to reduce drawdown severity.",
-      "matching_terms": ["vol target drawdown", "drawdown overlay"],
+      "matching_terms": [
+        "vol target drawdown",
+        "drawdown overlay"
+      ],
       "hypothesis_template": "A volatility-target drawdown overlay may reduce maximum drawdown while retaining more growth than binary cash exits.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative while retaining at least 75% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25},
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.75}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.25
+        },
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.75
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "secondary",
+      "capability_status": "executable_now",
+      "next_action": "run_only_with_revised_hypothesis"
     },
     {
       "variant_id": "equity_curve_stop",
       "name": "Equity-curve stop",
       "description": "Stop trading after the strategy equity curve breaches a drawdown threshold.",
-      "matching_terms": ["equity curve stop", "drawdown stop"],
+      "matching_terms": [
+        "equity curve stop",
+        "drawdown stop"
+      ],
       "hypothesis_template": "An equity-curve stop may prevent strategy degradation from compounding after a deep drawdown.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce strategy max drawdown without materially lowering CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_equity_curve_state_before_strategy_json"
     },
     {
       "variant_id": "cooldown_after_loss",
       "name": "Cooldown after loss",
       "description": "Pause new entries after a realized loss or drawdown event.",
-      "matching_terms": ["cooldown", "loss pause"],
+      "matching_terms": [
+        "cooldown",
+        "loss pause"
+      ],
       "hypothesis_template": "A cooldown after loss may reduce whipsaw clustering in rule-based strategies.",
       "primary_metric": "sharpe",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Improve Sharpe without failing return retention below 70% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "small_schema_extension_required",
+      "next_action": "define_trade_memory_state_before_strategy_json"
     }
   ],
   "suggested_validation": [

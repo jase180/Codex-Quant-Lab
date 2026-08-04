@@ -20,43 +20,80 @@
       "variant_id": "spy_to_tlt_regime_switch",
       "name": "SPY to TLT regime switch",
       "description": "Hold SPY in risk-on regimes and TLT in risk-off regimes.",
-      "matching_terms": ["spy tlt", "defensive switch", "asset switch"],
+      "matching_terms": [
+        "spy tlt",
+        "defensive switch",
+        "asset switch"
+      ],
       "hypothesis_template": "Switching from SPY to TLT during equity risk-off regimes may retain more return than cash exits while reducing drawdown.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative while retaining at least 80% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.25
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "core",
+      "capability_status": "portfolio_extension_required",
+      "next_action": "add_dynamic_asset_switching_first"
     },
     {
       "variant_id": "spy_to_shy_regime_switch",
       "name": "SPY to SHY regime switch",
       "description": "Hold short Treasuries instead of cash during risk-off regimes.",
-      "matching_terms": ["spy shy", "treasury switch"],
+      "matching_terms": [
+        "spy shy",
+        "treasury switch"
+      ],
       "hypothesis_template": "Switching from SPY to short Treasuries during risk-off regimes may improve cash-exit return retention.",
       "primary_metric": "cagr",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Retain at least 80% of benchmark CAGR and reduce max drawdown by at least 20% relative.",
       "success_criteria": [
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.8}
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.8
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "portfolio_extension_required",
+      "next_action": "add_dynamic_asset_switching_first"
     },
     {
       "variant_id": "risk_on_risk_off_basket_switch",
       "name": "Risk-on/risk-off basket switch",
       "description": "Switch between a risky basket and a defensive basket.",
-      "matching_terms": ["risk on risk off", "basket switch"],
+      "matching_terms": [
+        "risk on risk off",
+        "basket switch"
+      ],
       "hypothesis_template": "A two-basket risk-on/risk-off switch may improve drawdown-adjusted performance versus a static allocation.",
       "primary_metric": "sharpe",
       "benchmark": "static portfolio benchmark",
       "minimum_acceptable_performance": "Improve Sharpe versus the static benchmark after turnover costs.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "portfolio_extension_required",
+      "next_action": "add_dynamic_asset_switching_first"
     }
   ],
   "suggested_validation": [

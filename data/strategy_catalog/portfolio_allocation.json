@@ -20,44 +20,89 @@
       "variant_id": "equal_weight_two_asset",
       "name": "Equal-weight two-asset portfolio",
       "description": "Hold two assets at fixed equal weights.",
-      "matching_terms": ["equal weight", "static allocation", "two asset"],
+      "matching_terms": [
+        "equal weight",
+        "static allocation",
+        "two asset"
+      ],
       "hypothesis_template": "A static two-asset equal-weight portfolio may reduce drawdown versus SPY buy-and-hold while retaining acceptable growth.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 70% of SPY benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "secondary",
+      "capability_status": "executable_now",
+      "next_action": "run_after_human_approval"
     },
     {
       "variant_id": "equity_bond_60_40",
       "name": "Equity/bond 60/40",
       "description": "Hold a fixed 60% equity and 40% bond allocation.",
-      "matching_terms": ["60 40", "equity bond", "static portfolio"],
+      "matching_terms": [
+        "60 40",
+        "equity bond",
+        "static portfolio"
+      ],
       "hypothesis_template": "A simple 60/40 equity-bond portfolio may improve drawdown-adjusted performance versus SPY buy-and-hold.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative while retaining at least 60% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25},
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.6}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.25
+        },
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.6
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "later",
+      "capability_status": "executable_now",
+      "next_action": "run_only_with_revised_hypothesis"
     },
     {
       "variant_id": "three_asset_static_defensive",
       "name": "Three-asset static defensive mix",
       "description": "Hold equities, bonds, and cash-like exposure at fixed weights.",
-      "matching_terms": ["three asset", "defensive mix", "static defensive"],
+      "matching_terms": [
+        "three asset",
+        "defensive mix",
+        "static defensive"
+      ],
       "hypothesis_template": "A static defensive multi-asset mix may reduce drawdown enough to justify lower raw return versus SPY.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 30% relative while retaining at least 50% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.3}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.3
+        }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "secondary",
+      "capability_status": "executable_now",
+      "next_action": "run_after_human_approval"
     }
   ],
   "suggested_validation": [

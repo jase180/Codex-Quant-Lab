@@ -50,7 +50,10 @@
           "threshold": 0.0
         }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "core",
+      "capability_status": "portfolio_extension_required",
+      "next_action": "build_rotation_portfolio_capability_first"
     }
   ],
   "suggested_validation": [

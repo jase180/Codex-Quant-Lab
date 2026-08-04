@@ -51,7 +51,10 @@
           "threshold": 0.7
         }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "secondary",
+      "capability_status": "executable_now",
+      "next_action": "run_only_with_revised_hypothesis"
     }
   ],
   "suggested_validation": [

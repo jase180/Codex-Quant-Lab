@@ -47,6 +47,9 @@ def _catalog_entry(
                     }
                 ],
                 "engine_can_currently_execute": executable,
+                "research_priority": "core",
+                "capability_status": "executable_now" if executable else "unsupported_now",
+                "next_action": "run_after_human_approval" if executable else "defer_until_capability_exists",
             }
         ],
         "suggested_validation": ["Run one prespecified validation path."],
@@ -109,6 +112,20 @@ class StrategyIdeasTest(unittest.TestCase):
         self.assertGreaterEqual(len(entries), 10)
         self.assertGreaterEqual(variant_count, 30)
         self.assertGreaterEqual(executable_variant_count, 5)
+        for entry in entries:
+            for variant in entry.canonical_variants:
+                self.assertIn(variant["research_priority"], {"core", "secondary", "later"})
+                self.assertIn(
+                    variant["capability_status"],
+                    {
+                        "executable_now",
+                        "small_schema_extension_required",
+                        "data_extension_required",
+                        "portfolio_extension_required",
+                        "unsupported_now",
+                    },
+                )
+                self.assertTrue(variant["next_action"])
 
     def test_load_strategy_catalog_requires_conceptual_fields(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -120,6 +137,16 @@ class StrategyIdeasTest(unittest.TestCase):
         self.assertEqual(1, len(entries))
         self.assertEqual("trend_following", entries[0].family_id)
         self.assertTrue(entries[0].engine_can_currently_execute)
+
+    def test_load_strategy_catalog_rejects_inconsistent_variant_capability(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            catalog_dir = Path(tmpdir)
+            payload = _catalog_entry("mean_reversion", executable=False)
+            payload["canonical_variants"][0]["capability_status"] = "executable_now"
+            _write_json(catalog_dir / "mean.json", payload)
+
+            with self.assertRaisesRegex(ValueError, "marked executable_now but is not executable"):
+                load_strategy_catalog(catalog_dir)
 
     def test_suggest_excludes_do_not_repeat_idea_and_keeps_conceptual_config(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -159,6 +186,8 @@ class StrategyIdeasTest(unittest.TestCase):
         self.assertIn("trend_following", suggestion.excluded_families)
         self.assertIn("momentum_rotation (not executable)", suggestion.excluded_families)
         self.assertTrue(suggestion.draft_experiment_config["requires_human_approval_before_strategy_json"])
+        self.assertEqual("core", suggestion.draft_experiment_config["research_priority"])
+        self.assertEqual("executable_now", suggestion.draft_experiment_config["capability_status"])
         self.assertNotIn("strategy_path", suggestion.draft_experiment_config)
 
     def test_cli_ideas_suggest_prints_hypothesis_and_draft_config(self) -> None:

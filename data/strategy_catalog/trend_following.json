@@ -52,7 +52,10 @@
           "threshold": 0.25
         }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "core",
+      "capability_status": "executable_now",
+      "next_action": "run_after_human_approval"
     },
     {
       "variant_id": "breakout_long_cash",
@@ -76,7 +79,10 @@
           "threshold": 0.0
         }
       ],
-      "engine_can_currently_execute": true
+      "engine_can_currently_execute": true,
+      "research_priority": "secondary",
+      "capability_status": "executable_now",
+      "next_action": "run_after_human_approval"
     }
   ],
   "suggested_validation": [

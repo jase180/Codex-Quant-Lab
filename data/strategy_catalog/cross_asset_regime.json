@@ -20,43 +20,83 @@
       "variant_id": "bond_trend_equity_filter",
       "name": "Bond-trend equity filter",
       "description": "Condition equity exposure on the trend of a bond ETF or Treasury proxy.",
-      "matching_terms": ["bond trend", "treasury filter", "cross asset"],
+      "matching_terms": [
+        "bond trend",
+        "treasury filter",
+        "cross asset"
+      ],
       "hypothesis_template": "A bond-trend regime filter may improve equity drawdown behavior during rate-sensitive stress periods.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 75% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "core",
+      "capability_status": "data_extension_required",
+      "next_action": "add_multi_symbol_indicator_inputs_first"
     },
     {
       "variant_id": "vix_proxy_equity_filter",
       "name": "Volatility-proxy equity filter",
       "description": "Reduce equity exposure when a volatility proxy enters a stressed regime.",
-      "matching_terms": ["vix proxy", "volatility proxy", "stress filter"],
+      "matching_terms": [
+        "vix proxy",
+        "volatility proxy",
+        "stress filter"
+      ],
       "hypothesis_template": "A volatility-proxy equity filter may reduce crash exposure without overly reducing normal-market exposure.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 25% relative and avoid worse Sharpe.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.25
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "data_extension_required",
+      "next_action": "add_external_regime_series_first"
     },
     {
       "variant_id": "credit_spread_proxy_filter",
       "name": "Credit-spread proxy filter",
       "description": "Use risky-credit versus Treasury behavior as an equity-risk signal.",
-      "matching_terms": ["credit spread", "hyg", "lqd", "credit proxy"],
+      "matching_terms": [
+        "credit spread",
+        "hyg",
+        "lqd",
+        "credit proxy"
+      ],
       "hypothesis_template": "A credit-stress proxy may identify equity-risk-off regimes before price-only equity filters react.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown without failing return retention below 70% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "return_retention", "metric": "cagr", "comparison": "strategy_vs_benchmark_ratio", "operator": ">=", "threshold": 0.7}
+        {
+          "name": "return_retention",
+          "metric": "cagr",
+          "comparison": "strategy_vs_benchmark_ratio",
+          "operator": ">=",
+          "threshold": 0.7
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "data_extension_required",
+      "next_action": "add_external_macro_series_first"
     }
   ],
   "suggested_validation": [

@@ -20,43 +20,79 @@
       "variant_id": "value_momentum_rotation",
       "name": "Value/momentum rotation",
       "description": "Rotate between value and momentum factor ETFs using relative strength.",
-      "matching_terms": ["value momentum", "factor rotation"],
+      "matching_terms": [
+        "value momentum",
+        "factor rotation"
+      ],
       "hypothesis_template": "Rotating between value and momentum factor ETFs may improve Sharpe versus a static factor blend.",
       "primary_metric": "sharpe",
       "benchmark": "static factor blend",
       "minimum_acceptable_performance": "Improve Sharpe after turnover costs and avoid worse max drawdown.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "core",
+      "capability_status": "data_extension_required",
+      "next_action": "add_factor_data_and_rotation_capability_first"
     },
     {
       "variant_id": "low_vol_factor_defensive_switch",
       "name": "Low-volatility factor defensive switch",
       "description": "Move toward low-volatility factor exposure during stressed regimes.",
-      "matching_terms": ["low volatility factor", "defensive factor"],
+      "matching_terms": [
+        "low volatility factor",
+        "defensive factor"
+      ],
       "hypothesis_template": "A low-volatility factor switch may reduce equity drawdown while preserving more return than cash.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 75% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "data_extension_required",
+      "next_action": "add_factor_data_and_rotation_capability_first"
     },
     {
       "variant_id": "quality_momentum_confirmation",
       "name": "Quality plus momentum confirmation",
       "description": "Hold equity factor exposure only when quality and momentum proxies agree.",
-      "matching_terms": ["quality momentum", "factor confirmation"],
+      "matching_terms": [
+        "quality momentum",
+        "factor confirmation"
+      ],
       "hypothesis_template": "Requiring quality and momentum confirmation may reduce weak-factor periods without excessive turnover.",
       "primary_metric": "sharpe",
       "benchmark": "static factor blend",
       "minimum_acceptable_performance": "Improve Sharpe versus a static blend after realistic costs.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "data_extension_required",
+      "next_action": "add_factor_data_and_confirmation_rules_first"
     }
   ],
   "suggested_validation": [

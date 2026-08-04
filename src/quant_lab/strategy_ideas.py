@@ -24,6 +24,29 @@ REQUIRED_CATALOG_FIELDS = {
     "references",
     "engine_can_currently_execute",
 }
+REQUIRED_VARIANT_FIELDS = {
+    "variant_id",
+    "name",
+    "description",
+    "matching_terms",
+    "hypothesis_template",
+    "primary_metric",
+    "benchmark",
+    "minimum_acceptable_performance",
+    "success_criteria",
+    "engine_can_currently_execute",
+    "research_priority",
+    "capability_status",
+    "next_action",
+}
+ALLOWED_RESEARCH_PRIORITIES = {"core", "secondary", "later"}
+ALLOWED_CAPABILITY_STATUSES = {
+    "executable_now",
+    "small_schema_extension_required",
+    "data_extension_required",
+    "portfolio_extension_required",
+    "unsupported_now",
+}
 
 
 @dataclass(frozen=True)
@@ -272,6 +295,28 @@ def _validate_catalog_payload(payload: dict[str, Any], path: Path) -> None:
         raise ValueError(f"{path} has unsupported schema_version: {payload['schema_version']}")
     if not isinstance(payload["canonical_variants"], list) or not payload["canonical_variants"]:
         raise ValueError(f"{path} must define at least one canonical variant")
+    for index, variant in enumerate(payload["canonical_variants"], start=1):
+        _validate_catalog_variant(variant, path, index)
+
+
+def _validate_catalog_variant(variant: dict[str, Any], path: Path, index: int) -> None:
+    missing = sorted(REQUIRED_VARIANT_FIELDS.difference(variant))
+    if missing:
+        raise ValueError(f"{path} variant {index} is missing required fields: {', '.join(missing)}")
+
+    priority = variant["research_priority"]
+    if priority not in ALLOWED_RESEARCH_PRIORITIES:
+        raise ValueError(f"{path} variant {index} has unsupported research_priority: {priority}")
+
+    capability_status = variant["capability_status"]
+    if capability_status not in ALLOWED_CAPABILITY_STATUSES:
+        raise ValueError(f"{path} variant {index} has unsupported capability_status: {capability_status}")
+
+    executable = bool(variant["engine_can_currently_execute"])
+    if executable and capability_status != "executable_now":
+        raise ValueError(f"{path} variant {index} is executable but capability_status is {capability_status}")
+    if not executable and capability_status == "executable_now":
+        raise ValueError(f"{path} variant {index} is marked executable_now but is not executable")
 
 
 def _first_executable_variant(entry: CatalogEntry) -> dict[str, Any] | None:
@@ -298,6 +343,9 @@ def _score_entry(entry: CatalogEntry, variant: dict[str, Any], conclusions: Sequ
         reasons.append("Prior conclusions do not appear to have already tested this family directly.")
     else:
         reasons.append("Prior conclusions mention this family, so treat the hypothesis as a new formulation.")
+    if variant.get("research_priority") == "core":
+        score += 1
+        reasons.append("The catalog marks this variant as a core research idea.")
 
     return score, reasons
 
@@ -310,6 +358,9 @@ def _draft_experiment_config(entry: CatalogEntry, variant: dict[str, Any]) -> di
         "hypothesis": variant["hypothesis_template"],
         "intended_benefit": entry.payload["expected_benefit"],
         "benchmark": variant["benchmark"],
+        "research_priority": variant["research_priority"],
+        "capability_status": variant["capability_status"],
+        "next_action": variant["next_action"],
         "primary_metric": variant["primary_metric"],
         "minimum_acceptable_performance": variant["minimum_acceptable_performance"],
         "important_tradeoffs": entry.payload["failure_modes"],

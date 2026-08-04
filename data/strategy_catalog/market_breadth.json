@@ -20,43 +20,79 @@
       "variant_id": "advance_decline_filter",
       "name": "Advance/decline filter",
       "description": "Hold equity exposure only when advance/decline breadth is healthy.",
-      "matching_terms": ["advance decline", "breadth filter"],
+      "matching_terms": [
+        "advance decline",
+        "breadth filter"
+      ],
       "hypothesis_template": "An advance/decline breadth filter may reduce equity exposure before broad market declines.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative while retaining at least 75% of benchmark CAGR.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.2}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.2
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "data_extension_required",
+      "next_action": "add_breadth_data_source_first"
     },
     {
       "variant_id": "percent_above_ma_filter",
       "name": "Percent-above-MA filter",
       "description": "Use percentage of constituents above a moving average as a market health signal.",
-      "matching_terms": ["percent above ma", "market breadth"],
+      "matching_terms": [
+        "percent above ma",
+        "market breadth"
+      ],
       "hypothesis_template": "A percent-above-moving-average breadth filter may improve drawdown control versus index-price-only filters.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown more than the comparable price-only filter without worse CAGR retention.",
       "success_criteria": [
-        {"name": "drawdown_reduction", "metric": "max_drawdown", "comparison": "relative_reduction_vs_benchmark", "operator": ">=", "threshold": 0.25}
+        {
+          "name": "drawdown_reduction",
+          "metric": "max_drawdown",
+          "comparison": "relative_reduction_vs_benchmark",
+          "operator": ">=",
+          "threshold": 0.25
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "secondary",
+      "capability_status": "data_extension_required",
+      "next_action": "add_breadth_data_source_first"
     },
     {
       "variant_id": "new_high_new_low_filter",
       "name": "New-high/new-low filter",
       "description": "Use the balance of new highs and new lows as a risk signal.",
-      "matching_terms": ["new highs new lows", "breadth"],
+      "matching_terms": [
+        "new highs new lows",
+        "breadth"
+      ],
       "hypothesis_template": "A new-high/new-low breadth filter may identify fragile markets before index drawdowns become large.",
       "primary_metric": "max_drawdown",
       "benchmark": "buy-and-hold",
       "minimum_acceptable_performance": "Reduce max drawdown by at least 20% relative and improve Sharpe.",
       "success_criteria": [
-        {"name": "risk_adjusted_return", "metric": "sharpe", "comparison": "strategy_vs_benchmark_delta", "operator": ">", "threshold": 0.0}
+        {
+          "name": "risk_adjusted_return",
+          "metric": "sharpe",
+          "comparison": "strategy_vs_benchmark_delta",
+          "operator": ">",
+          "threshold": 0.0
+        }
       ],
-      "engine_can_currently_execute": false
+      "engine_can_currently_execute": false,
+      "research_priority": "later",
+      "capability_status": "data_extension_required",
+      "next_action": "add_breadth_data_source_first"
     }
   ],
   "suggested_validation": [
