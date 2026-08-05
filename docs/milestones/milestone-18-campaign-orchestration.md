@@ -86,12 +86,15 @@ Current progress:
   baseline.
 - Validation checks allowed template, allowed symbol, supported parameters,
   required local data, success criteria, budget, and campaign `do_not_repeat`.
+- Valid `run_experiment` proposals are converted into cycle-local
+  `strategy.json`, `run_default_args.json`, and `run_default_command.md`
+  handoff artifacts.
 
 Still missing:
 
 - retry-on-invalid behavior,
 - material-difference checks beyond simple `do_not_repeat`,
-- conversion from proposal to executable workflow inputs.
+- automatic execution of the generated `experiment run-default` inputs.
 
 ### 18C: One Real Campaign Cycle
 
@@ -101,6 +104,14 @@ conclusions.
 
 Exit criterion: one cycle runs an existing experiment workflow and reads
 `experiment_conclusion.json`.
+
+Current progress:
+
+- Conversion-only handoff is implemented in `src/quant_lab/campaign_conversion.py`.
+- `quant-lab campaign run` now writes planned default-workflow inputs under the
+  cycle directory after proposal validation succeeds.
+- Execution is still intentionally skipped, so campaign state is not yet
+  advanced and no experiment conclusion is read back into campaign memory.
 
 ### 18D: Campaign Knowledge Update
 

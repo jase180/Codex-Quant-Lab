@@ -19,6 +19,7 @@ from quant_lab.campaign import (  # noqa: E402
     load_campaign_state,
     parse_campaign_config,
 )
+from quant_lab.campaign_conversion import prepare_campaign_experiment_inputs  # noqa: E402
 from quant_lab.campaign_proposal import (  # noqa: E402
     deterministic_campaign_proposal,
     parse_campaign_proposal,
@@ -117,6 +118,33 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(validation.valid)
         self.assertEqual(validation.projected_run_count, 11)
 
+    def test_prepare_campaign_experiment_inputs_writes_strategy_and_run_default_handoff(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            proposal = deterministic_campaign_proposal(config, state)
+            inputs = prepare_campaign_experiment_inputs(
+                proposal,
+                config=config,
+                cycle_dir=Path(paths.cycles_dir) / "cycle_001",
+            )
+
+            strategy = json.loads(Path(inputs.strategy_path).read_text(encoding="utf-8"))
+            args_payload = json.loads(Path(inputs.run_default_args_path).read_text(encoding="utf-8"))
+            command_markdown = Path(inputs.run_default_command_path).read_text(encoding="utf-8")
+
+        self.assertEqual(strategy["name"], "SPY SMA 200 long/cash campaign baseline")
+        self.assertEqual(strategy["market"]["symbol"], "SPY")
+        self.assertIn("--param", inputs.command_tokens)
+        self.assertIn("sma_200.inputs.length=200", inputs.command_tokens)
+        self.assertIn("--success-criterion", inputs.command_tokens)
+        self.assertEqual(args_payload["schema_version"], "campaign_experiment_inputs.v1")
+        self.assertIn("quant-lab", command_markdown)
+        self.assertIn("experiment", command_markdown)
+        self.assertIn("run-default", command_markdown)
+
     def test_campaign_proposal_rejects_unsupported_template_parameter(self) -> None:
         config = parse_campaign_config(campaign_payload())
 
@@ -144,7 +172,7 @@ class CampaignTests(unittest.TestCase):
         self.assertFalse(validation.valid)
         self.assertTrue(any("unsupported parameters" in reason for reason in validation.reasons))
 
-    def test_campaign_run_writes_validation_only_cycle_artifacts(self) -> None:
+    def test_campaign_run_writes_conversion_artifacts_without_execution(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             config_path = root / "campaign.json"
@@ -165,14 +193,27 @@ class CampaignTests(unittest.TestCase):
 
             proposal_path = out_dir / "cycles" / "cycle_001" / "proposal.json"
             validation_path = out_dir / "cycles" / "cycle_001" / "proposal_validation.json"
+            strategy_path = out_dir / "cycles" / "cycle_001" / "strategy.json"
+            args_path = out_dir / "cycles" / "cycle_001" / "run_default_args.json"
+            command_path = out_dir / "cycles" / "cycle_001" / "run_default_command.md"
+            conclusion_path = out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.json"
             proposal_exists = proposal_path.exists()
             validation_exists = validation_path.exists()
+            strategy_exists = strategy_path.exists()
+            args_exists = args_path.exists()
+            command_exists = command_path.exists()
+            conclusion_exists = conclusion_path.exists()
             validation = json.loads(validation_path.read_text(encoding="utf-8"))
 
         self.assertEqual(exit_code, 0)
         self.assertTrue(proposal_exists)
         self.assertTrue(validation_exists)
+        self.assertTrue(strategy_exists)
+        self.assertTrue(args_exists)
+        self.assertTrue(command_exists)
+        self.assertFalse(conclusion_exists)
         self.assertTrue(validation["valid"])
+        self.assertIn("planned_command:", stdout.getvalue())
         self.assertIn("execution: skipped", stdout.getvalue())
 
 

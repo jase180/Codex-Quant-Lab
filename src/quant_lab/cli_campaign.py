@@ -12,6 +12,7 @@ from .campaign import (
     load_campaign_config,
     load_campaign_state,
 )
+from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_proposal import (
     deterministic_campaign_proposal,
     save_campaign_proposal_artifacts,
@@ -68,6 +69,11 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         print("reasons:")
         for reason in validation.reasons:
             print(f"- {reason}")
+    if validation.valid and proposal.action == "run_experiment":
+        inputs = prepare_campaign_experiment_inputs(proposal, config=config, cycle_dir=cycle_dir)
+        print(f"strategy: {inputs.strategy_path}")
+        print(f"run_default_args: {inputs.run_default_args_path}")
+        print(f"planned_command: {inputs.run_default_command_path}")
     print("execution: skipped")
     return 0 if validation.valid else 1
 
