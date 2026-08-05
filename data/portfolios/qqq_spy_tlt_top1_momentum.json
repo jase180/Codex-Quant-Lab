@@ -1,0 +1,35 @@
+{
+  "schema_version": "portfolio_plan.v1",
+  "portfolio_id": "qqq_spy_tlt_top1_momentum",
+  "name": "QQQ SPY TLT Top-1 Momentum",
+  "description": "Monthly top-1 relative-strength rotation across QQQ, SPY, and TLT using trailing adjusted closes.",
+  "symbols": [
+    {
+      "symbol": "QQQ",
+      "data": "../cache/QQQ_2015-01-01_2025-12-31.csv",
+      "target_weight": 0.3333333333333333
+    },
+    {
+      "symbol": "SPY",
+      "data": "../cache/SPY_2015-01-01_2025-12-31.csv",
+      "target_weight": 0.3333333333333333
+    },
+    {
+      "symbol": "TLT",
+      "data": "../cache/TLT_2015-01-01_2025-12-31.csv",
+      "target_weight": 0.3333333333333333
+    }
+  ],
+  "rebalance": {
+    "frequency": "monthly"
+  },
+  "allocation_model": {
+    "kind": "top_n_relative_strength",
+    "lookback": 63,
+    "top_n": 1
+  },
+  "benchmark": {
+    "symbol": "SPY",
+    "data": "../cache/SPY_2015-01-01_2025-12-31.csv"
+  }
+}

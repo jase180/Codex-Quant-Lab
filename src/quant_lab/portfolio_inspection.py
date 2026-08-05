@@ -55,6 +55,7 @@ def format_portfolio_run_summary(summary: dict) -> str:
         f"  Initial cash: {_format_money(metadata.get('initial_cash'))}",
         f"  Alignment: {_format_plain(metadata.get('alignment_policy'))}",
         f"  Rebalance: {_format_plain(metadata.get('rebalance_frequency'))}",
+        f"  Allocation model: {_allocation_model_label(metadata.get('allocation_model'))}",
         f"  Cost preset: {_format_plain(metadata.get('costs', {}).get('preset'))}",
         f"  Commission fixed: {_format_money(metadata.get('costs', {}).get('commission_fixed'))}",
         f"  Commission rate: {_format_decimal(metadata.get('costs', {}).get('commission_rate'))}",
@@ -152,6 +153,15 @@ def _benchmark_label(benchmark: dict) -> str:
     if not symbol:
         return "-"
     return f"buy-and-hold {symbol}"
+
+
+def _allocation_model_label(allocation_model: object) -> str:
+    if not isinstance(allocation_model, dict):
+        return "-"
+    kind = allocation_model.get("kind")
+    if kind == "top_n_relative_strength":
+        return f"{kind} lookback={allocation_model.get('lookback')} top_n={allocation_model.get('top_n')}"
+    return _format_plain(kind)
 
 
 def _comparison_row(summary: dict) -> dict:

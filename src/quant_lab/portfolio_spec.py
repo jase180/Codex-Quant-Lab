@@ -10,6 +10,7 @@ from typing import Any, Literal
 
 _ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 _ALLOWED_REBALANCE_FREQUENCIES = {"none", "monthly", "quarterly", "annually"}
+_ALLOWED_ALLOCATION_MODEL_KINDS = {"static_weights", "top_n_relative_strength"}
 _WEIGHT_TOLERANCE = 1e-9
 
 
@@ -36,6 +37,13 @@ class PortfolioBenchmarkSpec:
 
 
 @dataclass(frozen=True)
+class AllocationModelSpec:
+    kind: Literal["static_weights", "top_n_relative_strength"]
+    lookback: int | None = None
+    top_n: int | None = None
+
+
+@dataclass(frozen=True)
 class PortfolioSpec:
     schema_version: Literal["portfolio_plan.v1"]
     portfolio_id: str
@@ -44,6 +52,7 @@ class PortfolioSpec:
     symbols: list[PortfolioSymbolSpec]
     rebalance: RebalanceSpec
     benchmark: PortfolioBenchmarkSpec
+    allocation_model: AllocationModelSpec
     source_path: str | None = None
 
 
@@ -75,6 +84,7 @@ def load_portfolio_spec(path: str | Path) -> PortfolioSpec:
         symbols=parsed.symbols,
         rebalance=parsed.rebalance,
         benchmark=parsed.benchmark,
+        allocation_model=parsed.allocation_model,
         source_path=str(spec_path),
     )
 
@@ -92,6 +102,10 @@ def parse_portfolio_spec(payload: dict[str, Any]) -> PortfolioSpec:
     symbols = _parse_symbols(_require_list(payload, "symbols"))
     rebalance = _parse_rebalance(_require_mapping(payload, "rebalance"))
     benchmark = _parse_benchmark(_require_mapping(payload, "benchmark"))
+    allocation_model = _parse_allocation_model(
+        payload.get("allocation_model"),
+        symbol_count=len(symbols),
+    )
 
     _reject_unknown_keys(
         payload,
@@ -103,6 +117,7 @@ def parse_portfolio_spec(payload: dict[str, Any]) -> PortfolioSpec:
             "symbols",
             "rebalance",
             "benchmark",
+            "allocation_model",
         },
         context="portfolio",
     )
@@ -115,6 +130,7 @@ def parse_portfolio_spec(payload: dict[str, Any]) -> PortfolioSpec:
         symbols=symbols,
         rebalance=rebalance,
         benchmark=benchmark,
+        allocation_model=allocation_model,
     )
 
 
@@ -176,6 +192,34 @@ def _parse_benchmark(payload: dict[str, Any]) -> PortfolioBenchmarkSpec:
     return PortfolioBenchmarkSpec(symbol=symbol, data=data)
 
 
+def _parse_allocation_model(payload: Any, *, symbol_count: int) -> AllocationModelSpec:
+    if payload is None:
+        return AllocationModelSpec(kind="static_weights")
+    if not isinstance(payload, dict):
+        raise PortfolioSpecError("portfolio.allocation_model must be an object.")
+
+    kind = _require_literal(
+        payload,
+        "kind",
+        _ALLOWED_ALLOCATION_MODEL_KINDS,
+        "allocation_model",
+    )
+    if kind == "static_weights":
+        _reject_unknown_keys(payload, {"kind"}, "allocation_model")
+        return AllocationModelSpec(kind="static_weights")
+
+    lookback = _require_positive_int(payload, "lookback", "allocation_model")
+    top_n = _require_positive_int(payload, "top_n", "allocation_model")
+    if top_n > symbol_count:
+        raise PortfolioSpecError("allocation_model.top_n must be no greater than the symbol count.")
+    _reject_unknown_keys(payload, {"kind", "lookback", "top_n"}, "allocation_model")
+    return AllocationModelSpec(
+        kind="top_n_relative_strength",
+        lookback=lookback,
+        top_n=top_n,
+    )
+
+
 def _require_mapping(payload: dict[str, Any], key: str, context: str = "portfolio") -> dict[str, Any]:
     value = payload.get(key)
     if not isinstance(value, dict):
@@ -226,6 +270,15 @@ def _require_weight(payload: dict[str, Any], key: str, context: str) -> float:
             f"{context}.{key} must be greater than 0 and no more than 1."
         )
     return weight
+
+
+def _require_positive_int(payload: dict[str, Any], key: str, context: str) -> int:
+    value = payload.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise PortfolioSpecError(f"{context}.{key} must be a positive integer.")
+    if value <= 0:
+        raise PortfolioSpecError(f"{context}.{key} must be a positive integer.")
+    return value
 
 
 def _reject_unknown_keys(payload: dict[str, Any], allowed: set[str], context: str) -> None:

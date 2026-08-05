@@ -58,7 +58,8 @@ class StaticWeightPortfolioBacktester:
 
         cash = self.initial_cash
         shares_by_symbol = {symbol.symbol: 0.0 for symbol in portfolio.symbols}
-        target_weights = {symbol.symbol: symbol.target_weight for symbol in portfolio.symbols}
+        static_target_weights = {symbol.symbol: symbol.target_weight for symbol in portfolio.symbols}
+        current_target_weights = dict(static_target_weights)
         pending_orders: list[PortfolioRebalanceOrder] = []
         equity_rows: list[dict] = []
         position_rows: list[dict] = []
@@ -96,15 +97,22 @@ class StaticWeightPortfolioBacktester:
                 shares_by_symbol,
                 close_prices,
                 total_value,
-                target_weights,
+                current_target_weights,
             )
 
             if _should_rebalance(timestamp, previous_timestamp, portfolio.rebalance.frequency):
+                current_target_weights = _target_weights_for_rebalance(
+                    portfolio,
+                    dataset,
+                    timestamp,
+                    static_target_weights,
+                    current_target_weights,
+                )
                 pending_orders = _build_rebalance_orders(
                     shares_by_symbol,
                     close_prices,
                     total_value,
-                    target_weights,
+                    current_target_weights,
                 )
             previous_timestamp = timestamp
 
@@ -221,6 +229,61 @@ def _build_rebalance_orders(
         quantity = abs(value_delta) / close_prices[symbol]
         orders.append(PortfolioRebalanceOrder(symbol=symbol, side=side, quantity=quantity))
     return orders
+
+
+def _target_weights_for_rebalance(
+    portfolio: PortfolioSpec,
+    dataset: MultiAssetDataSet,
+    timestamp: pd.Timestamp,
+    static_target_weights: dict[str, float],
+    previous_target_weights: dict[str, float],
+) -> dict[str, float]:
+    model = portfolio.allocation_model
+    if model.kind == "static_weights":
+        return dict(static_target_weights)
+    if model.kind == "top_n_relative_strength":
+        return _top_n_relative_strength_weights(
+            dataset=dataset,
+            timestamp=timestamp,
+            lookback=int(model.lookback),
+            top_n=int(model.top_n),
+            previous_target_weights=previous_target_weights,
+        )
+    raise ValueError(f"unsupported allocation model: {model.kind}")
+
+
+def _top_n_relative_strength_weights(
+    *,
+    dataset: MultiAssetDataSet,
+    timestamp: pd.Timestamp,
+    lookback: int,
+    top_n: int,
+    previous_target_weights: dict[str, float],
+) -> dict[str, float]:
+    current_index = dataset.calendar.get_loc(timestamp)
+    if not isinstance(current_index, int):
+        raise ValueError("dataset calendar must contain unique timestamps")
+    if current_index < lookback:
+        return dict(previous_target_weights)
+
+    past_timestamp = dataset.calendar[current_index - lookback]
+    returns: list[tuple[str, float]] = []
+    for symbol, data in dataset.symbols.items():
+        past_close = float(data.loc[past_timestamp, "close"])
+        current_close = float(data.loc[timestamp, "close"])
+        if past_close <= 0:
+            raise ValueError(f"{symbol} close at lookback date must be positive")
+        returns.append((symbol, (current_close / past_close) - 1.0))
+
+    selected = {
+        symbol
+        for symbol, _return in sorted(returns, key=lambda item: (-item[1], item[0]))[:top_n]
+    }
+    selected_weight = 1.0 / top_n
+    return {
+        symbol: selected_weight if symbol in selected else 0.0
+        for symbol in dataset.symbols
+    }
 
 
 def _should_rebalance(

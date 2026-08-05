@@ -177,7 +177,8 @@ artifact before deciding what happened.
 - Run a train/test parameter sweep that selects on the train period and reruns
   only the selected variant on the later test period.
 - Run explicit walk-forward windows for repeated train/test checks.
-- Run simple static-weight multi-symbol portfolio backtests.
+- Run simple static-weight and Top-N momentum-rotation multi-symbol portfolio
+  backtests.
 - Plan dry-run batches of portfolio candidate runs before executing them.
 - Track research hypotheses in a local experiment registry.
 - Save reports, metrics, equity curves, drawdown charts, trades, strategy copies,
@@ -664,7 +665,7 @@ rows, and to automatically append the generated `run_metadata.json` path to the
 experiment's `linked_runs`. Use `--experiments-path` too when the experiment
 registry is not the default `artifacts/experiments.jsonl`.
 
-### Run A Static-Weight Portfolio
+### Run A Portfolio
 
 List the built-in starter portfolio templates:
 
@@ -758,9 +759,11 @@ quant-lab portfolio-run \
 ```
 
 The portfolio command loads every symbol CSV from the portfolio spec, aligns
-dates by intersection, rebalances static target weights, compares against the
-configured buy-and-hold benchmark, writes portfolio artifacts, and appends a
-`portfolio_run` row to the research index. See
+dates by intersection, calculates target weights from the configured allocation
+model, compares against the configured buy-and-hold benchmark, writes portfolio
+artifacts, and appends a `portfolio_run` row to the research index. Static
+weights are the default; `allocation_model.kind: top_n_relative_strength`
+supports a narrow momentum-rotation path. See
 [docs/portfolio/portfolio-workflow.md](docs/portfolio/portfolio-workflow.md).
 
 Inspect a saved portfolio run:

@@ -40,6 +40,32 @@ class PortfolioSpecTests(unittest.TestCase):
         self.assertEqual(spec.symbols[0].target_weight, 0.60)
         self.assertEqual(spec.rebalance.frequency, "monthly")
         self.assertEqual(spec.benchmark.symbol, "SPY")
+        self.assertEqual(spec.allocation_model.kind, "static_weights")
+
+    def test_parse_top_n_relative_strength_allocation_model(self) -> None:
+        payload = valid_portfolio_payload()
+        payload["allocation_model"] = {
+            "kind": "top_n_relative_strength",
+            "lookback": 2,
+            "top_n": 1,
+        }
+
+        spec = parse_portfolio_spec(payload)
+
+        self.assertEqual(spec.allocation_model.kind, "top_n_relative_strength")
+        self.assertEqual(spec.allocation_model.lookback, 2)
+        self.assertEqual(spec.allocation_model.top_n, 1)
+
+    def test_rejects_top_n_larger_than_symbol_count(self) -> None:
+        payload = valid_portfolio_payload()
+        payload["allocation_model"] = {
+            "kind": "top_n_relative_strength",
+            "lookback": 2,
+            "top_n": 3,
+        }
+
+        with self.assertRaisesRegex(PortfolioSpecError, "top_n"):
+            parse_portfolio_spec(payload)
 
     def test_load_portfolio_spec_records_source_path(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -62,6 +88,22 @@ class PortfolioSpecTests(unittest.TestCase):
 
         self.assertEqual(spec.portfolio_id, "qqq_spy_static_60_40")
         self.assertEqual([symbol.symbol for symbol in spec.symbols], ["QQQ", "SPY"])
+
+    def test_example_momentum_rotation_spec_is_valid(self) -> None:
+        spec_path = (
+            Path(__file__).resolve().parents[1]
+            / "data"
+            / "portfolios"
+            / "qqq_spy_tlt_top1_momentum.json"
+        )
+
+        spec = load_portfolio_spec(spec_path)
+
+        self.assertEqual(spec.portfolio_id, "qqq_spy_tlt_top1_momentum")
+        self.assertEqual([symbol.symbol for symbol in spec.symbols], ["QQQ", "SPY", "TLT"])
+        self.assertEqual(spec.allocation_model.kind, "top_n_relative_strength")
+        self.assertEqual(spec.allocation_model.lookback, 63)
+        self.assertEqual(spec.allocation_model.top_n, 1)
 
     def test_rejects_duplicate_symbols(self) -> None:
         payload = valid_portfolio_payload()

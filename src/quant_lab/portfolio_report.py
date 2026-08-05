@@ -31,6 +31,7 @@ def build_portfolio_report(
     )
     caveat_lines = "\n".join(f"- {caveat}" for caveat in metrics.caveats) or "- None."
     benchmark_section = _benchmark_report_section(benchmark_comparison)
+    allocation_model_summary = _allocation_model_summary(portfolio)
 
     return f"""# {portfolio.name}
 
@@ -60,6 +61,7 @@ Report role: supporting interpretation.
 
 - Alignment policy: `{dataset.alignment_policy}`.
 - Rebalance frequency: `{portfolio.rebalance.frequency}`.
+- Allocation model: {allocation_model_summary}.
 - Rebalance decisions use close prices and fill at the next aligned open.
 - Costs: `{cost_assumptions.preset}`, fixed commission {cost_assumptions.commission_fixed:.4f},
   rate {cost_assumptions.commission_rate:.6f}, slippage {cost_assumptions.slippage_bps:.2f} bps.
@@ -87,6 +89,15 @@ def _benchmark_report_section(benchmark: PortfolioBenchmarkComparison | None) ->
 | Sharpe Ratio | {_optional_number(benchmark.metrics.sharpe_ratio)} |
 | Max Drawdown | {benchmark.metrics.max_drawdown:.2%} |
 | Excess Total Return | {benchmark.excess_total_return:.2%} |"""
+
+
+def _allocation_model_summary(portfolio: PortfolioSpec) -> str:
+    model = portfolio.allocation_model
+    if model.kind == "static_weights":
+        return "`static_weights`"
+    if model.kind == "top_n_relative_strength":
+        return f"`top_n_relative_strength`, lookback `{model.lookback}`, top_n `{model.top_n}`"
+    return f"`{model.kind}`"
 
 
 def _optional_percent(value: float | None) -> str:

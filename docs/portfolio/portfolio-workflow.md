@@ -1,19 +1,21 @@
 # Portfolio Workflow
 
-This workflow tests a simple static-weight portfolio across more than one daily
-OHLCV CSV.
+This workflow tests simple multi-symbol portfolio rules across daily OHLCV CSVs.
+Static weights are the default path. A narrow Top-N relative-strength allocation
+model is also supported for momentum-rotation research.
 
 The first portfolio version is intentionally narrow:
 
 - long-only symbols,
-- static target weights,
+- static target weights or Top-N trailing-return rotation,
 - periodic rebalancing,
 - date-intersection alignment,
 - next-aligned-open rebalance fills,
 - buy-and-hold benchmark comparison.
 
-It is useful for allocation research. It is not yet an optimizer, live-trading
-tool, or automated symbol researcher.
+It is useful for allocation and first-pass rotation research. It is not yet an
+optimizer, live-trading tool, multi-signal ranking engine, or automated symbol
+researcher.
 
 ## 1. Fetch The Symbol Data
 
@@ -69,9 +71,27 @@ The important fields are:
 - `symbols`: each portfolio component and its CSV path.
 - `target_weight`: the desired static allocation weight.
 - `rebalance.frequency`: `none`, `monthly`, `quarterly`, or `annually`.
+- optional `allocation_model`: dynamic target-weight model. When omitted, the
+  portfolio uses `static_weights`.
 - `benchmark`: one symbol CSV used for the buy-and-hold comparison.
 
-Weights must sum to `1.0`.
+Symbol weights must sum to `1.0`. For dynamic allocation models, these weights
+are still the static reference allocation and the fallback before the model has
+enough lookback data.
+
+Supported allocation models:
+
+- `static_weights`: use each symbol's `target_weight` at every rebalance.
+- `top_n_relative_strength`: rank symbols by trailing close-to-close return over
+  `lookback` aligned sessions, hold the top `top_n` symbols at equal weight, and
+  set all other target weights to `0.0`.
+
+Example rotation spec:
+
+[data/portfolios/qqq_spy_tlt_top1_momentum.json](../../data/portfolios/qqq_spy_tlt_top1_momentum.json)
+
+The example uses monthly rebalancing, a `63`-session lookback, and `top_n: 1`
+across QQQ, SPY, and TLT.
 
 ## 3. Generate Weight Variants
 
@@ -159,7 +179,7 @@ Then read `portfolio_report.md`.
 Then inspect:
 
 - `portfolio_metadata.json` for data fingerprints, costs, rebalance settings,
-  benchmark input, command tokens, and git commit.
+  allocation model, benchmark input, command tokens, and git commit.
 - `portfolio_trades.csv` for next-open rebalance fills.
 - `portfolio_positions.csv` for per-symbol holdings and weights.
 - `portfolio_allocation_drift.csv` for target-versus-actual weight drift.
@@ -266,8 +286,12 @@ The first version recommends:
 - Symbols are aligned by date intersection. Rows missing from any symbol are
   dropped from the run window.
 - Rebalance decisions use close prices and fill at the next aligned open.
+- Top-N relative-strength decisions use aligned close data through the rebalance
+  decision date and still fill at the next aligned open.
 - The first available aligned session in a rebalance period can trigger the
   rebalance decision.
+- Before a dynamic allocation model has enough lookback data, the portfolio uses
+  the static reference weights from `symbols`.
 - Final-bar rebalance signals do not fill.
 - Benchmark data must cover every aligned portfolio date.
 - Data files are local research inputs. If a CSV changes, the saved fingerprints

@@ -69,6 +69,13 @@ class PortfolioBenchmarkMetadata:
 
 
 @dataclass(frozen=True)
+class PortfolioAllocationModelMetadata:
+    kind: str
+    lookback: int | None
+    top_n: int | None
+
+
+@dataclass(frozen=True)
 class PortfolioMetadata:
     metadata_schema_version: str
     run_type: str
@@ -79,6 +86,7 @@ class PortfolioMetadata:
     schema_version: str
     alignment_policy: str
     rebalance_frequency: str
+    allocation_model: PortfolioAllocationModelMetadata
     initial_cash: float
     benchmark_symbol: str
     benchmark_data: str
@@ -113,6 +121,11 @@ def build_portfolio_metadata(
         schema_version=portfolio.schema_version,
         alignment_policy=dataset.alignment_policy,
         rebalance_frequency=portfolio.rebalance.frequency,
+        allocation_model=PortfolioAllocationModelMetadata(
+            kind=portfolio.allocation_model.kind,
+            lookback=portfolio.allocation_model.lookback,
+            top_n=portfolio.allocation_model.top_n,
+        ),
         initial_cash=float(initial_cash),
         benchmark_symbol=portfolio.benchmark.symbol,
         benchmark_data=portfolio.benchmark.data,

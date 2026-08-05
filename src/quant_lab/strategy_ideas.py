@@ -282,7 +282,7 @@ def format_strategy_idea_suggestion(suggestion: StrategyIdeaSuggestion) -> str:
             config_json,
             "```",
             "",
-            "No executable strategy JSON was created. Convert this idea only after human approval.",
+            "No executable strategy or portfolio spec was created. Convert this idea only after human approval.",
         ]
     )
 

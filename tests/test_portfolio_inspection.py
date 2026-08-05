@@ -31,6 +31,7 @@ class PortfolioInspectionTests(unittest.TestCase):
         self.assertIn("qqq_spy_static_60_40", output)
         self.assertIn("Benchmark return: 5.00%", output)
         self.assertIn("Excess return: 1.00%", output)
+        self.assertIn("Allocation model: static_weights", output)
         self.assertIn("QQQ: target=60.00%", output)
         self.assertIn("quality=none", output)
         self.assertIn("sha=abcdef123456", output)
@@ -148,6 +149,11 @@ def _write_portfolio_artifacts(
                 "name": "QQQ SPY Static 60/40",
                 "alignment_policy": "intersection",
                 "rebalance_frequency": "monthly",
+                "allocation_model": {
+                    "kind": "static_weights",
+                    "lookback": None,
+                    "top_n": None,
+                },
                 "initial_cash": 1000.0,
                 "costs": {
                     "preset": "none",

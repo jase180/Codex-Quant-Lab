@@ -31,6 +31,27 @@ def portfolio_spec(frequency: str = "monthly"):
     )
 
 
+def rotation_portfolio_spec(frequency: str = "monthly"):
+    payload = {
+        "schema_version": "portfolio_plan.v1",
+        "portfolio_id": "qqq_spy_top1_momentum",
+        "name": "QQQ SPY Top-1 Momentum",
+        "description": "Rotate into the strongest symbol by trailing return.",
+        "symbols": [
+            {"symbol": "QQQ", "data": "QQQ.csv", "target_weight": 0.50},
+            {"symbol": "SPY", "data": "SPY.csv", "target_weight": 0.50},
+        ],
+        "rebalance": {"frequency": frequency},
+        "allocation_model": {
+            "kind": "top_n_relative_strength",
+            "lookback": 1,
+            "top_n": 1,
+        },
+        "benchmark": {"symbol": "SPY", "data": "SPY.csv"},
+    }
+    return parse_portfolio_spec(payload)
+
+
 def market_data(closes: list[float]) -> pd.DataFrame:
     dates = pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-05"])
     return pd.DataFrame(
@@ -75,6 +96,34 @@ def dataset_starting_after_month_start() -> MultiAssetDataSet:
     )
 
 
+def rotation_dataset() -> MultiAssetDataSet:
+    dates = pd.to_datetime(["2026-01-30", "2026-02-02", "2026-02-03"])
+    return MultiAssetDataSet(
+        symbols={
+            "QQQ": _market_data_for_dates(dates, [100, 110, 120]),
+            "SPY": _market_data_for_dates(dates, [200, 200, 200]),
+        },
+        calendar=pd.DatetimeIndex(dates),
+        alignment_policy="intersection",
+        data_quality={},
+        fingerprints={},
+        dropped_rows_by_symbol={"QQQ": 0, "SPY": 0},
+    )
+
+
+def _market_data_for_dates(dates: pd.DatetimeIndex, closes: list[float]) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "open": closes,
+            "high": [close + 1 for close in closes],
+            "low": [close - 1 for close in closes],
+            "close": closes,
+            "volume": [1000, 1000, 1000],
+        },
+        index=dates,
+    )
+
+
 class PortfolioBacktestTests(unittest.TestCase):
     def test_static_weight_portfolio_fills_rebalance_at_next_open(self) -> None:
         result = StaticWeightPortfolioBacktester(initial_cash=1000).run(portfolio_spec(), dataset())
@@ -106,6 +155,23 @@ class PortfolioBacktestTests(unittest.TestCase):
 
         self.assertEqual(result.trades.index[0].date().isoformat(), "2026-01-05")
         self.assertFalse(result.trades.empty)
+
+    def test_top_n_relative_strength_rotates_to_strongest_symbol_at_next_open(self) -> None:
+        result = StaticWeightPortfolioBacktester(initial_cash=1000).run(
+            rotation_portfolio_spec(),
+            rotation_dataset(),
+        )
+
+        # The first rebalance has no prior lookback return, so it uses the
+        # static reference weights. The second rebalance sees QQQ as stronger
+        # using close-to-close data through 2026-02-02 and fills the rotation at
+        # the next available open on 2026-02-03.
+        trades_on_rotation_fill = result.trades.loc[pd.Timestamp("2026-02-03")]
+        self.assertEqual(set(trades_on_rotation_fill["symbol"]), {"QQQ", "SPY"})
+        self.assertAlmostEqual(result.positions.loc[(pd.Timestamp("2026-02-03"), "QQQ")].target_weight, 1.0)
+        self.assertAlmostEqual(result.positions.loc[(pd.Timestamp("2026-02-03"), "SPY")].target_weight, 0.0)
+        self.assertGreater(result.positions.loc[(pd.Timestamp("2026-02-03"), "QQQ")].shares, 0.0)
+        self.assertAlmostEqual(result.positions.loc[(pd.Timestamp("2026-02-03"), "SPY")].shares, 0.0)
 
     def test_final_bar_rebalance_signal_does_not_fill(self) -> None:
         data = dataset()

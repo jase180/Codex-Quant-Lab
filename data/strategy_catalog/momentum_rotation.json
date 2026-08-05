@@ -50,10 +50,10 @@
           "threshold": 0.0
         }
       ],
-      "engine_can_currently_execute": false,
+      "engine_can_currently_execute": true,
       "research_priority": "core",
-      "capability_status": "portfolio_extension_required",
-      "next_action": "build_rotation_portfolio_capability_first"
+      "capability_status": "executable_now",
+      "next_action": "run_after_human_approval"
     }
   ],
   "suggested_validation": [
@@ -66,6 +66,6 @@
     "Jegadeesh and Titman, Returns to Buying Winners and Selling Losers",
     "Faber, A Quantitative Approach to Tactical Asset Allocation"
   ],
-  "engine_can_currently_execute": false,
-  "execution_notes": "The current portfolio engine supports static weights, but not dynamic cross-sectional ranking or scheduled rotation."
+  "engine_can_currently_execute": true,
+  "execution_notes": "The portfolio engine supports a narrow monthly/quarterly/annual Top-N trailing-return allocation model over an explicitly listed universe. It does not yet support multiple ranking signals, cash filters, volatility weighting, or optimizer constraints."
 }

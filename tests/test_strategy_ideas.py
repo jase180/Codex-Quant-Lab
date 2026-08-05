@@ -224,7 +224,7 @@ class StrategyIdeasTest(unittest.TestCase):
         self.assertIn("Prior research records read: 0", output)
         self.assertIn("## Proposed Hypothesis", output)
         self.assertIn("## Draft Experiment Config", output)
-        self.assertIn("No executable strategy JSON was created", output)
+        self.assertIn("No executable strategy or portfolio spec was created", output)
 
     def test_suggest_excludes_portfolio_family_from_registry_decision_memory(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
