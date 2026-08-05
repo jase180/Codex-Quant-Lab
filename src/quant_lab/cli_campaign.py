@@ -11,6 +11,8 @@ from .campaign import (
     initialize_campaign,
     load_campaign_config,
     load_campaign_state,
+    save_campaign_state,
+    update_campaign_state_after_execution,
 )
 from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_execution import execute_campaign_experiment_inputs
@@ -76,11 +78,21 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         print(f"run_default_args: {inputs.run_default_args_path}")
         print(f"planned_command: {inputs.run_default_command_path}")
         execution = execute_campaign_experiment_inputs(inputs)
+        updated_state = update_campaign_state_after_execution(
+            state,
+            config=config,
+            execution=execution,
+            projected_run_count=validation.projected_run_count,
+        )
+        save_campaign_state(updated_state, paths.output_dir, config=config)
         print(f"execution: {execution.status}")
         print(f"execution_receipt: {execution.execution_json_path}")
         print(f"conclusion: {execution.conclusion_path or '-'}")
         print(f"conclusion_json: {execution.conclusion_json_path or '-'}")
         print(f"read_first: {execution.read_first_path or '-'}")
+        print(f"state: {paths.state_path}")
+        print(f"cycle_number: {updated_state.cycle_number}")
+        print(f"runs_used: {updated_state.runs_used}")
     else:
         print("execution: skipped")
     return 0 if validation.valid else 1

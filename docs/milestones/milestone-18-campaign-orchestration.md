@@ -131,6 +131,25 @@ budget.
 Exit criterion: cycle 2 demonstrably uses cycle 1's conclusion and avoids a
 rejected branch.
 
+Current progress:
+
+- Completed executions update `campaign_state.json` and `campaign_state.md`.
+- Campaign state records completed experiment id, title, research-system
+  status, strategy-hypothesis status, confidence label, conclusion paths,
+  projected run count, and elapsed seconds.
+- Conclusion `current_conclusion`, `do_not_repeat`, and `open_questions` are
+  carried into campaign-level memory.
+- Rejected strategy hypotheses add an explicit unchanged-branch guardrail so a
+  resumed deterministic campaign does not rerun the same failed proposal.
+- A resume smoke check blocked cycle 2 from repeating the rejected SMA 200
+  baseline.
+
+Still missing:
+
+- a smarter deterministic fallback proposal after the first branch is blocked,
+- retry-on-invalid behavior,
+- richer material-difference checks across non-identical proposals.
+
 ### 18E: Final Campaign Report
 
 Write `final_report.md` and `final_report.json` with attempted experiments,

@@ -19,6 +19,7 @@ from quant_lab.campaign import (  # noqa: E402
     load_campaign_config,
     load_campaign_state,
     parse_campaign_config,
+    update_campaign_state_after_execution,
 )
 from quant_lab.campaign_conversion import prepare_campaign_experiment_inputs  # noqa: E402
 from quant_lab.campaign_execution import CampaignExecutionResult, execute_campaign_experiment_inputs  # noqa: E402
@@ -46,6 +47,23 @@ def campaign_payload() -> dict:
         "max_variants_per_experiment": 3,
         "duration_minutes": 30,
         "provider": "deterministic",
+    }
+
+
+def conclusion_payload() -> dict:
+    return {
+        "schema_version": "experiment_conclusion.v1",
+        "experiment_id": "EXP-123",
+        "experiment": {
+            "title": "SPY SMA 200 long/cash campaign baseline",
+            "hypothesis": "A trend rule may reduce drawdown.",
+        },
+        "research_system_status": {"status": "valid"},
+        "strategy_hypothesis_status": {"status": "rejected"},
+        "confidence_label": "rejected",
+        "current_conclusion": "The repo measured the idea correctly, but the strategy failed the criteria.",
+        "do_not_repeat": ["Do not rerun the same SMA 200 long/cash branch unchanged."],
+        "open_questions": ["Did adjusted prices affect the comparison?"],
     }
 
 
@@ -166,7 +184,7 @@ class CampaignTests(unittest.TestCase):
                 workflow.return_value.conclusion_path = str(Path(inputs.output_dir) / "experiment_conclusion.json")
                 workflow.return_value.read_first_path = workflow.return_value.conclusion_path
                 Path(workflow.return_value.conclusion_path).parent.mkdir(parents=True, exist_ok=True)
-                Path(workflow.return_value.conclusion_path).write_text("{}", encoding="utf-8")
+                Path(workflow.return_value.conclusion_path).write_text(json.dumps(conclusion_payload()), encoding="utf-8")
                 result = execute_campaign_experiment_inputs(inputs)
 
             receipt = json.loads(Path(result.execution_json_path).read_text(encoding="utf-8"))
@@ -178,6 +196,55 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(workflow.called)
         self.assertEqual(receipt["schema_version"], "campaign_execution.v1")
         self.assertIn("Campaign Cycle Execution", markdown)
+
+    def test_update_campaign_state_after_execution_carries_forward_conclusion_knowledge(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            conclusion_path = Path(temp_dir) / "experiment_conclusion.json"
+            conclusion_path.write_text(json.dumps(conclusion_payload()), encoding="utf-8")
+            execution = CampaignExecutionResult(
+                schema_version="campaign_execution.v1",
+                status="completed",
+                experiment_id="EXP-123",
+                output_dir=str(Path(temp_dir) / "experiment"),
+                conclusion_path=str(conclusion_path.with_suffix(".md")),
+                conclusion_json_path=str(conclusion_path),
+                read_first_path=str(conclusion_path.with_suffix(".md")),
+                execution_json_path=str(Path(temp_dir) / "campaign_execution.json"),
+                execution_markdown_path=str(Path(temp_dir) / "campaign_execution.md"),
+                error=None,
+                elapsed_seconds=7,
+                created_at_utc="2026-08-05T00:00:00Z",
+            )
+
+            updated = update_campaign_state_after_execution(
+                state,
+                config=config,
+                execution=execution,
+                projected_run_count=11,
+            )
+
+        self.assertEqual(updated.cycle_number, 1)
+        self.assertEqual(updated.runs_used, 11)
+        self.assertEqual(updated.elapsed_seconds, 7)
+        self.assertEqual(updated.remaining_budget["cycles"], 2)
+        self.assertEqual(updated.remaining_budget["runs"], 9)
+        self.assertEqual(updated.completed_experiments[0]["research_system_status"], "valid")
+        self.assertEqual(updated.completed_experiments[0]["strategy_hypothesis_status"], "rejected")
+        self.assertIn("strategy failed", " ".join(updated.current_findings))
+        self.assertIn("Do not rerun the same SMA 200 long/cash branch unchanged.", updated.do_not_repeat)
+        self.assertIn(
+            "Do not repeat unchanged rejected experiment: SPY SMA 200 long/cash campaign baseline.",
+            updated.do_not_repeat,
+        )
+        self.assertIn("Did adjusted prices affect the comparison?", updated.unresolved_questions)
+        repeated_proposal = deterministic_campaign_proposal(config, updated)
+        repeated_validation = validate_campaign_proposal(repeated_proposal, config=config, state=updated)
+        self.assertFalse(repeated_validation.valid)
+        self.assertTrue(any("do_not_repeat" in reason for reason in repeated_validation.reasons))
 
     def test_campaign_proposal_rejects_unsupported_template_parameter(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -212,18 +279,22 @@ class CampaignTests(unittest.TestCase):
             config_path = root / "campaign.json"
             out_dir = root / "campaign"
             config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+            fake_conclusion_path = out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.json"
+            fake_conclusion_path.parent.mkdir(parents=True, exist_ok=True)
+            fake_conclusion_path.write_text(json.dumps(conclusion_payload()), encoding="utf-8")
 
             fake_execution = CampaignExecutionResult(
                 schema_version="campaign_execution.v1",
                 status="completed",
                 experiment_id="EXP-999",
                 output_dir=str(out_dir / "cycles" / "cycle_001" / "experiment"),
-                conclusion_path=str(out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.json"),
-                conclusion_json_path=str(out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.json"),
+                conclusion_path=str(fake_conclusion_path.with_suffix(".md")),
+                conclusion_json_path=str(fake_conclusion_path),
                 read_first_path=str(out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.md"),
                 execution_json_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.json"),
                 execution_markdown_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.md"),
                 error=None,
+                elapsed_seconds=5,
                 created_at_utc="2026-08-05T00:00:00Z",
             )
             with patch("quant_lab.cli_campaign.execute_campaign_experiment_inputs", return_value=fake_execution):
@@ -250,6 +321,7 @@ class CampaignTests(unittest.TestCase):
             args_exists = args_path.exists()
             command_exists = command_path.exists()
             validation = json.loads(validation_path.read_text(encoding="utf-8"))
+            state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
 
         self.assertEqual(exit_code, 0)
         self.assertTrue(proposal_exists)
@@ -258,9 +330,13 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(args_exists)
         self.assertTrue(command_exists)
         self.assertTrue(validation["valid"])
+        self.assertEqual(state.cycle_number, 1)
+        self.assertEqual(state.runs_used, 11)
+        self.assertIn("Do not rerun the same SMA 200 long/cash branch unchanged.", state.do_not_repeat)
         self.assertIn("planned_command:", stdout.getvalue())
         self.assertIn("execution: completed", stdout.getvalue())
         self.assertIn("conclusion:", stdout.getvalue())
+        self.assertIn("cycle_number: 1", stdout.getvalue())
 
 
 if __name__ == "__main__":

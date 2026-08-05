@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,7 @@ class CampaignExecutionResult:
     execution_json_path: str
     execution_markdown_path: str
     error: str | None
+    elapsed_seconds: int
     created_at_utc: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,6 +42,7 @@ def execute_campaign_experiment_inputs(inputs: CampaignExperimentInputs) -> Camp
 
     args = argparse.Namespace(**inputs.run_default_args)
     validate_default_experiment_args(args)
+    started = time.monotonic()
     try:
         result = run_default_experiment(args)
         conclusion_json_path = _conclusion_json_path(result.conclusion_path)
@@ -56,6 +59,7 @@ def execute_campaign_experiment_inputs(inputs: CampaignExperimentInputs) -> Camp
             execution_json_path=str(_execution_json_path(inputs)),
             execution_markdown_path=str(_execution_markdown_path(inputs)),
             error=None,
+            elapsed_seconds=max(0, int(time.monotonic() - started)),
             created_at_utc=utc_now_iso(),
         )
     except Exception as exc:
@@ -70,6 +74,7 @@ def execute_campaign_experiment_inputs(inputs: CampaignExperimentInputs) -> Camp
             execution_json_path=str(_execution_json_path(inputs)),
             execution_markdown_path=str(_execution_markdown_path(inputs)),
             error=str(exc),
+            elapsed_seconds=max(0, int(time.monotonic() - started)),
             created_at_utc=utc_now_iso(),
         )
         _save_execution_result(execution)
@@ -97,6 +102,7 @@ def _format_execution_markdown(execution: CampaignExecutionResult) -> str:
             f"- Read first: `{execution.read_first_path or '-'}`",
             f"- Conclusion: `{execution.conclusion_path or '-'}`",
             f"- Conclusion JSON: `{execution.conclusion_json_path or '-'}`",
+            f"- Elapsed seconds: `{execution.elapsed_seconds}`",
             f"- Error: {execution.error or '-'}",
             "",
         ]

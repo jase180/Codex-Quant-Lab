@@ -1211,7 +1211,7 @@ def register_campaign_commands(subparsers) -> None:
 
     run_parser = campaign_subparsers.add_parser(
         "run",
-        help="Create and validate one bounded campaign proposal. Execution is added in a later milestone slice.",
+        help="Run one bounded campaign cycle through the existing default experiment workflow.",
     )
     run_parser.add_argument("--config", default=None, help="Input campaign config JSON. Creates state when needed.")
     run_parser.add_argument("--out", required=True, help="Campaign output directory.")
