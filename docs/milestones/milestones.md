@@ -419,7 +419,34 @@ Exit criteria:
   While non-dry-run execution is deferred, keep work to dry-run validation,
   docs, and cleanup.
 
-## Milestone 18: Strategy Language V2
+## Milestone 18: Campaign Orchestration
+
+Status: planned, first skeleton slice in progress.
+
+Goal: add a bounded campaign controller that can repeat the existing research
+workflow under strict budgets and proposal validation.
+
+Detailed plan:
+[milestone-18-campaign-orchestration.md](milestone-18-campaign-orchestration.md)
+
+Planned work:
+
+- Campaign config and state files.
+- Strict proposal schema.
+- Deterministic provider first.
+- Proposal validation and budget accounting.
+- One-cycle execution through existing workflows.
+- Campaign knowledge updates.
+- Final campaign reports.
+- Later Ollama and Codex providers behind the same proposal contract.
+
+Exit criteria:
+
+- A campaign can safely run several bounded cycles, update cumulative research
+  knowledge, stop for explicit reasons, and leave a readable final report
+  without allowing the provider to modify source code or bypass validation.
+
+## Milestone 19: Strategy Language V2
 
 Status: proposed.
 
@@ -433,7 +460,7 @@ Planned work:
 - Stops, exits, holding-period rules, and cooldowns.
 - Migration docs from v1 to v2.
 
-## Milestone 19: Portfolio Realism
+## Milestone 20: Portfolio Realism
 
 Status: proposed.
 
@@ -446,7 +473,7 @@ Planned work:
 - Simple volatility-aware allocation options.
 - Better blended portfolio benchmarks.
 
-## Milestone 20: CLI UX And Configuration Polish
+## Milestone 21: CLI UX And Configuration Polish
 
 Status: proposed.
 
@@ -458,7 +485,7 @@ Planned work:
 - Better command help and beginner-facing errors.
 - Current quickstart cleanup.
 
-## Milestone 21: Example Research Library
+## Milestone 22: Example Research Library
 
 Status: proposed.
 
@@ -471,7 +498,7 @@ Planned work:
 - Rejected idea example.
 - Data-quality warning example.
 
-## Milestone 22: Test, Packaging, And Maintenance Hardening
+## Milestone 23: Test, Packaging, And Maintenance Hardening
 
 Status: proposed.
 

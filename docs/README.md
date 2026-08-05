@@ -58,9 +58,15 @@ current workflow docs and the latest experiment handoffs.
   Ollama-backed commands.
 - [Milestone 17 Local-Agent Advisor](milestones/milestone-17-local-agent-advisor.md):
   implementation plan and boundary.
+- [Milestone 18 Campaign Orchestration](milestones/milestone-18-campaign-orchestration.md):
+  bounded multi-cycle campaign roadmap and current implementation boundary.
 
 Current boundary: agent commands can prepare context and recommend the next
 experiment, but they do not take over execution without a human/Codex step.
+
+Campaign boundary: `campaign init` and `campaign status` can create and inspect
+campaign state. Multi-cycle execution is being built in Milestone 18 and should
+reuse existing experiment workflows rather than reimplementing research logic.
 
 ## Workflow And Evidence Design
 
@@ -92,6 +98,7 @@ experiment, but they do not take over execution without a human/Codex step.
 - [Milestone 15 State Review](milestones/milestone-15-state-review.md)
 - [Milestone 16 Session Manifests](milestones/milestone-16-session-manifests.md)
 - [Milestone 17 Local-Agent Advisor](milestones/milestone-17-local-agent-advisor.md)
+- [Milestone 18 Campaign Orchestration](milestones/milestone-18-campaign-orchestration.md)
 
 ## Reference
 

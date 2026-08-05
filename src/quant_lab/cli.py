@@ -20,6 +20,7 @@ from .cli_agent import (
     agent_suggest_command,
     agent_validate_recommendation_command,
 )
+from .cli_campaign import campaign_init_command, campaign_status_command
 from .cli_health import doctor_command, smoke_test_command
 from .cli_ideas import ideas_suggest_command
 from .cli_runs import list_runs_command, run_command
@@ -103,6 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_portfolio_plan_commands(subparsers)
     register_session_commands(subparsers)
     register_agent_commands(subparsers)
+    register_campaign_commands(subparsers)
     register_ideas_commands(subparsers)
     register_robustness_commands(subparsers)
     register_sweep_commands(subparsers)
@@ -1182,6 +1184,30 @@ def register_agent_commands(subparsers) -> None:
     validate_parser.add_argument("--json", action="store_true", help="Print normalized recommendation JSON.")
     validate_parser.add_argument("--markdown", action="store_true", help="Print normalized Markdown after validation.")
     validate_parser.set_defaults(func=agent_validate_recommendation_command)
+
+
+def register_campaign_commands(subparsers) -> None:
+    campaign_parser = subparsers.add_parser(
+        "campaign",
+        help="Run bounded multi-cycle research campaigns.",
+    )
+    campaign_subparsers = campaign_parser.add_subparsers(dest="campaign_command", required=True)
+
+    init_parser = campaign_subparsers.add_parser(
+        "init",
+        help="Create campaign_config.json, campaign_state.json, and campaign_state.md.",
+    )
+    init_parser.add_argument("--config", required=True, help="Path to input campaign config JSON.")
+    init_parser.add_argument("--out", required=True, help="Campaign output directory.")
+    init_parser.add_argument("--force", action="store_true", help="Overwrite existing campaign state files.")
+    init_parser.set_defaults(func=campaign_init_command)
+
+    status_parser = campaign_subparsers.add_parser(
+        "status",
+        help="Print compact status for an initialized campaign.",
+    )
+    status_parser.add_argument("--campaign", required=True, help="Campaign output directory.")
+    status_parser.set_defaults(func=campaign_status_command)
 
 
 def add_agent_manifest_argument(parser: argparse.ArgumentParser) -> None:
