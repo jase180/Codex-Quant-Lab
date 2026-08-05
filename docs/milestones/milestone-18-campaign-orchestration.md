@@ -1,6 +1,6 @@
 # Milestone 18: Campaign Orchestration
 
-Status: planned, first skeleton slice in progress.
+Status: in progress.
 
 ## Goal
 
@@ -53,6 +53,15 @@ full experiment loop yet.
 Exit criterion: campaign config and state can be created, inspected, and resumed
 without losing budget or objective context.
 
+Current progress:
+
+- `campaign_config.json`, `campaign_state.json`, and `campaign_state.md`
+  persistence exists.
+- `quant-lab campaign init` creates campaign state.
+- `quant-lab campaign status` prints compact orientation.
+- `quant-lab campaign run` can create a deterministic proposal, validate it,
+  save cycle artifacts, and stop before execution.
+
 ### 18B: Proposal Contract And Validation
 
 Define `campaign_proposal.v1` with permitted actions:
@@ -66,6 +75,23 @@ budgets, material difference from prior work, and `do_not_repeat` constraints.
 
 Exit criterion: invalid proposals are saved, rejected with reasons, retried at
 most once, then stop or fall back deterministically.
+
+Current progress:
+
+- `campaign_proposal.v1` exists for `run_experiment`, `request_human_review`,
+  and `stop_campaign`.
+- `campaign_validation.v1` saves valid/rejected status, reasons, and projected
+  run count.
+- The deterministic provider proposes the first SPY SMA 200 long/cash campaign
+  baseline.
+- Validation checks allowed template, allowed symbol, supported parameters,
+  required local data, success criteria, budget, and campaign `do_not_repeat`.
+
+Still missing:
+
+- retry-on-invalid behavior,
+- material-difference checks beyond simple `do_not_repeat`,
+- conversion from proposal to executable workflow inputs.
 
 ### 18C: One Real Campaign Cycle
 

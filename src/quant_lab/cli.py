@@ -20,7 +20,7 @@ from .cli_agent import (
     agent_suggest_command,
     agent_validate_recommendation_command,
 )
-from .cli_campaign import campaign_init_command, campaign_status_command
+from .cli_campaign import campaign_init_command, campaign_run_command, campaign_status_command
 from .cli_health import doctor_command, smoke_test_command
 from .cli_ideas import ideas_suggest_command
 from .cli_runs import list_runs_command, run_command
@@ -1208,6 +1208,22 @@ def register_campaign_commands(subparsers) -> None:
     )
     status_parser.add_argument("--campaign", required=True, help="Campaign output directory.")
     status_parser.set_defaults(func=campaign_status_command)
+
+    run_parser = campaign_subparsers.add_parser(
+        "run",
+        help="Create and validate one bounded campaign proposal. Execution is added in a later milestone slice.",
+    )
+    run_parser.add_argument("--config", default=None, help="Input campaign config JSON. Creates state when needed.")
+    run_parser.add_argument("--out", required=True, help="Campaign output directory.")
+    run_parser.add_argument("--resume", action="store_true", help="Reuse existing campaign state when present.")
+    run_parser.add_argument("--force", action="store_true", help="Overwrite initialized state when --config is provided.")
+    run_parser.add_argument(
+        "--provider",
+        choices=["deterministic", "ollama", "codex"],
+        default=None,
+        help="Reserved provider override. For now, use the provider in the config.",
+    )
+    run_parser.set_defaults(func=campaign_run_command)
 
 
 def add_agent_manifest_argument(parser: argparse.ArgumentParser) -> None:
