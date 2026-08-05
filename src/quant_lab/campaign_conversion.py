@@ -33,6 +33,7 @@ class CampaignExperimentInputs:
     output_dir: str
     run_default_args_path: str
     run_default_command_path: str
+    run_default_args: dict[str, Any]
     command_tokens: list[str]
     created_at_utc: str
 
@@ -74,12 +75,13 @@ def prepare_campaign_experiment_inputs(
     )
     write_strategy_template(strategy_payload, strategy_path, force=True)
 
-    command_tokens = _run_default_command_tokens(
+    run_default_args = _run_default_args(
         proposal,
         config=config,
         strategy_path=str(strategy_path),
         output_dir=str(output_dir),
     )
+    command_tokens = _run_default_command_tokens(run_default_args)
     inputs = CampaignExperimentInputs(
         schema_version=CAMPAIGN_EXPERIMENT_INPUTS_SCHEMA_VERSION,
         proposal_title=proposal.title,
@@ -88,6 +90,7 @@ def prepare_campaign_experiment_inputs(
         output_dir=str(output_dir),
         run_default_args_path=str(run_default_args_path),
         run_default_command_path=str(run_default_command_path),
+        run_default_args=run_default_args,
         command_tokens=command_tokens,
         created_at_utc=utc_now_iso(),
     )
@@ -96,62 +99,83 @@ def prepare_campaign_experiment_inputs(
     return inputs
 
 
-def _run_default_command_tokens(
+def _run_default_args(
     proposal: CampaignProposal,
     *,
     config: CampaignConfig,
     strategy_path: str,
     output_dir: str,
-) -> list[str]:
+) -> dict[str, Any]:
     if proposal.symbol is None:
         raise ValueError("proposal symbol is required")
 
-    tokens = [
-        "quant-lab",
-        "experiment",
-        "run-default",
-        "--title",
-        proposal.title,
-        "--hypothesis",
-        proposal.hypothesis,
-        "--strategy",
-        strategy_path,
-        "--data",
-        config.data_paths[proposal.symbol],
-        "--symbol",
-        proposal.symbol,
-        "--out",
-        output_dir,
-        "--cost-preset",
-        config.cost_preset,
-        "--benchmark",
-        config.benchmark,
-        "--intended-benefit",
-        _intended_benefit(proposal),
-        "--primary-metric",
-        "max_drawdown",
-        "--minimum-acceptable-performance",
-        _minimum_acceptable_performance(proposal),
-        "--tradeoff",
-        "May give up upside during sustained equity bull markets.",
-        "--tag",
-        "campaign",
-        "--tag",
-        _tag_slug(config.title),
-        "--train-end",
-        DEFAULT_TRAIN_END,
-        "--test-start",
-        DEFAULT_TEST_START,
-        "--select-by",
-        "sharpe_ratio",
-    ]
-    for value in _param_arguments(proposal):
-        tokens.extend(["--param", value])
-    for window in DEFAULT_DATE_WINDOWS:
-        tokens.extend(["--date-window", window])
-    for criterion in _success_criterion_arguments(proposal.success_criteria):
-        tokens.extend(["--success-criterion", criterion])
+    return {
+        "title": proposal.title,
+        "hypothesis": proposal.hypothesis,
+        "strategy": strategy_path,
+        "data": config.data_paths[proposal.symbol],
+        "symbol": proposal.symbol,
+        "out": output_dir,
+        "experiment_id": None,
+        "tag": ["campaign", _tag_slug(config.title)],
+        "param": _param_arguments(proposal),
+        "train_end": DEFAULT_TRAIN_END,
+        "test_start": DEFAULT_TEST_START,
+        "select_by": "sharpe_ratio",
+        "date_window": list(DEFAULT_DATE_WINDOWS),
+        "cost_sensitivity_preset": [],
+        "decision": "conservative",
+        "intended_benefit": _intended_benefit(proposal),
+        "primary_metric": "max_drawdown",
+        "minimum_acceptable_performance": _minimum_acceptable_performance(proposal),
+        "tradeoff": ["May give up upside during sustained equity bull markets."],
+        "success_criterion": _success_criterion_arguments(proposal.success_criteria),
+        "initial_cash": 100_000.0,
+        "quantity": 1.0,
+        "sizing": "percent-equity",
+        "allocation": 1.0,
+        "run_name": None,
+        "cost_preset": config.cost_preset,
+        "commission_fixed": None,
+        "commission_rate": None,
+        "slippage_bps": None,
+        "benchmark": config.benchmark,
+        "experiments_path": "artifacts/experiments.jsonl",
+        "index_path": "artifacts/research_index.jsonl",
+    }
+
+
+def _run_default_command_tokens(args: dict[str, Any]) -> list[str]:
+    tokens = ["quant-lab", "experiment", "run-default"]
+    _extend_option(tokens, "--title", args["title"])
+    _extend_option(tokens, "--hypothesis", args["hypothesis"])
+    _extend_option(tokens, "--strategy", args["strategy"])
+    _extend_option(tokens, "--data", args["data"])
+    _extend_option(tokens, "--symbol", args["symbol"])
+    _extend_option(tokens, "--out", args["out"])
+    _extend_option(tokens, "--cost-preset", args["cost_preset"])
+    _extend_option(tokens, "--benchmark", args["benchmark"])
+    _extend_option(tokens, "--intended-benefit", args["intended_benefit"])
+    _extend_option(tokens, "--primary-metric", args["primary_metric"])
+    _extend_option(tokens, "--minimum-acceptable-performance", args["minimum_acceptable_performance"])
+    for value in args["tradeoff"]:
+        _extend_option(tokens, "--tradeoff", value)
+    for value in args["tag"]:
+        _extend_option(tokens, "--tag", value)
+    _extend_option(tokens, "--train-end", args["train_end"])
+    _extend_option(tokens, "--test-start", args["test_start"])
+    _extend_option(tokens, "--select-by", args["select_by"])
+    for value in args["param"]:
+        _extend_option(tokens, "--param", value)
+    for value in args["date_window"]:
+        _extend_option(tokens, "--date-window", value)
+    for value in args["success_criterion"]:
+        _extend_option(tokens, "--success-criterion", value)
     return tokens
+
+
+def _extend_option(tokens: list[str], option: str, value: object) -> None:
+    tokens.extend([option, str(value)])
 
 
 def _strategy_id(proposal: CampaignProposal) -> str:

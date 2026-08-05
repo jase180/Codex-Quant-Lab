@@ -110,8 +110,17 @@ Current progress:
 - Conversion-only handoff is implemented in `src/quant_lab/campaign_conversion.py`.
 - `quant-lab campaign run` now writes planned default-workflow inputs under the
   cycle directory after proposal validation succeeds.
-- Execution is still intentionally skipped, so campaign state is not yet
-  advanced and no experiment conclusion is read back into campaign memory.
+- `src/quant_lab/campaign_execution.py` executes the generated
+  `experiment run-default` arguments through the existing Python workflow.
+- Each executed cycle writes `campaign_execution.json` and
+  `campaign_execution.md`, including the experiment id, readable conclusion, and
+  machine-readable `experiment_conclusion.json`.
+
+Still missing:
+
+- campaign state advancement after a completed execution,
+- conclusion synthesis into campaign memory,
+- retry-on-invalid behavior before execution.
 
 ### 18D: Campaign Knowledge Update
 

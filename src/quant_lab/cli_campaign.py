@@ -13,6 +13,7 @@ from .campaign import (
     load_campaign_state,
 )
 from .campaign_conversion import prepare_campaign_experiment_inputs
+from .campaign_execution import execute_campaign_experiment_inputs
 from .campaign_proposal import (
     deterministic_campaign_proposal,
     save_campaign_proposal_artifacts,
@@ -74,7 +75,14 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         print(f"strategy: {inputs.strategy_path}")
         print(f"run_default_args: {inputs.run_default_args_path}")
         print(f"planned_command: {inputs.run_default_command_path}")
-    print("execution: skipped")
+        execution = execute_campaign_experiment_inputs(inputs)
+        print(f"execution: {execution.status}")
+        print(f"execution_receipt: {execution.execution_json_path}")
+        print(f"conclusion: {execution.conclusion_path or '-'}")
+        print(f"conclusion_json: {execution.conclusion_json_path or '-'}")
+        print(f"read_first: {execution.read_first_path or '-'}")
+    else:
+        print("execution: skipped")
     return 0 if validation.valid else 1
 
 
