@@ -43,7 +43,7 @@ def campaign_payload() -> dict:
         "data_paths": {"SPY": "data/cache/SPY_2015-01-01_2025-12-31.csv"},
         "cost_preset": "retail-liquid",
         "max_cycles": 3,
-        "max_total_runs": 20,
+        "max_total_runs": 33,
         "max_variants_per_experiment": 3,
         "duration_minutes": 30,
         "provider": "deterministic",
@@ -96,7 +96,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(Path(paths.state_markdown_path).name, CAMPAIGN_STATE_MARKDOWN_FILENAME)
         self.assertEqual(state.status, "running")
         self.assertEqual(state.remaining_budget["cycles"], 3)
-        self.assertEqual(state.remaining_budget["runs"], 20)
+        self.assertEqual(state.remaining_budget["runs"], 33)
         self.assertIn("What Are We Trying To Learn?", markdown)
         self.assertIn("SPY drawdown-control research", markdown)
 
@@ -119,7 +119,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(loaded.title, "SPY drawdown-control research")
         self.assertIn("Campaign initialized", init_stdout.getvalue())
         self.assertIn("Campaign Status", status_stdout.getvalue())
-        self.assertIn("Runs used: 0/20", status_stdout.getvalue())
+        self.assertIn("Runs used: 0/33", status_stdout.getvalue())
 
     def test_deterministic_campaign_proposal_validates_against_budget(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -231,7 +231,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(updated.runs_used, 11)
         self.assertEqual(updated.elapsed_seconds, 7)
         self.assertEqual(updated.remaining_budget["cycles"], 2)
-        self.assertEqual(updated.remaining_budget["runs"], 9)
+        self.assertEqual(updated.remaining_budget["runs"], 22)
         self.assertEqual(updated.completed_experiments[0]["research_system_status"], "valid")
         self.assertEqual(updated.completed_experiments[0]["strategy_hypothesis_status"], "rejected")
         self.assertIn("strategy failed", " ".join(updated.current_findings))
@@ -241,10 +241,46 @@ class CampaignTests(unittest.TestCase):
             updated.do_not_repeat,
         )
         self.assertIn("Did adjusted prices affect the comparison?", updated.unresolved_questions)
-        repeated_proposal = deterministic_campaign_proposal(config, updated)
+        follow_up = deterministic_campaign_proposal(config, updated)
+        follow_up_validation = validate_campaign_proposal(follow_up, config=config, state=updated)
+        repeated_proposal = parse_campaign_proposal(
+            {
+                "schema_version": "campaign_proposal.v1",
+                "action": "run_experiment",
+                "title": "SPY SMA 200 long/cash campaign baseline",
+                "hypothesis": "Repeat the rejected branch unchanged.",
+                "rationale": "Validator check.",
+                "difference_from_prior_work": "No material difference.",
+                "strategy_template": "sma-long-cash",
+                "symbol": "SPY",
+                "parameters": {"sma_length": 200},
+                "success_criteria": {"minimum_cagr_retention": 0.8},
+                "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+            }
+        )
         repeated_validation = validate_campaign_proposal(repeated_proposal, config=config, state=updated)
+        self.assertEqual(follow_up.strategy_template, "ema-trend-follow")
+        self.assertTrue(follow_up_validation.valid)
         self.assertFalse(repeated_validation.valid)
         self.assertTrue(any("do_not_repeat" in reason for reason in repeated_validation.reasons))
+
+    def test_deterministic_campaign_proposal_stops_after_known_sequence_is_exhausted(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+
+        state.completed_experiments.extend(
+            [
+                {"title": "SPY SMA 200 long/cash campaign baseline"},
+                {"title": "SPY EMA 50 RSI trend-follow campaign follow-up"},
+            ]
+        )
+        proposal = deterministic_campaign_proposal(config, state)
+
+        self.assertEqual(proposal.action, "stop_campaign")
+        self.assertEqual(projected_run_count(proposal), 0)
 
     def test_campaign_proposal_rejects_unsupported_template_parameter(self) -> None:
         config = parse_campaign_config(campaign_payload())

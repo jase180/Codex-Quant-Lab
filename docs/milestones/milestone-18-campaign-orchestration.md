@@ -14,7 +14,7 @@ quant-lab campaign run \
   --provider codex \
   --duration 60m \
   --max-cycles 5 \
-  --max-total-runs 30 \
+  --max-total-runs 55 \
   --out artifacts/campaigns/spy_research_001
 ```
 
@@ -139,8 +139,11 @@ Current progress:
   carried into campaign-level memory.
 - Rejected strategy hypotheses add an explicit unchanged-branch guardrail so a
   resumed deterministic campaign does not rerun the same failed proposal.
-- A resume smoke check blocked cycle 2 from repeating the rejected SMA 200
-  baseline.
+- The deterministic provider can propose an EMA 50 plus RSI trend-follow
+  follow-up after the SMA 200 long/cash baseline has been tested.
+- A resume smoke check ran the SMA 200 baseline, then the EMA 50 plus RSI
+  follow-up, then produced a `stop_campaign` proposal once the deterministic
+  sequence was exhausted.
 
 Still missing:
 
@@ -190,7 +193,7 @@ Keep the first real campaign narrow:
 - benchmark: `buy-and-hold`,
 - cost preset: `retail-liquid`,
 - max cycles: `3`,
-- max total runs: `20`,
+- max total runs: `33`,
 - max variants per experiment: `3`,
 - duration: `30m`.
 

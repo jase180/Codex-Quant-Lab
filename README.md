@@ -95,7 +95,9 @@ the campaign state, proposes one bounded experiment, validates it, converts it
 into the existing `experiment run-default` workflow, runs that workflow, reads
 the canonical conclusion JSON, and updates campaign memory. Resume with
 `--resume`; repeated rejected branches are blocked through campaign
-`do_not_repeat` memory.
+`do_not_repeat` memory. The first deterministic sequence tests the SMA 200
+long/cash baseline, then an EMA 50 plus RSI trend-follow follow-up, then stops
+instead of inventing extra ideas.
 
 Use the guided workflow when you want the lab to create the workspace and
 recommend one command at a time instead of executing the full default workflow:

@@ -433,7 +433,8 @@ Current/planned work:
 
 - Campaign config and state files are implemented.
 - Strict proposal schema is implemented.
-- Deterministic provider first is implemented for the initial SMA 200 baseline.
+- Deterministic provider is implemented for the initial SMA 200 baseline and
+  an EMA 50 plus RSI follow-up.
 - Proposal validation and budget accounting are implemented for one cycle.
 - One-cycle execution through existing workflows is implemented.
 - Campaign knowledge updates are implemented from canonical conclusion JSON.

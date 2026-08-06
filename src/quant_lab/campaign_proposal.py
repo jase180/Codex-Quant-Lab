@@ -123,25 +123,26 @@ def validate_campaign_proposal_shape(proposal: CampaignProposal) -> None:
 
 
 def deterministic_campaign_proposal(config: CampaignConfig, state: CampaignState) -> CampaignProposal:
-    """Return one safe first proposal from the campaign's allowed scope."""
+    """Return one safe proposal from the campaign's allowed scope."""
 
     if state.remaining_budget.get("cycles", 0) <= 0 or state.remaining_budget.get("runs", 0) <= 0:
-        return CampaignProposal(
-            schema_version=CAMPAIGN_PROPOSAL_SCHEMA_VERSION,
-            action="stop_campaign",
-            title="Stop campaign",
-            hypothesis="No further experiment should run because the remaining budget is exhausted.",
-            rationale="Campaign budget is exhausted.",
-            difference_from_prior_work="No new experiment.",
-            strategy_template=None,
-            symbol=None,
-            parameters={},
-            success_criteria={},
-            validation_plan={},
-        )
+        return _stop_campaign_proposal("Campaign budget is exhausted.")
 
     symbol = config.allowed_symbols[0]
-    template = _preferred_allowed_template(config)
+    if "sma-long-cash" in config.allowed_templates and not _has_completed_title(
+        state,
+        f"{symbol} SMA 200 long/cash campaign baseline",
+    ):
+        return _sma_long_cash_baseline_proposal(symbol)
+    if "ema-trend-follow" in config.allowed_templates and not _has_completed_title(
+        state,
+        f"{symbol} EMA 50 RSI trend-follow campaign follow-up",
+    ):
+        return _ema_trend_follow_follow_up_proposal(symbol)
+    return _stop_campaign_proposal("No remaining deterministic campaign proposal is materially different from prior work.")
+
+
+def _sma_long_cash_baseline_proposal(symbol: str) -> CampaignProposal:
     return CampaignProposal(
         schema_version=CAMPAIGN_PROPOSAL_SCHEMA_VERSION,
         action="run_experiment",
@@ -152,9 +153,9 @@ def deterministic_campaign_proposal(config: CampaignConfig, state: CampaignState
         ),
         rationale="Start with the simplest allowed drawdown-control baseline before testing variants.",
         difference_from_prior_work="First campaign proposal; establishes the campaign baseline.",
-        strategy_template=template,
+        strategy_template="sma-long-cash",
         symbol=symbol,
-        parameters={"sma_length": 200} if template == "sma-long-cash" else {},
+        parameters={"sma_length": 200},
         success_criteria={
             "minimum_cagr_retention": 0.8,
             "minimum_relative_drawdown_reduction": 0.25,
@@ -164,6 +165,51 @@ def deterministic_campaign_proposal(config: CampaignConfig, state: CampaignState
             "date_sensitivity": True,
             "train_test": True,
         },
+    )
+
+
+def _ema_trend_follow_follow_up_proposal(symbol: str) -> CampaignProposal:
+    return CampaignProposal(
+        schema_version=CAMPAIGN_PROPOSAL_SCHEMA_VERSION,
+        action="run_experiment",
+        title=f"{symbol} EMA 50 RSI trend-follow campaign follow-up",
+        hypothesis=(
+            f"A daily {symbol} EMA trend-follow rule with RSI confirmation may reduce drawdown "
+            "while avoiding some SMA 200 whipsaw after realistic costs."
+        ),
+        rationale=(
+            "The prior SMA 200 long/cash branch reduced drawdown too little and sacrificed too much CAGR; "
+            "this follow-up tests a different existing trend template before adding any new strategy features."
+        ),
+        difference_from_prior_work="Uses EMA trend confirmation plus RSI momentum instead of a single SMA long/cash threshold.",
+        strategy_template="ema-trend-follow",
+        symbol=symbol,
+        parameters={},
+        success_criteria={
+            "minimum_cagr_retention": 0.75,
+            "minimum_relative_drawdown_reduction": 0.20,
+        },
+        validation_plan={
+            "cost_sensitivity": True,
+            "date_sensitivity": True,
+            "train_test": True,
+        },
+    )
+
+
+def _stop_campaign_proposal(rationale: str) -> CampaignProposal:
+    return CampaignProposal(
+        schema_version=CAMPAIGN_PROPOSAL_SCHEMA_VERSION,
+        action="stop_campaign",
+        title="Stop campaign",
+        hypothesis="No further deterministic experiment should run.",
+        rationale=rationale,
+        difference_from_prior_work="No new experiment.",
+        strategy_template=None,
+        symbol=None,
+        parameters={},
+        success_criteria={},
+        validation_plan={},
     )
 
 
@@ -285,10 +331,8 @@ def _validate_run_experiment_proposal(
         reasons.append("proposal appears to violate do_not_repeat campaign memory")
 
 
-def _preferred_allowed_template(config: CampaignConfig) -> str:
-    if "sma-long-cash" in config.allowed_templates:
-        return "sma-long-cash"
-    return config.allowed_templates[0]
+def _has_completed_title(state: CampaignState, title: str) -> bool:
+    return any(str(item.get("title") or "") == title for item in state.completed_experiments)
 
 
 def _parameter_variant_count(parameters: dict[str, Any]) -> int:
