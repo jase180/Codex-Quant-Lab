@@ -421,7 +421,7 @@ Exit criteria:
 
 ## Milestone 18: Campaign Orchestration
 
-Status: planned, first skeleton slice in progress.
+Status: in progress; deterministic one-cycle execution and campaign memory are implemented.
 
 Goal: add a bounded campaign controller that can repeat the existing research
 workflow under strict budgets and proposal validation.
@@ -429,14 +429,14 @@ workflow under strict budgets and proposal validation.
 Detailed plan:
 [milestone-18-campaign-orchestration.md](milestone-18-campaign-orchestration.md)
 
-Planned work:
+Current/planned work:
 
-- Campaign config and state files.
-- Strict proposal schema.
-- Deterministic provider first.
-- Proposal validation and budget accounting.
-- One-cycle execution through existing workflows.
-- Campaign knowledge updates.
+- Campaign config and state files are implemented.
+- Strict proposal schema is implemented.
+- Deterministic provider first is implemented for the initial SMA 200 baseline.
+- Proposal validation and budget accounting are implemented for one cycle.
+- One-cycle execution through existing workflows is implemented.
+- Campaign knowledge updates are implemented from canonical conclusion JSON.
 - Final campaign reports.
 - Later Ollama and Codex providers behind the same proposal contract.
 

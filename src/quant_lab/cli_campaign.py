@@ -12,10 +12,10 @@ from .campaign import (
     load_campaign_config,
     load_campaign_state,
     save_campaign_state,
-    update_campaign_state_after_execution,
 )
 from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_execution import execute_campaign_experiment_inputs
+from .campaign_knowledge import update_campaign_state_after_execution
 from .campaign_proposal import (
     deterministic_campaign_proposal,
     save_campaign_proposal_artifacts,

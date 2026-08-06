@@ -82,6 +82,21 @@ Every conclusion separates two questions:
 A strategy can be rejected while the research system is `valid`. That is a good
 negative result, not a repo failure.
 
+For bounded campaign research, use `campaign run` with a campaign config:
+
+```bash
+quant-lab campaign run \
+  --config data/campaigns/spy_drawdown_control_campaign.json \
+  --out artifacts/campaigns/spy_research_001
+```
+
+The current campaign runner executes one deterministic cycle at a time. It reads
+the campaign state, proposes one bounded experiment, validates it, converts it
+into the existing `experiment run-default` workflow, runs that workflow, reads
+the canonical conclusion JSON, and updates campaign memory. Resume with
+`--resume`; repeated rejected branches are blocked through campaign
+`do_not_repeat` memory.
+
 Use the guided workflow when you want the lab to create the workspace and
 recommend one command at a time instead of executing the full default workflow:
 
@@ -188,6 +203,8 @@ artifact before deciding what happened.
 - Compare strategy results with explicit benchmarks. Buy-and-hold is the
   default, and cash is available as a flat baseline.
 - Write canonical experiment conclusions for humans and local agents.
+- Run one bounded deterministic campaign cycle that executes the default
+  experiment workflow and carries the conclusion into campaign state.
 - Define and refresh session manifest artifacts that orient future
   workflow-resume commands around the canonical conclusion.
 - Create a human-gated local-agent cycle dry run that writes context,

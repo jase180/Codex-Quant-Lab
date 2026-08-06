@@ -19,10 +19,10 @@ from quant_lab.campaign import (  # noqa: E402
     load_campaign_config,
     load_campaign_state,
     parse_campaign_config,
-    update_campaign_state_after_execution,
 )
 from quant_lab.campaign_conversion import prepare_campaign_experiment_inputs  # noqa: E402
 from quant_lab.campaign_execution import CampaignExecutionResult, execute_campaign_experiment_inputs  # noqa: E402
+from quant_lab.campaign_knowledge import update_campaign_state_after_execution  # noqa: E402
 from quant_lab.campaign_proposal import (  # noqa: E402
     deterministic_campaign_proposal,
     parse_campaign_proposal,

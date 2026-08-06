@@ -64,9 +64,11 @@ current workflow docs and the latest experiment handoffs.
 Current boundary: agent commands can prepare context and recommend the next
 experiment, but they do not take over execution without a human/Codex step.
 
-Campaign boundary: `campaign init` and `campaign status` can create and inspect
-campaign state. Multi-cycle execution is being built in Milestone 18 and should
-reuse existing experiment workflows rather than reimplementing research logic.
+Campaign boundary: `campaign run` can execute one deterministic bounded cycle
+through the existing `experiment run-default` workflow, read the canonical
+conclusion JSON, and update campaign memory. Multi-cycle provider-driven
+campaigns are still in progress; the controller must continue to own validation,
+budgets, execution, and stopping.
 
 ## Workflow And Evidence Design
 

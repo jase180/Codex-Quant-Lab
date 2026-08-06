@@ -60,7 +60,8 @@ Current progress:
 - `quant-lab campaign init` creates campaign state.
 - `quant-lab campaign status` prints compact orientation.
 - `quant-lab campaign run` can create a deterministic proposal, validate it,
-  save cycle artifacts, and stop before execution.
+  save cycle artifacts, execute one default workflow, and update campaign
+  memory.
 
 ### 18B: Proposal Contract And Validation
 
@@ -93,8 +94,7 @@ Current progress:
 Still missing:
 
 - retry-on-invalid behavior,
-- material-difference checks beyond simple `do_not_repeat`,
-- automatic execution of the generated `experiment run-default` inputs.
+- material-difference checks beyond simple `do_not_repeat`.
 
 ### 18C: One Real Campaign Cycle
 
@@ -118,8 +118,6 @@ Current progress:
 
 Still missing:
 
-- campaign state advancement after a completed execution,
-- conclusion synthesis into campaign memory,
 - retry-on-invalid behavior before execution.
 
 ### 18D: Campaign Knowledge Update
