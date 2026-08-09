@@ -159,6 +159,17 @@ findings, consumed budgets, unresolved risks, and stop reason.
 
 Exit criterion: stopped campaigns leave one readable front-door report.
 
+Current progress:
+
+- `stop_campaign` marks campaign state complete and writes `final_report.md`
+  plus `final_report.json`.
+- The final report summarizes attempted experiments, research-system statuses,
+  strategy-hypothesis outcomes, cumulative findings, `do_not_repeat`,
+  unresolved risks, consumed budget, remaining budget, and why the campaign
+  stopped.
+- The report labels the best remaining candidate cautiously and does not claim
+  that a partially supported strategy is investable.
+
 ### 18F: Ollama Provider
 
 Reuse the existing OpenAI-compatible provider boundary, but return the campaign

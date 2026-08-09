@@ -15,12 +15,13 @@ from .campaign import (
 )
 from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_execution import execute_campaign_experiment_inputs
-from .campaign_knowledge import update_campaign_state_after_execution
+from .campaign_knowledge import complete_campaign_state, update_campaign_state_after_execution
 from .campaign_proposal import (
     deterministic_campaign_proposal,
     save_campaign_proposal_artifacts,
     validate_campaign_proposal,
 )
+from .campaign_report import save_final_campaign_report
 
 
 def campaign_init_command(args: argparse.Namespace) -> int:
@@ -93,6 +94,14 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         print(f"state: {paths.state_path}")
         print(f"cycle_number: {updated_state.cycle_number}")
         print(f"runs_used: {updated_state.runs_used}")
+    elif validation.valid and proposal.action == "stop_campaign":
+        updated_state = complete_campaign_state(state, stop_reason=proposal.rationale)
+        save_campaign_state(updated_state, paths.output_dir, config=config)
+        final_json_path, final_markdown_path = save_final_campaign_report(config, updated_state, paths)
+        print("execution: skipped")
+        print(f"state: {paths.state_path}")
+        print(f"final_report: {final_markdown_path}")
+        print(f"final_report_json: {final_json_path}")
     else:
         print("execution: skipped")
     return 0 if validation.valid else 1

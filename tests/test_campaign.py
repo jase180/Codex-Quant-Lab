@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -19,6 +20,7 @@ from quant_lab.campaign import (  # noqa: E402
     load_campaign_config,
     load_campaign_state,
     parse_campaign_config,
+    save_campaign_state,
 )
 from quant_lab.campaign_conversion import prepare_campaign_experiment_inputs  # noqa: E402
 from quant_lab.campaign_execution import CampaignExecutionResult, execute_campaign_experiment_inputs  # noqa: E402
@@ -29,6 +31,7 @@ from quant_lab.campaign_proposal import (  # noqa: E402
     projected_run_count,
     validate_campaign_proposal,
 )
+from quant_lab.campaign_report import build_final_campaign_report  # noqa: E402
 from quant_lab.cli import main  # noqa: E402
 
 
@@ -65,6 +68,25 @@ def conclusion_payload() -> dict:
         "do_not_repeat": ["Do not rerun the same SMA 200 long/cash branch unchanged."],
         "open_questions": ["Did adjusted prices affect the comparison?"],
     }
+
+
+def partial_conclusion_payload() -> dict:
+    payload = conclusion_payload()
+    payload["experiment_id"] = "EXP-124"
+    payload["experiment"] = {
+        "title": "SPY EMA 50 RSI trend-follow campaign follow-up",
+        "hypothesis": "A faster trend rule may improve drawdown behavior.",
+    }
+    payload["strategy_hypothesis_status"] = {
+        "status": "partially_supported",
+        "criteria_results": [
+            {"name": "return_retention", "passed": False, "observed": "0.4003"},
+            {"name": "drawdown_reduction", "passed": True, "observed": "0.3799"},
+        ],
+    }
+    payload["confidence_label"] = "rejected"
+    payload["current_conclusion"] = "The strategy reduced drawdown but failed return-retention criteria."
+    return payload
 
 
 class CampaignTests(unittest.TestCase):
@@ -281,6 +303,89 @@ class CampaignTests(unittest.TestCase):
 
         self.assertEqual(proposal.action, "stop_campaign")
         self.assertEqual(projected_run_count(proposal), 0)
+
+    def test_final_campaign_report_summarizes_completed_experiments_without_overclaiming(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            conclusion_one = Path(temp_dir) / "conclusion_one.json"
+            conclusion_two = Path(temp_dir) / "conclusion_two.json"
+            conclusion_one.write_text(json.dumps(conclusion_payload()), encoding="utf-8")
+            conclusion_two.write_text(json.dumps(partial_conclusion_payload()), encoding="utf-8")
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            completed_state = replace(
+                state,
+                status="complete",
+                cycle_number=2,
+                runs_used=22,
+                completed_experiments=[
+                    {
+                        "experiment_id": "EXP-123",
+                        "title": "SPY SMA 200 long/cash campaign baseline",
+                        "research_system_status": "valid",
+                        "strategy_hypothesis_status": "rejected",
+                        "confidence_label": "rejected",
+                        "conclusion_json_path": str(conclusion_one),
+                        "conclusion_path": str(conclusion_one.with_suffix(".md")),
+                        "projected_run_count": 11,
+                        "elapsed_seconds": 5,
+                    },
+                    {
+                        "experiment_id": "EXP-124",
+                        "title": "SPY EMA 50 RSI trend-follow campaign follow-up",
+                        "research_system_status": "valid",
+                        "strategy_hypothesis_status": "partially_supported",
+                        "confidence_label": "rejected",
+                        "conclusion_json_path": str(conclusion_two),
+                        "conclusion_path": str(conclusion_two.with_suffix(".md")),
+                        "projected_run_count": 11,
+                        "elapsed_seconds": 6,
+                    },
+                ],
+                current_findings=["One branch rejected.", "One branch partially supported."],
+                stop_reason="No remaining deterministic campaign proposal is materially different from prior work.",
+            )
+
+            report = build_final_campaign_report(config, completed_state)
+
+        self.assertEqual(report.status, "complete")
+        self.assertEqual(report.hypothesis_status_counts["rejected"], 1)
+        self.assertEqual(report.hypothesis_status_counts["partially_supported"], 1)
+        self.assertEqual(report.best_remaining_candidate["title"], "SPY EMA 50 RSI trend-follow campaign follow-up")
+        self.assertIn("review the conclusion", report.best_remaining_candidate["note"])
+
+    def test_campaign_run_stop_writes_final_report_and_marks_state_complete(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config = parse_campaign_config(campaign_payload())
+            paths = initialize_campaign(config, root / "campaign")
+            state = load_campaign_state(paths.state_path)
+            stopped_ready_state = replace(
+                state,
+                completed_experiments=[
+                    {"title": "SPY SMA 200 long/cash campaign baseline"},
+                    {"title": "SPY EMA 50 RSI trend-follow campaign follow-up"},
+                ],
+            )
+            save_campaign_state(stopped_ready_state, paths.output_dir, config=config)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(["campaign", "run", "--out", paths.output_dir, "--resume"])
+
+            final_json_path = Path(paths.final_report_json_path)
+            final_markdown_path = Path(paths.final_report_markdown_path)
+            updated_state = load_campaign_state(paths.state_path)
+            final_json_exists = final_json_path.exists()
+            final_markdown_exists = final_markdown_path.exists()
+            final_report = json.loads(final_json_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(updated_state.status, "complete")
+        self.assertTrue(final_json_exists)
+        self.assertTrue(final_markdown_exists)
+        self.assertEqual(final_report["schema_version"], "campaign_final_report.v1")
+        self.assertIn("final_report:", stdout.getvalue())
 
     def test_campaign_proposal_rejects_unsupported_template_parameter(self) -> None:
         config = parse_campaign_config(campaign_payload())

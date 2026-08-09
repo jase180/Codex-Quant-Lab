@@ -97,7 +97,11 @@ the canonical conclusion JSON, and updates campaign memory. Resume with
 `--resume`; repeated rejected branches are blocked through campaign
 `do_not_repeat` memory. The first deterministic sequence tests the SMA 200
 long/cash baseline, then an EMA 50 plus RSI trend-follow follow-up, then stops
-instead of inventing extra ideas.
+instead of inventing extra ideas. When it stops, read:
+
+```text
+artifacts/campaigns/<campaign>/final_report.md
+```
 
 Use the guided workflow when you want the lab to create the workspace and
 recommend one command at a time instead of executing the full default workflow:

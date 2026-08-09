@@ -62,6 +62,17 @@ def update_campaign_state_after_execution(
     )
 
 
+def complete_campaign_state(state: CampaignState, *, stop_reason: str) -> CampaignState:
+    """Mark campaign state complete without consuming another experiment cycle."""
+
+    return replace(
+        state,
+        status="complete",
+        stop_reason=stop_reason,
+        updated_at_utc=utc_now_iso(),
+    )
+
+
 def _remaining_budget_after(
     remaining_budget: dict[str, int],
     *,
