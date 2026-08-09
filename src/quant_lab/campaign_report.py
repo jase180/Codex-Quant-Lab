@@ -49,12 +49,11 @@ def save_final_campaign_report(
 
 def build_final_campaign_report(config: CampaignConfig, state: CampaignState) -> CampaignFinalReport:
     conclusions = [_load_optional_conclusion(item) for item in state.completed_experiments]
-    experiments = [_experiment_summary(item, conclusion) for item, conclusion in zip(state.completed_experiments, conclusions)]
-    invalid = [
-        item
-        for item in experiments
-        if item.get("research_system_status") == "invalid"
+    experiments = [
+        _experiment_summary(item, conclusion)
+        for item, conclusion in zip(state.completed_experiments, conclusions)
     ]
+    invalid = [item for item in experiments if item.get("research_system_status") == "invalid"]
     return CampaignFinalReport(
         schema_version=CAMPAIGN_FINAL_REPORT_SCHEMA_VERSION,
         title=config.title,

@@ -10,6 +10,8 @@ current workflow docs and the latest experiment handoffs.
   local commands.
 - [Runbooks](runbooks/runbooks.md): command-oriented map for operating the lab.
 - [Research Workflow](runbooks/research-workflow.md): end-to-end strategy research flow.
+- [Campaign Runbook](runbooks/campaign-runbook.md): bounded campaign commands,
+  state files, and final reports.
 - [Strategy Schema](architecture/strategy-schema.md): strict v1 JSON strategy format,
   including risk controls.
 - Conceptual strategy catalog: `data/strategy_catalog/*.json` and

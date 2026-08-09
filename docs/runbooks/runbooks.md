@@ -11,6 +11,8 @@ you want to do, but not which document has the commands.
   `doctor`, and the offline smoke test.
 - [Research Workflow](research-workflow.md): the default one-strategy research
   loop from plan creation through conclusion.
+- [Campaign Runbook](campaign-runbook.md): bounded deterministic campaign
+  execution, resume commands, state files, and final report.
 - [Trustworthy Example Workflow](trustworthy-example-workflow.md): a copyable
   skeptical example that keeps one experiment narrow.
 - [Research Guardrails](../architecture/research-guardrails.md): when not to
