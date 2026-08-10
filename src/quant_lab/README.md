@@ -45,6 +45,8 @@ It owns:
 - `strategy_ideas.py`: loads `data/strategy_catalog/*.json`, reads prior
   `experiment_conclusion.json` files, optionally attaches a matching
   opportunity thesis, and drafts one non-executable next idea.
+- `campaign_templates.py`: centralizes the campaign-safe template metadata used
+  by provider context and proposal validation.
 - `research_plan_workflow.py`: shares research-plan recommendation logic,
   artifact-presence checks, and copyable command builders across CLI surfaces.
 - `default_experiment.py`: runs the normal single-strategy workflow from

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from .campaign import CampaignConfig, CampaignState
+from .campaign_templates import campaign_template_strategy_family, supported_campaign_template_parameters
 from .opportunity_theses import load_opportunity_catalog
 from .research_plan_common import utc_now_iso, validate_required_text_fields, write_json_payload
 
@@ -18,16 +19,6 @@ PROPOSAL_JSON_FILENAME = "proposal.json"
 VALIDATION_JSON_FILENAME = "proposal_validation.json"
 VALIDATION_MARKDOWN_FILENAME = "proposal_validation.md"
 ALLOWED_CAMPAIGN_ACTIONS = {"run_experiment", "request_human_review", "stop_campaign"}
-SUPPORTED_TEMPLATE_PARAMETERS = {
-    "sma-long-cash": {"sma_length"},
-    "ema-trend-follow": set(),
-}
-TEMPLATE_STRATEGY_FAMILIES = {
-    "sma-long-cash": "trend_following",
-    "ema-trend-follow": "trend_following",
-}
-
-
 @dataclass(frozen=True)
 class CampaignProposal:
     schema_version: str
@@ -336,7 +327,8 @@ def _validate_run_experiment_proposal(
         reasons.append(f"required data path is missing for symbol: {proposal.symbol}")
     elif proposal.symbol and not Path(config.data_paths[proposal.symbol]).exists():
         reasons.append(f"required data file does not exist: {config.data_paths[proposal.symbol]}")
-    unsupported_params = sorted(set(proposal.parameters) - SUPPORTED_TEMPLATE_PARAMETERS.get(str(proposal.strategy_template), set()))
+    supported_params = supported_campaign_template_parameters(str(proposal.strategy_template))
+    unsupported_params = sorted(set(proposal.parameters) - supported_params)
     if unsupported_params:
         reasons.append(f"unsupported parameters for template {proposal.strategy_template}: {unsupported_params}")
     variant_count = _parameter_variant_count(proposal.parameters)
@@ -410,7 +402,7 @@ def _validate_opportunity_thesis_reference(
     if thesis.engine_fit != "ready":
         reasons.append(f"opportunity thesis engine_fit is not ready: {proposal.opportunity_thesis_id}")
 
-    strategy_family = TEMPLATE_STRATEGY_FAMILIES.get(str(proposal.strategy_template))
+    strategy_family = campaign_template_strategy_family(str(proposal.strategy_template))
     if strategy_family is None:
         reasons.append(f"no strategy-family mapping exists for template: {proposal.strategy_template}")
         return

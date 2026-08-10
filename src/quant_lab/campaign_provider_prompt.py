@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .campaign import CampaignConfig, CampaignState
 from .campaign_proposal import ALLOWED_CAMPAIGN_ACTIONS, CAMPAIGN_PROPOSAL_SCHEMA_VERSION
+from .campaign_templates import campaign_strategy_families_for_templates
 from .opportunity_theses import OpportunityThesis, load_opportunity_catalog
 
 
@@ -163,7 +164,7 @@ def _campaign_opportunity_summaries(
         return []
 
     theses = load_opportunity_catalog(root)
-    allowed_families = _allowed_strategy_families(config.allowed_templates)
+    allowed_families = campaign_strategy_families_for_templates(config.allowed_templates)
     return [
         _opportunity_summary(thesis)
         for thesis in theses
@@ -171,18 +172,6 @@ def _campaign_opportunity_summaries(
         and thesis.engine_fit == "ready"
         and allowed_families.intersection(thesis.compatible_strategy_families)
     ]
-
-
-def _allowed_strategy_families(templates: list[str]) -> set[str]:
-    # This mapping is intentionally small. It only tells the campaign provider
-    # which current opportunity theses are relevant to templates the campaign
-    # is already allowed to execute.
-    template_families = {
-        "sma-long-cash": "trend_following",
-        "ema-trend-follow": "trend_following",
-    }
-    return {template_families[template] for template in templates if template in template_families}
-
 
 def _opportunity_summary(thesis: OpportunityThesis) -> dict:
     payload = thesis.payload
