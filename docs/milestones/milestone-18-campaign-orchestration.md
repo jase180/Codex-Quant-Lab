@@ -231,6 +231,23 @@ and state. Codex must not edit source files during campaign execution.
 Exit criterion: switching provider from Ollama to Codex does not change
 campaign logic.
 
+Current progress:
+
+- `--provider codex` initializes and persists a Codex campaign provider.
+- The Codex provider writes the same `provider_context.json` and
+  `provider_prompt.md` artifacts as other model-facing providers.
+- Because the standalone CLI cannot call the current Codex chat session, it
+  returns a valid `request_human_review` handoff proposal and stops with
+  `execution: skipped_human_review`.
+- This keeps the controller boundary intact while giving Codex a concrete
+  artifact to read before proposing a strict `campaign_proposal.v1` in a future
+  integration.
+
+Still missing:
+
+- an actual Codex API or connector adapter that can return proposal JSON
+  directly to the campaign controller.
+
 ### 18H: Timed Campaigns
 
 Add `--duration`, graceful stop, resume support, and interruption-safe final

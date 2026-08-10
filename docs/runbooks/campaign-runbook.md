@@ -6,7 +6,7 @@ features.
 
 ## Current Boundary
 
-`quant-lab campaign run` currently has two provider modes:
+`quant-lab campaign run` currently has three provider modes:
 
 - `deterministic`: proposes, validates, executes one campaign cycle, reads the
   canonical conclusion, and updates campaign memory.
@@ -16,9 +16,11 @@ features.
   attempt fails or validates false, the controller allows one retry with the
   prior error or validation reasons in the second context. If the retry also
   fails, it writes a deterministic fallback proposal for inspection only.
+- `codex`: writes the same provider context and prompt artifacts, returns a
+  valid `request_human_review` handoff proposal, and stops. The standalone CLI
+  does not call the current Codex chat session.
 
-The Codex provider is not implemented yet. Deterministic run commands execute
-one campaign cycle:
+Deterministic run commands execute one campaign cycle:
 
 1. Read `campaign_config.json` and `campaign_state.json`.
 2. Propose one bounded experiment.
@@ -192,6 +194,37 @@ provider dry runs, invalid proposals, deterministic fallbacks, or exhausted
 campaign state. In practice, use one dry-run cycle first, then a short explicit
 execution loop only after inspecting the provider artifacts.
 
+## Codex Handoff
+
+Use this when you want Codex to inspect the exact campaign context but do not
+want the standalone campaign CLI to pretend it can control this chat session:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --provider codex `
+  --out artifacts\campaigns\spy_codex_handoff_001 `
+  --force
+```
+
+The command writes:
+
+```text
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_context.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_prompt.md
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_proposal.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/proposal_validation.md
+```
+
+It prints:
+
+```text
+execution: skipped_human_review
+```
+
+That means the handoff is ready for a human or this Codex session to review,
+but no experiment was executed.
+
 ## Current Deterministic Sequence
 
 The deterministic provider currently proposes:
@@ -268,6 +301,6 @@ The current campaign stops when:
 - proposal validation fails,
 - or the provider returns `stop_campaign`.
 
-Ollama and future Codex providers must keep the same boundary: providers return
+Ollama and Codex providers must keep the same boundary: providers return
 strict proposal JSON, while the controller owns validation, execution, state,
 and stopping.

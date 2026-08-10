@@ -183,6 +183,11 @@ def _run_one_campaign_cycle(args: argparse.Namespace, *, config: CampaignConfig,
         print(f"final_report: {final_markdown_path}")
         print(f"final_report_json: {final_json_path}")
         return CampaignCycleResult(exit_code=0, stop_loop=True)
+    elif validation.valid and proposal.action == "request_human_review":
+        print("execution: skipped_human_review")
+        print(f"provider: {config.provider}")
+        print("note: review the provider prompt and supply a valid campaign proposal before execution")
+        return CampaignCycleResult(exit_code=0, stop_loop=True)
     else:
         print("execution: skipped")
         return CampaignCycleResult(exit_code=0 if validation.valid else 1, stop_loop=True)

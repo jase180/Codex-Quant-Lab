@@ -173,7 +173,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(proposal.action, "run_experiment")
         self.assertEqual(proposal.strategy_template, "sma-long-cash")
 
-    def test_campaign_provider_boundary_rejects_unimplemented_codex_provider(self) -> None:
+    def test_campaign_provider_boundary_returns_codex_handoff_proposal(self) -> None:
         payload = campaign_payload()
         payload["provider"] = "codex"
         config = parse_campaign_config(payload)
@@ -182,8 +182,10 @@ class CampaignTests(unittest.TestCase):
             paths = initialize_campaign(config, temp_dir)
             state = load_campaign_state(paths.state_path)
 
-        with self.assertRaisesRegex(NotImplementedError, "not implemented yet"):
-            campaign_provider_proposal(config, state)
+        proposal = campaign_provider_proposal(config, state)
+
+        self.assertEqual(proposal.action, "request_human_review")
+        self.assertEqual(proposal.title, "Codex campaign proposal handoff")
 
     def test_ollama_campaign_provider_returns_strict_proposal_and_writes_artifacts(self) -> None:
         payload = campaign_payload()
@@ -774,6 +776,43 @@ class CampaignTests(unittest.TestCase):
                         "ollama",
                     ]
                 )
+
+    def test_campaign_run_codex_provider_writes_handoff_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "campaign",
+                        "run",
+                        "--config",
+                        str(config_path),
+                        "--provider",
+                        "codex",
+                        "--out",
+                        str(out_dir),
+                    ]
+                )
+
+            saved_config = load_campaign_config(out_dir / "campaign_config.json")
+            cycle_dir = out_dir / "cycles" / "cycle_001"
+            proposal = json.loads((cycle_dir / "proposal.json").read_text(encoding="utf-8"))
+            provider_context_exists = (cycle_dir / "provider_attempt_001" / "provider_context.json").exists()
+            provider_prompt_exists = (cycle_dir / "provider_attempt_001" / "provider_prompt.md").exists()
+            provider_proposal_exists = (cycle_dir / "provider_attempt_001" / "provider_proposal.json").exists()
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(saved_config.provider, "codex")
+        self.assertEqual(proposal["action"], "request_human_review")
+        self.assertTrue(provider_context_exists)
+        self.assertTrue(provider_prompt_exists)
+        self.assertTrue(provider_proposal_exists)
+        self.assertIn("execution: skipped_human_review", output)
 
     def test_campaign_run_loop_stops_on_duration_limit_between_cycles(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
