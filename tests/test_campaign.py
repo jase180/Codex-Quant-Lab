@@ -32,6 +32,7 @@ from quant_lab.campaign_proposal import (  # noqa: E402
     validate_campaign_proposal,
 )
 from quant_lab.campaign_provider import campaign_provider_proposal, campaign_provider_result  # noqa: E402
+from quant_lab.campaign_provider_prompt import build_campaign_provider_context  # noqa: E402
 from quant_lab.campaign_report import build_final_campaign_report  # noqa: E402
 from quant_lab.cli import main  # noqa: E402
 
@@ -172,6 +173,20 @@ class CampaignTests(unittest.TestCase):
 
         self.assertEqual(proposal.action, "run_experiment")
         self.assertEqual(proposal.strategy_template, "sma-long-cash")
+        self.assertEqual(proposal.opportunity_thesis_id, "liquid_etf_trend_defense")
+
+    def test_campaign_provider_context_includes_relevant_opportunity_theses(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            context = build_campaign_provider_context(config, state)
+
+        thesis_ids = [item["thesis_id"] for item in context["opportunity_theses"]]
+        self.assertIn("liquid_etf_trend_defense", thesis_ids)
+        self.assertNotIn("forced_event_liquidity", thesis_ids)
+        self.assertIn("Prefer proposals with an opportunity_thesis_id", " ".join(context["provider_rules"]))
 
     def test_campaign_provider_boundary_returns_codex_handoff_proposal(self) -> None:
         payload = campaign_payload()
@@ -228,12 +243,15 @@ class CampaignTests(unittest.TestCase):
             )
 
             context_exists = Path(result.context_path or "").exists()
+            context_payload = json.loads(Path(result.context_path or "").read_text(encoding="utf-8"))
             prompt_exists = Path(result.prompt_path or "").exists()
             raw_exists = Path(result.raw_response_path or "").exists()
             parsed_exists = Path(result.parsed_proposal_path or "").exists()
 
         self.assertEqual(result.provider, "ollama")
         self.assertEqual(result.proposal.title, "SPY SMA 200 local-model dry run")
+        self.assertIn("opportunity_theses", context_payload)
+        self.assertTrue(any(item["thesis_id"] == "liquid_etf_trend_defense" for item in context_payload["opportunity_theses"]))
         self.assertTrue(context_exists)
         self.assertTrue(prompt_exists)
         self.assertTrue(raw_exists)

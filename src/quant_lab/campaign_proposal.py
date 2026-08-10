@@ -21,6 +21,10 @@ SUPPORTED_TEMPLATE_PARAMETERS = {
     "sma-long-cash": {"sma_length"},
     "ema-trend-follow": set(),
 }
+TEMPLATE_STRATEGY_FAMILIES = {
+    "sma-long-cash": "trend_following",
+    "ema-trend-follow": "trend_following",
+}
 
 
 @dataclass(frozen=True)
@@ -33,6 +37,7 @@ class CampaignProposal:
     difference_from_prior_work: str
     strategy_template: str | None
     symbol: str | None
+    opportunity_thesis_id: str | None
     parameters: dict[str, Any]
     success_criteria: dict[str, Any]
     validation_plan: dict[str, bool]
@@ -69,6 +74,7 @@ def parse_campaign_proposal(payload: dict[str, Any]) -> CampaignProposal:
             "difference_from_prior_work",
             "strategy_template",
             "symbol",
+            "opportunity_thesis_id",
             "parameters",
             "success_criteria",
             "validation_plan",
@@ -91,6 +97,7 @@ def parse_campaign_proposal(payload: dict[str, Any]) -> CampaignProposal:
         difference_from_prior_work=_required_text(payload, "difference_from_prior_work", "campaign proposal"),
         strategy_template=_optional_text(payload.get("strategy_template")),
         symbol=_optional_text(payload.get("symbol")),
+        opportunity_thesis_id=_optional_text(payload.get("opportunity_thesis_id")),
         parameters=_mapping(payload.get("parameters"), "campaign proposal parameters"),
         success_criteria=_mapping(payload.get("success_criteria"), "campaign proposal success_criteria"),
         validation_plan={str(key): bool(value) for key, value in _mapping(payload.get("validation_plan"), "campaign proposal validation_plan").items()},
@@ -155,6 +162,7 @@ def _sma_long_cash_baseline_proposal(symbol: str) -> CampaignProposal:
         difference_from_prior_work="First campaign proposal; establishes the campaign baseline.",
         strategy_template="sma-long-cash",
         symbol=symbol,
+        opportunity_thesis_id="liquid_etf_trend_defense",
         parameters={"sma_length": 200},
         success_criteria={
             "minimum_cagr_retention": 0.8,
@@ -184,6 +192,7 @@ def _ema_trend_follow_follow_up_proposal(symbol: str) -> CampaignProposal:
         difference_from_prior_work="Uses EMA trend confirmation plus RSI momentum instead of a single SMA long/cash threshold.",
         strategy_template="ema-trend-follow",
         symbol=symbol,
+        opportunity_thesis_id="liquid_etf_trend_defense",
         parameters={},
         success_criteria={
             "minimum_cagr_retention": 0.75,
@@ -207,6 +216,7 @@ def _stop_campaign_proposal(rationale: str) -> CampaignProposal:
         difference_from_prior_work="No new experiment.",
         strategy_template=None,
         symbol=None,
+        opportunity_thesis_id=None,
         parameters={},
         success_criteria={},
         validation_plan={},

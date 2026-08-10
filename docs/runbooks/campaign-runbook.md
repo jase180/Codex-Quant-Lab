@@ -23,13 +23,21 @@ features.
 Deterministic run commands execute one campaign cycle:
 
 1. Read `campaign_config.json` and `campaign_state.json`.
-2. Propose one bounded experiment.
-3. Validate the proposal against allowed templates, data, budgets, and
+2. Read relevant `data/opportunity_catalog/*.json` theses for the campaign's
+   allowed templates.
+3. Propose one bounded experiment.
+4. Validate the proposal against allowed templates, data, budgets, and
    `do_not_repeat` memory.
-4. Convert the proposal into the existing `experiment run-default` workflow.
-5. Execute that workflow.
-6. Read `experiment_conclusion.json`.
-7. Update `campaign_state.json` and `campaign_state.md`.
+5. Convert the proposal into the existing `experiment run-default` workflow.
+6. Execute that workflow.
+7. Read `experiment_conclusion.json`.
+8. Update `campaign_state.json` and `campaign_state.md`.
+
+For model-backed providers, `provider_context.json` includes compact
+opportunity-thesis summaries. The provider can name an `opportunity_thesis_id`
+in its strict proposal, but the controller still owns validation, conversion,
+execution, budgets, and stopping. The thesis is context for choosing the next
+experiment; it is not executable strategy JSON.
 
 When the deterministic sequence is exhausted, it writes `final_report.md` and
 `final_report.json`. Ollama dry runs do not update campaign state or consume

@@ -10,6 +10,13 @@ First implementation slice delivered:
 - Updated `quant-lab ideas suggest` so compatible strategy suggestions can cite
   a matching opportunity thesis without creating executable strategy JSON.
 
+Second implementation slice delivered:
+
+- Added optional `opportunity_thesis_id` support to `campaign_proposal.v1`.
+- Added compact opportunity-thesis summaries to campaign provider context.
+- Updated deterministic campaign proposals to cite the liquid ETF trend-defense
+  thesis when using the current SPY trend templates.
+
 ## Goal
 
 Shift Quant Lab from searching strategy space to searching economic-mechanism
