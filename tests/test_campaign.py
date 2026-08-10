@@ -550,6 +550,8 @@ class CampaignTests(unittest.TestCase):
                         "title": "SPY SMA 200 long/cash campaign baseline",
                         "research_system_status": "valid",
                         "strategy_hypothesis_status": "rejected",
+                        "opportunity_thesis_id": "liquid_etf_trend_defense",
+                        "thesis_status": "weakened",
                         "confidence_label": "rejected",
                         "conclusion_json_path": str(conclusion_one),
                         "conclusion_path": str(conclusion_one.with_suffix(".md")),
@@ -561,6 +563,8 @@ class CampaignTests(unittest.TestCase):
                         "title": "SPY EMA 50 RSI trend-follow campaign follow-up",
                         "research_system_status": "valid",
                         "strategy_hypothesis_status": "partially_supported",
+                        "opportunity_thesis_id": "liquid_etf_trend_defense",
+                        "thesis_status": "weakened",
                         "confidence_label": "rejected",
                         "conclusion_json_path": str(conclusion_two),
                         "conclusion_path": str(conclusion_two.with_suffix(".md")),
@@ -577,6 +581,8 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(report.status, "complete")
         self.assertEqual(report.hypothesis_status_counts["rejected"], 1)
         self.assertEqual(report.hypothesis_status_counts["partially_supported"], 1)
+        self.assertEqual(report.thesis_status_counts["weakened"], 2)
+        self.assertEqual(report.experiments_attempted[0]["opportunity_thesis_id"], "liquid_etf_trend_defense")
         self.assertEqual(report.best_remaining_candidate["title"], "SPY EMA 50 RSI trend-follow campaign follow-up")
         self.assertIn("review the conclusion", report.best_remaining_candidate["note"])
 

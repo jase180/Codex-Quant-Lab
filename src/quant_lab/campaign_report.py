@@ -25,6 +25,7 @@ class CampaignFinalReport:
     experiments_attempted: list[dict[str, Any]]
     technically_invalid_experiments: list[dict[str, Any]]
     hypothesis_status_counts: dict[str, int]
+    thesis_status_counts: dict[str, int]
     cumulative_findings: list[str]
     do_not_repeat: list[str]
     unresolved_risks: list[str]
@@ -64,6 +65,7 @@ def build_final_campaign_report(config: CampaignConfig, state: CampaignState) ->
         experiments_attempted=experiments,
         technically_invalid_experiments=invalid,
         hypothesis_status_counts=_status_counts(experiments),
+        thesis_status_counts=_thesis_status_counts(experiments),
         cumulative_findings=state.current_findings,
         do_not_repeat=state.do_not_repeat,
         unresolved_risks=state.unresolved_questions,
@@ -93,6 +95,8 @@ def _experiment_summary(record: dict[str, Any], conclusion: dict[str, Any] | Non
     summary = {
         "experiment_id": record.get("experiment_id"),
         "title": record.get("title"),
+        "opportunity_thesis_id": record.get("opportunity_thesis_id"),
+        "thesis_status": record.get("thesis_status"),
         "research_system_status": research_status,
         "strategy_hypothesis_status": strategy_status,
         "confidence_label": record.get("confidence_label"),
@@ -103,6 +107,11 @@ def _experiment_summary(record: dict[str, Any], conclusion: dict[str, Any] | Non
     }
     if conclusion is not None:
         summary["current_conclusion"] = conclusion.get("current_conclusion")
+        thesis_status = conclusion.get("thesis_status")
+        if isinstance(thesis_status, dict):
+            summary["opportunity_thesis_id"] = thesis_status.get("opportunity_thesis_id")
+            summary["thesis_status"] = thesis_status.get("status")
+            summary["thesis_status_reason"] = thesis_status.get("reason")
         summary["criteria_results"] = _criteria_results(conclusion)
         summary["robustness_status"] = _robustness_status(conclusion)
     return summary
@@ -131,6 +140,14 @@ def _status_counts(experiments: list[dict[str, Any]]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for experiment in experiments:
         status = str(experiment.get("strategy_hypothesis_status") or "-")
+        counts[status] = counts.get(status, 0) + 1
+    return counts
+
+
+def _thesis_status_counts(experiments: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for experiment in experiments:
+        status = str(experiment.get("thesis_status") or "-")
         counts[status] = counts.get(status, 0) + 1
     return counts
 
@@ -176,6 +193,10 @@ def _format_final_report_markdown(report: CampaignFinalReport) -> str:
             "",
             *[f"- {status}: `{count}`" for status, count in sorted(report.hypothesis_status_counts.items())],
             "",
+            "## Thesis Outcomes",
+            "",
+            *[f"- {status}: `{count}`" for status, count in sorted(report.thesis_status_counts.items())],
+            "",
             "## Cumulative Findings",
             "",
             *_bullet_lines(report.cumulative_findings),
@@ -212,6 +233,7 @@ def _experiment_lines(experiments: list[dict[str, Any]]) -> list[str]:
             f"- `{item.get('experiment_id', '-')}` {item.get('title', '-')}: "
             f"research `{item.get('research_system_status', '-')}`, "
             f"hypothesis `{item.get('strategy_hypothesis_status', '-')}`, "
+            f"thesis `{item.get('thesis_status', '-')}`, "
             f"confidence `{item.get('confidence_label', '-')}`. "
             f"Conclusion: `{item.get('conclusion_path', '-')}`"
         )
