@@ -24,6 +24,8 @@ Third implementation slice delivered:
   template's strategy family.
 - Executed campaign experiments now carry the thesis ID into experiment tags,
   conclusion JSON, and campaign memory.
+- Campaign validation rejects prompt-example placeholder text after an Ollama
+  dry run showed that a model can return valid JSON with copied example prose.
 
 ## Goal
 

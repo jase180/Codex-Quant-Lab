@@ -19,6 +19,11 @@ PROPOSAL_JSON_FILENAME = "proposal.json"
 VALIDATION_JSON_FILENAME = "proposal_validation.json"
 VALIDATION_MARKDOWN_FILENAME = "proposal_validation.md"
 ALLOWED_CAMPAIGN_ACTIONS = {"run_experiment", "request_human_review", "stop_campaign"}
+DISALLOWED_PLACEHOLDER_TEXT = {
+    "a clear testable hypothesis.",
+    "why this test is justified now.",
+    "what is materially different from prior work.",
+}
 @dataclass(frozen=True)
 class CampaignProposal:
     schema_version: str
@@ -238,6 +243,7 @@ def validate_campaign_proposal(
         )
     if proposal.action in {"request_human_review", "stop_campaign"} and projected_runs != 0:
         reasons.append("non-run actions must not consume runs")
+    _validate_non_placeholder_text(proposal, reasons)
 
     return CampaignProposalValidation(
         schema_version=CAMPAIGN_VALIDATION_SCHEMA_VERSION,
@@ -411,6 +417,17 @@ def _validate_opportunity_thesis_reference(
             "opportunity thesis is not compatible with template "
             f"{proposal.strategy_template}: {proposal.opportunity_thesis_id}"
         )
+
+
+def _validate_non_placeholder_text(proposal: CampaignProposal, reasons: list[str]) -> None:
+    fields = {
+        "hypothesis": proposal.hypothesis,
+        "rationale": proposal.rationale,
+        "difference_from_prior_work": proposal.difference_from_prior_work,
+    }
+    for field_name, value in fields.items():
+        if value.strip().lower() in DISALLOWED_PLACEHOLDER_TEXT:
+            reasons.append(f"{field_name} appears to be copied placeholder text")
 
 
 def _required_text(payload: dict[str, Any], key: str, context: str) -> str:

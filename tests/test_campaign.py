@@ -274,6 +274,36 @@ class CampaignTests(unittest.TestCase):
         self.assertFalse(validation.valid)
         self.assertTrue(any("not compatible with template" in reason for reason in validation.reasons))
 
+    def test_campaign_validation_rejects_prompt_placeholder_text(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY SMA 200 long/cash campaign baseline",
+                    "hypothesis": "A clear testable hypothesis.",
+                    "rationale": "Why this test is justified now.",
+                    "difference_from_prior_work": "What is materially different from prior work.",
+                    "strategy_template": "sma-long-cash",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "liquid_etf_trend_defense",
+                    "parameters": {"sma_length": 200},
+                    "success_criteria": {"minimum_cagr_retention": 0.8},
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertFalse(validation.valid)
+        self.assertTrue(any("hypothesis appears to be copied placeholder text" in reason for reason in validation.reasons))
+        self.assertTrue(any("rationale appears to be copied placeholder text" in reason for reason in validation.reasons))
+        self.assertTrue(any("difference_from_prior_work appears" in reason for reason in validation.reasons))
+
     def test_campaign_provider_boundary_returns_codex_handoff_proposal(self) -> None:
         payload = campaign_payload()
         payload["provider"] = "codex"

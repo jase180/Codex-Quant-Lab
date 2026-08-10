@@ -45,6 +45,11 @@ exists in `data/opportunity_catalog/`, is marked `decision: test_now`, has
 strategy family. A provider cannot cite a blocked event-data thesis to justify a
 currently supported SPY trend-template run.
 
+Validation also rejects obvious prompt-example placeholder text in the
+hypothesis, rationale, or difference-from-prior-work fields. This prevents a
+model from returning syntactically valid JSON that merely copies the example
+instead of making a real proposal.
+
 For executed campaign experiments, the thesis ID is also carried into the
 generated `experiment run-default` command as an `opportunity:<id>` experiment
 tag. That tag appears in the canonical `experiment_conclusion.json`, and
