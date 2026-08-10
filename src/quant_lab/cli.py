@@ -1244,6 +1244,11 @@ def register_campaign_commands(subparsers) -> None:
         action="store_true",
         help="Execute a valid non-deterministic provider proposal. Defaults to dry-run.",
     )
+    run_parser.add_argument(
+        "--loop",
+        action="store_true",
+        help="Keep running campaign cycles until stop, invalid proposal, dry-run, completed state, or safety cap.",
+    )
     run_parser.set_defaults(func=campaign_run_command)
 
 

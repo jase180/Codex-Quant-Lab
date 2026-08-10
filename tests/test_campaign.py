@@ -556,6 +556,69 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("conclusion:", stdout.getvalue())
         self.assertIn("cycle_number: 1", stdout.getvalue())
 
+    def test_campaign_run_loop_runs_until_deterministic_stop_and_final_report(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+            calls: list[str] = []
+
+            def fake_execute(inputs) -> CampaignExecutionResult:
+                calls.append(inputs.output_dir)
+                conclusion = conclusion_payload() if len(calls) == 1 else partial_conclusion_payload()
+                conclusion_path = Path(inputs.output_dir) / "experiment_conclusion.json"
+                conclusion_path.parent.mkdir(parents=True, exist_ok=True)
+                conclusion_path.write_text(json.dumps(conclusion), encoding="utf-8")
+                return CampaignExecutionResult(
+                    schema_version="campaign_execution.v1",
+                    status="completed",
+                    experiment_id=f"EXP-{len(calls)}",
+                    output_dir=inputs.output_dir,
+                    conclusion_path=str(conclusion_path.with_suffix(".md")),
+                    conclusion_json_path=str(conclusion_path),
+                    read_first_path=str(conclusion_path.with_suffix(".md")),
+                    execution_json_path=str(Path(inputs.output_dir).parent / "campaign_execution.json"),
+                    execution_markdown_path=str(Path(inputs.output_dir).parent / "campaign_execution.md"),
+                    error=None,
+                    elapsed_seconds=5,
+                    created_at_utc="2026-08-05T00:00:00Z",
+                )
+
+            with patch("quant_lab.cli_campaign.execute_campaign_experiment_inputs", side_effect=fake_execute):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                    exit_code = main(
+                        [
+                            "campaign",
+                            "run",
+                            "--config",
+                            str(config_path),
+                            "--out",
+                            str(out_dir),
+                            "--loop",
+                        ]
+                    )
+
+            state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
+            final_report_path = out_dir / "final_report.md"
+            cycle_one_exists = (out_dir / "cycles" / "cycle_001" / "proposal.json").exists()
+            cycle_two_exists = (out_dir / "cycles" / "cycle_002" / "proposal.json").exists()
+            cycle_three_exists = (out_dir / "cycles" / "cycle_003" / "proposal.json").exists()
+            final_report_exists = final_report_path.exists()
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(state.status, "complete")
+        self.assertEqual(state.cycle_number, 2)
+        self.assertEqual(state.runs_used, 22)
+        self.assertTrue(final_report_exists)
+        self.assertTrue(cycle_one_exists)
+        self.assertTrue(cycle_two_exists)
+        self.assertTrue(cycle_three_exists)
+        self.assertIn("Campaign loop starting", output)
+        self.assertIn("final_report:", output)
+
     def test_campaign_run_ollama_provider_dry_run_saves_proposal_without_execution(self) -> None:
         payload = campaign_payload()
         payload["provider"] = "ollama"

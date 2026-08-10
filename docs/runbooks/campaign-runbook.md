@@ -81,6 +81,21 @@ Run the resume command until it writes:
 final_report: artifacts\campaigns\spy_research_001\final_report.md
 ```
 
+Or let the controller keep running cycles until a stop condition:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --out artifacts\campaigns\spy_research_001 `
+  --loop `
+  --force
+```
+
+`--loop` reuses the same one-cycle machinery. It stops when the campaign state
+is no longer `running`, a proposal is invalid, a provider dry run is reached, a
+`stop_campaign` proposal writes the final report, or the safety iteration cap is
+hit.
+
 ## Ollama Proposal Dry Run
 
 Use this only to inspect whether a local model can produce a valid bounded
@@ -147,6 +162,11 @@ it into the existing `experiment run-default` workflow.
 If both model attempts fail and the controller writes a deterministic fallback,
 `--execute-model-proposal` still does not execute it. Fallback proposals are for
 inspection only.
+
+`--loop` can be combined with `--execute-model-proposal`, but it still stops on
+provider dry runs, invalid proposals, deterministic fallbacks, or exhausted
+campaign state. In practice, use one dry-run cycle first, then a short explicit
+execution loop only after inspecting the provider artifacts.
 
 ## Current Deterministic Sequence
 

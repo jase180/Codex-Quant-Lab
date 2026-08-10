@@ -205,10 +205,14 @@ Current progress:
   user passes `--execute-model-proposal`. Dry-run remains the default.
 - Deterministic fallback proposals remain inspection-only even when
   `--execute-model-proposal` is passed.
+- `quant-lab campaign run --loop` can now run repeated cycles through the same
+  proposal, validation, execution, conclusion, and state-update path until a
+  stop condition is reached.
 
 Still missing:
 
-- multi-cycle Ollama campaign execution.
+- real successful multi-cycle Ollama smoke with the local model responding
+  within timeout.
 
 ### 18G: Codex Provider
 

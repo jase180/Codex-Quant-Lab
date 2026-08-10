@@ -37,6 +37,12 @@ class CampaignProposalSelection:
     diagnostics: list[str]
 
 
+@dataclass(frozen=True)
+class CampaignCycleResult:
+    exit_code: int
+    stop_loop: bool
+
+
 def campaign_init_command(args: argparse.Namespace) -> int:
     config = load_campaign_config(args.config)
     paths = initialize_campaign(config, args.out, overwrite=args.force)
@@ -68,6 +74,29 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     if args.provider is not None and args.provider != config.provider:
         raise ValueError("campaign run provider override is not persisted yet; update the config file for now")
 
+    if getattr(args, "loop", False):
+        return _run_campaign_loop(args, config=config, paths=paths)
+    return _run_one_campaign_cycle(args, config=config, state=state, paths=paths).exit_code
+
+
+def _run_campaign_loop(args: argparse.Namespace, *, config: CampaignConfig, paths) -> int:
+    max_iterations = config.max_cycles + 1
+    print("Campaign loop starting")
+    for iteration in range(1, max_iterations + 1):
+        state = load_campaign_state(paths.state_path)
+        if state.status != "running":
+            print(f"Campaign loop stopped: status={state.status}")
+            return 0
+        print(f"Campaign loop cycle: {iteration}")
+        result = _run_one_campaign_cycle(args, config=config, state=state, paths=paths)
+        if result.stop_loop or result.exit_code != 0:
+            print(f"Campaign loop stopped: exit_code={result.exit_code}")
+            return result.exit_code
+    print("Campaign loop stopped: max loop iterations reached")
+    return 1
+
+
+def _run_one_campaign_cycle(args: argparse.Namespace, *, config: CampaignConfig, state, paths) -> CampaignCycleResult:
     cycle_dir = _cycle_dir(paths.cycles_dir, state.cycle_number + 1)
     selection = _select_campaign_proposal(args, config=config, state=state, cycle_dir=cycle_dir)
     provider_result = selection.provider_result
@@ -103,6 +132,7 @@ def campaign_run_command(args: argparse.Namespace) -> int:
             print("note: model execution was requested, but the selected proposal did not come from a model response")
         else:
             print("note: pass --execute-model-proposal to run a valid model proposal")
+        return CampaignCycleResult(exit_code=0, stop_loop=True)
     elif validation.valid and proposal.action == "run_experiment":
         inputs = prepare_campaign_experiment_inputs(proposal, config=config, cycle_dir=cycle_dir)
         print(f"strategy: {inputs.strategy_path}")
@@ -124,6 +154,7 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         print(f"state: {paths.state_path}")
         print(f"cycle_number: {updated_state.cycle_number}")
         print(f"runs_used: {updated_state.runs_used}")
+        return CampaignCycleResult(exit_code=0, stop_loop=False)
     elif validation.valid and proposal.action == "stop_campaign":
         updated_state = complete_campaign_state(state, stop_reason=proposal.rationale)
         save_campaign_state(updated_state, paths.output_dir, config=config)
@@ -132,9 +163,10 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         print(f"state: {paths.state_path}")
         print(f"final_report: {final_markdown_path}")
         print(f"final_report_json: {final_json_path}")
+        return CampaignCycleResult(exit_code=0, stop_loop=True)
     else:
         print("execution: skipped")
-    return 0 if validation.valid else 1
+        return CampaignCycleResult(exit_code=0 if validation.valid else 1, stop_loop=True)
 
 
 def _should_skip_model_execution(
