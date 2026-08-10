@@ -1249,6 +1249,23 @@ def register_campaign_commands(subparsers) -> None:
         action="store_true",
         help="Keep running campaign cycles until stop, invalid proposal, dry-run, completed state, or safety cap.",
     )
+    run_parser.add_argument(
+        "--duration",
+        default=None,
+        help="Override duration budget when initializing a campaign, such as 30m, 60m, 1h, or 90s.",
+    )
+    run_parser.add_argument(
+        "--max-cycles",
+        type=int,
+        default=None,
+        help="Override max campaign cycles when initializing a campaign.",
+    )
+    run_parser.add_argument(
+        "--max-total-runs",
+        type=int,
+        default=None,
+        help="Override max total backtests when initializing a campaign.",
+    )
     run_parser.set_defaults(func=campaign_run_command)
 
 

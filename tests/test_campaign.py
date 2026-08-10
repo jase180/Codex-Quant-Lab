@@ -619,6 +619,135 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("Campaign loop starting", output)
         self.assertIn("final_report:", output)
 
+    def test_campaign_run_budget_overrides_initialize_saved_config_and_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+            fake_conclusion_path = out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.json"
+            fake_conclusion_path.parent.mkdir(parents=True, exist_ok=True)
+            fake_conclusion_path.write_text(json.dumps(conclusion_payload()), encoding="utf-8")
+            fake_execution = CampaignExecutionResult(
+                schema_version="campaign_execution.v1",
+                status="completed",
+                experiment_id="EXP-OVERRIDE",
+                output_dir=str(out_dir / "cycles" / "cycle_001" / "experiment"),
+                conclusion_path=str(fake_conclusion_path.with_suffix(".md")),
+                conclusion_json_path=str(fake_conclusion_path),
+                read_first_path=str(fake_conclusion_path.with_suffix(".md")),
+                execution_json_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.json"),
+                execution_markdown_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.md"),
+                error=None,
+                elapsed_seconds=5,
+                created_at_utc="2026-08-05T00:00:00Z",
+            )
+
+            with patch("quant_lab.cli_campaign.execute_campaign_experiment_inputs", return_value=fake_execution):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    exit_code = main(
+                        [
+                            "campaign",
+                            "run",
+                            "--config",
+                            str(config_path),
+                            "--out",
+                            str(out_dir),
+                            "--duration",
+                            "90s",
+                            "--max-cycles",
+                            "2",
+                            "--max-total-runs",
+                            "22",
+                        ]
+                    )
+
+            saved_config = load_campaign_config(out_dir / "campaign_config.json")
+            state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(saved_config.duration_minutes, 2)
+        self.assertEqual(saved_config.max_cycles, 2)
+        self.assertEqual(saved_config.max_total_runs, 22)
+        self.assertEqual(state.remaining_budget["cycles"], 1)
+        self.assertEqual(state.remaining_budget["runs"], 11)
+        self.assertEqual(state.remaining_budget["seconds"], 115)
+
+    def test_campaign_run_budget_overrides_reject_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+            config = parse_campaign_config(campaign_payload())
+            initialize_campaign(config, out_dir)
+
+            with self.assertRaisesRegex(ValueError, "overrides can only initialize"):
+                main(
+                    [
+                        "campaign",
+                        "run",
+                        "--config",
+                        str(config_path),
+                        "--out",
+                        str(out_dir),
+                        "--resume",
+                        "--max-cycles",
+                        "2",
+                    ]
+                )
+
+    def test_campaign_run_loop_stops_on_duration_limit_between_cycles(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+            fake_conclusion_path = out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.json"
+            fake_conclusion_path.parent.mkdir(parents=True, exist_ok=True)
+            fake_conclusion_path.write_text(json.dumps(conclusion_payload()), encoding="utf-8")
+            fake_execution = CampaignExecutionResult(
+                schema_version="campaign_execution.v1",
+                status="completed",
+                experiment_id="EXP-TIME",
+                output_dir=str(out_dir / "cycles" / "cycle_001" / "experiment"),
+                conclusion_path=str(fake_conclusion_path.with_suffix(".md")),
+                conclusion_json_path=str(fake_conclusion_path),
+                read_first_path=str(fake_conclusion_path.with_suffix(".md")),
+                execution_json_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.json"),
+                execution_markdown_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.md"),
+                error=None,
+                elapsed_seconds=5,
+                created_at_utc="2026-08-05T00:00:00Z",
+            )
+
+            with patch("quant_lab.cli_campaign.execute_campaign_experiment_inputs", return_value=fake_execution):
+                with patch("quant_lab.cli_campaign.time.monotonic", side_effect=[0.0, 0.0, 61.0]):
+                    with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                        exit_code = main(
+                            [
+                                "campaign",
+                                "run",
+                                "--config",
+                                str(config_path),
+                                "--out",
+                                str(out_dir),
+                                "--loop",
+                                "--duration",
+                                "1m",
+                            ]
+                        )
+
+            state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
+            final_report_exists = (out_dir / "final_report.md").exists()
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(state.status, "complete")
+        self.assertEqual(state.stop_reason, "duration wall-clock limit reached")
+        self.assertTrue(final_report_exists)
+        self.assertIn("duration limit reached", output)
+
     def test_campaign_run_ollama_provider_dry_run_saves_proposal_without_execution(self) -> None:
         payload = campaign_payload()
         payload["provider"] = "ollama"

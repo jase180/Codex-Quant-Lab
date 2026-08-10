@@ -88,6 +88,9 @@ Or let the controller keep running cycles until a stop condition:
   --config data\campaigns\spy_drawdown_control_campaign.json `
   --out artifacts\campaigns\spy_research_001 `
   --loop `
+  --duration 30m `
+  --max-cycles 3 `
+  --max-total-runs 33 `
   --force
 ```
 
@@ -95,6 +98,23 @@ Or let the controller keep running cycles until a stop condition:
 is no longer `running`, a proposal is invalid, a provider dry run is reached, a
 `stop_campaign` proposal writes the final report, or the safety iteration cap is
 hit.
+
+Budget overrides are only applied when initializing a new campaign with
+`--config`. They are written into the saved `campaign_config.json` and initial
+`campaign_state.json`. Resumed campaigns use their saved budgets; the CLI
+rejects budget overrides on `--resume` so the state and config cannot drift.
+
+Supported duration forms:
+
+```text
+30m
+1h
+90s
+30
+```
+
+Bare numbers mean minutes. Seconds are rounded up to the nearest minute because
+campaign config stores duration in minutes.
 
 ## Ollama Proposal Dry Run
 

@@ -208,6 +208,12 @@ Current progress:
 - `quant-lab campaign run --loop` can now run repeated cycles through the same
   proposal, validation, execution, conclusion, and state-update path until a
   stop condition is reached.
+- `campaign run` can override `--duration`, `--max-cycles`, and
+  `--max-total-runs` when initializing a new campaign. Overrides are written
+  into the saved campaign config/state and are rejected on resume.
+- Loop mode now checks wall-clock duration between cycles and writes a final
+  report with stop reason `duration wall-clock limit reached` when the limit is
+  hit.
 
 Still missing:
 

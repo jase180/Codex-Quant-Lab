@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -63,11 +64,18 @@ def campaign_status_command(args: argparse.Namespace) -> int:
 
 def campaign_run_command(args: argparse.Namespace) -> int:
     paths = campaign_paths(args.out)
+    exists = _campaign_exists(paths)
     if args.config:
         config = load_campaign_config(args.config)
-        if not args.resume or not _campaign_exists(paths):
+        if _has_campaign_budget_overrides(args):
+            if args.resume and exists:
+                raise ValueError("campaign budget overrides can only initialize a new campaign, not resume one")
+            config = _config_with_budget_overrides(config, args)
+        if not args.resume or not exists:
             initialize_campaign(config, args.out, overwrite=args.force)
     else:
+        if _has_campaign_budget_overrides(args):
+            raise ValueError("campaign budget overrides require --config so a new campaign config can be written")
         config = load_campaign_config(paths.config_path)
 
     state = load_campaign_state(paths.state_path)
@@ -81,11 +89,22 @@ def campaign_run_command(args: argparse.Namespace) -> int:
 
 def _run_campaign_loop(args: argparse.Namespace, *, config: CampaignConfig, paths) -> int:
     max_iterations = config.max_cycles + 1
+    started_at = time.monotonic()
+    duration_seconds = config.duration_minutes * 60
     print("Campaign loop starting")
     for iteration in range(1, max_iterations + 1):
         state = load_campaign_state(paths.state_path)
         if state.status != "running":
             print(f"Campaign loop stopped: status={state.status}")
+            return 0
+        if time.monotonic() - started_at >= duration_seconds:
+            updated_state = complete_campaign_state(state, stop_reason="duration wall-clock limit reached")
+            save_campaign_state(updated_state, paths.output_dir, config=config)
+            final_json_path, final_markdown_path = save_final_campaign_report(config, updated_state, paths)
+            print("Campaign loop stopped: duration limit reached")
+            print(f"state: {paths.state_path}")
+            print(f"final_report: {final_markdown_path}")
+            print(f"final_report_json: {final_json_path}")
             return 0
         print(f"Campaign loop cycle: {iteration}")
         result = _run_one_campaign_cycle(args, config=config, state=state, paths=paths)
@@ -360,3 +379,46 @@ def _campaign_exists(paths) -> bool:
 
 def _cycle_dir(cycles_dir: str, cycle_number: int) -> str:
     return str(Path(cycles_dir) / f"cycle_{cycle_number:03d}")
+
+
+def _has_campaign_budget_overrides(args: argparse.Namespace) -> bool:
+    return (
+        getattr(args, "duration", None) is not None
+        or getattr(args, "max_cycles", None) is not None
+        or getattr(args, "max_total_runs", None) is not None
+    )
+
+
+def _config_with_budget_overrides(config: CampaignConfig, args: argparse.Namespace) -> CampaignConfig:
+    updates = {}
+    if getattr(args, "duration", None) is not None:
+        updates["duration_minutes"] = _parse_duration_minutes(args.duration)
+    if getattr(args, "max_cycles", None) is not None:
+        updates["max_cycles"] = _positive_int(args.max_cycles, "--max-cycles")
+    if getattr(args, "max_total_runs", None) is not None:
+        updates["max_total_runs"] = _positive_int(args.max_total_runs, "--max-total-runs")
+    return replace(config, **updates)
+
+
+def _parse_duration_minutes(value: str) -> int:
+    cleaned = str(value).strip().lower()
+    if not cleaned:
+        raise ValueError("--duration must not be empty")
+    if cleaned.endswith("m"):
+        return _positive_int(cleaned[:-1], "--duration")
+    if cleaned.endswith("h"):
+        return _positive_int(cleaned[:-1], "--duration") * 60
+    if cleaned.endswith("s"):
+        seconds = _positive_int(cleaned[:-1], "--duration")
+        return max(1, (seconds + 59) // 60)
+    return _positive_int(cleaned, "--duration")
+
+
+def _positive_int(value, label: str) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be a positive integer") from exc
+    if parsed <= 0:
+        raise ValueError(f"{label} must be a positive integer")
+    return parsed
