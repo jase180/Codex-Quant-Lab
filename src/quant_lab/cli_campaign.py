@@ -20,7 +20,7 @@ from .campaign_proposal import (
     save_campaign_proposal_artifacts,
     validate_campaign_proposal,
 )
-from .campaign_provider import campaign_provider_proposal
+from .campaign_provider import campaign_provider_result, save_campaign_provider_error_artifacts
 from .campaign_report import save_final_campaign_report
 
 
@@ -55,9 +55,29 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     if args.provider is not None and args.provider != config.provider:
         raise ValueError("campaign run provider override is not persisted yet; update the config file for now")
 
-    proposal = campaign_provider_proposal(config, state)
-    validation = validate_campaign_proposal(proposal, config=config, state=state)
     cycle_dir = _cycle_dir(paths.cycles_dir, state.cycle_number + 1)
+    try:
+        provider_result = campaign_provider_result(
+            config,
+            state,
+            cycle_dir=cycle_dir,
+            base_url=getattr(args, "base_url", None),
+            model=getattr(args, "model", None),
+            timeout_seconds=getattr(args, "timeout_seconds", 60.0),
+        )
+    except Exception as exc:
+        error_json_path, error_markdown_path = save_campaign_provider_error_artifacts(
+            cycle_dir=cycle_dir,
+            provider=config.provider,
+            error=str(exc),
+        )
+        print("Campaign provider failed")
+        print(f"provider_error: {error_json_path}")
+        print(f"read_first: {error_markdown_path}")
+        print("execution: skipped")
+        return 1
+    proposal = provider_result.proposal
+    validation = validate_campaign_proposal(proposal, config=config, state=state)
     proposal_path, validation_path, validation_markdown_path = save_campaign_proposal_artifacts(
         proposal,
         validation,
@@ -67,13 +87,25 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     print(f"Campaign proposal written: {proposal_path}")
     print(f"validation: {validation_path}")
     print(f"read_first: {validation_markdown_path}")
+    if provider_result.context_path:
+        print(f"provider_context: {provider_result.context_path}")
+    if provider_result.prompt_path:
+        print(f"provider_prompt: {provider_result.prompt_path}")
+    if provider_result.raw_response_path:
+        print(f"provider_raw_response: {provider_result.raw_response_path}")
+    if provider_result.parsed_proposal_path:
+        print(f"provider_proposal: {provider_result.parsed_proposal_path}")
     print(f"valid: {validation.valid}")
     print(f"projected_run_count: {validation.projected_run_count}")
     if validation.reasons:
         print("reasons:")
         for reason in validation.reasons:
             print(f"- {reason}")
-    if validation.valid and proposal.action == "run_experiment":
+    if validation.valid and proposal.action == "run_experiment" and config.provider != "deterministic":
+        print(f"execution: skipped_provider_dry_run")
+        print(f"provider: {config.provider}")
+        print("note: model campaign providers validate proposals only in this slice")
+    elif validation.valid and proposal.action == "run_experiment":
         inputs = prepare_campaign_experiment_inputs(proposal, config=config, cycle_dir=cycle_dir)
         print(f"strategy: {inputs.strategy_path}")
         print(f"run_default_args: {inputs.run_default_args_path}")

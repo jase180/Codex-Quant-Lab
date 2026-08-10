@@ -1221,7 +1221,23 @@ def register_campaign_commands(subparsers) -> None:
         "--provider",
         choices=["deterministic", "ollama", "codex"],
         default=None,
-        help="Reserved provider override. For now, use the provider in the config.",
+        help="Reserved provider override. For now, use the provider in the config when resuming.",
+    )
+    run_parser.add_argument(
+        "--base-url",
+        default="http://localhost:11434/v1",
+        help="OpenAI-compatible base URL for --provider ollama. Defaults to Ollama's local v1 endpoint.",
+    )
+    run_parser.add_argument(
+        "--model",
+        default=None,
+        help="Model name for --provider ollama. Defaults to llama3.1:8b.",
+    )
+    run_parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=60.0,
+        help="Provider request timeout in seconds. Defaults to 60.",
     )
     run_parser.set_defaults(func=campaign_run_command)
 

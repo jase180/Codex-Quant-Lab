@@ -181,6 +181,27 @@ proposal schema instead of an agent recommendation schema.
 Exit criterion: a bounded three-cycle campaign can run with `--provider ollama`
 without unsupported actions.
 
+Current progress:
+
+- `src/quant_lab/campaign_provider.py` now builds a structured campaign context
+  and prompt for the Ollama provider.
+- Ollama uses the existing OpenAI-compatible HTTP pattern and asks for
+  `campaign_proposal.v1`.
+- A model dry run writes `provider_context.json`, `provider_prompt.md`,
+  `provider_raw_response.txt`, and `provider_proposal.json` under the cycle
+  directory.
+- The parsed proposal is validated by the same deterministic validator.
+- `quant-lab campaign run` deliberately skips execution for non-deterministic
+  providers in this slice, so a model can be inspected before it spends
+  backtest budget.
+
+Still missing:
+
+- retry-on-invalid model output,
+- deterministic fallback or safe stop after repeated invalid proposals,
+- actual model-proposal execution after dry-run quality is proven,
+- multi-cycle Ollama campaign execution.
+
 ### 18G: Codex Provider
 
 Codex returns proposal JSON only. The campaign controller still owns execution

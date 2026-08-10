@@ -6,10 +6,16 @@ features.
 
 ## Current Boundary
 
-`quant-lab campaign run` currently supports the deterministic campaign provider.
-The provider boundary exists for future Ollama and Codex adapters, but those
-model providers are not implemented yet. Each run command executes one campaign
-cycle:
+`quant-lab campaign run` currently has two provider modes:
+
+- `deterministic`: proposes, validates, executes one campaign cycle, reads the
+  canonical conclusion, and updates campaign memory.
+- `ollama`: asks a local OpenAI-compatible Ollama model for one strict proposal,
+  saves the provider context/prompt/raw response/proposal, validates it, and
+  stops before execution. This is a dry-run safety step.
+
+The Codex provider is not implemented yet. Deterministic run commands execute
+one campaign cycle:
 
 1. Read `campaign_config.json` and `campaign_state.json`.
 2. Propose one bounded experiment.
@@ -21,7 +27,8 @@ cycle:
 7. Update `campaign_state.json` and `campaign_state.md`.
 
 When the deterministic sequence is exhausted, it writes `final_report.md` and
-`final_report.json`.
+`final_report.json`. Ollama dry runs do not update campaign state or consume
+backtest budget yet.
 
 The campaign runner must not modify source code, add indicators, change success
 criteria after seeing results, or silently expand parameter grids.
@@ -70,6 +77,41 @@ Run the resume command until it writes:
 ```text
 final_report: artifacts\campaigns\spy_research_001\final_report.md
 ```
+
+## Ollama Proposal Dry Run
+
+Use this only to inspect whether a local model can produce a valid bounded
+proposal. The command saves and validates the proposal but does not generate
+strategy files, run backtests, update campaign state, or write conclusions.
+
+Create a temporary config whose `provider` is `ollama`, then run:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_ollama_campaign.json `
+  --out artifacts\campaigns\spy_ollama_dry_run_001 `
+  --model llama3.1:8b `
+  --force
+```
+
+The useful files are:
+
+```text
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_context.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_prompt.md
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_raw_response.txt
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_proposal.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/proposal_validation.md
+```
+
+If the proposal is valid, the CLI prints:
+
+```text
+execution: skipped_provider_dry_run
+```
+
+That is expected. Model-provider execution comes after invalid-output retry and
+fallback behavior are implemented.
 
 ## Current Deterministic Sequence
 
@@ -147,6 +189,6 @@ The current campaign stops when:
 - proposal validation fails,
 - or the provider returns `stop_campaign`.
 
-Future Ollama and Codex providers must keep the same boundary: providers return
+Ollama and future Codex providers must keep the same boundary: providers return
 strict proposal JSON, while the controller owns validation, execution, state,
 and stopping.

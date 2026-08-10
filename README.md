@@ -103,6 +103,18 @@ instead of inventing extra ideas. When it stops, read:
 artifacts/campaigns/<campaign>/final_report.md
 ```
 
+The Ollama campaign provider currently runs in proposal dry-run mode only. It
+saves the model context, prompt, raw response, parsed proposal, and validation,
+then prints `execution: skipped_provider_dry_run` without spending backtest
+budget:
+
+```bash
+quant-lab campaign run \
+  --config data/campaigns/spy_drawdown_control_ollama_campaign.json \
+  --out artifacts/campaigns/spy_ollama_dry_run_001 \
+  --model llama3.1:8b
+```
+
 Use the guided workflow when you want the lab to create the workspace and
 recommend one command at a time instead of executing the full default workflow:
 

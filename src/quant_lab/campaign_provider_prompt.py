@@ -1,0 +1,134 @@
+"""Campaign provider context and prompt construction."""
+
+from __future__ import annotations
+
+import json
+
+from .campaign import CampaignConfig, CampaignState
+from .campaign_proposal import ALLOWED_CAMPAIGN_ACTIONS, CAMPAIGN_PROPOSAL_SCHEMA_VERSION
+
+
+CAMPAIGN_PROPOSAL_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "campaign_proposal",
+        "schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": [
+                "schema_version",
+                "action",
+                "title",
+                "hypothesis",
+                "rationale",
+                "difference_from_prior_work",
+                "strategy_template",
+                "symbol",
+                "parameters",
+                "success_criteria",
+                "validation_plan",
+            ],
+            "properties": {
+                "schema_version": {"type": "string", "const": CAMPAIGN_PROPOSAL_SCHEMA_VERSION},
+                "action": {"type": "string", "enum": sorted(ALLOWED_CAMPAIGN_ACTIONS)},
+                "title": {"type": "string"},
+                "hypothesis": {"type": "string"},
+                "rationale": {"type": "string"},
+                "difference_from_prior_work": {"type": "string"},
+                "strategy_template": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                "symbol": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                "parameters": {"type": "object"},
+                "success_criteria": {"type": "object"},
+                "validation_plan": {
+                    "type": "object",
+                    "additionalProperties": {"type": "boolean"},
+                },
+            },
+        },
+    },
+}
+
+
+def build_campaign_provider_context(config: CampaignConfig, state: CampaignState) -> dict:
+    """Build the exact context a model can see before proposing one cycle."""
+
+    return {
+        "schema_version": "campaign_provider_context.v1",
+        "campaign": {
+            "title": config.title,
+            "objective": config.objective,
+            "allowed_symbols": config.allowed_symbols,
+            "allowed_templates": config.allowed_templates,
+            "benchmark": config.benchmark,
+            "data_paths": config.data_paths,
+            "cost_preset": config.cost_preset,
+        },
+        "budgets": {
+            "max_cycles": config.max_cycles,
+            "max_total_runs": config.max_total_runs,
+            "max_variants_per_experiment": config.max_variants_per_experiment,
+            "duration_minutes": config.duration_minutes,
+            "remaining": state.remaining_budget,
+            "runs_used": state.runs_used,
+            "cycle_number": state.cycle_number,
+            "elapsed_seconds": state.elapsed_seconds,
+        },
+        "completed_experiments": state.completed_experiments,
+        "current_findings": state.current_findings,
+        "do_not_repeat": state.do_not_repeat,
+        "unresolved_questions": state.unresolved_questions,
+        "provider_rules": [
+            "Return one campaign_proposal.v1 JSON object only.",
+            "Do not include Markdown, prose, shell commands, or extra keys.",
+            "Do not propose source-code changes or unsupported strategy features.",
+            "Do not repeat branches listed in do_not_repeat.",
+            "Use only allowed_symbols and allowed_templates.",
+            "Prespecify success_criteria before seeing results.",
+            "Prefer stop_campaign when no justified experiment remains.",
+        ],
+    }
+
+
+def build_campaign_provider_prompt(context: dict) -> str:
+    allowed_actions = ", ".join(sorted(ALLOWED_CAMPAIGN_ACTIONS))
+    return "\n".join(
+        [
+            "You are a bounded quant research campaign proposer.",
+            "Read the campaign context and return exactly one JSON object.",
+            "You are not allowed to edit files, run commands, modify strategy engines, or expand research scope.",
+            "The controller will validate your proposal before anything executes.",
+            "",
+            "Required proposal schema:",
+            "- schema_version: campaign_proposal.v1",
+            f"- action: one of {allowed_actions}",
+            "- title: concise experiment title",
+            "- hypothesis: prespecified investment hypothesis",
+            "- rationale: why this is the next justified test",
+            "- difference_from_prior_work: why this is materially different from completed work",
+            "- strategy_template: allowed template name, or null for non-run actions",
+            "- symbol: allowed symbol, or null for non-run actions",
+            "- parameters: object using only parameters supported by the chosen template",
+            "- success_criteria: measurable thresholds set before execution",
+            "- validation_plan: object of booleans such as cost_sensitivity, date_sensitivity, train_test",
+            "",
+            "Use this exact JSON shape:",
+            "{",
+            '  "schema_version": "campaign_proposal.v1",',
+            '  "action": "run_experiment",',
+            '  "title": "SPY SMA 200 long/cash campaign baseline",',
+            '  "hypothesis": "A clear testable hypothesis.",',
+            '  "rationale": "Why this test is justified now.",',
+            '  "difference_from_prior_work": "What is materially different from prior work.",',
+            '  "strategy_template": "sma-long-cash",',
+            '  "symbol": "SPY",',
+            '  "parameters": {"sma_length": 200},',
+            '  "success_criteria": {"minimum_cagr_retention": 0.8},',
+            '  "validation_plan": {"cost_sensitivity": true, "date_sensitivity": true, "train_test": true}',
+            "}",
+            "",
+            "Campaign context JSON:",
+            json.dumps(context, indent=2, sort_keys=True),
+            "",
+            "Return the proposal now. Return JSON only.",
+        ]
+    )

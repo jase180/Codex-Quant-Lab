@@ -31,7 +31,7 @@ from quant_lab.campaign_proposal import (  # noqa: E402
     projected_run_count,
     validate_campaign_proposal,
 )
-from quant_lab.campaign_provider import campaign_provider_proposal  # noqa: E402
+from quant_lab.campaign_provider import campaign_provider_proposal, campaign_provider_result  # noqa: E402
 from quant_lab.campaign_report import build_final_campaign_report  # noqa: E402
 from quant_lab.cli import main  # noqa: E402
 
@@ -173,9 +173,9 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(proposal.action, "run_experiment")
         self.assertEqual(proposal.strategy_template, "sma-long-cash")
 
-    def test_campaign_provider_boundary_rejects_unimplemented_model_providers(self) -> None:
+    def test_campaign_provider_boundary_rejects_unimplemented_codex_provider(self) -> None:
         payload = campaign_payload()
-        payload["provider"] = "ollama"
+        payload["provider"] = "codex"
         config = parse_campaign_config(payload)
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -184,6 +184,58 @@ class CampaignTests(unittest.TestCase):
 
         with self.assertRaisesRegex(NotImplementedError, "not implemented yet"):
             campaign_provider_proposal(config, state)
+
+    def test_ollama_campaign_provider_returns_strict_proposal_and_writes_artifacts(self) -> None:
+        payload = campaign_payload()
+        payload["provider"] = "ollama"
+        config = parse_campaign_config(payload)
+        model_payload = {
+            "schema_version": "campaign_proposal.v1",
+            "action": "run_experiment",
+            "title": "SPY SMA 200 local-model dry run",
+            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
+            "rationale": "Use an already supported template before broadening campaign scope.",
+            "difference_from_prior_work": "First model-proposed campaign dry run.",
+            "strategy_template": "sma-long-cash",
+            "symbol": "SPY",
+            "parameters": {"sma_length": 200},
+            "success_criteria": {
+                "minimum_cagr_retention": 0.8,
+                "minimum_relative_drawdown_reduction": 0.25,
+            },
+            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+        }
+
+        def fake_post(url: str, payload: dict, timeout_seconds: float) -> dict:
+            self.assertEqual(url, "http://local/v1/chat/completions")
+            self.assertEqual(payload["model"], "model")
+            self.assertEqual(timeout_seconds, 12.0)
+            return {"choices": [{"message": {"content": json.dumps(model_payload)}}]}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            result = campaign_provider_result(
+                config,
+                state,
+                cycle_dir=Path(paths.cycles_dir) / "cycle_001",
+                base_url="http://local/v1",
+                model="model",
+                timeout_seconds=12.0,
+                http_post=fake_post,
+            )
+
+            context_exists = Path(result.context_path or "").exists()
+            prompt_exists = Path(result.prompt_path or "").exists()
+            raw_exists = Path(result.raw_response_path or "").exists()
+            parsed_exists = Path(result.parsed_proposal_path or "").exists()
+
+        self.assertEqual(result.provider, "ollama")
+        self.assertEqual(result.proposal.title, "SPY SMA 200 local-model dry run")
+        self.assertTrue(context_exists)
+        self.assertTrue(prompt_exists)
+        self.assertTrue(raw_exists)
+        self.assertTrue(parsed_exists)
 
     def test_prepare_campaign_experiment_inputs_writes_strategy_and_run_default_handoff(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -503,6 +555,120 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("execution: completed", stdout.getvalue())
         self.assertIn("conclusion:", stdout.getvalue())
         self.assertIn("cycle_number: 1", stdout.getvalue())
+
+    def test_campaign_run_ollama_provider_dry_run_saves_proposal_without_execution(self) -> None:
+        payload = campaign_payload()
+        payload["provider"] = "ollama"
+        model_payload = {
+            "schema_version": "campaign_proposal.v1",
+            "action": "run_experiment",
+            "title": "SPY SMA 200 local-model dry run",
+            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
+            "rationale": "Use an already supported template before broadening campaign scope.",
+            "difference_from_prior_work": "First model-proposed campaign dry run.",
+            "strategy_template": "sma-long-cash",
+            "symbol": "SPY",
+            "parameters": {"sma_length": 200},
+            "success_criteria": {
+                "minimum_cagr_retention": 0.8,
+                "minimum_relative_drawdown_reduction": 0.25,
+            },
+            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            def fake_post(url: str, request_payload: dict, timeout_seconds: float) -> dict:
+                return {"choices": [{"message": {"content": json.dumps(model_payload)}}]}
+
+            with patch("quant_lab.campaign_provider._post_json", side_effect=fake_post):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                    exit_code = main(
+                        [
+                            "campaign",
+                            "run",
+                            "--config",
+                            str(config_path),
+                            "--out",
+                            str(out_dir),
+                            "--model",
+                            "model",
+                        ]
+                    )
+
+            cycle_dir = out_dir / "cycles" / "cycle_001"
+            proposal_path = cycle_dir / "proposal.json"
+            validation_path = cycle_dir / "proposal_validation.json"
+            context_path = cycle_dir / "provider_context.json"
+            raw_path = cycle_dir / "provider_raw_response.txt"
+            strategy_path = cycle_dir / "strategy.json"
+            execution_path = cycle_dir / "campaign_execution.json"
+            state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
+            proposal_exists = proposal_path.exists()
+            validation_exists = validation_path.exists()
+            context_exists = context_path.exists()
+            raw_exists = raw_path.exists()
+            strategy_exists = strategy_path.exists()
+            execution_exists = execution_path.exists()
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(proposal_exists)
+        self.assertTrue(validation_exists)
+        self.assertTrue(context_exists)
+        self.assertTrue(raw_exists)
+        self.assertFalse(strategy_exists)
+        self.assertFalse(execution_exists)
+        self.assertEqual(state.cycle_number, 0)
+        self.assertIn("execution: skipped_provider_dry_run", output)
+
+    def test_campaign_run_ollama_provider_failure_writes_error_receipt(self) -> None:
+        payload = campaign_payload()
+        payload["provider"] = "ollama"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with patch("quant_lab.campaign_provider._post_json", side_effect=RuntimeError("provider timed out")):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                    exit_code = main(
+                        [
+                            "campaign",
+                            "run",
+                            "--config",
+                            str(config_path),
+                            "--out",
+                            str(out_dir),
+                            "--model",
+                            "model",
+                        ]
+                    )
+
+            cycle_dir = out_dir / "cycles" / "cycle_001"
+            error_json_path = cycle_dir / "provider_error.json"
+            error_markdown_path = cycle_dir / "provider_error.md"
+            context_path = cycle_dir / "provider_context.json"
+            prompt_path = cycle_dir / "provider_prompt.md"
+            error_exists = error_json_path.exists()
+            error_markdown_exists = error_markdown_path.exists()
+            context_exists = context_path.exists()
+            prompt_exists = prompt_path.exists()
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 1)
+        self.assertTrue(error_exists)
+        self.assertTrue(error_markdown_exists)
+        self.assertTrue(context_exists)
+        self.assertTrue(prompt_exists)
+        self.assertIn("Campaign provider failed", output)
+        self.assertIn("execution: skipped", output)
 
 
 if __name__ == "__main__":

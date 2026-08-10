@@ -192,6 +192,8 @@ def _post_json(url: str, payload: dict, timeout_seconds: float) -> dict:
         raise RuntimeError(f"provider HTTP error {exc.code}: {detail}") from exc
     except URLError as exc:
         raise RuntimeError(f"provider connection error: {exc.reason}") from exc
+    except TimeoutError as exc:
+        raise RuntimeError("provider connection timed out") from exc
     return json.loads(response_body)
 
 

@@ -68,9 +68,11 @@ experiment, but they do not take over execution without a human/Codex step.
 
 Campaign boundary: `campaign run` can execute one deterministic bounded cycle
 through the existing `experiment run-default` workflow, read the canonical
-conclusion JSON, and update campaign memory. Multi-cycle provider-driven
-campaigns are still in progress; the controller must continue to own validation,
-budgets, execution, and stopping.
+conclusion JSON, and update campaign memory. The Ollama provider can currently
+do a proposal dry run: save provider context, prompt, raw response, parsed
+proposal, and validation, then stop before execution. Multi-cycle
+provider-driven campaigns are still in progress; the controller must continue
+to own validation, budgets, execution, and stopping.
 
 ## Workflow And Evidence Design
 
