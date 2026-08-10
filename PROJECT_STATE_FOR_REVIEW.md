@@ -1,26 +1,24 @@
-﻿# Project State For Review
+# Project State For Review
 
-Inspected code/research state: `bca10d7e9b38dd809573dc4c16f0dcea046a531b`
+Inspected repository state before this document refresh: `4769606 Add Codex campaign handoff provider`.
 
-Note: this review document is committed in a later docs-cleanup commit, so the
-final commit hash is reported in the commit history rather than embedded here.
+This file is meant to orient a reviewer quickly. It describes current behavior, not aspirations.
 
 ## 1. Executive Summary
 
-Codex-Quant-Lab is now a local Python daily-data quant research lab, not a trading system. It can fetch adjusted daily OHLCV data, validate simple JSON strategies, run long-only backtests with next-open fills, save auditable artifacts, run sweeps and robustness checks, and organize results into experiment-level summaries and conclusions. The intended user is a hands-on researcher or engineer who wants disciplined small experiments without building a full research platform. The normal workflow is hypothesis plus prespecified objective -> default experiment workflow -> baseline run -> trust/robustness/validation -> canonical experiment conclusion -> decision. The most mature path is single-symbol rule-based strategy research; portfolio support exists but is more advanced and noisier. The project has useful guardrails around data fingerprints, benchmark comparison, transaction costs, warnings, saved strategy payloads, explicit human review, and separate research-system versus strategy-hypothesis statuses. The canonical SPY long/cash conclusion has been refreshed to report `research_system_status: valid` and `strategy_hypothesis_status: rejected`, making the valid-negative-result distinction concrete. Recent work added local-agent advisor scaffolding and the first strategy-layer risk control, but agent execution remains dry-run and human-gated. The biggest remaining weakness is information design: the system writes many overlapping human-facing reports, and a reviewer must know that `experiment_conclusion.md` is the intended experiment-level source of truth. A second weakness is that findings are saved and summarized, but they are not automatically converted into a reusable knowledge base that constrains future experiments unless a human, Codex, or local agent reads the conclusion/manifest. Correctness is supported by tests, but adjusted-price/corporate-action assumptions still depend heavily on `yfinance` behavior; the current SPY audit now checks manually supplied dividend amounts, but not an automated independent provider.
+Codex-Quant-Lab is a local Python research lab for daily-data, rule-based quant experiments. It is for a hands-on researcher or engineer who wants honest, reproducible backtests before adding more strategy complexity. The normal single-experiment workflow is: prepare data, create or choose a strategy JSON, run `experiment run-default`, then read `experiment_conclusion.md/json`. The normal campaign workflow is: run `campaign run --loop` with a bounded config, let the controller run existing experiment workflows, then read `final_report.md/json`. The repo now separates research-system validity from strategy-hypothesis success, so a strategy can fail while the repo succeeds. The most useful current path is SPY-style long/cash trend research with realistic costs, benchmark comparison, validation, and saved conclusions. The campaign layer can carry conclusions forward, avoid repeated rejected branches, and stop with a final report. Ollama integration exists behind strict proposal validation, retry, fallback, and explicit execution gates; Codex currently exists as a handoff provider, not an automatic API adapter. The biggest weakness is still information design: there are many reports, and users need docs to know which file is the front door. The biggest correctness risk is still adjusted-price and benchmark economics, especially dividends/splits and provider dependence.
 
 ## 2. Current End-to-End Workflow
 
-Concrete target hypothesis:
+Concrete example:
 
 > Test whether a long/cash SPY 200-day moving-average strategy improves drawdown-adjusted performance versus SPY buy-and-hold after realistic costs.
 
-The project can express this as a v1 JSON rule strategy that enters when SPY close is above a 200-day moving average and exits to cash when close is below it. The current `new-strategy` command can generate this with the `sma-long-cash` template and `--length 200`. Existing examples include `data/strategies/sma_crossover.json`, `data/strategies/ema_trend_follow.json`, and `data/strategies/sma_long_cash_vol_target.json`.
+### Required Single-Experiment Path
 
-### Required Steps
-
-1. Data preparation.
+1. Prepare data.
    - Entry point: `quant-lab fetch`.
+   - Input: symbol and date range.
    - Command:
      ```powershell
      .\.venv-win\Scripts\python.exe -m quant_lab.cli fetch `
@@ -29,12 +27,12 @@ The project can express this as a v1 JSON rule strategy that enters when SPY clo
        --end 2025-12-31 `
        --out data\cache
      ```
-   - Input: ticker/date range.
-   - Output: `data/cache/SPY_2015-01-01_2025-12-31.csv` plus `data/cache/SPY_2015-01-01_2025-12-31.provenance.json`.
-   - Read next: optional `quant-lab show-data-source --data data\cache\SPY_2015-01-01_2025-12-31.csv`.
+   - Output: `data/cache/SPY_2015-01-01_2025-12-31.csv` and `.provenance.json`.
+   - Read next: optionally inspect with `show-data-source`.
 
-2. Strategy definition.
+2. Create strategy JSON.
    - Entry point: `quant-lab new-strategy`.
+   - Input: `sma-long-cash`, symbol, SMA length, ids.
    - Command:
      ```powershell
      .\.venv-win\Scripts\python.exe -m quant_lab.cli new-strategy `
@@ -43,20 +41,20 @@ The project can express this as a v1 JSON rule strategy that enters when SPY clo
        --length 200 `
        --strategy-id spy_sma_200_long_cash `
        --name "SPY 200-day SMA long/cash" `
-       --out artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json
+       --out artifacts\research\spy_200d_long_cash\strategy.json
      ```
-   - Input: template name, symbol, SMA length, strategy id/name, and output path.
-   - Output: a strict strategy JSON consumed by `src/quant_lab/strategy_schema.py` and `src/quant_lab/rule_based_strategy.py`.
-   - Read next: the generated strategy JSON and `docs/architecture/strategy-schema.md`.
+   - Output: strict v1 strategy JSON.
+   - Read next: generated `strategy.json` if auditing assumptions.
 
-3. Default experiment workflow.
+3. Run the default workflow.
    - Entry point: `quant-lab experiment run-default`.
+   - Input: hypothesis, strategy, data, benchmark/cost/validation choices.
    - Command:
      ```powershell
      .\.venv-win\Scripts\python.exe -m quant_lab.cli experiment run-default `
        --title "SPY 200-day SMA long/cash drawdown test" `
        --hypothesis "A daily SPY 200-day moving-average long/cash strategy may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." `
-       --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
+       --strategy artifacts\research\spy_200d_long_cash\strategy.json `
        --data data\cache\SPY_2015-01-01_2025-12-31.csv `
        --symbol SPY `
        --cost-preset retail-liquid `
@@ -67,582 +65,370 @@ The project can express this as a v1 JSON rule strategy that enters when SPY clo
        --date-window 2020-01-01,2025-12-30 `
        --out artifacts\research\spy_200d_long_cash_default
      ```
-   - Input: hypothesis, strategy JSON, OHLCV CSV, cost preset, benchmark default, one controlled parameter neighborhood, train/test split, and date windows.
-   - Output: baseline run, trust report, sweep, train/test validation, cost/date/benchmark sensitivity, `evidence_summary.md`, `experiment_conclusion.md/json`, `default_workflow_summary.md`, and a conservative decision.
+   - Output: baseline run, sweep/validation/robustness artifacts, `evidence_summary.md`, `experiment_conclusion.md`, `experiment_conclusion.json`, and a workflow summary.
    - Read next: `artifacts/research/spy_200d_long_cash_default/experiment_conclusion.md`.
-
-4. Supporting inspection.
-   - Entry points: `show-run`, `compare-runs`, `summarize-run-trust`, `session refresh`, and direct artifact reads.
-   - Input: generated metadata paths and session/conclusion artifacts.
-   - Output: no new core evidence unless a report command is explicitly run.
-   - Read next: supporting files only when the conclusion raises a question, especially `baseline/report.md`, `baseline/run_metadata.json`, `sweep_001/research.md`, and robustness reports.
-
-The old manual chain still exists, but it is now the advanced path. The first walkthrough should not require users to manually operate `research-plan init`, `run`, `summarize-run-trust`, `summarize-experiment`, and `conclude-experiment` unless they need step-by-step control.
 
 ### Optional Validation Steps
 
-- Parameter sweep: `quant-lab sweep --param sma_200.inputs.length=150,175,200,225,250`.
-- Train/test validation: same `sweep` command with `--train-end`, `--test-start`, and `--select-by`.
-- Walk-forward validation: same `sweep` command with repeated `--walk-forward-window train_start,train_end,test_start,test_end`.
-- Cost sensitivity: `quant-lab robustness cost-sensitivity`.
-- Date sensitivity: `quant-lab robustness date-sensitivity`.
-- Benchmark sensitivity: `quant-lab robustness benchmark-sensitivity`.
-- Parameter-neighborhood report: `quant-lab robustness parameter-neighborhood --summary ...`.
+- `quant-lab summarize-run-trust`: one-run trust report from `run_metadata.json`.
+- `quant-lab sweep`: parameter sweeps, train/test, and walk-forward checks.
+- `quant-lab robustness cost-sensitivity`: rerun across cost presets.
+- `quant-lab robustness date-sensitivity`: rerun across date windows.
+- `quant-lab robustness benchmark-sensitivity`: compare benchmark assumptions.
+- `quant-lab audit-adjusted-prices`: provider-internal adjusted-price audit.
 
 ### Advanced Research-Management Steps
 
-- Experiment registry: `new-experiment`, `list-experiments`, `show-experiment`, `update-experiment`, `link-run`, `decide-experiment`.
-- Session manifest: `session status`, `session replay-plan`, `session refresh`.
-- Local-agent advisor: `agent context`, `agent suggest`, `agent cycle --dry-run`, `agent validate-recommendation`.
-- Portfolio workflow: `portfolio-run`, `portfolio-plan`, `portfolio-variants`, `portfolio-candidates`, `portfolio-batch`.
+- `research-plan init/next`: guided manual workflow.
+- `session refresh/status/replay-plan`: session orientation and command replay.
+- `agent context/suggest/cycle/validate-recommendation`: local-agent advisor artifacts.
+- `ideas suggest`: conceptual strategy-catalog suggestion from prior conclusions.
+- `campaign run --loop`: bounded multi-cycle orchestration.
+- Portfolio commands: `portfolio-run`, `portfolio-plan`, `portfolio-variants`, `portfolio-candidates`, `portfolio-batch`.
+
+### Campaign Path
+
+Deterministic campaign:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --out artifacts\campaigns\spy_research_001 `
+  --loop `
+  --duration 30m `
+  --max-cycles 3 `
+  --max-total-runs 33 `
+  --force
+```
+
+Ollama dry run:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --provider ollama `
+  --out artifacts\campaigns\spy_ollama_dry_run_001 `
+  --model llama3.1:8b `
+  --force
+```
+
+Codex handoff:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --provider codex `
+  --out artifacts\campaigns\spy_codex_handoff_001 `
+  --force
+```
+
+Campaign front door after completion: `artifacts/campaigns/<campaign>/final_report.md`.
 
 ## 3. Current Architecture Map
 
 ### Market Data
 
-- Source files: `src/quant_lab/data_fetch.py`, `src/quant_lab/data_source.py`, `src/backtester_core/data.py`, `src/quant_lab/data_quality.py`.
-- Owns: yfinance download, OHLCV normalization, CSV/provenance writing, cached-data inspection, OHLCV validation, data-quality warnings.
-- Information flow: `fetch_market_data()` calls `yf.download(..., auto_adjust=True, actions=False)`, `normalize_ohlcv_frame()` writes date/open/high/low/close/volume CSVs, and `write_market_data_provenance()` records provider/date/fingerprint metadata. Backtests then read CSVs and run `validate_ohlcv_data()` plus `build_data_quality_report()`.
-- Dependents: `run`, `sweep`, robustness commands, portfolio runs, trust reports, `doctor`, and metadata fingerprint verification.
+- Important files: `src/quant_lab/data_fetch.py`, `src/quant_lab/data_source.py`, `src/backtester_core/data.py`, `src/quant_lab/data_quality.py`.
+- Owns: yfinance download, OHLCV normalization, provenance, cached-data inspection, data-quality warnings.
+- Flow: `fetch` writes adjusted OHLCV CSV plus provenance; runs load the CSV, validate it, fingerprint it, and carry provenance into metadata/reports.
+- Dependents: runs, sweeps, robustness, portfolio runs, trust reports, adjusted-price audit.
 
 ### Strategy Definition
 
-- Source files: `src/quant_lab/strategy_schema.py`, `src/quant_lab/strategy_templates.py`, `data/strategies/*.json`, `docs/architecture/strategy-schema.md`.
-- Owns: strict v1 JSON parsing, allowed indicators/operators/value references, starter templates.
-- Information flow: JSON is parsed into `StrategySpec`, validated for unknown fields and indicator references, then passed to `build_rule_based_strategy()`.
-- Dependents: single-run backtests, sweeps, robustness checks, research plans, smoke tests.
+- Important files: `src/quant_lab/strategy_schema.py`, `src/quant_lab/strategy_templates.py`, `src/quant_lab/rule_based_strategy.py`, `data/strategies/*.json`.
+- Owns: strict strategy schema, starter templates, indicator/rule parsing, signal generation.
+- Flow: JSON strategy -> `StrategySpec` -> rule-based strategy -> bar-by-bar signals.
+- Dependents: `run`, `experiment run-default`, campaign conversion, sweeps, robustness.
 
-### Signal Generation
+### Backtest Execution And Portfolio Logic
 
-- Source file: `src/quant_lab/rule_based_strategy.py`.
-- Owns: incremental close-based SMA/EMA/RSI/rolling-high/rolling-low state and entry/exit condition evaluation.
-- Information flow: each close updates indicator state, conditions produce buy/sell orders, and the engine fills those orders on the next bar open.
-- Dependents: `src/quant_lab/run_artifacts.py`, sweeps, robustness, smoke tests.
+- Important files: `src/backtester_core/engine.py`, `src/backtester_core/execution.py`, `src/backtester_core/portfolio.py`, `src/quant_lab/run_artifacts.py`, `src/quant_lab/portfolio_backtest.py`.
+- Owns: next-open fills, commissions/slippage, cash/position accounting, equity curves, portfolio rebalancing.
+- Flow: strategy signal on bar `t` becomes order for bar `t+1` open; portfolio marks equity to close.
+- Dependents: all strategy runs, portfolio runs, validation, and reports.
 
-### Backtest Execution
+### Metrics And Reporting
 
-- Source files: `src/backtester_core/engine.py`, `src/backtester_core/execution.py`, `src/backtester_core/portfolio.py`, `src/quant_lab/run_artifacts.py`, `src/quant_lab/run_config.py`.
-- Owns: next-open order execution, transaction cost model, cash/position accounting, equity history, run configuration.
-- Information flow: `run_single_backtest()` builds the strategy, benchmark, data quality report, and engine; `BacktestEngine.run()` queues signals from bar `t` and fills on bar `t+1` open; `Portfolio` records fills and marks to close.
-- Dependents: CLI `run`, `sweep`, robustness, smoke test, artifact writers.
+- Important files: `src/metrics_reporting/metrics.py`, `src/metrics_reporting/artifacts.py`, `src/quant_lab/benchmarks.py`, `src/quant_lab/experiment_conclusion.py`, `src/quant_lab/campaign_report.py`.
+- Owns: return/drawdown metrics, charts, benchmark comparisons, run reports, experiment conclusions, campaign final reports.
+- Flow: execution output -> raw artifacts -> run metadata/index -> summaries/conclusions -> session/agent/campaign context.
+- Dependents: humans, Codex, local agents, campaign controller.
 
-### Portfolio Logic
+### Robustness And Validation
 
-- Source files: `src/quant_lab/portfolio_spec.py`, `portfolio_data.py`, `portfolio_backtest.py`, `portfolio_execution.py`, `portfolio_artifacts.py`, `portfolio_metadata.py`, `portfolio_benchmarks.py`.
-- Owns: static-weight portfolio specs, aligned multi-symbol data, periodic rebalancing, portfolio-level trades/positions/equity, benchmarks, metadata.
-- Information flow: portfolio spec plus symbol CSVs are loaded, aligned by date, rebalanced according to frequency, and written as portfolio-specific artifacts.
-- Dependents: `portfolio-run`, `portfolio-plan`, `portfolio-variants`, `portfolio-candidates`, `portfolio-batch`, portfolio inspection/trust/summary commands.
+- Important files: `src/quant_lab/robustness.py`, `src/quant_lab/parameter_neighborhood.py`, `src/quant_lab/sweep_guardrails.py`.
+- Owns: cost/date/benchmark sensitivity and parameter-neighborhood review.
+- Flow: reuse normal backtest execution with controlled changes, then write summary CSV/Markdown.
+- Dependents: default experiment workflow and experiment conclusions.
 
-### Metrics
+### Experiment Registry And Guided Workflow
 
-- Source files: `src/backtester_core/reporting.py`, `src/metrics_reporting/metrics.py`, `src/metrics_reporting/artifacts.py`, `src/metrics_reporting/charts.py`, `src/quant_lab/benchmarks.py`.
-- Owns: total return, CAGR, Sharpe, max drawdown, equity/drawdown chart output, buy-and-hold/cash benchmark curves.
-- Information flow: engine output -> metrics summary -> run report, JSON metrics, charts, benchmark comparison.
-- Dependents: all run/sweep/robustness/portfolio artifacts and summaries.
+- Important files: `src/quant_lab/research_registry.py`, `src/quant_lab/research_index.py`, `src/quant_lab/research_plan.py`, `src/quant_lab/session_manifest.py`.
+- Owns: experiment records, linked runs, research index, session orientation, next-step guidance.
+- Flow: run metadata is appended to `research_index.jsonl`, experiment records link metadata paths, session manifests package the current state.
+- Dependents: summaries, conclusions, agent context, campaign knowledge.
 
-### Reporting
+### Campaign Orchestration
 
-- Source files: `src/quant_lab/run_artifacts.py`, `experiment_summary.py`, `experiment_conclusion.py`, `portfolio_report.py`, `portfolio_experiment_summary.py`, `run_trust.py`, `portfolio_trust.py`, `sweep_guardrails.py`, `parameter_neighborhood.py`.
-- Owns: human-readable run reports, evidence summaries, conclusions, trust reports, portfolio reports, robustness/guardrail reports.
-- Information flow: raw run metadata/index rows are converted to Markdown reports; `experiment_conclusion.py` synthesizes linked rows into a current conclusion, do-not-repeat list, and next useful tests.
-- Dependents: users, Codex/local-agent context, session manifests.
+- Important files: `src/quant_lab/campaign.py`, `src/quant_lab/campaign_proposal.py`, `src/quant_lab/campaign_provider.py`, `src/quant_lab/campaign_provider_prompt.py`, `src/quant_lab/campaign_conversion.py`, `src/quant_lab/campaign_execution.py`, `src/quant_lab/campaign_knowledge.py`, `src/quant_lab/campaign_report.py`, `src/quant_lab/cli_campaign.py`.
+- Owns: bounded campaign config/state, strict proposal schema, provider attempts, validation, conversion to `experiment run-default`, execution, cumulative memory, final reports.
+- Flow: config/state -> provider proposal -> validator -> existing experiment workflow -> canonical conclusion -> campaign state/final report.
+- Dependents: campaign CLI, future model-driven research loops.
 
-### Robustness Testing
+## 4. Findings And Knowledge Flow
 
-- Source files: `src/quant_lab/robustness.py`, `src/quant_lab/parameter_neighborhood.py`, `src/quant_lab/sweep_guardrails.py`.
-- Owns: cost sensitivity, date sensitivity, benchmark substitution, parameter-neighborhood review, sweep guardrails.
-- Information flow: robustness commands rerun normal backtests with controlled perturbations and append rows to the same research index; reports summarize sensitivity outcomes.
-- Dependents: guided workflow and experiment conclusion labeling.
+After a normal run, raw evidence is saved as `metrics.json`, `equity_curve.csv`, `trades.csv`, `run_metadata.json`, `strategy.json`, data quality JSON, warnings JSON, charts, and a row in `research_index.jsonl`.
 
-### Experiment Registry
+Human-readable analysis is saved as `report.md`, optional trust reports, sweep `research.md`, robustness reports, `evidence_summary.md`, and `experiment_conclusion.md`.
 
-- Source files: `src/quant_lab/research_registry.py`, `src/quant_lab/research_index.py`.
-- Owns: experiment JSONL records, linked metadata paths, decisions, flat run index rows.
-- Information flow: runs append flat rows to `research_index.jsonl`; experiment records in `experiments.jsonl` link metadata paths and store status/decision fields.
-- Dependents: `list-runs`, `show-run`, compare commands, summaries, conclusions, guided workflow, session manifests.
+Experiment-level conclusions are saved in `experiment_conclusion.md` and `experiment_conclusion.json`. These are the main source of truth for what was learned inside one experiment.
 
-### Guided Workflow
+Campaign-level conclusions are saved in `campaign_state.md/json` during execution and `final_report.md/json` when stopped. The campaign state carries forward completed experiment titles, research-system status, strategy-hypothesis status, current findings, do-not-repeat items, unresolved questions, and budgets.
 
-- Source files: `src/quant_lab/research_plan.py`, `src/quant_lab/research_plan_workflow.py`, `src/quant_lab/cli_research_plan.py`, `src/quant_lab/portfolio_research_plan.py`, `src/quant_lab/cli_session.py`.
-- Owns: plan files, next-step recommendation, session refresh/status/replay.
-- Information flow: plan + index + experiment registry + known artifacts -> next recommended command; session manifest packages current status and key artifacts.
-- Dependents: human CLI workflow and agent context.
+Future runs do not automatically query a global semantic knowledge base. Future campaign cycles can read their own accumulated campaign state; agent/context workflows can package conclusions; humans and Codex still need to interpret cross-experiment knowledge.
 
-### Artifact Persistence
-
-- Source files: `src/quant_lab/run_artifacts.py`, `src/quant_lab/run_metadata.py`, `src/metrics_reporting/artifacts.py`, `src/quant_lab/session_manifest.py`, `src/quant_lab/agent_*`.
-- Owns: stable JSON/CSV/Markdown/PNG outputs.
-- Information flow: every run writes its own directory; experiment-level commands write summary/conclusion files; agent commands write context/recommendation/cycle artifacts.
-- Dependents: all inspection, verification, summary, session, and local-agent commands.
-
-## 4. Findings and Knowledge Flow
-
-### What Happens After A Run
-
-- Raw evidence saved: `metrics.json`, `equity_curve.csv`, `trades.csv`, `data_quality.json`, `research_warnings.json`, charts, `run_metadata.json`, and a flat row in `research_index.jsonl`.
-- Human-readable analysis saved: `report.md`, optional `research_note.md`, optional `run_trust_report.md`, sweep `research.md`, robustness reports, evidence summaries.
-- Experiment-level conclusion saved: `experiment_conclusion.md`, `experiment_conclusion.json`, and `agent_context.md` from `conclude-experiment`.
-- Current conclusion storage: the authoritative experiment-level conclusion is `artifacts/research/<experiment>/experiment_conclusion.md`, with structured companion `experiment_conclusion.json`.
-- Future automatic use: a future run does not automatically read prior conclusions before executing; future Codex/local-agent workflows can read them through `session_manifest.json`, `agent_context.md`, and `agent context`.
-- Guided workflow previous-result use: `research-plan next` uses previous runs indirectly through `research_index.jsonl`, experiment decision state, and artifact existence checks such as `run_trust_report.md`, `evidence_summary.md`, robustness reports, and `experiment_conclusion.json`.
-- Linked versus synthesized: the system does synthesize linked results into evidence labels, supporting/contradicting evidence, do-not-repeat items, and next useful tests; it does not maintain a broader semantic memory across separate experiments.
-- Manual interpretation still required: deciding whether a weak/mixed/rejected conclusion is economically meaningful, whether the hypothesis should change, whether corporate-action data assumptions are acceptable, and whether a next experiment is logically new rather than a rerun.
-
-### Worked Example
-
-Run result:
+Worked example:
 
 > QQQ SMA crossover reduced drawdown but materially underperformed buy-and-hold.
 
-Storage path:
-
-- Saved data: each run directory stores `metrics.json`, `equity_curve.csv`, `trades.csv`, `run_metadata.json`, `data_quality.json`, `research_warnings.json`, and chart PNGs. The research index stores a flat row with run type, total return, max drawdown, trade count, benchmark total return, excess total return, output directory, and metadata path.
-- Saved analysis: `report.md` shows the strategy metrics, benchmark comparison, data quality, and warnings. `summarize-run-trust` can add `run_trust_report.md`. A sweep adds `summary.csv` and `research.md`.
-- Saved decision: `decide-experiment` stores a structured decision inside `experiments.jsonl`; `conclude-experiment` stores a deterministic conclusion in `experiment_conclusion.md/json`.
-- Reusable research knowledge: `experiment_conclusion.json` contains `current_conclusion`, `do_not_repeat`, `next_useful_tests`, `source_artifacts`, and agent instructions. It is reusable when a future human/Codex/agent reads it; it is not a global memory that automatically blocks future commands.
-
-Effect on next experiment:
-
-- Within the same experiment, `research-plan next` can stop after a recorded decision or move toward conclusion/decision based on artifacts.
-- Across a new experiment, nothing automatically says "do not repeat QQQ SMA crossover"; the user or agent must read the prior conclusion and apply it.
+- Saved data: run-level metrics, equity curve, trades, metadata, strategy snapshot, data quality, warnings.
+- Saved analysis: `report.md`, optional trust report, sweep/robustness reports.
+- Saved decision: experiment registry decision plus `experiment_conclusion.md/json`.
+- Reusable knowledge: `do_not_repeat`, `current_conclusion`, `next_useful_tests`, and campaign `do_not_repeat` if the run occurred inside a campaign.
+- Effect on next experiment: inside the same campaign, rejected branches are carried into `campaign_state.json` and can block unchanged repeats. Across unrelated experiments, reuse still requires a human, Codex, or local agent to read the prior conclusion.
 
 ## 5. Artifact Inventory
 
 ### Raw Evidence
 
-- `data/cache/<SYMBOL>_<start>_<end>.csv`
-  - Created by: `quant-lab fetch`.
-  - Authoritative: yes for local input data.
-  - Duplicates: no, but multiple cached CSVs can overlap.
-  - Read when: checking exactly what data was tested.
-- `*.provenance.json`
-  - Created by: `write_market_data_provenance()`.
-  - Authoritative: yes for fetch/provider/fingerprint metadata.
-  - Duplicates: overlaps with `run_metadata.data`.
-  - Read when: auditing adjusted-price source and data identity.
-- `run_metadata.json`
-  - Created by: `run_single_backtest()` / `persist_run_record()`.
-  - Authoritative: yes for one strategy run.
-  - Duplicates: paths and metrics overlap with reports/index rows.
-  - Read when: auditing one run or feeding inspection/summary commands.
-- `strategy.json`
-  - Created by: `save_strategy_payload()` for normal runs and sweep variants.
-  - Authoritative: yes for the exact strategy payload passed to that run.
-  - Duplicates: source strategy files, but intentionally snapshots the run input.
-  - Read when: reproducing or auditing the exact rules that generated a run.
-- `metrics.json`
-  - Created by: `metrics_reporting.save_run_artifacts()`.
-  - Authoritative: yes for computed run metrics.
-  - Duplicates: values appear in `report.md`, `run_metadata.json`, and index rows.
-  - Read when: machine-comparing one run.
-- `equity_curve.csv`
-  - Created by: `metrics_reporting.save_run_artifacts()`.
-  - Authoritative: yes for run equity series.
-  - Duplicates: chart visualizations.
-  - Read when: recalculating metrics or plotting.
-- `trades.csv`
-  - Created by: `save_trades()`.
-  - Authoritative: yes for fills.
-  - Duplicates: trade count appears elsewhere.
-  - Read when: checking execution behavior.
-- `data_quality.json`
-  - Created by: `save_data_quality_report()`.
-  - Authoritative: yes for per-run data checks.
-  - Duplicates: summary appears in `report.md`.
-  - Read when: evaluating data cleanliness.
-- `research_warnings.json`
-  - Created by: `save_research_warnings()`.
-  - Authoritative: yes for warning flags.
-  - Duplicates: warning text appears in `report.md`.
-  - Read when: checking weak-sample/trade-count caveats.
-- Portfolio raw artifacts: `portfolio_metadata.json`, `portfolio_metrics.json`, `portfolio_equity_curve.csv`, `portfolio_positions.csv`, `portfolio_trades.csv`, `portfolio_allocation_drift.csv`.
-  - Created by: `portfolio-run`.
-  - Authoritative: yes for one portfolio run.
-  - Duplicates: metrics and paths appear in portfolio reports/index rows.
-  - Read when: auditing portfolio execution and allocation behavior.
+- Market data CSV and provenance: created by `fetch`; authoritative local input; read when checking source data.
+- `strategy.json`: saved beside each run; authoritative exact strategy input for that run; intentionally duplicates the source strategy file.
+- `run_metadata.json`: created by run persistence; authoritative run identity, paths, costs, sizing, benchmark, git commit, data fingerprint.
+- `metrics.json`, `equity_curve.csv`, `trades.csv`: created by run artifact persistence; authoritative raw run results.
+- `data_quality.json`, `research_warnings.json`: created per run; authoritative caveats.
+- Portfolio equivalents: `portfolio_metadata.json`, `portfolio_metrics.json`, `portfolio_equity_curve.csv`, `portfolio_positions.csv`, `portfolio_trades.csv`.
 
 ### Derived Analysis
 
-- `report.md`
-  - Created by: `run`.
-  - Authoritative: main human entry point for one run, but not the machine source.
-  - Duplicates: metrics, benchmark, data quality, warnings.
-  - Read when: first inspecting one run.
-- `equity_curve.png`, `drawdown.png`
-  - Created by: `save_charts()`.
-  - Authoritative: no, visual derivative.
-  - Duplicates: `equity_curve.csv`.
-  - Read when: visually scanning behavior.
-- `run_trust_report.md`
-  - Created by: `summarize-run-trust`.
-  - Authoritative: supporting trust analysis.
-  - Duplicates: data provenance/fingerprint/data-quality checks.
-  - Read when: before widening a branch.
-- Sweep `summary.csv`
-  - Created by: `sweep`.
-  - Authoritative: yes for sweep table.
-  - Duplicates: child run metadata.
-  - Read when: selecting/diagnosing parameter variants.
-- Sweep `research.md`
-  - Created by: `sweep`.
-  - Authoritative: main human entry point for one sweep.
-  - Duplicates: `summary.csv`.
-  - Read when: first inspecting a sweep.
-- Robustness reports: `cost_sensitivity_report.md`, `date_sensitivity_report.md`, `benchmark_sensitivity_report.md`, `parameter_neighborhood_report.md`.
-  - Created by: `robustness ...`.
-  - Authoritative: supporting interpretation for robustness.
-  - Duplicates: child run metadata and summary CSVs.
-  - Read when: deciding if evidence survives perturbation.
-- Guardrail reports: `sweep_guardrails.md`, `portfolio_batch_summary.md`.
-  - Created by: `summarize-sweep-guardrails` and `portfolio-batch summarize`.
-  - Authoritative: supporting warning layer.
-  - Duplicates: summary CSVs/manifests.
-  - Read when: checking whether a sweep/batch is too broad or weak.
+- `report.md`: one-run human report; read for a single run.
+- `run_trust_report.md`: one-run trust/caveat report; read when auditing data/benchmark assumptions.
+- `summary.csv` and `research.md`: sweep outputs; read for parameter experiments.
+- Robustness reports: cost/date/benchmark/parameter-neighborhood summaries; read for sensitivity.
+- `default_workflow_summary.md`: one-command workflow receipt; read when checking what `experiment run-default` produced.
 
 ### Experiment-Level Knowledge
 
-- `research_plan.json` / `research_plan.md`
-  - Created by: `research-plan init`.
-  - Authoritative: yes for intended hypothesis/configuration.
-  - Duplicates: experiment registry fields and session manifest.
-  - Read when: starting/resuming workflow.
-- `experiments.jsonl`
-  - Created/updated by: experiment commands and run linking.
-  - Authoritative: yes for experiment registry and decisions.
-  - Duplicates: plan/title/status and linked metadata paths.
-  - Read when: auditing decisions/links.
-- `research_index.jsonl`
-  - Created by: run/sweep/robustness/portfolio execution.
-  - Authoritative: yes as flat run index, no as detailed run source.
-  - Duplicates: selected fields from run metadata.
-  - Read when: finding/comparing runs.
-- `evidence_summary.md`
-  - Created by: `summarize-experiment`.
-  - Authoritative: supporting interpretation, not final truth.
-  - Duplicates: conclusion and index rows.
-  - Read when: understanding linked evidence before conclusion.
-- `experiment_conclusion.md` / `experiment_conclusion.json`
-  - Created by: `conclude-experiment`.
-  - Authoritative: main full-experiment source of truth.
-  - Duplicates: selected evidence summary content.
-  - Read when: deciding what was learned and what not to repeat.
-- `agent_context.md`
-  - Created by: `conclude-experiment`.
-  - Authoritative: no; adapter for agents.
-  - Duplicates: conclusion fields.
-  - Read when: prompting Codex/local agent.
-- `session_manifest.json` / `session_manifest.md`
-  - Created by: `session refresh`, smoke test, conclusion/decision updates.
-  - Authoritative: workflow orientation, not conclusion.
-  - Duplicates: plan, conclusion path, key artifact paths, next command.
-  - Read when: resuming a workflow.
-- `agent_context_bundle.json/md`, `agent_recommendation.json/md`, `agent_cycle.json/md`
-  - Created by: `agent context`, `agent suggest`, `agent cycle --dry-run`.
-  - Authoritative: no for research; yes for advisor audit trail.
-  - Duplicates: manifest/conclusion/recommendation content.
-  - Read when: inspecting local-agent advice.
+- `evidence_summary.md`: supporting summary, not the final front door.
+- `experiment_conclusion.md`: main human-readable experiment conclusion.
+- `experiment_conclusion.json`: machine-readable conclusion for agents/campaigns.
+- Registry decisions in `experiments.jsonl`: structured experiment decisions.
+
+### Campaign-Level Knowledge
+
+- `campaign_config.json`: authoritative campaign input.
+- `campaign_state.json/md`: current campaign status and memory.
+- `cycles/cycle_*/proposal.json`: final selected proposal for a cycle.
+- `cycles/cycle_*/proposal_validation.md/json`: proposal gate.
+- `cycles/cycle_*/provider_attempt_*/provider_context.json` and `provider_prompt.md`: model/Codex context.
+- `cycles/cycle_*/campaign_execution.json/md`: execution receipt when a cycle executes.
+- `final_report.md/json`: campaign front door after stop.
 
 Main entry points:
 
-- One run: `report.md` for human reading, `run_metadata.json` for authoritative machine audit.
-- One sweep: `research.md` for human reading, `summary.csv` for authoritative sweep table.
-- One full experiment: `experiment_conclusion.md` for human reading, `experiment_conclusion.json` for agent/tool reading. `session_manifest.md` is the resume entry point, not the conclusion.
+- One run: `report.md` for human reading, `run_metadata.json` for audit.
+- One sweep: `research.md` plus `summary.csv`.
+- One experiment: `experiment_conclusion.md`.
+- One campaign: `final_report.md`.
 
 ## 6. CLI Surface
 
-### Core
+Core:
 
-- `fetch`: core data preparation; user passes symbol/date/out.
-- `run`: core single strategy run; user passes strategy/data/out/experiment/index paths.
-- `sweep`: core exploratory parameter grid; user passes strategy/data/out/params and optional validation windows.
-- `experiment run-default`: core one-command workflow for baseline, trust, sweep, train/test, robustness, evidence summary, conclusion, and decision.
-- `research-plan init`, `research-plan next`: core guided workflow; `next` prints commands but user still copies/runs them.
-- `show-run`: core run inspection; requires metadata path.
-- `compare-runs`: core comparison; requires multiple metadata paths.
-- `summarize-experiment`: core evidence summary; requires experiment/index paths and experiment id.
-- `conclude-experiment`: core canonical conclusion; requires experiment/index paths and output dir.
-- `decide-experiment`: core decision recording; requires experiment id and decision fields.
+- `fetch`, `show-data-source`, `list-data-cache`
+- `new-strategy`, `list-strategy-templates`
+- `run`, `experiment run-default`
+- `campaign run`, `campaign init`, `campaign status`
 
-### Validation
+Validation:
 
-- `doctor`: environment/dependency/project-file checks.
-- `smoke-test`: offline wiring check; `--agent-cycle` verifies deterministic local-agent dry-run.
-- `show-data-source`: data/provenance inspection; requires data path.
-- `list-data-cache`: cache inventory.
-- `audit-adjusted-prices`: focused adjusted-price/corporate-action audit against expected events and manually supplied dividend amounts.
-- `verify-run`: fingerprint verification; requires run metadata.
-- `summarize-run-trust`: data trust report; requires run metadata.
-- `summarize-sweep-guardrails`: sweep warning report; requires sweep summary.
-- `robustness cost-sensitivity`: controlled cost reruns.
-- `robustness date-sensitivity`: controlled date-window reruns.
-- `robustness benchmark-sensitivity`: benchmark substitution reruns.
-- `robustness parameter-neighborhood`: parameter stability report from sweep summary.
+- `doctor`, `smoke-test`, `verify-run`
+- `summarize-run-trust`, `audit-adjusted-prices`
+- `sweep`
+- `robustness cost-sensitivity`, `date-sensitivity`, `benchmark-sensitivity`, `parameter-neighborhood`
 
-### Organization
+Organization:
 
-- `list-runs`: index browsing.
-- `new-experiment`, `list-experiments`, `show-experiment`, `update-experiment`, `link-run`: registry management.
-- `session status`, `session replay-plan`, `session refresh`: workflow orientation/replay without execution.
-- `list-strategy-templates`, `new-strategy`: strategy starter files.
+- `list-runs`, `show-run`, `compare-runs`
+- `new-experiment`, `list-experiments`, `show-experiment`, `update-experiment`, `link-run`, `decide-experiment`, `draft-decision`
+- `summarize-experiment`, `conclude-experiment`
+- `session status`, `session replay-plan`, `session refresh`
 
-### Advanced
+Advanced:
 
-- `portfolio-run`, `show-portfolio-run`, `compare-portfolio-runs`, `summarize-portfolio-data-trust`.
-- `list-portfolio-templates`, `new-portfolio`, `portfolio-variants`, `portfolio-candidates`.
-- `portfolio-plan init`, `portfolio-plan next`.
-- `portfolio-batch plan`, `portfolio-batch run`, `portfolio-batch summarize`.
-- `summarize-portfolio-experiment`.
-- `agent context`, `agent suggest`, `agent cycle`, `agent validate-recommendation`.
+- Portfolio commands: `new-portfolio`, `portfolio-run`, `portfolio-plan`, `portfolio-variants`, `portfolio-candidates`, `portfolio-batch`, `show-portfolio-run`, `compare-portfolio-runs`, `summarize-portfolio-data-trust`, `summarize-portfolio-experiment`
+- Agent commands: `agent context`, `agent suggest`, `agent cycle`, `agent validate-recommendation`
+- Idea command: `ideas suggest`
 
-### Redundant Candidates
+Redundant candidates:
 
-- `summarize-experiment` and `conclude-experiment` overlap as human-facing synthesis; conclusion is clearer as final source of truth.
-- `session status` and `session_manifest.md` duplicate orientation.
-- `agent_context.md` and `agent_context_bundle.md` overlap conceptually but serve different stages.
-- `show-run`, `report.md`, and `run_metadata.json` all answer "what happened in this run" at different levels.
+- `show-run`, `report.md`, and `run_metadata.json` overlap by design.
+- `session_manifest.md`, `campaign_state.md`, and `final_report.md` can all act as orientation files at different scopes.
+- Manual `research-plan` flow overlaps with `experiment run-default`, but remains useful for step-by-step work.
 
-### Legacy Candidates
+Legacy candidates:
 
-- None are clearly legacy in code, but several early inspection commands may become secondary if the default workflow is simplified around plan/session/conclusion.
+- None are clearly legacy. The project should demote some commands in docs before removing anything.
 
-The default single-strategy workflow can run as one command through `experiment run-default`. Advanced, incremental, portfolio, and inspection workflows still mostly require manual path passing. Guided commands print next commands, and session/agent commands package paths, but they do not execute a fully autonomous state machine.
+Most commands still require explicit paths. `experiment run-default` and `campaign run --loop` are the main orchestration commands that reduce manual path passing.
 
 ## 7. What Changed Recently
 
-- Strategy-layer risk controls were added. `risk_controls` now supports a strict `volatility_target` control in v1 strategy JSON, and `data/strategies/sma_long_cash_vol_target.json` records the first SPY example. User problem solved: test risk controls in the backtester/strategy layer before asking an agent to invent them. Complexity impact: adds a real strategy feature, but the schema stays narrow and deterministic.
-- Normal single runs now save `strategy.json` beside the rest of the run artifacts and record it in `run_metadata.json`. User problem solved: one run is now self-contained enough to audit the exact strategy payload later. Complexity impact: net simplification for reproducibility.
-- A real SPY volatility-target drawdown-control experiment was run and documented in `docs/experiments/spy-vol-target-drawdown-control-experiment.md`. User problem solved: the new risk-control feature was tested end to end instead of only proven by unit tests. Complexity impact: reduces research ambiguity by rejecting this exact 12% vol-target branch.
-- Research guardrails were documented in `docs/architecture/research-guardrails.md`. User problem solved: prevent the project from responding to each failed backtest by adding a new strategy knob. Complexity impact: reduces future scope creep and freezes agent expansion until more human-reviewed conclusions exist.
-- Local-agent advisor path was added: `agent context`, `agent suggest`, `agent cycle --dry-run`, and `agent validate-recommendation` now create strict context/recommendation/cycle artifacts. User problem solved: let a local model recommend the next experiment step without taking over execution. Complexity impact: useful but definitely another layer; dry-run boundary prevents it from becoming dangerous.
-- OpenAI-compatible model provider support was added for Ollama-like endpoints. User problem solved: integrate a local model such as `llama3.1:8b`. Complexity impact: adds provider/prompt/schema validation code, justified if local agent iteration is a real goal.
-- Model recommendation validation was hardened, including fallback to deterministic advice on invalid model output and command/action mismatch rejection. User problem solved: reduce bad local-model suggestions. Complexity impact: reduces operational risk more than it adds complexity.
-- Complete sessions now short-circuit to deterministic `stop` before model calls. User problem solved: avoid wasting model calls and avoid re-opening completed work. Complexity impact: simplifies behavior for done sessions.
-- `doctor` and `smoke-test` were added, then `smoke-test --agent-cycle` was added. User problem solved: prove the environment and workflow wiring without internet. Complexity impact: net simplification for onboarding; smoke test is beginning to own orchestration, but current refactor keeps it manageable.
-- Runbook docs were added/organized: `docs/runbooks/runbooks.md`, `docs/runbooks/local-agent-runbook.md`, and README links. User problem solved: a future user/Codex session can find commands without reading the whole README. Complexity impact: reduces human complexity, adds some doc duplication that must stay synchronized.
-- Recent cleanup refactored CLI agent summary printing and isolated optional smoke-test agent verification. User problem solved: keep fast-moving agent code maintainable. Complexity impact: small reduction.
+- Campaign provider boundary was added in `src/quant_lab/campaign_provider.py`. It made providers return proposals only while Python owns execution, validation, state, and stopping. This reduced risk.
+- Deterministic campaign follow-up was added. The campaign can run SMA 200 baseline, then EMA/RSI follow-up, then stop instead of inventing endless branches. This made the loop demonstrable but still narrow.
+- Final campaign reports were added in `src/quant_lab/campaign_report.py`. This gave campaigns a real front door and reduced ambiguity after multi-cycle runs.
+- Ollama campaign proposal dry-run was added. It saves context, prompt, raw model output, parsed proposal, and validation. This adds infrastructure, but the dry-run default keeps it contained.
+- Retry/fallback behavior was added. Invalid or failed model attempts are saved under `provider_attempt_001/002`, attempt 2 receives feedback, then fallback/stop occurs. This reduced model-risk more than it added complexity.
+- Explicit model execution gating was added through `--execute-model-proposal`. Valid model-originated proposals can execute only with opt-in; deterministic fallbacks remain inspection-only.
+- `campaign run --loop` was added. One command can now run repeated bounded cycles through existing experiment workflows.
+- Campaign budget overrides were added: `--duration`, `--max-cycles`, and `--max-total-runs`. They apply only when initializing, preventing state/config drift.
+- Provider override persistence was added. `--provider ollama|codex|deterministic` can initialize a campaign and is rejected on resume changes.
+- Codex handoff provider was added. It writes Codex-readable context/prompt artifacts and stops with `request_human_review`; it does not pretend to call this chat session.
+
+Net effect: campaign orchestration is now coherent and useful, but model-provider execution still needs real local-model success before being trusted.
 
 ## 8. Current Strengths
 
-1. Execution timing is explicit and tested. `src/backtester_core/engine.py` queues bar `t` signals and fills on bar `t+1` open; tests include no same-bar fill, next-open fill, gap open, and final-bar no-fill cases in `tests/test_backtester_core.py`.
-2. Reproducibility metadata is strong for a small project. `src/quant_lab/run_metadata.py` fingerprints raw data bytes and stores command tokens, costs, sizing, benchmark, git commit, and artifact paths in `run_metadata.json`; `verify-run` tests changed/missing data cases.
-3. Reports are auditable back to raw files. `src/quant_lab/run_artifacts.py` writes metrics, equity curve, trades, charts, data quality, warnings, saved strategy payloads, metadata, and research index rows from one execution path.
-4. The guided workflow is conservative. `src/quant_lab/research_plan_workflow.py` asks for baseline, trust report, sweep, validation, evidence summary, robustness, conclusion, and decision rather than jumping straight from a good run to a decision.
-5. The project has a real offline health path. `quant-lab doctor` and `quant-lab smoke-test --agent-cycle` are implemented and tested; the latest full suite passed `385` tests, and the real smoke command verifies agent dry-run wiring without executing proposed commands.
+1. Execution timing is explicit and tested. Core backtests use next-open fills and tests cover no same-bar fill, final-bar signals, commissions/slippage, and sizing behavior.
+2. Reproducibility is strong. Runs save exact `strategy.json`, metadata, data fingerprints, costs, sizing, benchmark assumptions, and output paths.
+3. The project now distinguishes system validity from investment success. `experiment_conclusion.json` has research-system and strategy-hypothesis statuses, so failed strategies are not confused with repo failures.
+4. Campaign state carries knowledge forward inside a campaign. It records completed experiments, findings, do-not-repeat items, unresolved questions, and remaining budgets.
+5. Model/agent boundaries are conservative. Ollama proposals are strict JSON, retried once, validated, and dry-run by default. Codex is a handoff, not an uncontrolled executor.
 
 ## 9. Current Weaknesses
 
-1. Information-design problem: too many human-facing reports. `report.md`, `run_trust_report.md`, `research.md`, `sweep_guardrails.md`, robustness reports, `evidence_summary.md`, `experiment_conclusion.md`, `session_manifest.md`, and agent Markdown files all compete unless the reader already knows the hierarchy.
-2. Architecture/usability problem: workflow automation is split between one-command default flow and many lower-level commands. `experiment run-default` is coherent, but `research-plan next` and advanced workflows still require users to pass paths/ids/metadata; this is transparent but verbose.
-3. Missing research capability: prior conclusions are not automatically reusable across experiments. `experiment_conclusion.json` stores do-not-repeat and next-useful-test fields, but new plans/runs do not query a cross-experiment knowledge base.
-4. Correctness problem: adjusted prices, dividends, and splits are not directly modeled by the engine. Fetch uses `yfinance` `auto_adjust=True` and `actions=False`; the 2024 SPY dividend window now has an adjusted OHLC audit with manually supplied expected dividend amounts, but there is still no automated independent provider comparison.
-5. Missing research capability: risk controls are still narrow. The strategy schema supports `volatility_target`, but it does not yet support partial-exposure regimes, drawdown stops, trailing exits, cooldowns, or stacked controls with rich reporting.
+1. Information-design problem: too many Markdown reports compete for attention. `experiment_conclusion.md` and campaign `final_report.md` are the intended front doors, but this is learned from docs.
+2. Correctness problem: adjusted-price economics are still provider-dependent. The audit checks yfinance internal consistency, but not an independent provider or full corporate-action accounting.
+3. Missing research capability: no global cross-experiment semantic memory. Conclusions are reusable artifacts, but a new unrelated experiment does not automatically query them.
+4. Architecture/usability problem: there are many CLI commands. The core path is simpler now, but advanced use still requires manual paths and ids.
+5. Missing model capability: Ollama has been structurally integrated but local smoke attempts timed out. Codex is a handoff provider only.
 
 ## 10. One Concrete Experiment Walkthrough
 
-This walkthrough uses only current capabilities.
+Shortest current path for the SPY 200-day long/cash question:
 
-1. Data preparation.
+1. Data preparation:
    ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli fetch `
-     --symbol SPY `
-     --start 2015-01-01 `
-     --end 2025-12-31 `
-     --out data/cache
+   .\.venv-win\Scripts\python.exe -m quant_lab.cli fetch --symbol SPY --start 2015-01-01 --end 2025-12-31 --out data\cache
    ```
-   Creates normalized adjusted daily OHLCV CSV and provenance sidecar.
+   Creates adjusted daily OHLCV CSV and provenance.
 
-2. Strategy creation or strategy file used.
+2. Strategy creation:
    ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli new-strategy `
-     --template sma-long-cash `
-     --symbol SPY `
-     --length 200 `
-     --strategy-id spy_sma_200_long_cash `
-     --name "SPY 200-day SMA long/cash" `
-     --out artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json
+   .\.venv-win\Scripts\python.exe -m quant_lab.cli new-strategy --template sma-long-cash --symbol SPY --length 200 --strategy-id spy_sma_200_long_cash --name "SPY 200-day SMA long/cash" --out artifacts\research\spy_200d_long_cash\strategy.json
    ```
-   Creates the exact one-indicator SMA-200 long/cash rule.
+   Creates strict executable strategy JSON.
 
-3. Baseline run.
+3. Baseline plus validation workflow:
    ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli research-plan init `
-     --title "SPY 200-day long/cash trend" `
-     --hypothesis "A daily SPY close-above-200-day-SMA long/cash rule may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." `
-     --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
+   .\.venv-win\Scripts\python.exe -m quant_lab.cli experiment run-default `
+     --title "SPY 200-day SMA long/cash drawdown test" `
+     --hypothesis "A daily SPY 200-day moving-average long/cash strategy may improve drawdown-adjusted performance versus SPY buy-and-hold after realistic costs." `
+     --strategy artifacts\research\spy_200d_long_cash\strategy.json `
+     --data data\cache\SPY_2015-01-01_2025-12-31.csv `
      --symbol SPY `
      --cost-preset retail-liquid `
-     --out artifacts\research\spy_200d_long_cash
+     --param sma_200.inputs.length=150,200,250 `
+     --train-end 2020-12-31 `
+     --test-start 2021-01-01 `
+     --date-window 2015-01-02,2019-12-31 `
+     --date-window 2020-01-01,2025-12-30 `
+     --out artifacts\research\spy_200d_long_cash_default
    ```
-   Creates plan/registry/index files and prints the baseline `run` command.
+   Creates baseline run, sweep, cost/date/benchmark checks, train/test validation, evidence summary, and conclusion.
 
-   ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli run `
-     --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
-     --out artifacts\research\spy_200d_long_cash\baseline `
-     --initial-cash 100000 `
-     --sizing percent-equity `
-     --allocation 1.0 `
-     --benchmark buy-and-hold `
-     --cost-preset retail-liquid `
-     --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-     --experiment-id EXP-001 `
-     --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl `
-     --note "Baseline for SPY 200-day long/cash trend hypothesis."
+4. Main report:
+   ```text
+   artifacts/research/spy_200d_long_cash_default/experiment_conclusion.md
    ```
-   Creates the baseline run artifacts and links a run row to the experiment.
+   This is the first file to read.
 
-4. Main report to inspect.
-   ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli show-run `
-     --metadata artifacts\research\spy_200d_long_cash\baseline\run_metadata.json
-   ```
-   Creates no new artifact; prints one-run summary. Read `baseline/report.md` for human interpretation and `baseline/run_metadata.json` for audit.
+5. Cost sensitivity:
+   Included in `experiment run-default` when the default workflow is run with the current validation arguments. Manual command remains available through `robustness cost-sensitivity`.
 
-5. Cost sensitivity.
-   ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli robustness cost-sensitivity `
-     --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
-     --out artifacts\research\spy_200d_long_cash\robustness\costs `
-     --sizing percent-equity `
-     --allocation 1.0 `
-     --cost-preset none `
-     --cost-preset retail-liquid `
-     --cost-preset retail-conservative `
-     --benchmark buy-and-hold `
-     --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-     --experiment-id EXP-001 `
-     --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl
-   ```
-   Creates child runs plus `cost_sensitivity_summary.csv` and `cost_sensitivity_report.md`.
+6. Date sensitivity:
+   Included through `--date-window` arguments. Manual command remains available through `robustness date-sensitivity`.
 
-6. Date sensitivity.
-   ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli robustness date-sensitivity `
-     --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
-     --out artifacts\research\spy_200d_long_cash\robustness\dates `
-     --window 2015-01-01,2019-12-31 `
-     --window 2020-01-01,2025-12-31 `
-     --sizing percent-equity `
-     --allocation 1.0 `
-     --cost-preset retail-liquid `
-     --benchmark buy-and-hold `
-     --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-     --experiment-id EXP-001 `
-     --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl
-   ```
-   Creates date-window child runs plus `date_sensitivity_summary.csv` and `date_sensitivity_report.md`.
+7. Train/test validation:
+   Included through `--train-end` and `--test-start`.
 
-7. Train/test or walk-forward validation.
-   ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli sweep `
-     --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
-     --out artifacts\research\spy_200d_long_cash\train_test_001 `
-     --param sma_200.inputs.length=150,175,200,225,250 `
-     --train-end 2019-12-31 `
-     --test-start 2020-01-01 `
-     --select-by sharpe_ratio `
-     --sizing percent-equity `
-     --allocation 1.0 `
-     --benchmark buy-and-hold `
-     --cost-preset retail-liquid `
-     --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-     --experiment-id EXP-001 `
-     --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl
-   ```
-   Creates train sweep runs, selected test run, `summary.csv`, `test_summary/summary.csv`, and `research.md`. Blocker risk: the parameter path must match the actual indicator id in the JSON.
+8. Experiment summary/final conclusion:
+   `experiment_conclusion.md/json` is the canonical conclusion. `default_workflow_summary.md` is the execution receipt.
 
-   Optional walk-forward:
-   ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli sweep `
-     --strategy artifacts\research\spy_200d_long_cash\spy_sma_200_long_cash.json `
-     --data data/cache\SPY_2015-01-01_2025-12-31.csv `
-     --out artifacts\research\spy_200d_long_cash\walk_forward_001 `
-     --param sma_200.inputs.length=150,175,200,225,250 `
-     --walk-forward-window 2015-01-01,2017-12-31,2018-01-01,2019-12-31 `
-     --walk-forward-window 2018-01-01,2020-12-31,2021-01-01,2022-12-31 `
-     --walk-forward-window 2020-01-01,2022-12-31,2023-01-01,2025-12-31 `
-     --select-by sharpe_ratio `
-     --sizing percent-equity `
-     --allocation 1.0 `
-     --benchmark buy-and-hold `
-     --cost-preset retail-liquid `
-     --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-     --experiment-id EXP-001 `
-     --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl
-   ```
-   Creates windowed train/test run artifacts and `walk_forward_summary.csv`.
+Campaign variant:
 
-8. Experiment summary or final conclusion.
-   ```powershell
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli summarize-experiment `
-     --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-     --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl `
-     --experiment-id EXP-001 `
-     --out artifacts\research\spy_200d_long_cash\evidence_summary.md
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --out artifacts\campaigns\spy_research_001 `
+  --loop `
+  --duration 30m `
+  --max-cycles 3 `
+  --max-total-runs 33 `
+  --force
+```
 
-   .\.venv-win\Scripts\python.exe -m quant_lab.cli conclude-experiment `
-     --experiments-path artifacts\research\spy_200d_long_cash\experiments.jsonl `
-     --index-path artifacts\research\spy_200d_long_cash\research_index.jsonl `
-     --experiment-id EXP-001 `
-     --out artifacts\research\spy_200d_long_cash `
-     --force
-   ```
-   Creates supporting evidence summary and canonical conclusion files. Read `experiment_conclusion.md` first.
+This runs the current deterministic campaign sequence and writes `final_report.md/json`.
 
-## 11. Test and Correctness Status
+## 11. Test And Correctness Status
 
-- Command used: `.\.venv-win\Scripts\python.exe -m unittest discover -s tests`
-- Passed tests: `385`
-- Failed tests: `0`
-- Skipped tests: `0` observed in unittest output.
-- Test duration: `18.168s`
+Last full-suite command used during this docs refresh:
+
+```powershell
+$env:MPLCONFIGDIR='artifacts/matplotlib-cache'
+.\.venv-win\Scripts\python.exe -m unittest discover -s tests
+```
+
+Observed result during this docs refresh: `425` tests passed, `0` failed, `0` skipped, `18.422s`.
 
 Coverage assessment:
 
-- Next-open execution: directly tested in `tests/test_backtester_core.py` and `tests/test_portfolio_backtest.py`.
-- No same-bar look-ahead: directly tested by no same-bar fill and incremental indicator tests.
-- Final-bar signals: directly tested for single strategy and portfolio rebalance.
-- Cash exits: partially tested through sell/position accounting and long/cash strategy behavior; not all edge cases around partial liquidation are exhaustive.
-- Percent-equity sizing: directly tested in core execution, rule strategy, and CLI run tests.
-- Commissions: directly tested in portfolio accounting, execution model, CLI cost options, and cost presets.
-- Slippage: directly tested in execution model and CLI cost option paths.
-- Adjusted price handling: indirectly implemented by `yfinance` `auto_adjust=True`; a real SPY 2024 dividend-window audit passed with `0.0` max close difference against yfinance raw `Adj Close` and `0.0` max adjusted-OHLC difference against raw OHLC multiplied by the provider adjustment ratio.
-- Dividends: not directly modeled as cash flows; the SPY 2024 audit found the expected 2024 dividend dates in provider action rows, confirmed the manually supplied expected dividend amounts within tolerance, and confirmed adjusted close consistency for that window.
-- Splits: not directly modeled or tested; assumed folded into adjusted OHLC by provider.
-- Benchmark alignment: directly tested for buy-and-hold/cash metrics, generated benchmark assumption fields, report-visible benchmark assumptions, and portfolio benchmark date alignment; single-symbol buy-and-hold starts from the first input close. A tracked SPY benchmark entry-timing audit found that switching linked `EXP-003` buy-and-hold comparisons to next-open entry would not change any excess-return sign.
-- Indicator warm-up: directly tested for incremental indicators returning `None` before enough data and no trades during unavailable indicator periods.
-- Train/test separation: tests reject overlapping dates and cover selected train winner rerun on test data; correctness still depends on user-chosen split dates.
-- Walk-forward selection: tests cover explicit windows and overlapping-window rejection; no automated economic validation of chosen windows.
-- Data fingerprint verification: directly tested by `fingerprint_file()` and `verify-run` changed/missing data cases.
-- Experiment linking: directly tested by run linking, registry updates, experiment summaries, and conclusion building.
+- Next-open execution: directly tested.
+- No same-bar look-ahead: directly tested.
+- Final-bar signals: directly tested.
+- Cash exits: tested through long/cash strategy and portfolio accounting paths.
+- Percent-equity sizing: directly tested.
+- Commissions/slippage: directly tested.
+- Adjusted price handling: partially audited against provider-internal yfinance adjusted OHLC behavior.
+- Dividends: not modeled as cash flows; provider-adjusted prices are relied on.
+- Splits: not directly modeled; assumed included in adjusted OHLC.
+- Benchmark alignment: tested and audited for relevant SPY entry-timing concern.
+- Indicator warm-up: directly tested.
+- Train/test separation and walk-forward windows: directly tested for overlap/selection mechanics.
+- Data fingerprint verification: directly tested.
+- Experiment linking: directly tested.
+- Campaign linking/knowledge: directly tested for conclusion carry-forward, do-not-repeat, final reports, provider attempts, retries, fallback, and loop mode.
 
-Do not infer market correctness from the test count. The suite strongly checks deterministic plumbing and many accounting assumptions, but it does not prove the economic validity of any strategy or the provider-specific handling of corporate actions.
+Passing tests do not prove economic truth. They prove deterministic plumbing and many accounting assumptions.
 
 ## 12. Reviewer Questions
 
 1. Is the project currently useful for disciplined daily-data quant research?
-   - Yes, for small long-only daily-data studies where transparency matters more than breadth. The SPY and QQQ generated artifacts show the workflow can reach a conclusion.
+   - Yes, for small daily, long-only, rule-based research with strong auditability.
 2. Is it over-engineered relative to its strategy capabilities?
-   - Partly. The research-management layer is richer than the current strategy language, which still handles simple rule-based long-only strategies.
-3. Are findings merely stored, or are they turned into reusable knowledge?
-   - Both, but not fully automatically. Findings are synthesized into `experiment_conclusion.json/md`, do-not-repeat items, and next useful tests, but reuse depends on humans/Codex/agents reading those artifacts.
+   - Somewhat, but less than before. Campaign and conclusion machinery now connects to real workflows.
+3. Are findings merely stored, or turned into reusable knowledge?
+   - Inside a campaign, they are reusable through campaign state. Across unrelated experiments, they are stored/summarized but not globally automatic.
 4. Do the pieces work together coherently?
-   - Mostly yes. Data -> strategy -> run -> metadata/index -> summary/conclusion -> session/agent context is coherent, and `experiment run-default` proves the main path can be orchestrated. Advanced paths still involve enough manual path passing to feel more complex than they are.
+   - Mostly yes. The single-experiment and deterministic campaign paths are coherent. Model paths are bounded but not yet proven productive.
 5. Where does the workflow create unnecessary human-facing noise?
-   - Around run reports, trust reports, sweep research, guardrails, evidence summaries, conclusions, session manifests, and agent Markdown files. The hierarchy exists but is not obvious without docs.
+   - Run/trust/sweep/robustness/evidence/session/agent/campaign Markdown files overlap. The docs must keep naming the front doors.
 6. What should be simplified next?
-   - Make the default one-experiment path more command-driven and reduce duplicated human reports by clearly elevating `session_manifest.md` for orientation and `experiment_conclusion.md` for conclusion.
+   - Make docs even more front-door oriented and consider demoting older manual workflow docs behind `experiment run-default` and `campaign run --loop`.
 7. What should not be removed?
-   - `run_metadata.json`, `research_index.jsonl`, `experiment_conclusion.json/md`, next-open execution tests, data fingerprints, trust reports, and explicit benchmark/cost assumptions.
+   - Raw artifacts, `run_metadata.json`, strategy snapshots, `experiment_conclusion.md/json`, campaign state/final reports, data fingerprints, and correctness tests.
 8. What is the single highest-priority correctness audit?
-   - Broader corporate-action validation: the SPY 2024 adjusted-OHLC dividend audit passed against manually supplied expected dividend amounts, and the SPY benchmark entry-timing audit did not change the failed conclusion. The lab still needs either another provider or broader known-event coverage before treating adjusted-price behavior as fully de-risked.
+   - Independent adjusted-price/corporate-action validation against another provider or known-event dataset.
 9. What is the single best next real experiment?
-   - A partial-exposure SPY trend experiment, because the latest SMA long/cash and SMA plus 12% volatility-target tests both reduced drawdown but failed return-retention thresholds.
-10. Is the project ready for further feature development, or should development pause for consolidation?
-    - Pause feature expansion. The core is useful; the next work should audit price/benchmark economics before adding more strategy primitives or local-agent capabilities.
-
+   - Run the deterministic SPY campaign and inspect whether its `final_report.md` gives enough direction, before adding more strategy features.
+10. Is the project ready for feature development, or should development pause for consolidation?
+   - Pause major feature expansion. Run a few real campaigns/experiments, inspect friction, and only then add strategy breadth.

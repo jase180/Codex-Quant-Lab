@@ -24,6 +24,8 @@ current workflow docs and the latest experiment handoffs.
 
 ## Current Research State
 
+- [Project State For Review](../PROJECT_STATE_FOR_REVIEW.md): current repo shape,
+  workflow, architecture, strengths/weaknesses, and reviewer questions.
 - [SPY Long/Cash Trend Experiment](experiments/spy-long-cash-trend-experiment.md): original
   SPY SMA long/cash result.
 - [SPY Drawdown-Control Next Experiment](experiments/spy-drawdown-control-next-experiment.md):
@@ -66,13 +68,14 @@ current workflow docs and the latest experiment handoffs.
 Current boundary: agent commands can prepare context and recommend the next
 experiment, but they do not take over execution without a human/Codex step.
 
-Campaign boundary: `campaign run` can execute one deterministic bounded cycle
-through the existing `experiment run-default` workflow, read the canonical
-conclusion JSON, and update campaign memory. The Ollama provider can currently
-do a proposal dry run: save provider context, prompt, raw response, parsed
-proposal, and validation, then stop before execution. Multi-cycle
-provider-driven campaigns are still in progress; the controller must continue
-to own validation, budgets, execution, and stopping.
+Campaign boundary: `campaign run --loop` can execute bounded deterministic
+campaigns through the existing `experiment run-default` workflow, read canonical
+conclusion JSON, update campaign memory, and write `final_report.md/json`.
+Ollama can produce strict proposal JSON with saved attempt artifacts, one retry,
+deterministic fallback, and explicit `--execute-model-proposal` gating. Codex is
+currently a handoff provider that writes the same context/prompt artifacts and
+stops for human review. The controller continues to own validation, budgets,
+execution, and stopping.
 
 ## Workflow And Evidence Design
 

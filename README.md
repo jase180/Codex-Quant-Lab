@@ -82,37 +82,40 @@ Every conclusion separates two questions:
 A strategy can be rejected while the research system is `valid`. That is a good
 negative result, not a repo failure.
 
-For bounded campaign research, use `campaign run` with a campaign config:
+For bounded campaign research, use `campaign run --loop` with a campaign config:
 
 ```bash
 quant-lab campaign run \
   --config data/campaigns/spy_drawdown_control_campaign.json \
-  --out artifacts/campaigns/spy_research_001
+  --out artifacts/campaigns/spy_research_001 \
+  --loop \
+  --duration 30m \
+  --max-cycles 3 \
+  --max-total-runs 33
 ```
 
-The current campaign runner executes one deterministic cycle at a time. It reads
-the campaign state, proposes one bounded experiment, validates it, converts it
-into the existing `experiment run-default` workflow, runs that workflow, reads
-the canonical conclusion JSON, and updates campaign memory. Resume with
-`--resume`; repeated rejected branches are blocked through campaign
-`do_not_repeat` memory. The first deterministic sequence tests the SMA 200
-long/cash baseline, then an EMA 50 plus RSI trend-follow follow-up, then stops
-instead of inventing extra ideas. When it stops, read:
+The campaign runner reads campaign state, proposes one bounded experiment,
+validates it, converts valid run proposals into the existing
+`experiment run-default` workflow, reads canonical conclusions, updates
+campaign memory, and stops with a final report. The deterministic SPY campaign
+currently tests the SMA 200 long/cash baseline, then an EMA 50 plus RSI
+trend-follow follow-up, then stops instead of inventing extra ideas. When it
+stops, read:
 
 ```text
 artifacts/campaigns/<campaign>/final_report.md
 ```
 
-The Ollama campaign provider currently runs in proposal dry-run mode only. It
-saves the model context, prompt, raw response, parsed proposal, and validation,
-then prints `execution: skipped_provider_dry_run` without spending backtest
-budget:
+Ollama and Codex are bounded providers. Ollama can propose strict JSON, retries
+once on invalid output, and dry-runs by default; pass
+`--execute-model-proposal` only after inspecting artifacts. Codex currently
+writes a handoff prompt for this chat/session and stops for human review:
 
 ```bash
 quant-lab campaign run \
-  --config data/campaigns/spy_drawdown_control_ollama_campaign.json \
-  --out artifacts/campaigns/spy_ollama_dry_run_001 \
-  --model llama3.1:8b
+  --config data/campaigns/spy_drawdown_control_campaign.json \
+  --provider codex \
+  --out artifacts/campaigns/spy_codex_handoff_001
 ```
 
 Use the guided workflow when you want the lab to create the workspace and
