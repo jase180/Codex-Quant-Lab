@@ -2,6 +2,52 @@
 
 Status: in progress.
 
+## Current State Review
+
+As of commit `8e52011`, Milestone 19 has crossed the important boundary from
+plan to working behavior:
+
+- Opportunity theses are real catalog artifacts, not just prose in a milestone
+  note.
+- `quant-lab ideas suggest` can attach a compatible thesis to a suggested
+  strategy-family experiment.
+- Campaign provider context exposes compact thesis summaries to Ollama/Codex
+  style providers.
+- Campaign proposals can cite `opportunity_thesis_id`.
+- Validation rejects missing, blocked, unrelated, or placeholder-backed thesis
+  proposals.
+- Executed campaign experiments carry the thesis ID into tags, conclusion JSON,
+  and campaign memory.
+
+The current implementation is enough to make the agent search from a market
+mechanism more often than from a raw strategy template. It is intentionally not
+a fully autonomous research scientist yet.
+
+The main remaining gap is thesis-level conclusion state. The system can say:
+
+```text
+Strategy-hypothesis status: rejected
+Opportunity thesis ID: liquid_etf_trend_defense
+```
+
+But it does not yet say:
+
+```text
+Thesis status: weakened
+Reason: the exact SMA implementation failed return-retention and
+drawdown-reduction criteria, but this does not fully reject the broader liquid
+ETF trend-defense thesis.
+```
+
+That distinction matters because a failed strategy implementation should not
+automatically kill a broader market-structure thesis, and a later tuned variant
+should not pretend to confirm the original thesis without accumulated evidence.
+
+Recommendation: do one final small Milestone 19 slice before calling it wrapped:
+add deterministic `thesis_status` to campaign/conclusion artifacts for
+opportunity-linked experiments. Do not add new strategy features or a larger
+autonomous loop in this milestone.
+
 First implementation slice delivered:
 
 - Added `src/quant_lab/opportunity_theses.py` with strict
