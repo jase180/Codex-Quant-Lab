@@ -144,6 +144,9 @@ Current progress:
 - A resume smoke check ran the SMA 200 baseline, then the EMA 50 plus RSI
   follow-up, then produced a `stop_campaign` proposal once the deterministic
   sequence was exhausted.
+- Campaign proposal generation now goes through `src/quant_lab/campaign_provider.py`
+  so future Ollama and Codex adapters can return the same strict proposal
+  contract without taking over execution.
 
 Still missing:
 

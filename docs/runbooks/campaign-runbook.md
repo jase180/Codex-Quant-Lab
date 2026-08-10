@@ -6,8 +6,10 @@ features.
 
 ## Current Boundary
 
-`quant-lab campaign run` currently supports a deterministic campaign provider.
-It runs one campaign cycle per command invocation:
+`quant-lab campaign run` currently supports the deterministic campaign provider.
+The provider boundary exists for future Ollama and Codex adapters, but those
+model providers are not implemented yet. Each run command executes one campaign
+cycle:
 
 1. Read `campaign_config.json` and `campaign_state.json`.
 2. Propose one bounded experiment.
@@ -145,6 +147,6 @@ The current campaign stops when:
 - proposal validation fails,
 - or the provider returns `stop_campaign`.
 
-Future Ollama and Codex providers should keep the same boundary: providers
-return strict proposal JSON, while the controller owns validation, execution,
-state, and stopping.
+Future Ollama and Codex providers must keep the same boundary: providers return
+strict proposal JSON, while the controller owns validation, execution, state,
+and stopping.

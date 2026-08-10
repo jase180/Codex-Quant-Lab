@@ -17,10 +17,10 @@ from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_execution import execute_campaign_experiment_inputs
 from .campaign_knowledge import complete_campaign_state, update_campaign_state_after_execution
 from .campaign_proposal import (
-    deterministic_campaign_proposal,
     save_campaign_proposal_artifacts,
     validate_campaign_proposal,
 )
+from .campaign_provider import campaign_provider_proposal
 from .campaign_report import save_final_campaign_report
 
 
@@ -55,7 +55,7 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     if args.provider is not None and args.provider != config.provider:
         raise ValueError("campaign run provider override is not persisted yet; update the config file for now")
 
-    proposal = deterministic_campaign_proposal(config, state)
+    proposal = campaign_provider_proposal(config, state)
     validation = validate_campaign_proposal(proposal, config=config, state=state)
     cycle_dir = _cycle_dir(paths.cycles_dir, state.cycle_number + 1)
     proposal_path, validation_path, validation_markdown_path = save_campaign_proposal_artifacts(

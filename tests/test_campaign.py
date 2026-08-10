@@ -31,6 +31,7 @@ from quant_lab.campaign_proposal import (  # noqa: E402
     projected_run_count,
     validate_campaign_proposal,
 )
+from quant_lab.campaign_provider import campaign_provider_proposal  # noqa: E402
 from quant_lab.campaign_report import build_final_campaign_report  # noqa: E402
 from quant_lab.cli import main  # noqa: E402
 
@@ -159,6 +160,30 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(projected_run_count(proposal), 11)
         self.assertTrue(validation.valid)
         self.assertEqual(validation.projected_run_count, 11)
+
+    def test_campaign_provider_boundary_returns_deterministic_proposal(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+
+        proposal = campaign_provider_proposal(config, state)
+
+        self.assertEqual(proposal.action, "run_experiment")
+        self.assertEqual(proposal.strategy_template, "sma-long-cash")
+
+    def test_campaign_provider_boundary_rejects_unimplemented_model_providers(self) -> None:
+        payload = campaign_payload()
+        payload["provider"] = "ollama"
+        config = parse_campaign_config(payload)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+
+        with self.assertRaisesRegex(NotImplementedError, "not implemented yet"):
+            campaign_provider_proposal(config, state)
 
     def test_prepare_campaign_experiment_inputs_writes_strategy_and_run_default_handoff(self) -> None:
         config = parse_campaign_config(campaign_payload())
