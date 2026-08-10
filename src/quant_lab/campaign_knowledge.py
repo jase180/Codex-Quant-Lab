@@ -103,10 +103,12 @@ def _completed_experiment_record(
     experiment = _mapping(conclusion.get("experiment"))
     research_system = _mapping(conclusion.get("research_system_status"))
     strategy_hypothesis = _mapping(conclusion.get("strategy_hypothesis_status"))
+    thesis_status = _mapping(conclusion.get("thesis_status"))
     return {
         "experiment_id": conclusion.get("experiment_id"),
         "title": experiment.get("title"),
-        "opportunity_thesis_id": _opportunity_thesis_id(experiment),
+        "opportunity_thesis_id": thesis_status.get("opportunity_thesis_id") or _opportunity_thesis_id(experiment),
+        "thesis_status": thesis_status.get("status"),
         "research_system_status": research_system.get("status"),
         "strategy_hypothesis_status": strategy_hypothesis.get("status"),
         "confidence_label": conclusion.get("confidence_label"),
@@ -121,11 +123,13 @@ def _findings(conclusion: dict[str, Any]) -> list[str]:
     experiment = _mapping(conclusion.get("experiment"))
     research_system = _mapping(conclusion.get("research_system_status"))
     strategy_hypothesis = _mapping(conclusion.get("strategy_hypothesis_status"))
+    thesis_status = _mapping(conclusion.get("thesis_status"))
     title = str(experiment.get("title") or conclusion.get("experiment_id") or "experiment")
     current = str(conclusion.get("current_conclusion") or "").strip()
     status_line = (
         f"{title}: research system `{research_system.get('status', '-')}`, "
-        f"strategy hypothesis `{strategy_hypothesis.get('status', '-')}`."
+        f"strategy hypothesis `{strategy_hypothesis.get('status', '-')}`, "
+        f"thesis `{thesis_status.get('status', '-')}`."
     )
     return [line for line in (status_line, current) if line]
 

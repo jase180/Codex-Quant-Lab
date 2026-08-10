@@ -15,7 +15,7 @@ from quant_lab.research_plan import InvestmentObjective, SuccessCriterion
 from quant_lab.research_registry import EXPERIMENT_SCHEMA_VERSION, ExperimentRecord
 
 
-def _experiment(linked_runs=None):
+def _experiment(linked_runs=None, tags=None):
     return ExperimentRecord(
         experiment_schema_version=EXPERIMENT_SCHEMA_VERSION,
         experiment_id="EXP-001",
@@ -23,7 +23,7 @@ def _experiment(linked_runs=None):
         title="SPY trend trust check",
         hypothesis="A simple SPY trend rule may reduce drawdown without trailing buy-and-hold too much.",
         status="running",
-        tags=["spy", "trend"],
+        tags=list(tags or ["spy", "trend"]),
         strategy_path="data/strategies/spy_trend.json",
         data_path="data/cache/SPY.csv",
         linked_runs=list(linked_runs or []),
@@ -86,6 +86,7 @@ class ExperimentConclusionTest(unittest.TestCase):
                 "experiment",
                 "research_system_status",
                 "strategy_hypothesis_status",
+                "thesis_status",
                 "confidence_label",
                 "current_conclusion",
                 "supporting_evidence",
@@ -171,8 +172,80 @@ class ExperimentConclusionTest(unittest.TestCase):
         self.assertEqual("partially_supported", conclusion.strategy_hypothesis_status.status)
         self.assertIn("## Research-System Status", markdown)
         self.assertIn("## Strategy-Hypothesis Status", markdown)
+        self.assertIn("## Opportunity-Thesis Status", markdown)
         self.assertIn("`return_retention`: `fail`", markdown)
         self.assertIn("`drawdown_reduction`: `pass`", markdown)
+
+    def test_opportunity_thesis_status_weakens_on_rejected_linked_strategy(self):
+        records = [
+            _index_record(
+                run_id="test_selected",
+                run_type="test_selected_run",
+                excess_total_return=-0.57,
+                metadata_path="artifacts/research/spy/test_selected/run_metadata.json",
+            )
+            | {
+                "data_start": "2021-01-04",
+                "data_end": "2025-12-30",
+                "benchmark_name": "buy-and-hold",
+                "cost_preset": "retail-liquid",
+                "sizing": "percent-equity",
+                "cagr": 0.04,
+                "benchmark_cagr": 0.10,
+            },
+            _index_record(
+                run_id="cost_check",
+                run_type="cost_sensitivity_run",
+                excess_total_return=-0.60,
+                metadata_path="artifacts/research/spy/cost/run_metadata.json",
+            ),
+            _index_record(
+                run_id="date_check",
+                run_type="date_sensitivity_run",
+                excess_total_return=-0.50,
+                metadata_path="artifacts/research/spy/date/run_metadata.json",
+            ),
+            _index_record(
+                run_id="benchmark_check",
+                run_type="benchmark_sensitivity_run",
+                excess_total_return=-0.55,
+                metadata_path="artifacts/research/spy/benchmark/run_metadata.json",
+            ),
+        ]
+        objective = InvestmentObjective(
+            intended_benefit="return retention",
+            benchmark="buy-and-hold",
+            primary_metric="cagr",
+            minimum_acceptable_performance="Retain 80% of benchmark CAGR.",
+            success_criteria=[
+                SuccessCriterion(
+                    name="return_retention",
+                    metric="cagr",
+                    comparison="strategy_vs_benchmark_ratio",
+                    operator=">=",
+                    threshold=0.8,
+                )
+            ],
+        )
+
+        conclusion = build_experiment_conclusion(
+            _experiment(tags=["campaign", "opportunity:liquid_etf_trend_defense"]),
+            records,
+            investment_objective=objective,
+        )
+        markdown = format_experiment_conclusion_markdown(conclusion)
+        agent_context = format_agent_context(conclusion)
+
+        self.assertEqual("rejected", conclusion.strategy_hypothesis_status.status)
+        self.assertEqual("liquid_etf_trend_defense", conclusion.thesis_status.opportunity_thesis_id)
+        self.assertEqual("weakened", conclusion.thesis_status.status)
+        self.assertIn("does not fully reject", conclusion.thesis_status.reason)
+        self.assertIn("- Status: `weakened`", markdown)
+        self.assertIn("Opportunity-thesis status: `weakened`", agent_context)
+        self.assertIn("Opportunity-thesis status: weakened", conclusion.next_research_prompt.known_result)
+        self.assertTrue(
+            any("liquid_etf_trend_defense" in item for item in conclusion.next_research_prompt.constraints)
+        )
 
     def test_strategy_status_can_derive_benchmark_cagr_from_metadata(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -66,6 +66,12 @@ def conclusion_payload() -> dict:
         },
         "research_system_status": {"status": "valid"},
         "strategy_hypothesis_status": {"status": "rejected"},
+        "thesis_status": {
+            "opportunity_thesis_id": "liquid_etf_trend_defense",
+            "status": "weakened",
+            "reason": "The exact strategy failed but did not fully reject the broader thesis.",
+            "confidence": "medium",
+        },
         "confidence_label": "rejected",
         "current_conclusion": "The repo measured the idea correctly, but the strategy failed the criteria.",
         "do_not_repeat": ["Do not rerun the same SMA 200 long/cash branch unchanged."],
@@ -473,7 +479,9 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(updated.completed_experiments[0]["research_system_status"], "valid")
         self.assertEqual(updated.completed_experiments[0]["strategy_hypothesis_status"], "rejected")
         self.assertEqual(updated.completed_experiments[0]["opportunity_thesis_id"], "liquid_etf_trend_defense")
+        self.assertEqual(updated.completed_experiments[0]["thesis_status"], "weakened")
         self.assertIn("strategy failed", " ".join(updated.current_findings))
+        self.assertIn("thesis `weakened`", " ".join(updated.current_findings))
         self.assertIn("Do not rerun the same SMA 200 long/cash branch unchanged.", updated.do_not_repeat)
         self.assertIn(
             "Do not repeat unchanged rejected experiment: SPY SMA 200 long/cash campaign baseline.",

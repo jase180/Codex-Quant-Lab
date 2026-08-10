@@ -36,6 +36,7 @@ MARKDOWN_SECTION_ORDER = [
     "## Current Conclusion",
     "## Research-System Status",
     "## Strategy-Hypothesis Status",
+    "## Opportunity-Thesis Status",
     "## Confidence",
     "## What Was Tested",
     "## What Supports This",
@@ -171,6 +172,17 @@ class StrategyHypothesisStatus:
 
 
 @dataclass(frozen=True)
+class ThesisStatus:
+    opportunity_thesis_id: str | None
+    status: str
+    reason: str
+    confidence: str
+
+    def to_dict(self) -> dict[str, str | None]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class NextResearchPrompt:
     known_result: str
     what_appears_promising: list[str]
@@ -191,6 +203,7 @@ class ExperimentConclusion:
     experiment: ConclusionExperimentSnapshot
     research_system_status: ResearchSystemStatus
     strategy_hypothesis_status: StrategyHypothesisStatus
+    thesis_status: ThesisStatus
     confidence_label: str
     current_conclusion: str
     supporting_evidence: list[ConclusionEvidenceItem]
@@ -212,6 +225,7 @@ class ExperimentConclusion:
             "experiment": self.experiment.to_dict(),
             "research_system_status": self.research_system_status.to_dict(),
             "strategy_hypothesis_status": self.strategy_hypothesis_status.to_dict(),
+            "thesis_status": self.thesis_status.to_dict(),
             "confidence_label": self.confidence_label,
             "current_conclusion": self.current_conclusion,
             "supporting_evidence": [item.to_dict() for item in self.supporting_evidence],
@@ -257,6 +271,11 @@ def build_experiment_conclusion(
         investment_objective=investment_objective,
         legacy_evidence_label=evidence_label.label,
     )
+    thesis_status = _thesis_status(
+        experiment,
+        research_system_status=research_system_status,
+        strategy_hypothesis_status=strategy_hypothesis_status,
+    )
     do_not_repeat = _do_not_repeat(evidence_label.label, linked_records, robustness_notes)
     next_useful_tests = _next_useful_tests(evidence_label.label, linked_records, robustness_notes)
     open_questions = _open_questions(evidence_label.label, linked_records, robustness_notes)
@@ -281,6 +300,7 @@ def build_experiment_conclusion(
         ),
         research_system_status=research_system_status,
         strategy_hypothesis_status=strategy_hypothesis_status,
+        thesis_status=thesis_status,
         confidence_label=evidence_label.label,
         current_conclusion=current_conclusion,
         supporting_evidence=supporting_evidence,
@@ -294,6 +314,7 @@ def build_experiment_conclusion(
             current_conclusion=current_conclusion,
             research_system_status=research_system_status,
             strategy_hypothesis_status=strategy_hypothesis_status,
+            thesis_status=thesis_status,
             supporting_evidence=supporting_evidence,
             contradicting_evidence=contradicting_evidence,
             robustness_notes=robustness_notes,
@@ -332,6 +353,13 @@ def format_experiment_conclusion_markdown(conclusion: ExperimentConclusion) -> s
         f"- Summary: {conclusion.strategy_hypothesis_status.summary}",
         "- Criteria:",
         *_criterion_result_markdown(conclusion.strategy_hypothesis_status.criteria_results),
+        "",
+        "## Opportunity-Thesis Status",
+        "",
+        f"- Opportunity thesis: `{conclusion.thesis_status.opportunity_thesis_id or '-'}`",
+        f"- Status: `{conclusion.thesis_status.status}`",
+        f"- Confidence: `{conclusion.thesis_status.confidence}`",
+        f"- Reason: {conclusion.thesis_status.reason}",
         "",
         "## Confidence",
         "",
@@ -400,6 +428,7 @@ def format_agent_context(conclusion: ExperimentConclusion) -> str:
             f"- {conclusion.current_conclusion}",
             f"- Research-system status: `{conclusion.research_system_status.status}`",
             f"- Strategy-hypothesis status: `{conclusion.strategy_hypothesis_status.status}`",
+            f"- Opportunity-thesis status: `{conclusion.thesis_status.status}`",
             "",
             "Next research prompt:",
             *_next_research_prompt_markdown(conclusion.next_research_prompt),
@@ -650,6 +679,90 @@ def _strategy_hypothesis_status(
     return StrategyHypothesisStatus(status=status, summary=summary, criteria_results=criteria_results)
 
 
+def _thesis_status(
+    experiment: ExperimentRecord,
+    *,
+    research_system_status: ResearchSystemStatus,
+    strategy_hypothesis_status: StrategyHypothesisStatus,
+) -> ThesisStatus:
+    thesis_id = _opportunity_thesis_id(experiment.tags)
+    if thesis_id is None:
+        return ThesisStatus(
+            opportunity_thesis_id=None,
+            status="untested",
+            reason="No opportunity thesis tag was attached to this experiment.",
+            confidence="low",
+        )
+    if research_system_status.status == "invalid":
+        return ThesisStatus(
+            opportunity_thesis_id=thesis_id,
+            status="measurement_failure",
+            reason=(
+                "The experiment was linked to an opportunity thesis, but a critical research-system issue "
+                "prevents interpreting the result as evidence about that thesis."
+            ),
+            confidence="high",
+        )
+    if research_system_status.status == "valid_with_caveats":
+        return ThesisStatus(
+            opportunity_thesis_id=thesis_id,
+            status="untested",
+            reason=(
+                "The experiment was linked to an opportunity thesis, but research-system caveats are material enough "
+                "that the thesis should not be upgraded or downgraded from this run alone."
+            ),
+            confidence="medium",
+        )
+
+    strategy_status = strategy_hypothesis_status.status
+    if strategy_status == "supported":
+        return ThesisStatus(
+            opportunity_thesis_id=thesis_id,
+            status="supported",
+            reason=(
+                "A valid experiment linked to this opportunity thesis met the prespecified strategy criteria. "
+                "This supports the thesis locally, but broader confirmation still requires additional tests."
+            ),
+            confidence="medium",
+        )
+    if strategy_status == "partially_supported":
+        return ThesisStatus(
+            opportunity_thesis_id=thesis_id,
+            status="weakened",
+            reason=(
+                "A valid linked strategy test met only some prespecified criteria. The broader thesis remains plausible, "
+                "but this implementation weakened confidence and needs a clearly different follow-up."
+            ),
+            confidence="medium",
+        )
+    if strategy_status == "rejected":
+        return ThesisStatus(
+            opportunity_thesis_id=thesis_id,
+            status="weakened",
+            reason=(
+                "A valid linked strategy test failed its prespecified criteria. This weakens the opportunity thesis, "
+                "but does not fully reject the broader market mechanism from one implementation."
+            ),
+            confidence="medium",
+        )
+    return ThesisStatus(
+        opportunity_thesis_id=thesis_id,
+        status="untested",
+        reason=(
+            "The experiment was linked to an opportunity thesis, but the strategy-hypothesis status was inconclusive."
+        ),
+        confidence="low",
+    )
+
+
+def _opportunity_thesis_id(tags: list[str]) -> str | None:
+    for tag in tags:
+        if tag.startswith("opportunity:"):
+            thesis_id = tag.removeprefix("opportunity:").strip()
+            return thesis_id or None
+    return None
+
+
 def _representative_strategy_record(records: list[dict]) -> dict:
     validation_records = [record for record in records if str(record.get("run_type")) in VALIDATION_RUN_TYPES]
     if validation_records:
@@ -898,6 +1011,7 @@ def _next_research_prompt(
     current_conclusion: str,
     research_system_status: ResearchSystemStatus,
     strategy_hypothesis_status: StrategyHypothesisStatus,
+    thesis_status: ThesisStatus,
     supporting_evidence: list[ConclusionEvidenceItem],
     contradicting_evidence: list[ConclusionEvidenceItem],
     robustness_notes: list[RobustnessConclusionNote],
@@ -910,12 +1024,14 @@ def _next_research_prompt(
     return NextResearchPrompt(
         known_result=(
             f"{current_conclusion} Research-system status: {research_system_status.status}. "
-            f"Strategy-hypothesis status: {strategy_hypothesis_status.status}."
+            f"Strategy-hypothesis status: {strategy_hypothesis_status.status}. "
+            f"Opportunity-thesis status: {thesis_status.status}."
         ),
         what_appears_promising=_prompt_evidence_lines(supporting_evidence)
         or ["No linked evidence currently supports the hypothesis."],
         what_failed=_prompt_failure_lines(contradicting_evidence, robustness_notes),
         constraints=do_not_repeat + [
+            _thesis_prompt_constraint(thesis_status),
             "Change only one meaningful research idea per next experiment.",
             "Define success criteria before running the next command.",
             "Keep realistic costs, benchmark comparison, and next-open execution assumptions.",
@@ -925,6 +1041,15 @@ def _next_research_prompt(
             for test in next_useful_tests
         ]
         + [f"Resolve open question: {question}" for question in open_questions[:2]],
+    )
+
+
+def _thesis_prompt_constraint(thesis_status: ThesisStatus) -> str:
+    if thesis_status.opportunity_thesis_id is None:
+        return "If the next idea is agent-generated, attach an opportunity thesis before proposing a strategy."
+    return (
+        f"For opportunity thesis `{thesis_status.opportunity_thesis_id}`, current thesis status is "
+        f"`{thesis_status.status}`: {thesis_status.reason}"
     )
 
 

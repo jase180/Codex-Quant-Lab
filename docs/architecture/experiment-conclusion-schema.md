@@ -80,6 +80,12 @@ future loaders unless a migration path exists.
     "summary": "The strategy failed the prespecified measurable criteria.",
     "criteria_results": []
   },
+  "thesis_status": {
+    "opportunity_thesis_id": "liquid_etf_trend_defense",
+    "status": "weakened",
+    "reason": "The exact strategy failed, but this does not fully reject the broader thesis.",
+    "confidence": "medium"
+  },
   "confidence_label": "mixed",
   "current_conclusion": "The current evidence is mixed...",
   "supporting_evidence": [],
@@ -172,6 +178,27 @@ Strategy-hypothesis status: rejected
 The repo successfully tested the idea, but the strategy failed its predefined
 investment criteria.
 ```
+
+### `thesis_status`
+
+Answers whether an opportunity thesis was supported, weakened, rejected, left
+untested, or failed to be measured.
+
+Allowed `status` values:
+
+- `supported`
+- `weakened`
+- `rejected`
+- `untested`
+- `measurement_failure`
+
+This field is deliberately separate from `strategy_hypothesis_status`. A valid
+experiment can reject the exact tested strategy while only weakening the broader
+opportunity thesis. For example, a SPY SMA rule can fail return-retention
+criteria without proving that liquid ETF trend-defense mechanisms never exist.
+
+If no `opportunity:<id>` experiment tag exists, `opportunity_thesis_id` is
+`null` and status is `untested`.
 
 ### `confidence_label`
 

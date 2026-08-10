@@ -1,6 +1,6 @@
 # Milestone 19: Niche Discovery Layer
 
-Status: in progress.
+Status: complete after final thesis-status verification.
 
 ## Current State Review
 
@@ -43,9 +43,15 @@ That distinction matters because a failed strategy implementation should not
 automatically kill a broader market-structure thesis, and a later tuned variant
 should not pretend to confirm the original thesis without accumulated evidence.
 
-Recommendation: do one final small Milestone 19 slice before calling it wrapped:
-add deterministic `thesis_status` to campaign/conclusion artifacts for
-opportunity-linked experiments. Do not add new strategy features or a larger
+Final thesis-status slice delivered:
+
+- Added deterministic `thesis_status` to canonical experiment conclusions.
+- Added `## Opportunity-Thesis Status` to `experiment_conclusion.md`.
+- Added opportunity-thesis status to `agent_context.md` and
+  `next_research_prompt`.
+- Campaign memory now carries both `opportunity_thesis_id` and `thesis_status`.
+
+Milestone 19 should now stop. Do not add new strategy features or a larger
 autonomous loop in this milestone.
 
 First implementation slice delivered:
