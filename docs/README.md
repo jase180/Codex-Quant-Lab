@@ -64,6 +64,8 @@ current workflow docs and the latest experiment handoffs.
   implementation plan and boundary.
 - [Milestone 18 Campaign Orchestration](milestones/milestone-18-campaign-orchestration.md):
   bounded multi-cycle campaign roadmap and current implementation boundary.
+- [Milestone 19 Niche Discovery Layer](milestones/milestone-19-niche-discovery-layer.md):
+  planned opportunity-thesis layer for small-capacity market niches.
 
 Current boundary: agent commands can prepare context and recommend the next
 experiment, but they do not take over execution without a human/Codex step.

@@ -421,7 +421,8 @@ Exit criteria:
 
 ## Milestone 18: Campaign Orchestration
 
-Status: in progress; deterministic one-cycle execution and campaign memory are implemented.
+Status: mostly complete; deterministic loop execution, campaign memory, final
+reports, Ollama gated provider path, and Codex handoff are implemented.
 
 Goal: add a bounded campaign controller that can repeat the existing research
 workflow under strict budgets and proposal validation.
@@ -429,17 +430,19 @@ workflow under strict budgets and proposal validation.
 Detailed plan:
 [milestone-18-campaign-orchestration.md](milestone-18-campaign-orchestration.md)
 
-Current/planned work:
+Delivered:
 
 - Campaign config and state files are implemented.
 - Strict proposal schema is implemented.
 - Deterministic provider is implemented for the initial SMA 200 baseline and
   an EMA 50 plus RSI follow-up.
-- Proposal validation and budget accounting are implemented for one cycle.
-- One-cycle execution through existing workflows is implemented.
+- Proposal validation and budget accounting are implemented.
+- Loop execution through existing workflows is implemented.
 - Campaign knowledge updates are implemented from canonical conclusion JSON.
-- Final campaign reports.
-- Later Ollama and Codex providers behind the same proposal contract.
+- Final campaign reports are implemented.
+- Ollama provider dry-run, retry, fallback, and explicit execution gating are
+  implemented.
+- Codex handoff provider is implemented.
 
 Exit criteria:
 
@@ -447,7 +450,38 @@ Exit criteria:
   knowledge, stop for explicit reasons, and leave a readable final report
   without allowing the provider to modify source code or bypass validation.
 
-## Milestone 19: Strategy Language V2
+## Milestone 19: Niche Discovery Layer
+
+Status: proposed.
+
+Goal: shift agent-generated research from strategy-template search to
+small-capacity market-niche discovery.
+
+Detailed plan:
+[milestone-19-niche-discovery-layer.md](milestone-19-niche-discovery-layer.md)
+
+Planned work:
+
+- `opportunity_thesis.v1` schema.
+- Opportunity catalog with small-capacity, structurally motivated niches.
+- Gated rubric using pass/weak/fail and test/investigate/watchlist/reject
+  decisions.
+- `opportunities suggest` command that produces a thesis, not executable
+  strategy JSON.
+- Optional linkage from experiments/conclusions to opportunity theses.
+- Campaign context integration so agents see opportunity theses before
+  proposing experiments.
+
+Exit criteria:
+
+- Agent-generated research ideas require an opportunity thesis.
+- Thesis records identify the counterparty or forced actor.
+- Institutional-friction and capacity claims include evidence quality or
+  `unknown`.
+- At least one real experiment starts from a niche thesis rather than a
+  strategy template.
+
+## Milestone 20: Strategy Language V2
 
 Status: proposed.
 
@@ -461,7 +495,7 @@ Planned work:
 - Stops, exits, holding-period rules, and cooldowns.
 - Migration docs from v1 to v2.
 
-## Milestone 20: Portfolio Realism
+## Milestone 21: Portfolio Realism
 
 Status: proposed.
 
@@ -474,7 +508,7 @@ Planned work:
 - Simple volatility-aware allocation options.
 - Better blended portfolio benchmarks.
 
-## Milestone 21: CLI UX And Configuration Polish
+## Milestone 22: CLI UX And Configuration Polish
 
 Status: proposed.
 
@@ -486,7 +520,7 @@ Planned work:
 - Better command help and beginner-facing errors.
 - Current quickstart cleanup.
 
-## Milestone 22: Example Research Library
+## Milestone 23: Example Research Library
 
 Status: proposed.
 
@@ -499,7 +533,7 @@ Planned work:
 - Rejected idea example.
 - Data-quality warning example.
 
-## Milestone 23: Test, Packaging, And Maintenance Hardening
+## Milestone 24: Test, Packaging, And Maintenance Hardening
 
 Status: proposed.
 
@@ -537,14 +571,11 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Milestones 15 and 16 now provide the default workflow, canonical conclusion,
-and resumable session manifest foundation.
+Milestone 18 now provides the bounded campaign controller. The next
+highest-value direction is Milestone 19: add an opportunity-thesis layer so
+agents search for plausible small-capacity market imperfections before
+generating experiments.
 
-Reason: the project can now turn many saved artifacts into one obvious
-orientation file and one obvious conclusion file. The next highest-value gap is
-letting a local agent use those artifacts to recommend the next experiment
-without owning the repo or running unbounded loops.
-
-From here, follow the readiness roadmap: build Milestone 17 local-agent advisor
-support, then reassess Strategy Language V2 versus Portfolio Realism, then
-continue through CLI polish, example workflows, and maintenance hardening.
+Reason: the project can already falsify simple daily-data hypotheses. The next
+gap is not more strategy knobs; it is better idea selection and better
+structural reasoning before backtests are run.
