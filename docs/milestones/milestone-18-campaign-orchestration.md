@@ -201,10 +201,13 @@ Current progress:
 - If both model attempts fail, the controller writes a deterministic fallback
   proposal for inspection only. Because the campaign provider is still `ollama`,
   execution remains skipped.
+- A valid model-originated `run_experiment` proposal can execute only when the
+  user passes `--execute-model-proposal`. Dry-run remains the default.
+- Deterministic fallback proposals remain inspection-only even when
+  `--execute-model-proposal` is passed.
 
 Still missing:
 
-- actual model-proposal execution after dry-run quality is proven,
 - multi-cycle Ollama campaign execution.
 
 ### 18G: Codex Provider

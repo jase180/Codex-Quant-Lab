@@ -96,10 +96,13 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         print("reasons:")
         for reason in validation.reasons:
             print(f"- {reason}")
-    if validation.valid and proposal.action == "run_experiment" and config.provider != "deterministic":
+    if _should_skip_model_execution(args, config=config, provider_result=provider_result, validation=validation):
         print(f"execution: skipped_provider_dry_run")
         print(f"provider: {config.provider}")
-        print("note: model campaign providers validate proposals only in this slice")
+        if getattr(args, "execute_model_proposal", False):
+            print("note: model execution was requested, but the selected proposal did not come from a model response")
+        else:
+            print("note: pass --execute-model-proposal to run a valid model proposal")
     elif validation.valid and proposal.action == "run_experiment":
         inputs = prepare_campaign_experiment_inputs(proposal, config=config, cycle_dir=cycle_dir)
         print(f"strategy: {inputs.strategy_path}")
@@ -132,6 +135,22 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     else:
         print("execution: skipped")
     return 0 if validation.valid else 1
+
+
+def _should_skip_model_execution(
+    args: argparse.Namespace,
+    *,
+    config: CampaignConfig,
+    provider_result: CampaignProviderResult,
+    validation: CampaignProposalValidation,
+) -> bool:
+    if config.provider == "deterministic":
+        return False
+    if not validation.valid or provider_result.proposal.action != "run_experiment":
+        return False
+    if not getattr(args, "execute_model_proposal", False):
+        return True
+    return provider_result.raw_response is None
 
 
 def _select_campaign_proposal(

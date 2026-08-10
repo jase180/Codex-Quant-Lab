@@ -1239,6 +1239,11 @@ def register_campaign_commands(subparsers) -> None:
         default=60.0,
         help="Provider request timeout in seconds. Defaults to 60.",
     )
+    run_parser.add_argument(
+        "--execute-model-proposal",
+        action="store_true",
+        help="Execute a valid non-deterministic provider proposal. Defaults to dry-run.",
+    )
     run_parser.set_defaults(func=campaign_run_command)
 
 

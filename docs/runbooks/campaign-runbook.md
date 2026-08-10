@@ -123,8 +123,30 @@ If the proposal is valid, the CLI prints:
 execution: skipped_provider_dry_run
 ```
 
-That is expected. Model-provider execution comes after invalid-output retry and
-execution behavior are implemented.
+That is expected. Dry-run remains the default even though explicit execution is
+available.
+
+## Execute A Valid Ollama Proposal
+
+After inspecting a dry run, execute a valid model proposal with an explicit
+opt-in:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
+  --config data\campaigns\spy_drawdown_control_ollama_campaign.json `
+  --out artifacts\campaigns\spy_ollama_exec_001 `
+  --model llama3.1:8b `
+  --execute-model-proposal `
+  --force
+```
+
+This still does not let the model run shell commands or edit source. The model
+returns one proposal; Python validates it; only then does the controller convert
+it into the existing `experiment run-default` workflow.
+
+If both model attempts fail and the controller writes a deterministic fallback,
+`--execute-model-proposal` still does not execute it. Fallback proposals are for
+inspection only.
 
 ## Current Deterministic Sequence
 

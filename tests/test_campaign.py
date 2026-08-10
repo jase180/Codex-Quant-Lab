@@ -627,6 +627,81 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(state.cycle_number, 0)
         self.assertIn("execution: skipped_provider_dry_run", output)
 
+    def test_campaign_run_ollama_provider_executes_valid_model_proposal_when_explicitly_enabled(self) -> None:
+        payload = campaign_payload()
+        payload["provider"] = "ollama"
+        model_payload = {
+            "schema_version": "campaign_proposal.v1",
+            "action": "run_experiment",
+            "title": "SPY SMA 200 model execution",
+            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
+            "rationale": "Use a supported template with prespecified criteria.",
+            "difference_from_prior_work": "First explicitly executed model proposal.",
+            "strategy_template": "sma-long-cash",
+            "symbol": "SPY",
+            "parameters": {"sma_length": 200},
+            "success_criteria": {
+                "minimum_cagr_retention": 0.8,
+                "minimum_relative_drawdown_reduction": 0.25,
+            },
+            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+            fake_conclusion_path = out_dir / "cycles" / "cycle_001" / "experiment" / "experiment_conclusion.json"
+            fake_conclusion_path.parent.mkdir(parents=True, exist_ok=True)
+            fake_conclusion_path.write_text(json.dumps(conclusion_payload()), encoding="utf-8")
+            fake_execution = CampaignExecutionResult(
+                schema_version="campaign_execution.v1",
+                status="completed",
+                experiment_id="EXP-MODEL",
+                output_dir=str(out_dir / "cycles" / "cycle_001" / "experiment"),
+                conclusion_path=str(fake_conclusion_path.with_suffix(".md")),
+                conclusion_json_path=str(fake_conclusion_path),
+                read_first_path=str(fake_conclusion_path.with_suffix(".md")),
+                execution_json_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.json"),
+                execution_markdown_path=str(out_dir / "cycles" / "cycle_001" / "campaign_execution.md"),
+                error=None,
+                elapsed_seconds=5,
+                created_at_utc="2026-08-05T00:00:00Z",
+            )
+
+            def fake_post(url: str, request_payload: dict, timeout_seconds: float) -> dict:
+                return {"choices": [{"message": {"content": json.dumps(model_payload)}}]}
+
+            with patch("quant_lab.campaign_provider._post_json", side_effect=fake_post):
+                with patch("quant_lab.cli_campaign.execute_campaign_experiment_inputs", return_value=fake_execution):
+                    with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                        exit_code = main(
+                            [
+                                "campaign",
+                                "run",
+                                "--config",
+                                str(config_path),
+                                "--out",
+                                str(out_dir),
+                                "--model",
+                                "model",
+                                "--execute-model-proposal",
+                            ]
+                        )
+
+            strategy_path = out_dir / "cycles" / "cycle_001" / "strategy.json"
+            state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
+            strategy_exists = strategy_path.exists()
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(strategy_exists)
+        self.assertEqual(state.cycle_number, 1)
+        self.assertEqual(state.runs_used, 11)
+        self.assertIn("execution: completed", output)
+        self.assertIn("conclusion_json:", output)
+
     def test_campaign_run_ollama_provider_retries_invalid_proposal_with_feedback(self) -> None:
         payload = campaign_payload()
         payload["provider"] = "ollama"
@@ -722,6 +797,7 @@ class CampaignTests(unittest.TestCase):
                             str(out_dir),
                             "--model",
                             "model",
+                            "--execute-model-proposal",
                         ]
                     )
 
@@ -732,10 +808,12 @@ class CampaignTests(unittest.TestCase):
             error_markdown_path = first_attempt_dir / "provider_error.md"
             second_error_json_path = second_attempt_dir / "provider_error.json"
             proposal_path = cycle_dir / "proposal.json"
+            strategy_path = cycle_dir / "strategy.json"
             error_exists = error_json_path.exists()
             error_markdown_exists = error_markdown_path.exists()
             second_error_exists = second_error_json_path.exists()
             fallback_proposal_exists = proposal_path.exists()
+            strategy_exists = strategy_path.exists()
             output = stdout.getvalue()
 
         self.assertEqual(exit_code, 0)
@@ -743,8 +821,10 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(error_markdown_exists)
         self.assertTrue(second_error_exists)
         self.assertTrue(fallback_proposal_exists)
+        self.assertFalse(strategy_exists)
         self.assertIn("provider_fallback: deterministic", output)
         self.assertIn("execution: skipped_provider_dry_run", output)
+        self.assertIn("did not come from a model response", output)
 
 
 if __name__ == "__main__":
