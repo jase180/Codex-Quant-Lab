@@ -1221,7 +1221,7 @@ def register_campaign_commands(subparsers) -> None:
         "--provider",
         choices=["deterministic", "ollama", "codex"],
         default=None,
-        help="Reserved provider override. For now, use the provider in the config when resuming.",
+        help="Override provider when initializing a campaign. Resumed campaigns use the saved provider.",
     )
     run_parser.add_argument(
         "--base-url",

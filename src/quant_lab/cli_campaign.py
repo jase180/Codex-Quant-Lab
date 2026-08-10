@@ -67,15 +67,15 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     exists = _campaign_exists(paths)
     if args.config:
         config = load_campaign_config(args.config)
-        if _has_campaign_budget_overrides(args):
+        if _has_campaign_initialization_overrides(args):
             if args.resume and exists:
-                raise ValueError("campaign budget overrides can only initialize a new campaign, not resume one")
-            config = _config_with_budget_overrides(config, args)
+                raise ValueError("campaign initialization overrides can only initialize a new campaign, not resume one")
+            config = _config_with_initialization_overrides(config, args)
         if not args.resume or not exists:
             initialize_campaign(config, args.out, overwrite=args.force)
     else:
-        if _has_campaign_budget_overrides(args):
-            raise ValueError("campaign budget overrides require --config so a new campaign config can be written")
+        if _has_campaign_initialization_overrides(args):
+            raise ValueError("campaign initialization overrides require --config so a new campaign config can be written")
         config = load_campaign_config(paths.config_path)
 
     state = load_campaign_state(paths.state_path)
@@ -381,16 +381,19 @@ def _cycle_dir(cycles_dir: str, cycle_number: int) -> str:
     return str(Path(cycles_dir) / f"cycle_{cycle_number:03d}")
 
 
-def _has_campaign_budget_overrides(args: argparse.Namespace) -> bool:
+def _has_campaign_initialization_overrides(args: argparse.Namespace) -> bool:
     return (
-        getattr(args, "duration", None) is not None
+        getattr(args, "provider", None) is not None
+        or getattr(args, "duration", None) is not None
         or getattr(args, "max_cycles", None) is not None
         or getattr(args, "max_total_runs", None) is not None
     )
 
 
-def _config_with_budget_overrides(config: CampaignConfig, args: argparse.Namespace) -> CampaignConfig:
+def _config_with_initialization_overrides(config: CampaignConfig, args: argparse.Namespace) -> CampaignConfig:
     updates = {}
+    if getattr(args, "provider", None) is not None:
+        updates["provider"] = args.provider
     if getattr(args, "duration", None) is not None:
         updates["duration_minutes"] = _parse_duration_minutes(args.duration)
     if getattr(args, "max_cycles", None) is not None:

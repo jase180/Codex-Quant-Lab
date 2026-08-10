@@ -673,6 +673,60 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(state.remaining_budget["runs"], 11)
         self.assertEqual(state.remaining_budget["seconds"], 115)
 
+    def test_campaign_run_provider_override_initializes_saved_config(self) -> None:
+        model_payload = {
+            "schema_version": "campaign_proposal.v1",
+            "action": "run_experiment",
+            "title": "SPY SMA 200 provider override dry run",
+            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
+            "rationale": "Validate provider override persistence.",
+            "difference_from_prior_work": "First provider override dry run.",
+            "strategy_template": "sma-long-cash",
+            "symbol": "SPY",
+            "parameters": {"sma_length": 200},
+            "success_criteria": {"minimum_cagr_retention": 0.8},
+            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+
+            def fake_post(url: str, request_payload: dict, timeout_seconds: float) -> dict:
+                return {"choices": [{"message": {"content": json.dumps(model_payload)}}]}
+
+            with patch("quant_lab.campaign_provider._post_json", side_effect=fake_post):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                    exit_code = main(
+                        [
+                            "campaign",
+                            "run",
+                            "--config",
+                            str(config_path),
+                            "--provider",
+                            "ollama",
+                            "--out",
+                            str(out_dir),
+                            "--model",
+                            "model",
+                        ]
+                    )
+
+            saved_config = load_campaign_config(out_dir / "campaign_config.json")
+            state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
+            provider_context_exists = (
+                out_dir / "cycles" / "cycle_001" / "provider_attempt_001" / "provider_context.json"
+            ).exists()
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(saved_config.provider, "ollama")
+        self.assertEqual(state.cycle_number, 0)
+        self.assertTrue(provider_context_exists)
+        self.assertIn("execution: skipped_provider_dry_run", output)
+
     def test_campaign_run_budget_overrides_reject_resume(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -694,6 +748,30 @@ class CampaignTests(unittest.TestCase):
                         "--resume",
                         "--max-cycles",
                         "2",
+                    ]
+                )
+
+    def test_campaign_run_provider_override_rejects_resume_change(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(campaign_payload()), encoding="utf-8")
+            config = parse_campaign_config(campaign_payload())
+            initialize_campaign(config, out_dir)
+
+            with self.assertRaisesRegex(ValueError, "overrides can only initialize"):
+                main(
+                    [
+                        "campaign",
+                        "run",
+                        "--config",
+                        str(config_path),
+                        "--out",
+                        str(out_dir),
+                        "--resume",
+                        "--provider",
+                        "ollama",
                     ]
                 )
 

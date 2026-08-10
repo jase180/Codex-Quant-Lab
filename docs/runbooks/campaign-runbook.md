@@ -103,6 +103,8 @@ Budget overrides are only applied when initializing a new campaign with
 `--config`. They are written into the saved `campaign_config.json` and initial
 `campaign_state.json`. Resumed campaigns use their saved budgets; the CLI
 rejects budget overrides on `--resume` so the state and config cannot drift.
+The same rule applies to `--provider`: it can set the provider when creating a
+new campaign, but resumed campaigns use the saved provider.
 
 Supported duration forms:
 
@@ -122,11 +124,12 @@ Use this only to inspect whether a local model can produce a valid bounded
 proposal. The command saves and validates the proposal but does not generate
 strategy files, run backtests, update campaign state, or write conclusions.
 
-Create a temporary config whose `provider` is `ollama`, then run:
+Use the base campaign config and set the provider at initialization:
 
 ```powershell
 .\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
-  --config data\campaigns\spy_drawdown_control_ollama_campaign.json `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --provider ollama `
   --out artifacts\campaigns\spy_ollama_dry_run_001 `
   --model llama3.1:8b `
   --force
@@ -168,7 +171,8 @@ opt-in:
 
 ```powershell
 .\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
-  --config data\campaigns\spy_drawdown_control_ollama_campaign.json `
+  --config data\campaigns\spy_drawdown_control_campaign.json `
+  --provider ollama `
   --out artifacts\campaigns\spy_ollama_exec_001 `
   --model llama3.1:8b `
   --execute-model-proposal `

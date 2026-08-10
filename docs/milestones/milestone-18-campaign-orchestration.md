@@ -211,6 +211,9 @@ Current progress:
 - `campaign run` can override `--duration`, `--max-cycles`, and
   `--max-total-runs` when initializing a new campaign. Overrides are written
   into the saved campaign config/state and are rejected on resume.
+- `campaign run --provider` now works the same way: it can set
+  `deterministic`, `ollama`, or `codex` when initializing a campaign and is
+  rejected on resume.
 - Loop mode now checks wall-clock duration between cycles and writes a final
   report with stop reason `duration wall-clock limit reached` when the limit is
   hit.
