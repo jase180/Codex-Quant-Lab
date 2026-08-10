@@ -177,6 +177,7 @@ class StrategyIdeasTest(unittest.TestCase):
 
             suggestion = suggest_strategy_idea(
                 catalog_dir=catalog_dir,
+                opportunity_catalog_dir=root / "missing_opportunity_catalog",
                 conclusions_dir=conclusions_dir,
                 experiments_path=root / "missing_experiments.jsonl",
                 handoffs_dir=root / "missing_handoffs",
@@ -209,6 +210,8 @@ class StrategyIdeasTest(unittest.TestCase):
                         "suggest",
                         "--catalog-dir",
                         str(catalog_dir),
+                        "--opportunity-catalog-dir",
+                        str(Path(tmpdir) / "missing_opportunity_catalog"),
                         "--conclusions-dir",
                         str(conclusions_dir),
                         "--experiments-path",
@@ -262,6 +265,7 @@ class StrategyIdeasTest(unittest.TestCase):
 
             suggestion = suggest_strategy_idea(
                 catalog_dir=catalog_dir,
+                opportunity_catalog_dir=root / "missing_opportunity_catalog",
                 conclusions_dir=conclusions_dir,
                 experiments_path=experiments_path,
                 handoffs_dir=handoffs_dir,
@@ -298,6 +302,8 @@ class StrategyIdeasTest(unittest.TestCase):
                         "suggest",
                         "--catalog-dir",
                         str(catalog_dir),
+                        "--opportunity-catalog-dir",
+                        str(Path(tmpdir) / "missing_opportunity_catalog"),
                         "--conclusions-dir",
                         str(conclusions_dir),
                         "--experiments-path",
@@ -310,6 +316,88 @@ class StrategyIdeasTest(unittest.TestCase):
         self.assertEqual(1, exit_code)
         self.assertIn("No strategy idea suggestion", stdout.getvalue())
         self.assertNotIn("Traceback", stdout.getvalue())
+
+    def test_ideas_suggest_includes_matching_opportunity_thesis(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            catalog_dir = root / "catalog"
+            opportunity_catalog_dir = root / "opportunities"
+            conclusions_dir = root / "research"
+            handoffs_dir = root / "handoffs"
+            experiments_path = root / "experiments.jsonl"
+            catalog_dir.mkdir()
+            opportunity_catalog_dir.mkdir()
+            conclusions_dir.mkdir()
+            handoffs_dir.mkdir()
+            experiments_path.write_text("", encoding="utf-8")
+            _write_json(catalog_dir / "mean.json", _catalog_entry("mean_reversion", variant_id="rsi_pullback"))
+            _write_json(
+                opportunity_catalog_dir / "pullback.json",
+                {
+                    "schema_version": "opportunity_thesis.v1",
+                    "thesis_id": "retail_pullback_liquidity",
+                    "title": "Retail Pullback Liquidity",
+                    "market_niche": "Liquid ETFs after pullbacks.",
+                    "universe": ["SPY"],
+                    "phenomenon": "Temporary selling pressure can reverse.",
+                    "counterparty_or_forced_actor": "Volatility-sensitive sellers.",
+                    "why_edge_might_exist": "Urgent sellers may demand liquidity at unfavorable prices.",
+                    "why_large_funds_might_ignore_it": "The edge may be small and turnover-heavy.",
+                    "institutional_constraint_evidence": {
+                        "expected_daily_dollar_volume": "unknown",
+                        "estimated_position_size": "unknown",
+                        "estimated_strategy_capacity": "unknown",
+                        "number_of_opportunities_per_year": "unknown",
+                        "estimated_absolute_pnl_at_capacity": "unknown",
+                        "evidence_quality": "unknown",
+                    },
+                    "expected_capacity": "unknown",
+                    "expected_holding_period": "days",
+                    "execution_constraints": ["next-open fills"],
+                    "persistence_mechanism": "Liquidity demand can recur.",
+                    "crowding_risk": "medium",
+                    "edge_decay_trigger": "No rebound after realistic costs.",
+                    "observable_prediction": "Pullback entries improve Sharpe after costs.",
+                    "falsification_tests": ["Reject if Sharpe does not improve."],
+                    "required_project_capabilities": ["RSI indicator"],
+                    "compatible_strategy_families": ["mean_reversion"],
+                    "suggested_validation": ["Run cost sensitivity."],
+                    "references": ["Fixture reference"],
+                    "engine_fit": "ready",
+                    "rubric": {
+                        "structural_plausibility": "weak",
+                        "small_capital_advantage": "pass",
+                        "falsifiability": "pass",
+                        "deployability": "pass",
+                        "engine_fit": "ready",
+                    },
+                    "decision": "test_now",
+                },
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "ideas",
+                        "suggest",
+                        "--catalog-dir",
+                        str(catalog_dir),
+                        "--opportunity-catalog-dir",
+                        str(opportunity_catalog_dir),
+                        "--conclusions-dir",
+                        str(conclusions_dir),
+                        "--experiments-path",
+                        str(experiments_path),
+                        "--handoffs-dir",
+                        str(handoffs_dir),
+                    ]
+                )
+
+        output = stdout.getvalue()
+        self.assertEqual(0, exit_code)
+        self.assertIn("## Opportunity Thesis", output)
+        self.assertIn("Retail Pullback Liquidity", output)
+        self.assertIn('"opportunity_thesis_id": "retail_pullback_liquidity"', output)
 
 
 if __name__ == "__main__":

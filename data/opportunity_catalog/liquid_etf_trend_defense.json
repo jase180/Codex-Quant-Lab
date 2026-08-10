@@ -1,0 +1,62 @@
+{
+  "schema_version": "opportunity_thesis.v1",
+  "thesis_id": "liquid_etf_trend_defense",
+  "title": "Liquid ETF Trend Defense",
+  "market_niche": "Highly liquid broad-market ETFs with slow-moving institutional allocation flows.",
+  "universe": ["SPY", "QQQ", "IWM", "TLT"],
+  "phenomenon": "Large risk-off regimes can persist long enough that slow trend filters may reduce severe drawdowns.",
+  "counterparty_or_forced_actor": "Benchmark-constrained allocators, retirement flows, and systematic risk-budget reductions that react slowly to changing regimes.",
+  "why_edge_might_exist": "Broad risk regimes often persist because allocators, risk models, and mandates adjust gradually instead of instantly.",
+  "why_large_funds_might_ignore_it": "The idea is easy to know, crowded, tax-inefficient for some accounts, benchmark-drifting, and unattractive when judged against full-cycle equity beta.",
+  "institutional_constraint_evidence": {
+    "expected_daily_dollar_volume": "high",
+    "estimated_position_size": "small personal accounts through multi-million-dollar liquid ETF allocations",
+    "estimated_strategy_capacity": "high in SPY, but expected edge after costs is likely small and crowded",
+    "number_of_opportunities_per_year": "few major regime changes plus repeated whipsaws",
+    "estimated_absolute_pnl_at_capacity": "unknown",
+    "evidence_quality": "speculative"
+  },
+  "expected_capacity": "High for execution, lower for excess edge because the mechanism is widely known.",
+  "expected_holding_period": "Weeks to months.",
+  "execution_constraints": [
+    "daily close signal with next-open fill",
+    "liquid ETF slippage assumptions",
+    "consistent adjusted OHLC and benchmark treatment"
+  ],
+  "persistence_mechanism": "Slow allocation, risk-management, and behavioral responses can make major equity regimes persistent.",
+  "crowding_risk": "High, because moving-average timing is simple and widely published.",
+  "edge_decay_trigger": "Repeated failure to reduce drawdown across multiple equity bear markets after realistic costs and adjusted-price audits.",
+  "observable_prediction": "Trend-defense rules should lower max drawdown materially while retaining a prespecified fraction of buy-and-hold CAGR.",
+  "falsification_tests": [
+    "Reject the exact strategy hypothesis if CAGR retention and drawdown-reduction thresholds are not both met.",
+    "Weaken the thesis if date-window sensitivity shows drawdown improvement only in one cherry-picked period.",
+    "Treat measurement as invalid if adjusted-price or benchmark economics are inconsistent."
+  ],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "SMA and EMA trend filters",
+    "next-open execution",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "compatible_strategy_families": ["trend_following", "drawdown_control", "volatility_risk_filter"],
+  "suggested_validation": [
+    "Use one prespecified trend length before running.",
+    "Separate research-system validity from strategy-hypothesis status.",
+    "Run cost, date, and train/test validation before accepting the hypothesis."
+  ],
+  "references": [
+    "Hurst, Ooi, and Pedersen, A Century of Evidence on Trend-Following Investing",
+    "Moskowitz, Ooi, and Pedersen, Time Series Momentum"
+  ],
+  "engine_fit": "ready",
+  "rubric": {
+    "structural_plausibility": "pass",
+    "small_capital_advantage": "weak",
+    "falsifiability": "pass",
+    "deployability": "pass",
+    "engine_fit": "ready"
+  },
+  "decision": "test_now"
+}

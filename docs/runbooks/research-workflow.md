@@ -81,11 +81,15 @@ quant-lab ideas suggest
 ```
 
 This command reads prior `experiment_conclusion.json` files, experiment registry
-decisions, tracked handoff docs, and the conceptual strategy catalog in
-`data/strategy_catalog/`. It suggests one hypothesis, success criteria, and a
-draft experiment config, but it does not create executable strategy JSON. That
-keeps idea selection separate from implementation until a human approves the
-next test. The catalog can contain many ideas that are not yet executable; use
+decisions, tracked handoff docs, the conceptual strategy catalog in
+`data/strategy_catalog/`, and the opportunity-thesis catalog in
+`data/opportunity_catalog/`. It suggests one hypothesis, success criteria, and a
+draft experiment config, but it does not create executable strategy JSON. When a
+compatible `opportunity_thesis.v1` exists, the draft also names the market
+niche, forced actor, institutional-friction claim, evidence-quality label,
+edge-decay trigger, and falsification tests. That keeps idea selection separate
+from implementation until a human approves the next test. The catalog can
+contain many ideas that are not yet executable; use
 `engine_can_currently_execute` to tell concept from current engine support.
 
 ```bash

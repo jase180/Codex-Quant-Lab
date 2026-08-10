@@ -1,6 +1,14 @@
 # Milestone 19: Niche Discovery Layer
 
-Status: proposed.
+Status: in progress.
+
+First implementation slice delivered:
+
+- Added `src/quant_lab/opportunity_theses.py` with strict
+  `opportunity_thesis.v1` validation.
+- Added starter conceptual theses under `data/opportunity_catalog/`.
+- Updated `quant-lab ideas suggest` so compatible strategy suggestions can cite
+  a matching opportunity thesis without creating executable strategy JSON.
 
 ## Goal
 

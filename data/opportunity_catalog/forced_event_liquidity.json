@@ -1,0 +1,61 @@
+{
+  "schema_version": "opportunity_thesis.v1",
+  "thesis_id": "forced_event_liquidity",
+  "title": "Forced Event Liquidity",
+  "market_niche": "Corporate-action, index-change, and event-driven situations where some participants must transact.",
+  "universe": ["index additions and deletions", "splits", "distributions", "post-event gaps"],
+  "phenomenon": "Forced or mandate-driven trades may create temporary pressure that later mean-reverts.",
+  "counterparty_or_forced_actor": "Index funds, benchmark-constrained managers, corporate-action processors, tax-motivated sellers, and funds facing mandate or liquidity constraints.",
+  "why_edge_might_exist": "Some participants may transact for mandate, benchmark, tax, or operational reasons rather than expected return.",
+  "why_large_funds_might_ignore_it": "Each event may be too small, too operationally messy, too data-cleaning-heavy, or too liquidity-constrained for large capital.",
+  "institutional_constraint_evidence": {
+    "expected_daily_dollar_volume": "unknown until event universe is sourced",
+    "estimated_position_size": "unknown",
+    "estimated_strategy_capacity": "unknown",
+    "number_of_opportunities_per_year": "unknown",
+    "estimated_absolute_pnl_at_capacity": "unknown",
+    "evidence_quality": "unknown"
+  },
+  "expected_capacity": "Likely low to moderate and highly dependent on event type and liquidity.",
+  "expected_holding_period": "Days to months depending on the event.",
+  "execution_constraints": [
+    "clean event calendar",
+    "survivorship-aware universe data",
+    "spread and liquidity estimates",
+    "fixed holding-period exits"
+  ],
+  "persistence_mechanism": "Mandates and operational constraints can recur even after the broad pattern is known.",
+  "crowding_risk": "Medium to high in obvious events; lower in fragmented or annoying-to-clean niches.",
+  "edge_decay_trigger": "The opportunity should decay if event liquidity improves, indexes change rules, or event effects vanish after spread assumptions.",
+  "observable_prediction": "Event cohorts with forced-flow pressure should show measurable post-event drift or reversal after realistic trading frictions.",
+  "falsification_tests": [
+    "Reject if the effect disappears after realistic spread and liquidity assumptions.",
+    "Reject if the data source cannot distinguish real events from survivorship-biased samples.",
+    "Keep as untested until event data quality is auditable."
+  ],
+  "required_project_capabilities": [
+    "event calendar data",
+    "fixed holding-period exits",
+    "spread or liquidity modeling",
+    "cohort-level reporting"
+  ],
+  "compatible_strategy_families": ["event_gap_reversion", "calendar_seasonality"],
+  "suggested_validation": [
+    "Do not backtest until event data provenance is documented.",
+    "Use conservative spread assumptions.",
+    "Analyze cohorts by event type and liquidity bucket."
+  ],
+  "references": [
+    "Practitioner literature on index reconstitution and event-driven forced flows",
+    "Academic literature on price pressure around index changes"
+  ],
+  "engine_fit": "blocked",
+  "rubric": {
+    "structural_plausibility": "pass",
+    "small_capital_advantage": "pass",
+    "falsifiability": "pass",
+    "deployability": "blocked",
+    "engine_fit": "blocked"
+  },
+  "decision": "investigate_data"
+}

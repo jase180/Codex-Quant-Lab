@@ -1315,6 +1315,11 @@ def register_ideas_commands(subparsers) -> None:
         help="Directory containing conceptual strategy catalog JSON files. Defaults to data/strategy_catalog.",
     )
     suggest_parser.add_argument(
+        "--opportunity-catalog-dir",
+        default="data/opportunity_catalog",
+        help="Directory containing conceptual opportunity thesis JSON files. Defaults to data/opportunity_catalog.",
+    )
+    suggest_parser.add_argument(
         "--conclusions-dir",
         default="artifacts/research",
         help="Directory searched recursively for experiment_conclusion.json files. Defaults to artifacts/research.",

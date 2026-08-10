@@ -17,6 +17,9 @@ current workflow docs and the latest experiment handoffs.
 - Conceptual strategy catalog: `data/strategy_catalog/*.json` and
   `data/strategy_catalog/README.md` describe broad strategy families before
   they become executable strategy files.
+- Conceptual opportunity catalog: `data/opportunity_catalog/*.json` and
+  `data/opportunity_catalog/README.md` describe market niches, forced actors,
+  capacity/friction claims, and falsification tests before strategy selection.
 - [Core Backtest Assumption Audit](architecture/core-backtest-assumption-audit.md): current
   execution, data, benchmark, and realism assumptions.
 - [Research Guardrails](architecture/research-guardrails.md): constraints that

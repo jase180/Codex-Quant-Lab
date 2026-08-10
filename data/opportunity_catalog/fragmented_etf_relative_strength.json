@@ -1,0 +1,62 @@
+{
+  "schema_version": "opportunity_thesis.v1",
+  "thesis_id": "fragmented_etf_relative_strength",
+  "title": "Fragmented ETF Relative Strength",
+  "market_niche": "Sector, factor, and asset-class ETFs where leadership rotates across fragmented investor mandates.",
+  "universe": ["SPY", "QQQ", "TLT", "IWM", "sector ETFs", "factor ETFs"],
+  "phenomenon": "Relative strength may persist when capital reallocates gradually across asset classes, sectors, or styles.",
+  "counterparty_or_forced_actor": "Mandate-bound allocators, benchmark-aware managers, model portfolios, and slow-moving retirement or advisory flows.",
+  "why_edge_might_exist": "Portfolio reallocations often happen incrementally, so relative leadership can persist longer than one rebalance period.",
+  "why_large_funds_might_ignore_it": "The liquid ETF version is well known and likely crowded; smaller niche ETFs may have limited capacity, wider spreads, and operational overhead.",
+  "institutional_constraint_evidence": {
+    "expected_daily_dollar_volume": "high for broad ETFs, variable for niche ETFs",
+    "estimated_position_size": "unknown until the ETF universe is fixed",
+    "estimated_strategy_capacity": "likely high in broad ETFs and lower in niche ETFs",
+    "number_of_opportunities_per_year": "monthly or quarterly rebalance decisions",
+    "estimated_absolute_pnl_at_capacity": "unknown",
+    "evidence_quality": "speculative"
+  },
+  "expected_capacity": "High for broad liquid ETFs, but the most interesting small-capital version may require less-liquid niche ETFs.",
+  "expected_holding_period": "Weeks to months.",
+  "execution_constraints": [
+    "aligned multi-symbol daily data",
+    "rebalance-calendar handling",
+    "turnover and cost tracking",
+    "benchmark portfolio comparison"
+  ],
+  "persistence_mechanism": "Mandate changes, risk-budget shifts, and model-portfolio reallocations may create slow-moving flow pressure.",
+  "crowding_risk": "High in broad ETF momentum; lower only if the universe is fragmented enough and costs are modeled honestly.",
+  "edge_decay_trigger": "The thesis weakens if relative-strength winners fail across walk-forward windows or only work in one asset universe after tuning.",
+  "observable_prediction": "A prespecified relative-strength rotation should improve risk-adjusted return versus a static benchmark without excessive turnover.",
+  "falsification_tests": [
+    "Reject if walk-forward validation fails out of sample.",
+    "Reject if results depend on one tuned lookback or one cherry-picked universe.",
+    "Weaken if cost sensitivity removes most of the advantage."
+  ],
+  "required_project_capabilities": [
+    "multi-symbol daily data alignment",
+    "portfolio rotation templates",
+    "walk-forward validation",
+    "cost sensitivity",
+    "benchmark portfolio comparison"
+  ],
+  "compatible_strategy_families": ["momentum_rotation", "portfolio_allocation"],
+  "suggested_validation": [
+    "Predefine the ETF universe before running.",
+    "Use one ranking lookback and top-N count before seeing results.",
+    "Run walk-forward validation before interpreting any in-sample advantage."
+  ],
+  "references": [
+    "Academic and practitioner literature on cross-sectional momentum",
+    "Practitioner research on ETF relative-strength rotation"
+  ],
+  "engine_fit": "ready",
+  "rubric": {
+    "structural_plausibility": "pass",
+    "small_capital_advantage": "weak",
+    "falsifiability": "pass",
+    "deployability": "pass",
+    "engine_fit": "ready"
+  },
+  "decision": "test_now"
+}

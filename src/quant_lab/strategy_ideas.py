@@ -7,6 +7,11 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from .opportunity_theses import (
+    OpportunityThesis,
+    find_opportunity_for_strategy_family,
+    load_opportunity_catalog,
+)
 from .research_registry import load_experiments
 
 
@@ -85,6 +90,7 @@ class RankedStrategyIdea:
 class StrategyIdeaSuggestion:
     family: CatalogEntry
     variant: dict[str, Any]
+    opportunity_thesis: OpportunityThesis | None
     score: int
     reasons: list[str]
     rankings: list[RankedStrategyIdea]
@@ -176,11 +182,13 @@ def load_experiment_handoffs(handoffs_dir: str | Path) -> list[dict[str, Any]]:
 def suggest_strategy_idea(
     *,
     catalog_dir: str | Path = "data/strategy_catalog",
+    opportunity_catalog_dir: str | Path | None = "data/opportunity_catalog",
     conclusions_dir: str | Path = "artifacts/research",
     experiments_path: str | Path = "artifacts/experiments.jsonl",
     handoffs_dir: str | Path = "docs/experiments",
 ) -> StrategyIdeaSuggestion:
     catalog = load_strategy_catalog(catalog_dir)
+    opportunity_catalog = _load_optional_opportunity_catalog(opportunity_catalog_dir)
     prior_research = [
         *load_experiment_conclusions(conclusions_dir),
         *load_experiment_decisions(experiments_path),
@@ -199,17 +207,22 @@ def suggest_strategy_idea(
             excluded_families.append(f"{entry.family_id} (not executable)")
             continue
 
+        opportunity_thesis = find_opportunity_for_strategy_family(opportunity_catalog, entry.family_id)
         score, reasons = _score_entry(entry, variant, prior_research)
+        if opportunity_thesis is not None:
+            score += 1
+            reasons.append(f"Opportunity thesis `{opportunity_thesis.thesis_id}` gives this idea a mechanism.")
         scored.append(
             StrategyIdeaSuggestion(
                 family=entry,
                 variant=variant,
+                opportunity_thesis=opportunity_thesis,
                 score=score,
                 reasons=reasons,
                 rankings=[],
                 excluded_families=[],
                 prior_research_count=len(prior_research),
-                draft_experiment_config=_draft_experiment_config(entry, variant),
+                draft_experiment_config=_draft_experiment_config(entry, variant, opportunity_thesis),
             )
         )
 
@@ -232,6 +245,7 @@ def suggest_strategy_idea(
     return StrategyIdeaSuggestion(
         family=selected.family,
         variant=selected.variant,
+        opportunity_thesis=selected.opportunity_thesis,
         score=selected.score,
         reasons=selected.reasons,
         rankings=rankings,
@@ -253,6 +267,7 @@ def format_strategy_idea_suggestion(suggestion: StrategyIdeaSuggestion) -> str:
         f"- {item['name']}: {item['comparison']} {item['operator']} {item['threshold']} on {item['metric']}"
         for item in suggestion.draft_experiment_config["success_criteria"]
     )
+    thesis_lines = _format_opportunity_thesis_section(suggestion.opportunity_thesis)
 
     return "\n".join(
         [
@@ -264,6 +279,9 @@ def format_strategy_idea_suggestion(suggestion: StrategyIdeaSuggestion) -> str:
             "",
             "## Why This Ranked First",
             reasons,
+            "",
+            "## Opportunity Thesis",
+            thesis_lines,
             "",
             "## Compatible Family Ranking",
             rankings,
@@ -285,6 +303,15 @@ def format_strategy_idea_suggestion(suggestion: StrategyIdeaSuggestion) -> str:
             "No executable strategy or portfolio spec was created. Convert this idea only after human approval.",
         ]
     )
+
+
+def _load_optional_opportunity_catalog(catalog_dir: str | Path | None) -> list[OpportunityThesis]:
+    if catalog_dir is None:
+        return []
+    root = Path(catalog_dir)
+    if not root.exists():
+        return []
+    return load_opportunity_catalog(root)
 
 
 def _validate_catalog_payload(payload: dict[str, Any], path: Path) -> None:
@@ -350,8 +377,12 @@ def _score_entry(entry: CatalogEntry, variant: dict[str, Any], conclusions: Sequ
     return score, reasons
 
 
-def _draft_experiment_config(entry: CatalogEntry, variant: dict[str, Any]) -> dict[str, Any]:
-    return {
+def _draft_experiment_config(
+    entry: CatalogEntry,
+    variant: dict[str, Any],
+    opportunity_thesis: OpportunityThesis | None = None,
+) -> dict[str, Any]:
+    config = {
         "title": f"{entry.name}: {variant['name']}",
         "strategy_family": entry.family_id,
         "catalog_variant": variant["variant_id"],
@@ -368,6 +399,52 @@ def _draft_experiment_config(entry: CatalogEntry, variant: dict[str, Any]) -> di
         "suggested_validation": entry.payload["suggested_validation"],
         "requires_human_approval_before_strategy_json": True,
     }
+    if opportunity_thesis is not None:
+        payload = opportunity_thesis.payload
+        config["opportunity_thesis_id"] = opportunity_thesis.thesis_id
+        config["opportunity_thesis"] = {
+            "title": opportunity_thesis.title,
+            "market_niche": payload["market_niche"],
+            "counterparty_or_forced_actor": payload["counterparty_or_forced_actor"],
+            "why_edge_might_exist": payload["why_edge_might_exist"],
+            "why_large_funds_might_ignore_it": payload["why_large_funds_might_ignore_it"],
+            "institutional_constraint_evidence": payload["institutional_constraint_evidence"],
+            "persistence_mechanism": payload["persistence_mechanism"],
+            "edge_decay_trigger": payload["edge_decay_trigger"],
+            "observable_prediction": payload["observable_prediction"],
+            "falsification_tests": payload["falsification_tests"],
+            "rubric": payload["rubric"],
+            "decision": payload["decision"],
+        }
+    return config
+
+
+def _format_opportunity_thesis_section(opportunity_thesis: OpportunityThesis | None) -> str:
+    if opportunity_thesis is None:
+        return "No matching opportunity thesis found. Treat this as a strategy-family suggestion only."
+
+    payload = opportunity_thesis.payload
+    evidence = payload["institutional_constraint_evidence"]
+    rubric = payload["rubric"]
+    return "\n".join(
+        [
+            f"Selected thesis: {opportunity_thesis.title} (`{opportunity_thesis.thesis_id}`)",
+            f"- Market niche: {payload['market_niche']}",
+            f"- Forced actor: {payload['counterparty_or_forced_actor']}",
+            f"- Mechanism: {payload['why_edge_might_exist']}",
+            f"- Institutional friction: {payload['why_large_funds_might_ignore_it']}",
+            f"- Constraint evidence quality: {evidence['evidence_quality']}",
+            f"- Edge-decay trigger: {payload['edge_decay_trigger']}",
+            (
+                "- Rubric: "
+                f"structural={rubric['structural_plausibility']}, "
+                f"small_capital={rubric['small_capital_advantage']}, "
+                f"falsifiable={rubric['falsifiability']}, "
+                f"deployable={rubric['deployability']}, "
+                f"engine_fit={rubric['engine_fit']}"
+            ),
+        ]
+    )
 
 
 def _exclusion_text(conclusions: Iterable[dict[str, Any]]) -> str:

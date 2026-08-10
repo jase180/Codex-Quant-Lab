@@ -39,8 +39,12 @@ It owns:
   portfolio runs.
 - `portfolio_batch.py`: writes dry-run manifests for batches of portfolio specs.
 - `research_index.py`: appends flat JSONL rows to the local research registry.
+- `opportunity_theses.py`: validates conceptual `opportunity_thesis.v1` catalog
+  entries for market niches, forced actors, capacity/friction claims, and
+  falsification tests.
 - `strategy_ideas.py`: loads `data/strategy_catalog/*.json`, reads prior
-  `experiment_conclusion.json` files, and drafts one non-executable next idea.
+  `experiment_conclusion.json` files, optionally attaches a matching
+  opportunity thesis, and drafts one non-executable next idea.
 - `research_plan_workflow.py`: shares research-plan recommendation logic,
   artifact-presence checks, and copyable command builders across CLI surfaces.
 - `default_experiment.py`: runs the normal single-strategy workflow from

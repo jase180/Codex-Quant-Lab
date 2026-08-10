@@ -1,0 +1,61 @@
+{
+  "schema_version": "opportunity_thesis.v1",
+  "thesis_id": "retail_pullback_liquidity",
+  "title": "Retail Pullback Liquidity",
+  "market_niche": "Liquid ETFs and large stocks after short-term downside pressure.",
+  "universe": ["SPY", "QQQ", "IWM", "large liquid equities"],
+  "phenomenon": "Short-horizon oversold conditions may rebound when temporary selling pressure fades.",
+  "counterparty_or_forced_actor": "Volatility-sensitive sellers, de-risking retail traders, stop-loss clusters, and short-horizon systematic deleveraging.",
+  "why_edge_might_exist": "Urgent selling can temporarily push prices away from short-term equilibrium, creating a rebound window after forced liquidity demand fades.",
+  "why_large_funds_might_ignore_it": "The edge may be small, capacity-limited outside liquid ETFs, noisy, turnover-heavy, and hard to scale after spread and market-impact assumptions.",
+  "institutional_constraint_evidence": {
+    "expected_daily_dollar_volume": "varies by universe",
+    "estimated_position_size": "unknown until the universe is specified",
+    "estimated_strategy_capacity": "unknown",
+    "number_of_opportunities_per_year": "depends on threshold strictness",
+    "estimated_absolute_pnl_at_capacity": "unknown",
+    "evidence_quality": "unknown"
+  },
+  "expected_capacity": "Potentially moderate in ETFs and much lower in smaller equities.",
+  "expected_holding_period": "Days to weeks.",
+  "execution_constraints": [
+    "next-open entry after signal confirmation",
+    "turnover-sensitive cost assumptions",
+    "sparse-trade handling for stricter thresholds"
+  ],
+  "persistence_mechanism": "Liquidity demand, stop-outs, and behavioral overreaction may recur across market regimes.",
+  "crowding_risk": "Medium; short-term reversal is well known but implementation details and capacity constraints matter.",
+  "edge_decay_trigger": "The thesis weakens if rebounds disappear after realistic costs across multiple market regimes or only work after extensive threshold tuning.",
+  "observable_prediction": "A prespecified pullback rule should improve risk-adjusted return or exposure efficiency without relying on many tuned variants.",
+  "falsification_tests": [
+    "Reject the tested hypothesis if Sharpe does not improve after realistic costs.",
+    "Weaken the thesis if results require many thresholds or one lucky date window.",
+    "Treat the thesis as untested if the rule has too few trades to evaluate."
+  ],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "RSI indicator",
+    "threshold rules",
+    "cost sensitivity",
+    "date sensitivity"
+  ],
+  "compatible_strategy_families": ["mean_reversion", "statistical_reversion"],
+  "suggested_validation": [
+    "Choose one RSI threshold pair before running.",
+    "Use realistic costs because turnover is the main fragility.",
+    "Require minimum trade counts before interpreting the result strongly."
+  ],
+  "references": [
+    "Connors and Alvarez, Short Term Trading Strategies That Work",
+    "Academic literature on short-term reversal effects"
+  ],
+  "engine_fit": "ready",
+  "rubric": {
+    "structural_plausibility": "weak",
+    "small_capital_advantage": "pass",
+    "falsifiability": "pass",
+    "deployability": "pass",
+    "engine_fit": "ready"
+  },
+  "decision": "test_now"
+}

@@ -11,6 +11,7 @@ def ideas_suggest_command(args: argparse.Namespace) -> int:
     try:
         suggestion = suggest_strategy_idea(
             catalog_dir=args.catalog_dir,
+            opportunity_catalog_dir=args.opportunity_catalog_dir,
             conclusions_dir=args.conclusions_dir,
             experiments_path=args.experiments_path,
             handoffs_dir=args.handoffs_dir,
