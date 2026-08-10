@@ -12,7 +12,10 @@ features.
   canonical conclusion, and updates campaign memory.
 - `ollama`: asks a local OpenAI-compatible Ollama model for one strict proposal,
   saves the provider context/prompt/raw response/proposal, validates it, and
-  stops before execution. This is a dry-run safety step.
+  stops before execution. This is a dry-run safety step. If the first model
+  attempt fails or validates false, the controller allows one retry with the
+  prior error or validation reasons in the second context. If the retry also
+  fails, it writes a deterministic fallback proposal for inspection only.
 
 The Codex provider is not implemented yet. Deterministic run commands execute
 one campaign cycle:
@@ -97,12 +100,22 @@ Create a temporary config whose `provider` is `ollama`, then run:
 The useful files are:
 
 ```text
-artifacts/campaigns/<campaign>/cycles/cycle_001/provider_context.json
-artifacts/campaigns/<campaign>/cycles/cycle_001/provider_prompt.md
-artifacts/campaigns/<campaign>/cycles/cycle_001/provider_raw_response.txt
-artifacts/campaigns/<campaign>/cycles/cycle_001/provider_proposal.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_context.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_prompt.md
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_raw_response.txt
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_proposal.json
 artifacts/campaigns/<campaign>/cycles/cycle_001/proposal_validation.md
 ```
+
+If a retry happens, inspect:
+
+```text
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_002/provider_context.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_002/proposal_validation.md
+```
+
+The second context includes `prior_attempt_feedback`, which is the exact error
+or validation failure the model was asked to correct.
 
 If the proposal is valid, the CLI prints:
 
@@ -111,7 +124,7 @@ execution: skipped_provider_dry_run
 ```
 
 That is expected. Model-provider execution comes after invalid-output retry and
-fallback behavior are implemented.
+execution behavior are implemented.
 
 ## Current Deterministic Sequence
 

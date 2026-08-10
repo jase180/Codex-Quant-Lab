@@ -601,10 +601,11 @@ class CampaignTests(unittest.TestCase):
                     )
 
             cycle_dir = out_dir / "cycles" / "cycle_001"
+            attempt_dir = cycle_dir / "provider_attempt_001"
             proposal_path = cycle_dir / "proposal.json"
             validation_path = cycle_dir / "proposal_validation.json"
-            context_path = cycle_dir / "provider_context.json"
-            raw_path = cycle_dir / "provider_raw_response.txt"
+            context_path = attempt_dir / "provider_context.json"
+            raw_path = attempt_dir / "provider_raw_response.txt"
             strategy_path = cycle_dir / "strategy.json"
             execution_path = cycle_dir / "campaign_execution.json"
             state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
@@ -625,6 +626,79 @@ class CampaignTests(unittest.TestCase):
         self.assertFalse(execution_exists)
         self.assertEqual(state.cycle_number, 0)
         self.assertIn("execution: skipped_provider_dry_run", output)
+
+    def test_campaign_run_ollama_provider_retries_invalid_proposal_with_feedback(self) -> None:
+        payload = campaign_payload()
+        payload["provider"] = "ollama"
+        invalid_payload = {
+            "schema_version": "campaign_proposal.v1",
+            "action": "run_experiment",
+            "title": "SPY unsupported local-model dry run",
+            "hypothesis": "An unsupported parameter should be rejected.",
+            "rationale": "Validator retry check.",
+            "difference_from_prior_work": "Uses unsupported parameter.",
+            "strategy_template": "sma-long-cash",
+            "symbol": "SPY",
+            "parameters": {"not_supported": 1},
+            "success_criteria": {"minimum_cagr_retention": 0.8},
+            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+        }
+        valid_payload = {
+            "schema_version": "campaign_proposal.v1",
+            "action": "run_experiment",
+            "title": "SPY SMA 200 retry dry run",
+            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
+            "rationale": "Retry with supported parameters after validator feedback.",
+            "difference_from_prior_work": "Fixes the unsupported parameter from the first attempt.",
+            "strategy_template": "sma-long-cash",
+            "symbol": "SPY",
+            "parameters": {"sma_length": 200},
+            "success_criteria": {"minimum_cagr_retention": 0.8},
+            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+        }
+        responses = [invalid_payload, valid_payload]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            config_path = root / "campaign.json"
+            out_dir = root / "campaign"
+            config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            def fake_post(url: str, request_payload: dict, timeout_seconds: float) -> dict:
+                return {"choices": [{"message": {"content": json.dumps(responses.pop(0))}}]}
+
+            with patch("quant_lab.campaign_provider._post_json", side_effect=fake_post):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                    exit_code = main(
+                        [
+                            "campaign",
+                            "run",
+                            "--config",
+                            str(config_path),
+                            "--out",
+                            str(out_dir),
+                            "--model",
+                            "model",
+                        ]
+                    )
+
+            cycle_dir = out_dir / "cycles" / "cycle_001"
+            final_proposal = json.loads((cycle_dir / "proposal.json").read_text(encoding="utf-8"))
+            first_validation = json.loads(
+                (cycle_dir / "provider_attempt_001" / "proposal_validation.json").read_text(encoding="utf-8")
+            )
+            second_context = json.loads(
+                (cycle_dir / "provider_attempt_002" / "provider_context.json").read_text(encoding="utf-8")
+            )
+            output = stdout.getvalue()
+
+        self.assertEqual(exit_code, 0)
+        self.assertFalse(first_validation["valid"])
+        self.assertEqual(final_proposal["title"], "SPY SMA 200 retry dry run")
+        self.assertTrue(any("unsupported parameters" in item for item in second_context["prior_attempt_feedback"]))
+        self.assertIn("provider_attempt_1: valid=False", output)
+        self.assertIn("provider_attempt_2: valid=True", output)
+        self.assertNotIn("provider_fallback", output)
 
     def test_campaign_run_ollama_provider_failure_writes_error_receipt(self) -> None:
         payload = campaign_payload()
@@ -652,23 +726,25 @@ class CampaignTests(unittest.TestCase):
                     )
 
             cycle_dir = out_dir / "cycles" / "cycle_001"
-            error_json_path = cycle_dir / "provider_error.json"
-            error_markdown_path = cycle_dir / "provider_error.md"
-            context_path = cycle_dir / "provider_context.json"
-            prompt_path = cycle_dir / "provider_prompt.md"
+            first_attempt_dir = cycle_dir / "provider_attempt_001"
+            second_attempt_dir = cycle_dir / "provider_attempt_002"
+            error_json_path = first_attempt_dir / "provider_error.json"
+            error_markdown_path = first_attempt_dir / "provider_error.md"
+            second_error_json_path = second_attempt_dir / "provider_error.json"
+            proposal_path = cycle_dir / "proposal.json"
             error_exists = error_json_path.exists()
             error_markdown_exists = error_markdown_path.exists()
-            context_exists = context_path.exists()
-            prompt_exists = prompt_path.exists()
+            second_error_exists = second_error_json_path.exists()
+            fallback_proposal_exists = proposal_path.exists()
             output = stdout.getvalue()
 
-        self.assertEqual(exit_code, 1)
+        self.assertEqual(exit_code, 0)
         self.assertTrue(error_exists)
         self.assertTrue(error_markdown_exists)
-        self.assertTrue(context_exists)
-        self.assertTrue(prompt_exists)
-        self.assertIn("Campaign provider failed", output)
-        self.assertIn("execution: skipped", output)
+        self.assertTrue(second_error_exists)
+        self.assertTrue(fallback_proposal_exists)
+        self.assertIn("provider_fallback: deterministic", output)
+        self.assertIn("execution: skipped_provider_dry_run", output)
 
 
 if __name__ == "__main__":

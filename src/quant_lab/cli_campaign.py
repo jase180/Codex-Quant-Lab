@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from .campaign import (
+    CampaignConfig,
     campaign_paths,
     format_campaign_status,
     initialize_campaign,
@@ -17,11 +19,22 @@ from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_execution import execute_campaign_experiment_inputs
 from .campaign_knowledge import complete_campaign_state, update_campaign_state_after_execution
 from .campaign_proposal import (
+    CampaignProposalValidation,
     save_campaign_proposal_artifacts,
     validate_campaign_proposal,
 )
-from .campaign_provider import campaign_provider_result, save_campaign_provider_error_artifacts
+from .campaign_provider import CampaignProviderResult, campaign_provider_result, save_campaign_provider_error_artifacts
 from .campaign_report import save_final_campaign_report
+
+
+@dataclass(frozen=True)
+class CampaignProposalSelection:
+    provider_result: CampaignProviderResult
+    validation: CampaignProposalValidation
+    proposal_path: str
+    validation_path: str
+    validation_markdown_path: str
+    diagnostics: list[str]
 
 
 def campaign_init_command(args: argparse.Namespace) -> int:
@@ -56,37 +69,19 @@ def campaign_run_command(args: argparse.Namespace) -> int:
         raise ValueError("campaign run provider override is not persisted yet; update the config file for now")
 
     cycle_dir = _cycle_dir(paths.cycles_dir, state.cycle_number + 1)
-    try:
-        provider_result = campaign_provider_result(
-            config,
-            state,
-            cycle_dir=cycle_dir,
-            base_url=getattr(args, "base_url", None),
-            model=getattr(args, "model", None),
-            timeout_seconds=getattr(args, "timeout_seconds", 60.0),
-        )
-    except Exception as exc:
-        error_json_path, error_markdown_path = save_campaign_provider_error_artifacts(
-            cycle_dir=cycle_dir,
-            provider=config.provider,
-            error=str(exc),
-        )
-        print("Campaign provider failed")
-        print(f"provider_error: {error_json_path}")
-        print(f"read_first: {error_markdown_path}")
-        print("execution: skipped")
-        return 1
+    selection = _select_campaign_proposal(args, config=config, state=state, cycle_dir=cycle_dir)
+    provider_result = selection.provider_result
     proposal = provider_result.proposal
-    validation = validate_campaign_proposal(proposal, config=config, state=state)
-    proposal_path, validation_path, validation_markdown_path = save_campaign_proposal_artifacts(
-        proposal,
-        validation,
-        cycle_dir,
-    )
+    validation = selection.validation
+    proposal_path = selection.proposal_path
+    validation_path = selection.validation_path
+    validation_markdown_path = selection.validation_markdown_path
 
     print(f"Campaign proposal written: {proposal_path}")
     print(f"validation: {validation_path}")
     print(f"read_first: {validation_markdown_path}")
+    for diagnostic in selection.diagnostics:
+        print(diagnostic)
     if provider_result.context_path:
         print(f"provider_context: {provider_result.context_path}")
     if provider_result.prompt_path:
@@ -137,6 +132,175 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     else:
         print("execution: skipped")
     return 0 if validation.valid else 1
+
+
+def _select_campaign_proposal(
+    args: argparse.Namespace,
+    *,
+    config: CampaignConfig,
+    state,
+    cycle_dir: str,
+) -> CampaignProposalSelection:
+    if config.provider == "deterministic":
+        provider_result = campaign_provider_result(config, state, cycle_dir=cycle_dir)
+        validation = validate_campaign_proposal(provider_result.proposal, config=config, state=state)
+        proposal_path, validation_path, validation_markdown_path = save_campaign_proposal_artifacts(
+            provider_result.proposal,
+            validation,
+            cycle_dir,
+        )
+        return CampaignProposalSelection(
+            provider_result=provider_result,
+            validation=validation,
+            proposal_path=proposal_path,
+            validation_path=validation_path,
+            validation_markdown_path=validation_markdown_path,
+            diagnostics=[],
+        )
+
+    return _select_model_campaign_proposal(args, config=config, state=state, cycle_dir=cycle_dir)
+
+
+def _select_model_campaign_proposal(
+    args: argparse.Namespace,
+    *,
+    config: CampaignConfig,
+    state,
+    cycle_dir: str,
+) -> CampaignProposalSelection:
+    diagnostics: list[str] = []
+    last_selection: CampaignProposalSelection | None = None
+    retry_feedback: list[str] = []
+    for attempt_number in (1, 2):
+        attempt_dir = str(Path(cycle_dir) / f"provider_attempt_{attempt_number:03d}")
+        try:
+            provider_result = campaign_provider_result(
+                config,
+                state,
+                cycle_dir=attempt_dir,
+                base_url=getattr(args, "base_url", None),
+                model=getattr(args, "model", None),
+                timeout_seconds=getattr(args, "timeout_seconds", 60.0),
+                prior_attempt_feedback=retry_feedback,
+            )
+        except Exception as exc:
+            feedback = f"attempt {attempt_number} provider error: {exc}"
+            error_json_path, error_markdown_path = save_campaign_provider_error_artifacts(
+                cycle_dir=attempt_dir,
+                provider=config.provider,
+                error=feedback,
+            )
+            retry_feedback.append(feedback)
+            diagnostics.extend(
+                [
+                    f"provider_attempt_{attempt_number}: failed",
+                    f"provider_error_{attempt_number}: {error_json_path}",
+                    f"provider_error_read_first_{attempt_number}: {error_markdown_path}",
+                ]
+            )
+            continue
+
+        validation = validate_campaign_proposal(provider_result.proposal, config=config, state=state)
+        attempt_proposal_path, attempt_validation_path, attempt_validation_markdown_path = save_campaign_proposal_artifacts(
+            provider_result.proposal,
+            validation,
+            attempt_dir,
+        )
+        diagnostics.extend(
+            [
+                f"provider_attempt_{attempt_number}: valid={validation.valid}",
+                f"provider_attempt_proposal_{attempt_number}: {attempt_proposal_path}",
+                f"provider_attempt_validation_{attempt_number}: {attempt_validation_path}",
+                f"provider_attempt_read_first_{attempt_number}: {attempt_validation_markdown_path}",
+            ]
+        )
+        selection = _save_final_cycle_proposal(
+            provider_result=provider_result,
+            validation=validation,
+            cycle_dir=cycle_dir,
+            diagnostics=diagnostics,
+        )
+        last_selection = selection
+        if validation.valid:
+            return selection
+        retry_feedback.extend([f"attempt {attempt_number} validation error: {reason}" for reason in validation.reasons])
+
+    fallback_selection = _deterministic_fallback_selection(config, state, cycle_dir=cycle_dir, diagnostics=diagnostics)
+    if fallback_selection is not None:
+        return fallback_selection
+    if last_selection is not None:
+        return last_selection
+    return _provider_failure_stop_selection(config, state, cycle_dir=cycle_dir, diagnostics=diagnostics)
+
+
+def _save_final_cycle_proposal(
+    *,
+    provider_result: CampaignProviderResult,
+    validation: CampaignProposalValidation,
+    cycle_dir: str,
+    diagnostics: list[str],
+) -> CampaignProposalSelection:
+    proposal_path, validation_path, validation_markdown_path = save_campaign_proposal_artifacts(
+        provider_result.proposal,
+        validation,
+        cycle_dir,
+    )
+    return CampaignProposalSelection(
+        provider_result=provider_result,
+        validation=validation,
+        proposal_path=proposal_path,
+        validation_path=validation_path,
+        validation_markdown_path=validation_markdown_path,
+        diagnostics=list(diagnostics),
+    )
+
+
+def _deterministic_fallback_selection(
+    config: CampaignConfig,
+    state,
+    *,
+    cycle_dir: str,
+    diagnostics: list[str],
+) -> CampaignProposalSelection | None:
+    fallback_config = replace(config, provider="deterministic")
+    provider_result = campaign_provider_result(fallback_config, state, cycle_dir=None)
+    validation = validate_campaign_proposal(provider_result.proposal, config=config, state=state)
+    if not validation.valid:
+        return None
+    diagnostics = [
+        *diagnostics,
+        "provider_fallback: deterministic",
+        "provider_fallback_reason: model provider did not produce a valid proposal after one retry",
+    ]
+    return _save_final_cycle_proposal(
+        provider_result=replace(provider_result, provider=config.provider),
+        validation=validation,
+        cycle_dir=cycle_dir,
+        diagnostics=diagnostics,
+    )
+
+
+def _provider_failure_stop_selection(
+    config: CampaignConfig,
+    state,
+    *,
+    cycle_dir: str,
+    diagnostics: list[str],
+) -> CampaignProposalSelection:
+    fallback_config = replace(config, provider="deterministic")
+    provider_result = campaign_provider_result(fallback_config, state, cycle_dir=None)
+    validation = validate_campaign_proposal(provider_result.proposal, config=config, state=state)
+    diagnostics = [
+        *diagnostics,
+        "provider_fallback: deterministic_unvalidated",
+        "provider_fallback_reason: no provider proposal could be parsed; returning deterministic proposal for inspection",
+    ]
+    return _save_final_cycle_proposal(
+        provider_result=replace(provider_result, provider=config.provider),
+        validation=validation,
+        cycle_dir=cycle_dir,
+        diagnostics=diagnostics,
+    )
 
 
 def _campaign_exists(paths) -> bool:

@@ -189,16 +189,21 @@ Current progress:
   `campaign_proposal.v1`.
 - A model dry run writes `provider_context.json`, `provider_prompt.md`,
   `provider_raw_response.txt`, and `provider_proposal.json` under the cycle
-  directory.
+  attempt directory.
 - The parsed proposal is validated by the same deterministic validator.
 - `quant-lab campaign run` deliberately skips execution for non-deterministic
   providers in this slice, so a model can be inspected before it spends
   backtest budget.
+- Invalid or failed model attempts are saved under `provider_attempt_001/` and
+  `provider_attempt_002/`.
+- Attempt 2 receives `prior_attempt_feedback` containing the first attempt's
+  provider error or validation reasons.
+- If both model attempts fail, the controller writes a deterministic fallback
+  proposal for inspection only. Because the campaign provider is still `ollama`,
+  execution remains skipped.
 
 Still missing:
 
-- retry-on-invalid model output,
-- deterministic fallback or safe stop after repeated invalid proposals,
 - actual model-proposal execution after dry-run quality is proven,
 - multi-cycle Ollama campaign execution.
 

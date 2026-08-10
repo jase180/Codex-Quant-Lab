@@ -42,6 +42,8 @@ CAMPAIGN_PROVIDER_RAW_RESPONSE_FILENAME = "provider_raw_response.txt"
 CAMPAIGN_PROVIDER_PARSED_PROPOSAL_FILENAME = "provider_proposal.json"
 CAMPAIGN_PROVIDER_ERROR_JSON_FILENAME = "provider_error.json"
 CAMPAIGN_PROVIDER_ERROR_MARKDOWN_FILENAME = "provider_error.md"
+
+
 @dataclass(frozen=True)
 class CampaignProviderResult:
     provider: str
@@ -82,6 +84,7 @@ def campaign_provider_result(
     model: str | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     http_post: Callable[[str, dict, float], dict] | None = None,
+    prior_attempt_feedback: list[str] | None = None,
 ) -> CampaignProviderResult:
     """Return one provider proposal and save model-provider artifacts when possible."""
 
@@ -104,6 +107,7 @@ def campaign_provider_result(
             model=model or DEFAULT_OLLAMA_MODEL,
             timeout_seconds=timeout_seconds,
             http_post=http_post,
+            prior_attempt_feedback=prior_attempt_feedback,
         )
     if config.provider == "codex":
         raise NotImplementedError(
@@ -159,13 +163,14 @@ def _ollama_campaign_provider_result(
     model: str,
     timeout_seconds: float,
     http_post: Callable[[str, dict, float], dict] | None,
+    prior_attempt_feedback: list[str] | None,
 ) -> CampaignProviderResult:
     if not model.strip():
         raise ValueError("model is required for ollama campaign provider")
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
 
-    context = build_campaign_provider_context(config, state)
+    context = build_campaign_provider_context(config, state, prior_attempt_feedback=prior_attempt_feedback)
     prompt = build_campaign_provider_prompt(context)
     paths = _write_provider_prompt_artifacts(context, prompt, cycle_dir)
     post = http_post or _post_json

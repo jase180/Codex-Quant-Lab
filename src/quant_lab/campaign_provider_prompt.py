@@ -49,10 +49,15 @@ CAMPAIGN_PROPOSAL_RESPONSE_FORMAT = {
 }
 
 
-def build_campaign_provider_context(config: CampaignConfig, state: CampaignState) -> dict:
+def build_campaign_provider_context(
+    config: CampaignConfig,
+    state: CampaignState,
+    *,
+    prior_attempt_feedback: list[str] | None = None,
+) -> dict:
     """Build the exact context a model can see before proposing one cycle."""
 
-    return {
+    context = {
         "schema_version": "campaign_provider_context.v1",
         "campaign": {
             "title": config.title,
@@ -87,6 +92,9 @@ def build_campaign_provider_context(config: CampaignConfig, state: CampaignState
             "Prefer stop_campaign when no justified experiment remains.",
         ],
     }
+    if prior_attempt_feedback:
+        context["prior_attempt_feedback"] = prior_attempt_feedback
+    return context
 
 
 def build_campaign_provider_prompt(context: dict) -> str:
