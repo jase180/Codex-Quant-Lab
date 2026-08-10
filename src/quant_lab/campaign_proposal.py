@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from .campaign import CampaignConfig, CampaignState
+from .opportunity_theses import load_opportunity_catalog
 from .research_plan_common import utc_now_iso, validate_required_text_fields, write_json_payload
 
 
@@ -228,6 +229,7 @@ def validate_campaign_proposal(
     *,
     config: CampaignConfig,
     state: CampaignState,
+    opportunity_catalog_dir: str | Path | None = "data/opportunity_catalog",
 ) -> CampaignProposalValidation:
     reasons: list[str] = []
     projected_runs = projected_run_count(proposal)
@@ -235,7 +237,14 @@ def validate_campaign_proposal(
     if proposal.action not in ALLOWED_CAMPAIGN_ACTIONS:
         reasons.append(f"action is not permitted: {proposal.action}")
     if proposal.action == "run_experiment":
-        _validate_run_experiment_proposal(proposal, config=config, state=state, reasons=reasons, projected_runs=projected_runs)
+        _validate_run_experiment_proposal(
+            proposal,
+            config=config,
+            state=state,
+            reasons=reasons,
+            projected_runs=projected_runs,
+            opportunity_catalog_dir=opportunity_catalog_dir,
+        )
     if proposal.action in {"request_human_review", "stop_campaign"} and projected_runs != 0:
         reasons.append("non-run actions must not consume runs")
 
@@ -295,6 +304,7 @@ def format_campaign_validation_markdown(
             f"- Action: `{proposal.action}`",
             f"- Template: `{proposal.strategy_template or '-'}`",
             f"- Symbol: `{proposal.symbol or '-'}`",
+            f"- Opportunity thesis: `{proposal.opportunity_thesis_id or '-'}`",
             f"- Projected run count: `{validation.projected_run_count}`",
             "",
             "## Validation",
@@ -316,6 +326,7 @@ def _validate_run_experiment_proposal(
     state: CampaignState,
     reasons: list[str],
     projected_runs: int,
+    opportunity_catalog_dir: str | Path | None,
 ) -> None:
     if proposal.strategy_template not in config.allowed_templates:
         reasons.append(f"template is not allowed: {proposal.strategy_template}")
@@ -339,6 +350,11 @@ def _validate_run_experiment_proposal(
         reasons.append("success criteria are required before execution")
     if _violates_do_not_repeat(proposal, state):
         reasons.append("proposal appears to violate do_not_repeat campaign memory")
+    _validate_opportunity_thesis_reference(
+        proposal,
+        reasons=reasons,
+        opportunity_catalog_dir=opportunity_catalog_dir,
+    )
 
 
 def _has_completed_title(state: CampaignState, title: str) -> bool:
@@ -365,6 +381,44 @@ def _violates_do_not_repeat(proposal: CampaignProposal, state: CampaignState) ->
         *[str(value) for value in proposal.parameters.values()],
     ]
     return any(str(term).strip().lower() and str(term).strip().lower() in corpus for term in terms)
+
+
+def _validate_opportunity_thesis_reference(
+    proposal: CampaignProposal,
+    *,
+    reasons: list[str],
+    opportunity_catalog_dir: str | Path | None,
+) -> None:
+    if not proposal.opportunity_thesis_id:
+        return
+    if opportunity_catalog_dir is None:
+        reasons.append("opportunity_thesis_id was provided but opportunity catalog validation is disabled")
+        return
+
+    root = Path(opportunity_catalog_dir)
+    if not root.exists():
+        reasons.append(f"opportunity_thesis_id was provided but opportunity catalog does not exist: {root}")
+        return
+
+    theses = {thesis.thesis_id: thesis for thesis in load_opportunity_catalog(root)}
+    thesis = theses.get(proposal.opportunity_thesis_id)
+    if thesis is None:
+        reasons.append(f"opportunity_thesis_id is not in the opportunity catalog: {proposal.opportunity_thesis_id}")
+        return
+    if thesis.decision != "test_now":
+        reasons.append(f"opportunity thesis is not marked test_now: {proposal.opportunity_thesis_id}")
+    if thesis.engine_fit != "ready":
+        reasons.append(f"opportunity thesis engine_fit is not ready: {proposal.opportunity_thesis_id}")
+
+    strategy_family = TEMPLATE_STRATEGY_FAMILIES.get(str(proposal.strategy_template))
+    if strategy_family is None:
+        reasons.append(f"no strategy-family mapping exists for template: {proposal.strategy_template}")
+        return
+    if strategy_family not in thesis.compatible_strategy_families:
+        reasons.append(
+            "opportunity thesis is not compatible with template "
+            f"{proposal.strategy_template}: {proposal.opportunity_thesis_id}"
+        )
 
 
 def _required_text(payload: dict[str, Any], key: str, context: str) -> str:

@@ -17,6 +17,12 @@ Second implementation slice delivered:
 - Updated deterministic campaign proposals to cite the liquid ETF trend-defense
   thesis when using the current SPY trend templates.
 
+Third implementation slice delivered:
+
+- Campaign validation now checks cited opportunity theses against the catalog.
+- Cited theses must exist, be `test_now`, be `ready`, and match the selected
+  template's strategy family.
+
 ## Goal
 
 Shift Quant Lab from searching strategy space to searching economic-mechanism

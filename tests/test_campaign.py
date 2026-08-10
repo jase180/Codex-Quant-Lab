@@ -188,6 +188,91 @@ class CampaignTests(unittest.TestCase):
         self.assertNotIn("forced_event_liquidity", thesis_ids)
         self.assertIn("Prefer proposals with an opportunity_thesis_id", " ".join(context["provider_rules"]))
 
+    def test_campaign_validation_rejects_unknown_opportunity_thesis(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY unknown thesis test",
+                    "hypothesis": "A test proposal cites an unknown thesis.",
+                    "rationale": "Validator coverage.",
+                    "difference_from_prior_work": "Uses an unknown thesis id.",
+                    "strategy_template": "sma-long-cash",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "missing_thesis",
+                    "parameters": {"sma_length": 200},
+                    "success_criteria": {"minimum_cagr_retention": 0.8},
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertFalse(validation.valid)
+        self.assertTrue(any("not in the opportunity catalog" in reason for reason in validation.reasons))
+
+    def test_campaign_validation_rejects_blocked_opportunity_thesis(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY blocked thesis test",
+                    "hypothesis": "A test proposal cites a blocked thesis.",
+                    "rationale": "Validator coverage.",
+                    "difference_from_prior_work": "Uses a blocked event thesis.",
+                    "strategy_template": "sma-long-cash",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "forced_event_liquidity",
+                    "parameters": {"sma_length": 200},
+                    "success_criteria": {"minimum_cagr_retention": 0.8},
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertFalse(validation.valid)
+        self.assertTrue(any("not marked test_now" in reason for reason in validation.reasons))
+        self.assertTrue(any("engine_fit is not ready" in reason for reason in validation.reasons))
+
+    def test_campaign_validation_rejects_unrelated_opportunity_thesis(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY unrelated thesis test",
+                    "hypothesis": "A test proposal cites a thesis from another strategy family.",
+                    "rationale": "Validator coverage.",
+                    "difference_from_prior_work": "Uses an ETF rotation thesis with a trend template.",
+                    "strategy_template": "sma-long-cash",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "fragmented_etf_relative_strength",
+                    "parameters": {"sma_length": 200},
+                    "success_criteria": {"minimum_cagr_retention": 0.8},
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertFalse(validation.valid)
+        self.assertTrue(any("not compatible with template" in reason for reason in validation.reasons))
+
     def test_campaign_provider_boundary_returns_codex_handoff_proposal(self) -> None:
         payload = campaign_payload()
         payload["provider"] = "codex"

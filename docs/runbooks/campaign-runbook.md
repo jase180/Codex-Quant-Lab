@@ -39,6 +39,12 @@ in its strict proposal, but the controller still owns validation, conversion,
 execution, budgets, and stopping. The thesis is context for choosing the next
 experiment; it is not executable strategy JSON.
 
+When a proposal cites `opportunity_thesis_id`, validation checks that the thesis
+exists in `data/opportunity_catalog/`, is marked `decision: test_now`, has
+`engine_fit: ready`, and is compatible with the proposed strategy template's
+strategy family. A provider cannot cite a blocked event-data thesis to justify a
+currently supported SPY trend-template run.
+
 When the deterministic sequence is exhausted, it writes `final_report.md` and
 `final_report.json`. Ollama dry runs do not update campaign state or consume
 backtest budget yet.
