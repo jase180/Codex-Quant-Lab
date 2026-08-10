@@ -45,6 +45,12 @@ exists in `data/opportunity_catalog/`, is marked `decision: test_now`, has
 strategy family. A provider cannot cite a blocked event-data thesis to justify a
 currently supported SPY trend-template run.
 
+For executed campaign experiments, the thesis ID is also carried into the
+generated `experiment run-default` command as an `opportunity:<id>` experiment
+tag. That tag appears in the canonical `experiment_conclusion.json`, and
+campaign memory copies it into `completed_experiments[].opportunity_thesis_id`
+for the next cycle.
+
 When the deterministic sequence is exhausted, it writes `final_report.md` and
 `final_report.json`. Ollama dry runs do not update campaign state or consume
 backtest budget yet.

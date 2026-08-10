@@ -28,6 +28,7 @@ DEFAULT_DATE_WINDOWS = ("2015-01-02,2019-12-31", "2020-01-01,2025-12-30")
 class CampaignExperimentInputs:
     schema_version: str
     proposal_title: str
+    opportunity_thesis_id: str | None
     strategy_path: str
     data_path: str
     output_dir: str
@@ -85,6 +86,7 @@ def prepare_campaign_experiment_inputs(
     inputs = CampaignExperimentInputs(
         schema_version=CAMPAIGN_EXPERIMENT_INPUTS_SCHEMA_VERSION,
         proposal_title=proposal.title,
+        opportunity_thesis_id=proposal.opportunity_thesis_id,
         strategy_path=str(strategy_path),
         data_path=config.data_paths[proposal.symbol],
         output_dir=str(output_dir),
@@ -109,7 +111,7 @@ def _run_default_args(
     if proposal.symbol is None:
         raise ValueError("proposal symbol is required")
 
-    return {
+    args = {
         "title": proposal.title,
         "hypothesis": proposal.hypothesis,
         "strategy": strategy_path,
@@ -143,6 +145,12 @@ def _run_default_args(
         "experiments_path": "artifacts/experiments.jsonl",
         "index_path": "artifacts/research_index.jsonl",
     }
+    if proposal.opportunity_thesis_id:
+        args["tag"].append(f"opportunity:{proposal.opportunity_thesis_id}")
+        args["opportunity_thesis_id"] = proposal.opportunity_thesis_id
+    else:
+        args["opportunity_thesis_id"] = None
+    return args
 
 
 def _run_default_command_tokens(args: dict[str, Any]) -> list[str]:

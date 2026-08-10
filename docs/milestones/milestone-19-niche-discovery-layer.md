@@ -22,6 +22,8 @@ Third implementation slice delivered:
 - Campaign validation now checks cited opportunity theses against the catalog.
 - Cited theses must exist, be `test_now`, be `ready`, and match the selected
   template's strategy family.
+- Executed campaign experiments now carry the thesis ID into experiment tags,
+  conclusion JSON, and campaign memory.
 
 ## Goal
 

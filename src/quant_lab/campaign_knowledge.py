@@ -106,6 +106,7 @@ def _completed_experiment_record(
     return {
         "experiment_id": conclusion.get("experiment_id"),
         "title": experiment.get("title"),
+        "opportunity_thesis_id": _opportunity_thesis_id(experiment),
         "research_system_status": research_system.get("status"),
         "strategy_hypothesis_status": strategy_hypothesis.get("status"),
         "confidence_label": conclusion.get("confidence_label"),
@@ -138,6 +139,14 @@ def _branch_repetition_rules(conclusion: dict[str, Any]) -> list[str]:
     if not title:
         return []
     return [f"Do not repeat unchanged rejected experiment: {title}."]
+
+
+def _opportunity_thesis_id(experiment: dict[str, Any]) -> str | None:
+    for tag in _text_list(experiment.get("tags")):
+        if tag.startswith("opportunity:"):
+            thesis_id = tag.removeprefix("opportunity:").strip()
+            return thesis_id or None
+    return None
 
 
 def _next_status(

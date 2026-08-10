@@ -62,6 +62,7 @@ def conclusion_payload() -> dict:
         "experiment": {
             "title": "SPY SMA 200 long/cash campaign baseline",
             "hypothesis": "A trend rule may reduce drawdown.",
+            "tags": ["campaign", "opportunity:liquid_etf_trend_defense"],
         },
         "research_system_status": {"status": "valid"},
         "strategy_hypothesis_status": {"status": "rejected"},
@@ -365,6 +366,9 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("sma_200.inputs.length=200", inputs.command_tokens)
         self.assertIn("--success-criterion", inputs.command_tokens)
         self.assertEqual(args_payload["schema_version"], "campaign_experiment_inputs.v1")
+        self.assertEqual(args_payload["opportunity_thesis_id"], "liquid_etf_trend_defense")
+        self.assertIn("opportunity:liquid_etf_trend_defense", args_payload["run_default_args"]["tag"])
+        self.assertIn("opportunity:liquid_etf_trend_defense", inputs.command_tokens)
         self.assertIn("quant-lab", command_markdown)
         self.assertIn("experiment", command_markdown)
         self.assertIn("run-default", command_markdown)
@@ -438,6 +442,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(updated.remaining_budget["runs"], 22)
         self.assertEqual(updated.completed_experiments[0]["research_system_status"], "valid")
         self.assertEqual(updated.completed_experiments[0]["strategy_hypothesis_status"], "rejected")
+        self.assertEqual(updated.completed_experiments[0]["opportunity_thesis_id"], "liquid_etf_trend_defense")
         self.assertIn("strategy failed", " ".join(updated.current_findings))
         self.assertIn("Do not rerun the same SMA 200 long/cash branch unchanged.", updated.do_not_repeat)
         self.assertIn(
