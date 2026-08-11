@@ -427,9 +427,10 @@ Strategy-hypothesis status: rejected
 That means the lab worked and the strategy failed. Do not treat that as a repo
 failure.
 
-The final report may name a best remaining candidate. That is not a trading
-recommendation. It means the candidate is the least-bad branch from this bounded
-campaign and still needs review against unresolved risks.
+The final report may name a best completed result. That is not a trading
+recommendation. It means the completed branch was the least-bad result from this
+bounded campaign and still needs review against unresolved risks. If the bounded
+candidate menu is exhausted, `Best Remaining Candidate` should be `none`.
 
 ## Stop Conditions
 

@@ -712,8 +712,9 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(report.hypothesis_status_counts["partially_supported"], 1)
         self.assertEqual(report.thesis_status_counts["weakened"], 2)
         self.assertEqual(report.experiments_attempted[0]["opportunity_thesis_id"], "liquid_etf_trend_defense")
-        self.assertEqual(report.best_remaining_candidate["title"], "SPY EMA 50 RSI trend-follow campaign follow-up")
-        self.assertIn("review the conclusion", report.best_remaining_candidate["note"])
+        self.assertEqual(report.best_completed_result["title"], "SPY EMA 50 RSI trend-follow campaign follow-up")
+        self.assertIn("review the conclusion", report.best_completed_result["note"])
+        self.assertIsNone(report.best_remaining_candidate)
 
     def test_campaign_run_stop_writes_final_report_and_marks_state_complete(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -748,6 +749,8 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(final_json_exists)
         self.assertTrue(final_markdown_exists)
         self.assertEqual(final_report["schema_version"], "campaign_final_report.v1")
+        self.assertIn("best_completed_result", final_report)
+        self.assertIsNone(final_report["best_remaining_candidate"])
         self.assertIn("final_report:", stdout.getvalue())
 
     def test_campaign_proposal_rejects_unsupported_template_parameter(self) -> None:

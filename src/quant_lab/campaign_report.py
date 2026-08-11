@@ -29,6 +29,7 @@ class CampaignFinalReport:
     cumulative_findings: list[str]
     do_not_repeat: list[str]
     unresolved_risks: list[str]
+    best_completed_result: dict[str, Any] | None
     best_remaining_candidate: dict[str, Any] | None
     consumed_budget: dict[str, int]
     remaining_budget: dict[str, int]
@@ -69,7 +70,8 @@ def build_final_campaign_report(config: CampaignConfig, state: CampaignState) ->
         cumulative_findings=state.current_findings,
         do_not_repeat=state.do_not_repeat,
         unresolved_risks=state.unresolved_questions,
-        best_remaining_candidate=_best_remaining_candidate(experiments),
+        best_completed_result=_best_completed_result(experiments),
+        best_remaining_candidate=None,
         consumed_budget={
             "cycles": state.cycle_number,
             "runs": state.runs_used,
@@ -152,7 +154,7 @@ def _thesis_status_counts(experiments: list[dict[str, Any]]) -> dict[str, int]:
     return counts
 
 
-def _best_remaining_candidate(experiments: list[dict[str, Any]]) -> dict[str, Any] | None:
+def _best_completed_result(experiments: list[dict[str, Any]]) -> dict[str, Any] | None:
     for status in ("supported", "partially_supported", "inconclusive"):
         for experiment in experiments:
             if experiment.get("strategy_hypothesis_status") == status:
@@ -167,7 +169,8 @@ def _best_remaining_candidate(experiments: list[dict[str, Any]]) -> dict[str, An
 
 
 def _format_final_report_markdown(report: CampaignFinalReport) -> str:
-    best = report.best_remaining_candidate
+    best_completed = report.best_completed_result
+    best_remaining = report.best_remaining_candidate
     return "\n".join(
         [
             f"# Final Campaign Report: {report.title}",
@@ -209,9 +212,13 @@ def _format_final_report_markdown(report: CampaignFinalReport) -> str:
             "",
             *_bullet_lines(report.unresolved_risks),
             "",
+            "## Best Completed Result",
+            "",
+            _best_candidate_line(best_completed),
+            "",
             "## Best Remaining Candidate",
             "",
-            _best_candidate_line(best),
+            _best_candidate_line(best_remaining),
             "",
             "## Budget",
             "",
