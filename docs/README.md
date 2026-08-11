@@ -77,10 +77,12 @@ Campaign boundary: `campaign run --loop` can execute bounded deterministic
 campaigns through the existing `experiment run-default` workflow, read canonical
 conclusion JSON, update campaign memory, and write `final_report.md/json`.
 Ollama can produce strict proposal JSON with saved attempt artifacts, one retry,
-deterministic fallback, and explicit `--execute-model-proposal` gating. Codex is
-currently a handoff provider that writes the same context/prompt artifacts and
-stops for human review. The controller continues to own validation, budgets,
-execution, and stopping.
+deterministic fallback, and explicit `--execute-model-proposal` gating.
+Provider context includes `forbidden_proposals` so completed branches are shown
+as anti-examples, and validation rejects non-run handoffs that smuggle in partial
+experiment fields. Codex is currently a handoff provider that writes the same
+context/prompt artifacts and stops for human review. The controller continues to
+own validation, budgets, execution, and stopping.
 
 ## Workflow And Evidence Design
 

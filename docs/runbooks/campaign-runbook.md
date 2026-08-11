@@ -39,6 +39,13 @@ in its strict proposal, but the controller still owns validation, conversion,
 execution, budgets, and stopping. The thesis is context for choosing the next
 experiment; it is not executable strategy JSON.
 
+The same context also includes `forbidden_proposals`, a compact list of already
+completed experiment titles and thesis outcomes. Treat that list as anti-examples
+for the model: a valid provider should not repeat the same title, unchanged
+template/parameter branch, or rejected experiment. The prompt intentionally does
+not include a copyable strategy-specific JSON example, because local models can
+otherwise parrot the example instead of using campaign memory.
+
 When a proposal cites `opportunity_thesis_id`, validation checks that the thesis
 exists in `data/opportunity_catalog/`, is marked `decision: test_now`, has
 `engine_fit: ready`, and is compatible with the proposed strategy template's
@@ -49,6 +56,13 @@ Validation also rejects obvious prompt-example placeholder text in the
 hypothesis, rationale, or difference-from-prior-work fields. This prevents a
 model from returning syntactically valid JSON that merely copies the example
 instead of making a real proposal.
+
+Non-run actions are also validated. `request_human_review` and `stop_campaign`
+must not include partial executable experiment fields such as `symbol`,
+`strategy_template`, `parameters`, `success_criteria`, or `validation_plan`.
+`request_human_review` may still include `opportunity_thesis_id` when the model
+is asking a human to review a specific thesis rather than proposing a run.
+`stop_campaign` must leave the thesis ID empty.
 
 For executed campaign experiments, the thesis ID is also carried into the
 generated `experiment run-default` command as an `opportunity:<id>` experiment
@@ -185,6 +199,18 @@ artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_002/proposal_va
 
 The second context includes `prior_attempt_feedback`, which is the exact error
 or validation failure the model was asked to correct.
+
+For resumed seeded dry runs, also inspect `forbidden_proposals` inside
+`provider_context.json`. If the model repeats one of those titles, the controller
+should reject it with:
+
+```text
+proposal appears to violate do_not_repeat campaign memory
+```
+
+If the model cannot find a clean next run, a valid `request_human_review` is an
+acceptable result. That is a request for human judgment, not a failed campaign
+run.
 
 If the proposal is valid, the CLI prints:
 
