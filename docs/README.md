@@ -84,6 +84,9 @@ campaigns through the existing `experiment run-default` workflow, read canonical
 conclusion JSON, update campaign memory, and write `final_report.md/json`.
 `campaign candidates` writes a deterministic candidate menu first, including
 explicit `SEARCH_SPACE_EXHAUSTED` status when the bounded search space is empty.
+`campaign choose-candidate` lets deterministic/Ollama/Codex-style providers
+choose from candidate IDs and converts valid choices into normal proposals
+without execution.
 Ollama can produce strict proposal JSON with saved attempt artifacts, one retry,
 deterministic fallback, and explicit `--execute-model-proposal` gating.
 Provider context includes `forbidden_proposals` so completed branches are shown

@@ -89,6 +89,32 @@ class CampaignCandidateMenu:
         }
 
 
+def campaign_candidate_to_proposal(candidate: CampaignCandidate) -> CampaignProposal:
+    """Convert a validated candidate into the existing campaign proposal shape."""
+
+    return CampaignProposal(
+        schema_version="campaign_proposal.v1",
+        action="run_experiment",
+        title=candidate.title,
+        hypothesis=candidate.hypothesis,
+        rationale=candidate.novelty_reason,
+        difference_from_prior_work="Selected from deterministic campaign candidate menu.",
+        strategy_template=candidate.strategy_template,
+        symbol=candidate.symbol,
+        opportunity_thesis_id=candidate.opportunity_thesis_id,
+        parameters=dict(candidate.parameters),
+        success_criteria=dict(candidate.success_criteria),
+        validation_plan=dict(candidate.validation_plan),
+    )
+
+
+def find_campaign_candidate(menu: CampaignCandidateMenu, candidate_id: str) -> CampaignCandidate | None:
+    for candidate in menu.candidates:
+        if candidate.candidate_id == candidate_id:
+            return candidate
+    return None
+
+
 def build_campaign_candidate_menu(
     config: CampaignConfig,
     state: CampaignState,

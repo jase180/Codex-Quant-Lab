@@ -201,6 +201,50 @@ that is a valid research result. It means the current campaign scope has no
 remaining valid, non-duplicate, prespecified candidates after completed titles
 and `do_not_repeat` constraints are applied. Do not treat it as a CLI failure.
 
+## Choose From Candidate Menu
+
+Use this after inspecting the candidate menu and before integrating candidates
+into `campaign run`:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign choose-candidate `
+  --campaign artifacts\campaigns\spy_research_001
+```
+
+The command:
+
+1. regenerates the deterministic candidate menu,
+2. asks the campaign's configured provider to choose one candidate ID, request
+   human review, or stop,
+3. validates the choice,
+4. writes choice artifacts,
+5. converts a valid `choose_candidate` result into a normal
+   `campaign_proposal.v1`,
+6. stops before execution.
+
+Useful files:
+
+```text
+artifacts/campaigns/<campaign>/cycles/cycle_NNN/candidate_menu.md
+artifacts/campaigns/<campaign>/cycles/cycle_NNN/candidate_choice.json
+artifacts/campaigns/<campaign>/cycles/cycle_NNN/candidate_choice_validation.md
+artifacts/campaigns/<campaign>/cycles/cycle_NNN/proposal_validation.md
+```
+
+For Ollama-backed campaigns:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign choose-candidate `
+  --campaign artifacts\campaigns\spy_ollama_research_001 `
+  --model llama3.1:8b `
+  --timeout-seconds 120
+```
+
+Ollama now receives `campaign_candidate_choice.v1`, not a full freeform
+experiment proposal. It may only choose an existing `candidate_id`,
+`request_human_review`, or `stop_campaign`. Invalid choices are saved and retried
+once with validation feedback.
+
 ## Ollama Proposal Dry Run
 
 Use this only to inspect whether a local model can produce a valid bounded

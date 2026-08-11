@@ -19,7 +19,18 @@ from .campaign import (
 from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_execution import execute_campaign_experiment_inputs
 from .campaign_knowledge import complete_campaign_state, update_campaign_state_after_execution
-from .campaign_candidates import build_campaign_candidate_menu, save_campaign_candidate_menu
+from .campaign_candidate_choice import (
+    CampaignCandidateChoiceValidation,
+    save_campaign_candidate_choice_artifacts,
+    validate_campaign_candidate_choice,
+)
+from .campaign_candidate_provider import CampaignCandidateProviderResult, campaign_candidate_provider_result
+from .campaign_candidates import (
+    build_campaign_candidate_menu,
+    campaign_candidate_to_proposal,
+    find_campaign_candidate,
+    save_campaign_candidate_menu,
+)
 from .campaign_proposal import (
     CampaignProposalValidation,
     save_campaign_proposal_artifacts,
@@ -43,6 +54,16 @@ class CampaignProposalSelection:
 class CampaignCycleResult:
     exit_code: int
     stop_loop: bool
+
+
+@dataclass(frozen=True)
+class CampaignCandidateChoiceSelection:
+    provider_result: CampaignCandidateProviderResult
+    validation: CampaignCandidateChoiceValidation
+    choice_path: str
+    validation_path: str
+    validation_markdown_path: str
+    diagnostics: list[str]
 
 
 def campaign_init_command(args: argparse.Namespace) -> int:
@@ -84,6 +105,67 @@ def campaign_candidates_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def campaign_choose_candidate_command(args: argparse.Namespace) -> int:
+    paths = campaign_paths(args.campaign)
+    config = load_campaign_config(paths.config_path)
+    state = load_campaign_state(paths.state_path)
+    cycle_dir = _cycle_dir(paths.cycles_dir, state.cycle_number + 1)
+    menu = build_campaign_candidate_menu(
+        config,
+        state,
+        opportunity_catalog_dir=args.opportunity_catalog,
+        experiment_template_catalog_dir=args.experiment_template_catalog,
+        parameter_neighborhoods_dir=args.parameter_neighborhoods,
+    )
+    menu_json_path, menu_markdown_path = save_campaign_candidate_menu(menu, cycle_dir)
+    selection = _select_campaign_candidate_choice(args, config=config, state=state, menu=menu, cycle_dir=cycle_dir)
+    print(f"candidate_menu: {menu_json_path}")
+    print(f"candidate_menu_read_first: {menu_markdown_path}")
+    print(f"choice: {selection.choice_path}")
+    print(f"choice_validation: {selection.validation_path}")
+    print(f"choice_read_first: {selection.validation_markdown_path}")
+    for diagnostic in selection.diagnostics:
+        print(diagnostic)
+    provider_result = selection.provider_result
+    if provider_result.context_path:
+        print(f"provider_context: {provider_result.context_path}")
+    if provider_result.prompt_path:
+        print(f"provider_prompt: {provider_result.prompt_path}")
+    if provider_result.raw_response_path:
+        print(f"provider_raw_response: {provider_result.raw_response_path}")
+    if provider_result.parsed_choice_path:
+        print(f"provider_choice: {provider_result.parsed_choice_path}")
+    print(f"valid: {selection.validation.valid}")
+    print(f"action: {provider_result.choice.action}")
+    print(f"selected_candidate_id: {provider_result.choice.candidate_id or '-'}")
+    if selection.validation.reasons:
+        print("reasons:")
+        for reason in selection.validation.reasons:
+            print(f"- {reason}")
+    if not selection.validation.valid:
+        return 1
+    if provider_result.choice.action != "choose_candidate":
+        print("execution: skipped")
+        return 0
+
+    candidate = find_campaign_candidate(menu, provider_result.choice.candidate_id or "")
+    if candidate is None:
+        raise ValueError("validated candidate choice could not be found in menu")
+    proposal = campaign_candidate_to_proposal(candidate)
+    proposal_validation = validate_campaign_proposal(proposal, config=config, state=state)
+    proposal_path, proposal_validation_path, proposal_markdown_path = save_campaign_proposal_artifacts(
+        proposal,
+        proposal_validation,
+        cycle_dir,
+    )
+    print(f"proposal: {proposal_path}")
+    print(f"proposal_validation: {proposal_validation_path}")
+    print(f"proposal_read_first: {proposal_markdown_path}")
+    print(f"proposal_valid: {proposal_validation.valid}")
+    print("execution: skipped_candidate_choice")
+    return 0 if proposal_validation.valid else 1
+
+
 def campaign_run_command(args: argparse.Namespace) -> int:
     paths = campaign_paths(args.out)
     exists = _campaign_exists(paths)
@@ -107,6 +189,145 @@ def campaign_run_command(args: argparse.Namespace) -> int:
     if getattr(args, "loop", False):
         return _run_campaign_loop(args, config=config, paths=paths)
     return _run_one_campaign_cycle(args, config=config, state=state, paths=paths).exit_code
+
+
+def _select_campaign_candidate_choice(
+    args: argparse.Namespace,
+    *,
+    config: CampaignConfig,
+    state,
+    menu,
+    cycle_dir: str,
+) -> CampaignCandidateChoiceSelection:
+    if config.provider == "deterministic":
+        provider_result = campaign_candidate_provider_result(config, state, menu, cycle_dir=cycle_dir)
+        validation = validate_campaign_candidate_choice(provider_result.choice, menu=menu)
+        choice_path, validation_path, validation_markdown_path = save_campaign_candidate_choice_artifacts(
+            provider_result.choice,
+            validation,
+            cycle_dir,
+        )
+        return CampaignCandidateChoiceSelection(
+            provider_result=provider_result,
+            validation=validation,
+            choice_path=choice_path,
+            validation_path=validation_path,
+            validation_markdown_path=validation_markdown_path,
+            diagnostics=[],
+        )
+    return _select_model_candidate_choice(args, config=config, state=state, menu=menu, cycle_dir=cycle_dir)
+
+
+def _select_model_candidate_choice(
+    args: argparse.Namespace,
+    *,
+    config: CampaignConfig,
+    state,
+    menu,
+    cycle_dir: str,
+) -> CampaignCandidateChoiceSelection:
+    diagnostics: list[str] = []
+    last_selection: CampaignCandidateChoiceSelection | None = None
+    retry_feedback: list[str] = []
+    for attempt_number in (1, 2):
+        attempt_dir = str(Path(cycle_dir) / f"provider_attempt_{attempt_number:03d}")
+        try:
+            provider_result = campaign_candidate_provider_result(
+                config,
+                state,
+                menu,
+                cycle_dir=attempt_dir,
+                base_url=getattr(args, "base_url", None),
+                model=getattr(args, "model", None),
+                timeout_seconds=getattr(args, "timeout_seconds", 60.0),
+                prior_attempt_feedback=retry_feedback,
+            )
+        except Exception as exc:
+            feedback = f"attempt {attempt_number} provider error: {exc}"
+            error_json_path, error_markdown_path = save_campaign_provider_error_artifacts(
+                cycle_dir=attempt_dir,
+                provider=config.provider,
+                error=feedback,
+            )
+            retry_feedback.append(feedback)
+            diagnostics.extend(
+                [
+                    f"provider_attempt_{attempt_number}: failed",
+                    f"provider_error_{attempt_number}: {error_json_path}",
+                    f"provider_error_read_first_{attempt_number}: {error_markdown_path}",
+                ]
+            )
+            continue
+
+        validation = validate_campaign_candidate_choice(provider_result.choice, menu=menu)
+        attempt_choice_path, attempt_validation_path, attempt_markdown_path = save_campaign_candidate_choice_artifacts(
+            provider_result.choice,
+            validation,
+            attempt_dir,
+        )
+        diagnostics.extend(
+            [
+                f"provider_attempt_{attempt_number}: valid={validation.valid}",
+                f"provider_attempt_choice_{attempt_number}: {attempt_choice_path}",
+                f"provider_attempt_validation_{attempt_number}: {attempt_validation_path}",
+                f"provider_attempt_read_first_{attempt_number}: {attempt_markdown_path}",
+            ]
+        )
+        selection = _save_final_candidate_choice(
+            provider_result=provider_result,
+            validation=validation,
+            cycle_dir=cycle_dir,
+            diagnostics=diagnostics,
+        )
+        last_selection = selection
+        if validation.valid:
+            return selection
+        retry_feedback.extend([f"attempt {attempt_number} validation error: {reason}" for reason in validation.reasons])
+
+    fallback_result = campaign_candidate_provider_result(replace(config, provider="deterministic"), state, menu, cycle_dir=None)
+    fallback_validation = validate_campaign_candidate_choice(fallback_result.choice, menu=menu)
+    diagnostics = [
+        *diagnostics,
+        "provider_fallback: deterministic",
+        "provider_fallback_reason: model provider did not produce a valid candidate choice after one retry",
+    ]
+    if fallback_validation.valid:
+        return _save_final_candidate_choice(
+            provider_result=replace(fallback_result, provider=config.provider),
+            validation=fallback_validation,
+            cycle_dir=cycle_dir,
+            diagnostics=diagnostics,
+        )
+    if last_selection is not None:
+        return last_selection
+    return _save_final_candidate_choice(
+        provider_result=replace(fallback_result, provider=config.provider),
+        validation=fallback_validation,
+        cycle_dir=cycle_dir,
+        diagnostics=diagnostics,
+    )
+
+
+def _save_final_candidate_choice(
+    *,
+    provider_result: CampaignCandidateProviderResult,
+    validation: CampaignCandidateChoiceValidation,
+    cycle_dir: str,
+    diagnostics: list[str],
+) -> CampaignCandidateChoiceSelection:
+    choice_path, validation_path, validation_markdown_path = save_campaign_candidate_choice_artifacts(
+        provider_result.choice,
+        validation,
+        cycle_dir,
+    )
+    return CampaignCandidateChoiceSelection(
+        provider_result=provider_result,
+        validation=validation,
+        choice_path=choice_path,
+        validation_path=validation_path,
+        validation_markdown_path=validation_markdown_path,
+        diagnostics=list(diagnostics),
+    )
 
 
 def _run_campaign_loop(args: argparse.Namespace, *, config: CampaignConfig, paths) -> int:

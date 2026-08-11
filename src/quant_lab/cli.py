@@ -22,6 +22,7 @@ from .cli_agent import (
 )
 from .cli_campaign import (
     campaign_candidates_command,
+    campaign_choose_candidate_command,
     campaign_init_command,
     campaign_run_command,
     campaign_status_command,
@@ -1235,6 +1236,44 @@ def register_campaign_commands(subparsers) -> None:
         help="Directory containing parameter_neighborhood.v1 JSON files. Defaults to data/parameter_neighborhoods.",
     )
     candidates_parser.set_defaults(func=campaign_candidates_command)
+
+    choose_candidate_parser = campaign_subparsers.add_parser(
+        "choose-candidate",
+        help="Ask the configured provider to choose from a deterministic candidate menu without executing.",
+    )
+    choose_candidate_parser.add_argument("--campaign", required=True, help="Campaign output directory.")
+    choose_candidate_parser.add_argument(
+        "--base-url",
+        default="http://localhost:11434/v1",
+        help="OpenAI-compatible base URL for Ollama campaigns. Defaults to Ollama's local v1 endpoint.",
+    )
+    choose_candidate_parser.add_argument(
+        "--model",
+        default=None,
+        help="Model name for Ollama campaigns. Defaults to llama3.1:8b.",
+    )
+    choose_candidate_parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=60.0,
+        help="Provider request timeout in seconds. Defaults to 60.",
+    )
+    choose_candidate_parser.add_argument(
+        "--opportunity-catalog",
+        default="data/opportunity_catalog",
+        help="Directory containing opportunity_thesis.v1 JSON files. Defaults to data/opportunity_catalog.",
+    )
+    choose_candidate_parser.add_argument(
+        "--experiment-template-catalog",
+        default="data/experiment_template_catalog",
+        help="Directory containing experiment_template.v1 JSON files. Defaults to data/experiment_template_catalog.",
+    )
+    choose_candidate_parser.add_argument(
+        "--parameter-neighborhoods",
+        default="data/parameter_neighborhoods",
+        help="Directory containing parameter_neighborhood.v1 JSON files. Defaults to data/parameter_neighborhoods.",
+    )
+    choose_candidate_parser.set_defaults(func=campaign_choose_candidate_command)
 
     run_parser = campaign_subparsers.add_parser(
         "run",

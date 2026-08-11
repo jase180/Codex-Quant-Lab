@@ -1,10 +1,10 @@
 # Milestone 20: Candidate Menu Discovery
 
-Status: in progress. Slice 3 complete.
+Status: in progress. Slice 4 complete.
 
 ## Current Implementation State
 
-Slices 2 and 3 are implemented:
+Slices 2, 3, and 4 are implemented:
 
 - `src/quant_lab/experiment_templates.py` loads and validates
   `experiment_template.v1` and `parameter_neighborhood.v1` catalog entries.
@@ -19,9 +19,18 @@ Slices 2 and 3 are implemented:
   checks, unsupported campaign-parameter mappings, and neighborhood lookup.
 - `tests/test_campaign_candidates.py` validates fresh menus, seeded
   `SEARCH_SPACE_EXHAUSTED` behavior, artifact writing, and the CLI command.
+- `src/quant_lab/campaign_candidate_choice.py` defines strict
+  `campaign_candidate_choice.v1` parsing, validation, and artifacts.
+- `src/quant_lab/campaign_candidate_provider.py` lets deterministic, Ollama,
+  and Codex-style providers choose from candidate IDs instead of inventing full
+  experiment proposals.
+- `quant-lab campaign choose-candidate` writes a candidate menu, provider choice,
+  choice validation, and a converted `campaign_proposal.v1` when a candidate is
+  selected. It does not execute the proposal.
 
-No campaign execution behavior has changed yet. The next slice is provider
-selection from a generated menu.
+No campaign execution behavior has changed yet. The next slice is campaign-run
+integration, where `campaign run` can generate a candidate menu before provider
+selection.
 
 Real seeded SPY campaign check:
 
@@ -42,6 +51,28 @@ The rejected candidates include the completed SMA 200 branch, the completed EMA
 50 RSI branch, and SMA 100/150 variants rejected because campaign memory says
 not to keep widening the same branch until the contradicting evidence is
 explained.
+
+Real seeded Ollama candidate-choice check:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign choose-candidate `
+  --campaign artifacts\campaigns\candidate_choice_ollama_exhausted_smoke `
+  --model llama3.1:8b `
+  --timeout-seconds 120
+```
+
+Result:
+
+```text
+provider_attempt_1: valid=False
+provider_attempt_2: valid=True
+action: request_human_review
+execution: skipped
+```
+
+The first attempt chose `choose_candidate` with a null candidate ID against an
+exhausted menu. Validation rejected it. The retry returned a clean
+`request_human_review` without inventing a new experiment.
 
 ## Why This Milestone Exists
 
@@ -369,17 +400,19 @@ Goal: make Ollama/Codex choose from candidates instead of inventing proposals.
 
 Deliverables:
 
-- Provider context includes `candidate_menu`.
+- Provider context includes `candidate_menu`. Done.
 - Provider output is a strict candidate choice or human-review/stop action.
+  Done.
 - Python validates candidate IDs and converts selected candidates into existing
-  campaign proposals.
-- Invalid choices are saved, retried once, then stopped/fallback.
+  campaign proposals. Done.
+- Invalid choices are saved, retried once, then stopped/fallback. Done.
 
 Exit criteria:
 
 - Ollama no longer writes arbitrary experiment details for campaign discovery.
+  Done for `campaign choose-candidate`.
 - A repeated stale branch can only appear if Python generated it, which should
-  be treated as a candidate-generator bug.
+  be treated as a candidate-generator bug. Done for `campaign choose-candidate`.
 
 ### Slice 5: Campaign Integration
 
