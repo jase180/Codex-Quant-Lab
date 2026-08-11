@@ -69,6 +69,9 @@ current workflow docs and the latest experiment handoffs.
   bounded multi-cycle campaign roadmap and current implementation boundary.
 - [Milestone 19 Niche Discovery Layer](milestones/milestone-19-niche-discovery-layer.md):
   planned opportunity-thesis layer for small-capacity market niches.
+- [Milestone 20 Candidate Menu Discovery](milestones/milestone-20-candidate-menu-discovery.md):
+  planned candidate-generator layer so providers choose among bounded
+  experiments instead of inventing them.
 
 Current boundary: agent commands can prepare context and recommend the next
 experiment, but they do not take over execution without a human/Codex step.
@@ -115,6 +118,8 @@ own validation, budgets, execution, and stopping.
 - [Milestone 16 Session Manifests](milestones/milestone-16-session-manifests.md)
 - [Milestone 17 Local-Agent Advisor](milestones/milestone-17-local-agent-advisor.md)
 - [Milestone 18 Campaign Orchestration](milestones/milestone-18-campaign-orchestration.md)
+- [Milestone 19 Niche Discovery Layer](milestones/milestone-19-niche-discovery-layer.md)
+- [Milestone 20 Candidate Menu Discovery](milestones/milestone-20-candidate-menu-discovery.md)
 
 ## Reference
 

@@ -452,7 +452,7 @@ Exit criteria:
 
 ## Milestone 19: Niche Discovery Layer
 
-Status: proposed.
+Status: complete.
 
 Goal: shift agent-generated research from strategy-template search to
 small-capacity market-niche discovery.
@@ -481,7 +481,38 @@ Exit criteria:
 - At least one real experiment starts from a niche thesis rather than a
   strategy template.
 
-## Milestone 20: Strategy Language V2
+## Milestone 20: Candidate Menu Discovery
+
+Status: planned.
+
+Goal: generate a small menu of valid, non-duplicate, information-seeking
+experiment candidates before asking a provider to choose the next run.
+
+Detailed plan:
+[milestone-20-candidate-menu-discovery.md](milestone-20-candidate-menu-discovery.md)
+
+Planned work:
+
+- Experiment template catalog separate from executable strategy JSON.
+- Allowed parameter neighborhoods with small prespecified sets.
+- Deterministic candidate generation from opportunity theses, templates,
+  neighborhoods, and prior conclusions.
+- Duplicate and `do_not_repeat` filtering before a provider sees candidates.
+- Candidate metadata for information value, prior overlap, mining risk, and
+  engine support.
+- Provider prompt update so Ollama/Codex choose candidate IDs instead of
+  inventing freeform experiments.
+
+Exit criteria:
+
+- A seeded campaign can produce either a candidate menu or an explicit
+  `SEARCH_SPACE_EXHAUSTED` state.
+- A provider can choose from a bounded menu without inventing unsupported
+  strategy features.
+- Existing campaign validation, budgets, and experiment execution remain the
+  authority.
+
+## Milestone 21: Strategy Language V2
 
 Status: proposed.
 
@@ -495,7 +526,7 @@ Planned work:
 - Stops, exits, holding-period rules, and cooldowns.
 - Migration docs from v1 to v2.
 
-## Milestone 21: Portfolio Realism
+## Milestone 22: Portfolio Realism
 
 Status: proposed.
 
@@ -508,7 +539,7 @@ Planned work:
 - Simple volatility-aware allocation options.
 - Better blended portfolio benchmarks.
 
-## Milestone 22: CLI UX And Configuration Polish
+## Milestone 23: CLI UX And Configuration Polish
 
 Status: proposed.
 
@@ -520,7 +551,7 @@ Planned work:
 - Better command help and beginner-facing errors.
 - Current quickstart cleanup.
 
-## Milestone 23: Example Research Library
+## Milestone 24: Example Research Library
 
 Status: proposed.
 
@@ -533,7 +564,7 @@ Planned work:
 - Rejected idea example.
 - Data-quality warning example.
 
-## Milestone 24: Test, Packaging, And Maintenance Hardening
+## Milestone 25: Test, Packaging, And Maintenance Hardening
 
 Status: proposed.
 
@@ -571,11 +602,11 @@ Exit criteria:
 
 ## Near-Term Recommendation
 
-Milestone 18 now provides the bounded campaign controller. The next
-highest-value direction is Milestone 19: add an opportunity-thesis layer so
-agents search for plausible small-capacity market imperfections before
-generating experiments.
+Milestones 18 and 19 now provide the bounded campaign controller and the
+opportunity-thesis layer. The next highest-value direction is Milestone 20:
+candidate-menu discovery.
 
-Reason: the project can already falsify simple daily-data hypotheses. The next
-gap is not more strategy knobs; it is better idea selection and better
-structural reasoning before backtests are run.
+Reason: the project can already falsify simple daily-data hypotheses and attach
+them to market-mechanism theses. The next gap is not more strategy knobs or more
+prompt hacking; it is a deterministic menu of valid, non-duplicate,
+information-seeking experiment candidates that a provider can choose among.
