@@ -142,6 +142,7 @@ def deterministic_candidate_choice(menu: CampaignCandidateMenu) -> CampaignCandi
         candidate = sorted(
             menu.candidates,
             key=lambda item: (
+                _rank_baseline_preference(item.title),
                 _rank_information_gain(item.expected_information_gain),
                 _rank_mining_risk(item.parameter_mining_risk),
                 item.candidate_id,
@@ -159,6 +160,12 @@ def deterministic_candidate_choice(menu: CampaignCandidateMenu) -> CampaignCandi
         candidate_id=None,
         rationale="SEARCH_SPACE_EXHAUSTED: no valid candidate remains in the bounded menu.",
     )
+
+
+def _rank_baseline_preference(title: str) -> int:
+    # Prefer the canonical baseline when a fresh campaign has several valid variants.
+    # Later cycles still rely on completed-title and do_not_repeat filtering to move on.
+    return 0 if "baseline" in title.lower() else 1
 
 
 def _rank_information_gain(value: str) -> int:

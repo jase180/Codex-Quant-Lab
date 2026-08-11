@@ -727,6 +727,9 @@ class CampaignTests(unittest.TestCase):
                     {"title": "SPY SMA 200 long/cash campaign baseline"},
                     {"title": "SPY EMA 50 RSI trend-follow campaign follow-up"},
                 ],
+                do_not_repeat=[
+                    "Do not keep widening this branch without a materially different trend-defense mechanism.",
+                ],
             )
             save_campaign_state(stopped_ready_state, paths.output_dir, config=config)
 
@@ -891,10 +894,10 @@ class CampaignTests(unittest.TestCase):
             output = stdout.getvalue()
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(calls), 3)
         self.assertEqual(state.status, "complete")
-        self.assertEqual(state.cycle_number, 2)
-        self.assertEqual(state.runs_used, 22)
+        self.assertEqual(state.cycle_number, 3)
+        self.assertEqual(state.runs_used, 33)
         self.assertTrue(final_report_exists)
         self.assertTrue(cycle_one_exists)
         self.assertTrue(cycle_two_exists)
@@ -1081,18 +1084,18 @@ class CampaignTests(unittest.TestCase):
 
             saved_config = load_campaign_config(out_dir / "campaign_config.json")
             cycle_dir = out_dir / "cycles" / "cycle_001"
-            proposal = json.loads((cycle_dir / "proposal.json").read_text(encoding="utf-8"))
+            choice = json.loads((cycle_dir / "candidate_choice.json").read_text(encoding="utf-8"))
             provider_context_exists = (cycle_dir / "provider_attempt_001" / "provider_context.json").exists()
             provider_prompt_exists = (cycle_dir / "provider_attempt_001" / "provider_prompt.md").exists()
-            provider_proposal_exists = (cycle_dir / "provider_attempt_001" / "provider_proposal.json").exists()
+            provider_choice_exists = (cycle_dir / "provider_attempt_001" / "provider_proposal.json").exists()
             output = stdout.getvalue()
 
         self.assertEqual(exit_code, 0)
         self.assertEqual(saved_config.provider, "codex")
-        self.assertEqual(proposal["action"], "request_human_review")
+        self.assertEqual(choice["action"], "request_human_review")
         self.assertTrue(provider_context_exists)
         self.assertTrue(provider_prompt_exists)
-        self.assertTrue(provider_proposal_exists)
+        self.assertTrue(provider_choice_exists)
         self.assertIn("execution: skipped_human_review", output)
 
     def test_campaign_run_loop_stops_on_duration_limit_between_cycles(self) -> None:
@@ -1150,20 +1153,10 @@ class CampaignTests(unittest.TestCase):
         payload = campaign_payload()
         payload["provider"] = "ollama"
         model_payload = {
-            "schema_version": "campaign_proposal.v1",
-            "action": "run_experiment",
-            "title": "SPY SMA 200 local-model dry run",
-            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
-            "rationale": "Use an already supported template before broadening campaign scope.",
-            "difference_from_prior_work": "First model-proposed campaign dry run.",
-            "strategy_template": "sma-long-cash",
-            "symbol": "SPY",
-            "parameters": {"sma_length": 200},
-            "success_criteria": {
-                "minimum_cagr_retention": 0.8,
-                "minimum_relative_drawdown_reduction": 0.25,
-            },
-            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+            "schema_version": "campaign_candidate_choice.v1",
+            "action": "choose_candidate",
+            "candidate_id": "spy_price_vs_sma_trend_003",
+            "rationale": "Choose the canonical SMA 200 baseline candidate from the bounded menu.",
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1175,7 +1168,7 @@ class CampaignTests(unittest.TestCase):
             def fake_post(url: str, request_payload: dict, timeout_seconds: float) -> dict:
                 return {"choices": [{"message": {"content": json.dumps(model_payload)}}]}
 
-            with patch("quant_lab.campaign_provider._post_json", side_effect=fake_post):
+            with patch("quant_lab.campaign_candidate_provider._post_json", side_effect=fake_post):
                 with contextlib.redirect_stdout(io.StringIO()) as stdout:
                     exit_code = main(
                         [
@@ -1196,6 +1189,7 @@ class CampaignTests(unittest.TestCase):
             validation_path = cycle_dir / "proposal_validation.json"
             context_path = attempt_dir / "provider_context.json"
             raw_path = attempt_dir / "provider_raw_response.txt"
+            choice_path = cycle_dir / "candidate_choice.json"
             strategy_path = cycle_dir / "strategy.json"
             execution_path = cycle_dir / "campaign_execution.json"
             state = load_campaign_state(out_dir / CAMPAIGN_STATE_FILENAME)
@@ -1203,6 +1197,7 @@ class CampaignTests(unittest.TestCase):
             validation_exists = validation_path.exists()
             context_exists = context_path.exists()
             raw_exists = raw_path.exists()
+            choice_exists = choice_path.exists()
             strategy_exists = strategy_path.exists()
             execution_exists = execution_path.exists()
             output = stdout.getvalue()
@@ -1212,6 +1207,7 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(validation_exists)
         self.assertTrue(context_exists)
         self.assertTrue(raw_exists)
+        self.assertTrue(choice_exists)
         self.assertFalse(strategy_exists)
         self.assertFalse(execution_exists)
         self.assertEqual(state.cycle_number, 0)
@@ -1221,20 +1217,10 @@ class CampaignTests(unittest.TestCase):
         payload = campaign_payload()
         payload["provider"] = "ollama"
         model_payload = {
-            "schema_version": "campaign_proposal.v1",
-            "action": "run_experiment",
-            "title": "SPY SMA 200 model execution",
-            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
-            "rationale": "Use a supported template with prespecified criteria.",
-            "difference_from_prior_work": "First explicitly executed model proposal.",
-            "strategy_template": "sma-long-cash",
-            "symbol": "SPY",
-            "parameters": {"sma_length": 200},
-            "success_criteria": {
-                "minimum_cagr_retention": 0.8,
-                "minimum_relative_drawdown_reduction": 0.25,
-            },
-            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+            "schema_version": "campaign_candidate_choice.v1",
+            "action": "choose_candidate",
+            "candidate_id": "spy_price_vs_sma_trend_003",
+            "rationale": "Choose the canonical SMA 200 baseline candidate from the bounded menu.",
         }
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1263,7 +1249,7 @@ class CampaignTests(unittest.TestCase):
             def fake_post(url: str, request_payload: dict, timeout_seconds: float) -> dict:
                 return {"choices": [{"message": {"content": json.dumps(model_payload)}}]}
 
-            with patch("quant_lab.campaign_provider._post_json", side_effect=fake_post):
+            with patch("quant_lab.campaign_candidate_provider._post_json", side_effect=fake_post):
                 with patch("quant_lab.cli_campaign.execute_campaign_experiment_inputs", return_value=fake_execution):
                     with contextlib.redirect_stdout(io.StringIO()) as stdout:
                         exit_code = main(
@@ -1296,30 +1282,16 @@ class CampaignTests(unittest.TestCase):
         payload = campaign_payload()
         payload["provider"] = "ollama"
         invalid_payload = {
-            "schema_version": "campaign_proposal.v1",
-            "action": "run_experiment",
-            "title": "SPY unsupported local-model dry run",
-            "hypothesis": "An unsupported parameter should be rejected.",
-            "rationale": "Validator retry check.",
-            "difference_from_prior_work": "Uses unsupported parameter.",
-            "strategy_template": "sma-long-cash",
-            "symbol": "SPY",
-            "parameters": {"not_supported": 1},
-            "success_criteria": {"minimum_cagr_retention": 0.8},
-            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+            "schema_version": "campaign_candidate_choice.v1",
+            "action": "choose_candidate",
+            "candidate_id": "missing",
+            "rationale": "Try a missing candidate.",
         }
         valid_payload = {
-            "schema_version": "campaign_proposal.v1",
-            "action": "run_experiment",
-            "title": "SPY SMA 200 retry dry run",
-            "hypothesis": "A 200-day trend rule may reduce drawdown while retaining most growth.",
-            "rationale": "Retry with supported parameters after validator feedback.",
-            "difference_from_prior_work": "Fixes the unsupported parameter from the first attempt.",
-            "strategy_template": "sma-long-cash",
-            "symbol": "SPY",
-            "parameters": {"sma_length": 200},
-            "success_criteria": {"minimum_cagr_retention": 0.8},
-            "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+            "schema_version": "campaign_candidate_choice.v1",
+            "action": "choose_candidate",
+            "candidate_id": "spy_price_vs_sma_trend_003",
+            "rationale": "Retry with a candidate ID present in the bounded menu.",
         }
         responses = [invalid_payload, valid_payload]
 
@@ -1332,7 +1304,7 @@ class CampaignTests(unittest.TestCase):
             def fake_post(url: str, request_payload: dict, timeout_seconds: float) -> dict:
                 return {"choices": [{"message": {"content": json.dumps(responses.pop(0))}}]}
 
-            with patch("quant_lab.campaign_provider._post_json", side_effect=fake_post):
+            with patch("quant_lab.campaign_candidate_provider._post_json", side_effect=fake_post):
                 with contextlib.redirect_stdout(io.StringIO()) as stdout:
                     exit_code = main(
                         [
@@ -1350,7 +1322,7 @@ class CampaignTests(unittest.TestCase):
             cycle_dir = out_dir / "cycles" / "cycle_001"
             final_proposal = json.loads((cycle_dir / "proposal.json").read_text(encoding="utf-8"))
             first_validation = json.loads(
-                (cycle_dir / "provider_attempt_001" / "proposal_validation.json").read_text(encoding="utf-8")
+                (cycle_dir / "provider_attempt_001" / "candidate_choice_validation.json").read_text(encoding="utf-8")
             )
             second_context = json.loads(
                 (cycle_dir / "provider_attempt_002" / "provider_context.json").read_text(encoding="utf-8")
@@ -1359,8 +1331,8 @@ class CampaignTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertFalse(first_validation["valid"])
-        self.assertEqual(final_proposal["title"], "SPY SMA 200 retry dry run")
-        self.assertTrue(any("unsupported parameters" in item for item in second_context["prior_attempt_feedback"]))
+        self.assertEqual(final_proposal["title"], "SPY SMA 200 long/cash campaign baseline")
+        self.assertTrue(any("candidate_id is not in candidate menu" in item for item in second_context["prior_attempt_feedback"]))
         self.assertIn("provider_attempt_1: valid=False", output)
         self.assertIn("provider_attempt_2: valid=True", output)
         self.assertNotIn("provider_fallback", output)
@@ -1375,7 +1347,7 @@ class CampaignTests(unittest.TestCase):
             out_dir = root / "campaign"
             config_path.write_text(json.dumps(payload), encoding="utf-8")
 
-            with patch("quant_lab.campaign_provider._post_json", side_effect=RuntimeError("provider timed out")):
+            with patch("quant_lab.campaign_candidate_provider._post_json", side_effect=RuntimeError("provider timed out")):
                 with contextlib.redirect_stdout(io.StringIO()) as stdout:
                     exit_code = main(
                         [

@@ -8,16 +8,18 @@ features.
 
 `quant-lab campaign run` currently has three provider modes:
 
-- `deterministic`: proposes, validates, executes one campaign cycle, reads the
+- `deterministic`: generates a candidate menu, chooses the best valid candidate,
+  converts it into a campaign proposal, executes one campaign cycle, reads the
   canonical conclusion, and updates campaign memory.
-- `ollama`: asks a local OpenAI-compatible Ollama model for one strict proposal,
-  saves the provider context/prompt/raw response/proposal, validates it, and
-  stops before execution. This is a dry-run safety step. If the first model
-  attempt fails or validates false, the controller allows one retry with the
-  prior error or validation reasons in the second context. If the retry also
-  fails, it writes a deterministic fallback proposal for inspection only.
+- `ollama`: asks a local OpenAI-compatible Ollama model to choose one candidate
+  ID from the generated menu, saves the provider context/prompt/raw
+  response/choice, validates it, and stops before execution. This is a dry-run
+  safety step. If the first model attempt fails or validates false, the
+  controller allows one retry with the prior error or validation reasons in the
+  second context. If the retry also fails, it writes a deterministic fallback
+  choice for inspection only.
 - `codex`: writes the same provider context and prompt artifacts, returns a
-  valid `request_human_review` handoff proposal, and stops. The standalone CLI
+  valid `request_human_review` handoff choice, and stops. The standalone CLI
   does not call the current Codex chat session.
 
 Deterministic run commands execute one campaign cycle:
@@ -25,44 +27,32 @@ Deterministic run commands execute one campaign cycle:
 1. Read `campaign_config.json` and `campaign_state.json`.
 2. Read relevant `data/opportunity_catalog/*.json` theses for the campaign's
    allowed templates.
-3. Propose one bounded experiment.
-4. Validate the proposal against allowed templates, data, budgets, and
+3. Read `data/experiment_template_catalog/*.json` and
+   `data/parameter_neighborhoods/*.json`.
+4. Generate `candidate_menu.json` and `candidate_menu.md`.
+5. Choose and validate one `campaign_candidate_choice.v1`.
+6. Convert the chosen candidate into a normal `campaign_proposal.v1`.
+7. Validate the proposal against allowed templates, data, budgets, and
    `do_not_repeat` memory.
-5. Convert the proposal into the existing `experiment run-default` workflow.
-6. Execute that workflow.
-7. Read `experiment_conclusion.json`.
-8. Update `campaign_state.json` and `campaign_state.md`.
+8. Convert the proposal into the existing `experiment run-default` workflow.
+9. Execute that workflow.
+10. Read `experiment_conclusion.json`.
+11. Update `campaign_state.json` and `campaign_state.md`.
 
-For model-backed providers, `provider_context.json` includes compact
-opportunity-thesis summaries. The provider can name an `opportunity_thesis_id`
-in its strict proposal, but the controller still owns validation, conversion,
-execution, budgets, and stopping. The thesis is context for choosing the next
-experiment; it is not executable strategy JSON.
+For model-backed providers, `provider_context.json` includes the complete
+candidate menu plus campaign memory. The provider can only choose a candidate ID,
+request human review, or stop. It cannot invent strategy JSON, parameters,
+indicators, success criteria, or shell commands during `campaign run`.
 
-The same context also includes `forbidden_proposals`, a compact list of already
-completed experiment titles and thesis outcomes. Treat that list as anti-examples
-for the model: a valid provider should not repeat the same title, unchanged
-template/parameter branch, or rejected experiment. The prompt intentionally does
-not include a copyable strategy-specific JSON example, because local models can
-otherwise parrot the example instead of using campaign memory.
+The candidate menu already applies completed-title and `do_not_repeat` filters.
+Treat rejected candidates as useful evidence: they explain why a branch is not
+available instead of forcing the model to improvise.
 
-When a proposal cites `opportunity_thesis_id`, validation checks that the thesis
-exists in `data/opportunity_catalog/`, is marked `decision: test_now`, has
-`engine_fit: ready`, and is compatible with the proposed strategy template's
-strategy family. A provider cannot cite a blocked event-data thesis to justify a
-currently supported SPY trend-template run.
-
-Validation also rejects obvious prompt-example placeholder text in the
-hypothesis, rationale, or difference-from-prior-work fields. This prevents a
-model from returning syntactically valid JSON that merely copies the example
-instead of making a real proposal.
-
-Non-run actions are also validated. `request_human_review` and `stop_campaign`
-must not include partial executable experiment fields such as `symbol`,
-`strategy_template`, `parameters`, `success_criteria`, or `validation_plan`.
-`request_human_review` may still include `opportunity_thesis_id` when the model
-is asking a human to review a specific thesis rather than proposing a run.
-`stop_campaign` must leave the thesis ID empty.
+Candidate generation checks that each thesis exists in
+`data/opportunity_catalog/`, is marked `decision: test_now`, has
+`engine_fit: ready`, and is compatible with the selected experiment-template
+family. A blocked event-data thesis cannot leak into a currently supported SPY
+trend-template run.
 
 For executed campaign experiments, the thesis ID is also carried into the
 generated `experiment run-default` command as an `opportunity:<id>` experiment
@@ -74,9 +64,10 @@ Campaign-safe template metadata lives in `src/quant_lab/campaign_templates.py`.
 When adding a template to campaign execution, update that one mapping so provider
 context and proposal validation keep using the same strategy-family relationship.
 
-When the deterministic sequence is exhausted, it writes `final_report.md` and
-`final_report.json`. Ollama dry runs do not update campaign state or consume
-backtest budget yet.
+When the candidate menu is exhausted, or when the campaign hits its run or cycle
+budget, the loop writes `final_report.md` and `final_report.json`. Ollama dry
+runs do not update campaign state or consume backtest budget unless
+`--execute-model-proposal` is explicitly supplied.
 
 The campaign runner must not modify source code, add indicators, change success
 criteria after seeing results, or silently expand parameter grids.
@@ -140,9 +131,9 @@ Or let the controller keep running cycles until a stop condition:
 ```
 
 `--loop` reuses the same one-cycle machinery. It stops when the campaign state
-is no longer `running`, a proposal is invalid, a provider dry run is reached, a
-`stop_campaign` proposal writes the final report, or the safety iteration cap is
-hit.
+is no longer `running`, a candidate choice or converted proposal is invalid, a
+provider dry run is reached, a `stop_campaign` choice writes the final report,
+or the safety iteration cap is hit.
 
 Budget overrides are only applied when initializing a new campaign with
 `--config`. They are written into the saved `campaign_config.json` and initial
@@ -203,8 +194,8 @@ and `do_not_repeat` constraints are applied. Do not treat it as a CLI failure.
 
 ## Choose From Candidate Menu
 
-Use this after inspecting the candidate menu and before integrating candidates
-into `campaign run`:
+Use this after inspecting the candidate menu when you want to test provider
+selection without executing a cycle:
 
 ```powershell
 .\.venv-win\Scripts\python.exe -m quant_lab.cli campaign choose-candidate `
@@ -245,11 +236,12 @@ experiment proposal. It may only choose an existing `candidate_id`,
 `request_human_review`, or `stop_campaign`. Invalid choices are saved and retried
 once with validation feedback.
 
-## Ollama Proposal Dry Run
+## Ollama Candidate Dry Run
 
-Use this only to inspect whether a local model can produce a valid bounded
-proposal. The command saves and validates the proposal but does not generate
-strategy files, run backtests, update campaign state, or write conclusions.
+Use this only to inspect whether a local model can choose a valid bounded
+candidate. The command saves and validates the choice and generated proposal but
+does not generate strategy files, run backtests, update campaign state, or write
+conclusions.
 
 Use the base campaign config and set the provider at initialization:
 
@@ -269,32 +261,35 @@ artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_co
 artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_prompt.md
 artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_raw_response.txt
 artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_proposal.json
+artifacts/campaigns/<campaign>/cycles/cycle_001/candidate_choice_validation.md
 artifacts/campaigns/<campaign>/cycles/cycle_001/proposal_validation.md
 ```
+
+`provider_proposal.json` is a legacy filename in this path; for candidate-menu
+providers it contains the parsed `campaign_candidate_choice.v1`.
 
 If a retry happens, inspect:
 
 ```text
 artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_002/provider_context.json
-artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_002/proposal_validation.md
+artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_002/candidate_choice_validation.md
 ```
 
 The second context includes `prior_attempt_feedback`, which is the exact error
 or validation failure the model was asked to correct.
 
-For resumed seeded dry runs, also inspect `forbidden_proposals` inside
-`provider_context.json`. If the model repeats one of those titles, the controller
-should reject it with:
+For resumed seeded dry runs, inspect `candidate_menu.json`. If a stale branch is
+unavailable, the menu should include the rejection reason:
 
 ```text
-proposal appears to violate do_not_repeat campaign memory
+violates do_not_repeat
 ```
 
 If the model cannot find a clean next run, a valid `request_human_review` is an
 acceptable result. That is a request for human judgment, not a failed campaign
 run.
 
-If the proposal is valid, the CLI prints:
+If the candidate choice and generated proposal are valid, the CLI prints:
 
 ```text
 execution: skipped_provider_dry_run
@@ -303,10 +298,10 @@ execution: skipped_provider_dry_run
 That is expected. Dry-run remains the default even though explicit execution is
 available.
 
-## Execute A Valid Ollama Proposal
+## Execute A Valid Ollama Choice
 
-After inspecting a dry run, execute a valid model proposal with an explicit
-opt-in:
+After inspecting a dry run, execute a valid model-selected candidate with an
+explicit opt-in:
 
 ```powershell
 .\.venv-win\Scripts\python.exe -m quant_lab.cli campaign run `
@@ -319,8 +314,9 @@ opt-in:
 ```
 
 This still does not let the model run shell commands or edit source. The model
-returns one proposal; Python validates it; only then does the controller convert
-it into the existing `experiment run-default` workflow.
+returns one candidate choice; Python validates it, converts it into a proposal,
+validates the proposal, and only then converts it into the existing
+`experiment run-default` workflow.
 
 If both model attempts fail and the controller writes a deterministic fallback,
 `--execute-model-proposal` still does not execute it. Fallback proposals are for
@@ -347,11 +343,15 @@ want the standalone campaign CLI to pretend it can control this chat session:
 The command writes:
 
 ```text
+artifacts/campaigns/<campaign>/cycles/cycle_001/candidate_menu.md
 artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_context.json
 artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_prompt.md
 artifacts/campaigns/<campaign>/cycles/cycle_001/provider_attempt_001/provider_proposal.json
-artifacts/campaigns/<campaign>/cycles/cycle_001/proposal_validation.md
+artifacts/campaigns/<campaign>/cycles/cycle_001/candidate_choice_validation.md
 ```
+
+`provider_proposal.json` uses the same legacy filename noted above, but the
+payload is a candidate choice, not a freeform proposal.
 
 It prints:
 
@@ -368,9 +368,12 @@ The deterministic provider currently proposes:
 
 1. `SPY SMA 200 long/cash campaign baseline`
 2. `SPY EMA 50 RSI trend-follow campaign follow-up`
-3. `stop_campaign`
+3. another candidate only if the candidate menu still contains a materially
+   valid non-forbidden branch within budget
 
-It stops after those known proposals instead of inventing a third strategy.
+It stops when the menu is exhausted or campaign budgets are consumed. The exact
+third-step behavior depends on conclusions carried forward into
+`campaign_state.json`; a `do_not_repeat` item can remove nearby SMA variants.
 
 ## What To Read
 
@@ -432,12 +435,12 @@ campaign and still needs review against unresolved risks.
 
 The current campaign stops when:
 
-- the deterministic provider has no materially different proposal left,
+- the candidate menu has no materially different candidate left,
 - the run budget is too small for the next projected workflow,
 - cycle budget is exhausted,
-- proposal validation fails,
+- candidate-choice or proposal validation fails,
 - or the provider returns `stop_campaign`.
 
 Ollama and Codex providers must keep the same boundary: providers return
-strict proposal JSON, while the controller owns validation, execution, state,
-and stopping.
+strict candidate-choice JSON, while the controller owns validation, execution,
+state, and stopping.

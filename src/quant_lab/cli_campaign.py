@@ -338,7 +338,20 @@ def _run_campaign_loop(args: argparse.Namespace, *, config: CampaignConfig, path
     for iteration in range(1, max_iterations + 1):
         state = load_campaign_state(paths.state_path)
         if state.status != "running":
+            if state.status == "complete" and not Path(paths.final_report_json_path).exists():
+                final_json_path, final_markdown_path = save_final_campaign_report(config, state, paths)
+                print(f"final_report: {final_markdown_path}")
+                print(f"final_report_json: {final_json_path}")
             print(f"Campaign loop stopped: status={state.status}")
+            return 0
+        if state.cycle_number >= config.max_cycles:
+            updated_state = complete_campaign_state(state, stop_reason="maximum cycle budget reached")
+            save_campaign_state(updated_state, paths.output_dir, config=config)
+            final_json_path, final_markdown_path = save_final_campaign_report(config, updated_state, paths)
+            print("Campaign loop stopped: maximum cycle budget reached")
+            print(f"state: {paths.state_path}")
+            print(f"final_report: {final_markdown_path}")
+            print(f"final_report_json: {final_json_path}")
             return 0
         if time.monotonic() - started_at >= duration_seconds:
             updated_state = complete_campaign_state(state, stop_reason="duration wall-clock limit reached")
@@ -354,46 +367,114 @@ def _run_campaign_loop(args: argparse.Namespace, *, config: CampaignConfig, path
         if result.stop_loop or result.exit_code != 0:
             print(f"Campaign loop stopped: exit_code={result.exit_code}")
             return result.exit_code
+        updated_state = load_campaign_state(paths.state_path)
+        if updated_state.status == "complete":
+            final_json_path, final_markdown_path = save_final_campaign_report(config, updated_state, paths)
+            print(f"final_report: {final_markdown_path}")
+            print(f"final_report_json: {final_json_path}")
+            print(f"Campaign loop stopped: status={updated_state.status}")
+            return 0
+        if updated_state.status == "running" and updated_state.cycle_number >= config.max_cycles:
+            completed_state = complete_campaign_state(updated_state, stop_reason="maximum cycle budget reached")
+            save_campaign_state(completed_state, paths.output_dir, config=config)
+            final_json_path, final_markdown_path = save_final_campaign_report(config, completed_state, paths)
+            print("Campaign loop stopped: maximum cycle budget reached")
+            print(f"state: {paths.state_path}")
+            print(f"final_report: {final_markdown_path}")
+            print(f"final_report_json: {final_json_path}")
+            return 0
     print("Campaign loop stopped: max loop iterations reached")
     return 1
 
 
 def _run_one_campaign_cycle(args: argparse.Namespace, *, config: CampaignConfig, state, paths) -> CampaignCycleResult:
     cycle_dir = _cycle_dir(paths.cycles_dir, state.cycle_number + 1)
-    selection = _select_campaign_proposal(args, config=config, state=state, cycle_dir=cycle_dir)
-    provider_result = selection.provider_result
-    proposal = provider_result.proposal
-    validation = selection.validation
-    proposal_path = selection.proposal_path
-    validation_path = selection.validation_path
-    validation_markdown_path = selection.validation_markdown_path
+    menu = build_campaign_candidate_menu(
+        config,
+        state,
+        opportunity_catalog_dir=getattr(args, "opportunity_catalog", "data/opportunity_catalog"),
+        experiment_template_catalog_dir=getattr(args, "experiment_template_catalog", "data/experiment_template_catalog"),
+        parameter_neighborhoods_dir=getattr(args, "parameter_neighborhoods", "data/parameter_neighborhoods"),
+    )
+    menu_json_path, menu_markdown_path = save_campaign_candidate_menu(menu, cycle_dir)
+    selection = _select_campaign_candidate_choice(args, config=config, state=state, menu=menu, cycle_dir=cycle_dir)
+    choice_result = selection.provider_result
+    choice_validation = selection.validation
+
+    print(f"candidate_menu: {menu_json_path}")
+    print(f"candidate_menu_read_first: {menu_markdown_path}")
+    print(f"choice: {selection.choice_path}")
+    print(f"choice_validation: {selection.validation_path}")
+    print(f"choice_read_first: {selection.validation_markdown_path}")
+    for diagnostic in selection.diagnostics:
+        print(diagnostic)
+    if choice_result.context_path:
+        print(f"provider_context: {choice_result.context_path}")
+    if choice_result.prompt_path:
+        print(f"provider_prompt: {choice_result.prompt_path}")
+    if choice_result.raw_response_path:
+        print(f"provider_raw_response: {choice_result.raw_response_path}")
+    if choice_result.parsed_choice_path:
+        print(f"provider_choice: {choice_result.parsed_choice_path}")
+    print(f"valid: {choice_validation.valid}")
+    print(f"action: {choice_result.choice.action}")
+    print(f"selected_candidate_id: {choice_result.choice.candidate_id or '-'}")
+    if choice_validation.reasons:
+        print("reasons:")
+        for reason in choice_validation.reasons:
+            print(f"- {reason}")
+
+    if not choice_validation.valid:
+        print("execution: skipped")
+        return CampaignCycleResult(exit_code=1, stop_loop=True)
+    if choice_result.choice.action == "stop_campaign":
+        updated_state = complete_campaign_state(state, stop_reason=choice_result.choice.rationale)
+        save_campaign_state(updated_state, paths.output_dir, config=config)
+        final_json_path, final_markdown_path = save_final_campaign_report(config, updated_state, paths)
+        print("execution: skipped")
+        print(f"state: {paths.state_path}")
+        print(f"final_report: {final_markdown_path}")
+        print(f"final_report_json: {final_json_path}")
+        return CampaignCycleResult(exit_code=0, stop_loop=True)
+    if choice_result.choice.action == "request_human_review":
+        print("execution: skipped_human_review")
+        print(f"provider: {config.provider}")
+        print("note: review the candidate menu and choose a valid candidate before execution")
+        return CampaignCycleResult(exit_code=0, stop_loop=True)
+
+    candidate = find_campaign_candidate(menu, choice_result.choice.candidate_id or "")
+    if candidate is None:
+        raise ValueError("validated candidate choice could not be found in menu")
+    proposal = campaign_candidate_to_proposal(candidate)
+    validation = validate_campaign_proposal(proposal, config=config, state=state)
+    proposal_path, validation_path, validation_markdown_path = save_campaign_proposal_artifacts(
+        proposal,
+        validation,
+        cycle_dir,
+    )
 
     print(f"Campaign proposal written: {proposal_path}")
     print(f"validation: {validation_path}")
     print(f"read_first: {validation_markdown_path}")
-    for diagnostic in selection.diagnostics:
-        print(diagnostic)
-    if provider_result.context_path:
-        print(f"provider_context: {provider_result.context_path}")
-    if provider_result.prompt_path:
-        print(f"provider_prompt: {provider_result.prompt_path}")
-    if provider_result.raw_response_path:
-        print(f"provider_raw_response: {provider_result.raw_response_path}")
-    if provider_result.parsed_proposal_path:
-        print(f"provider_proposal: {provider_result.parsed_proposal_path}")
-    print(f"valid: {validation.valid}")
+    print(f"proposal_valid: {validation.valid}")
     print(f"projected_run_count: {validation.projected_run_count}")
     if validation.reasons:
-        print("reasons:")
+        print("proposal_reasons:")
         for reason in validation.reasons:
             print(f"- {reason}")
-    if _should_skip_model_execution(args, config=config, provider_result=provider_result, validation=validation):
+    if _should_skip_model_candidate_execution(
+        args,
+        config=config,
+        provider_result=choice_result,
+        choice_validation=choice_validation,
+        proposal_validation=validation,
+    ):
         print(f"execution: skipped_provider_dry_run")
         print(f"provider: {config.provider}")
         if getattr(args, "execute_model_proposal", False):
-            print("note: model execution was requested, but the selected proposal did not come from a model response")
+            print("note: model execution was requested, but the selected candidate did not come from a model response")
         else:
-            print("note: pass --execute-model-proposal to run a valid model proposal")
+            print("note: pass --execute-model-proposal to run a valid model-selected candidate")
         return CampaignCycleResult(exit_code=0, stop_loop=True)
     elif validation.valid and proposal.action == "run_experiment":
         inputs = prepare_campaign_experiment_inputs(proposal, config=config, cycle_dir=cycle_dir)
@@ -417,23 +498,28 @@ def _run_one_campaign_cycle(args: argparse.Namespace, *, config: CampaignConfig,
         print(f"cycle_number: {updated_state.cycle_number}")
         print(f"runs_used: {updated_state.runs_used}")
         return CampaignCycleResult(exit_code=0, stop_loop=False)
-    elif validation.valid and proposal.action == "stop_campaign":
-        updated_state = complete_campaign_state(state, stop_reason=proposal.rationale)
-        save_campaign_state(updated_state, paths.output_dir, config=config)
-        final_json_path, final_markdown_path = save_final_campaign_report(config, updated_state, paths)
-        print("execution: skipped")
-        print(f"state: {paths.state_path}")
-        print(f"final_report: {final_markdown_path}")
-        print(f"final_report_json: {final_json_path}")
-        return CampaignCycleResult(exit_code=0, stop_loop=True)
-    elif validation.valid and proposal.action == "request_human_review":
-        print("execution: skipped_human_review")
-        print(f"provider: {config.provider}")
-        print("note: review the provider prompt and supply a valid campaign proposal before execution")
-        return CampaignCycleResult(exit_code=0, stop_loop=True)
     else:
         print("execution: skipped")
         return CampaignCycleResult(exit_code=0 if validation.valid else 1, stop_loop=True)
+
+
+def _should_skip_model_candidate_execution(
+    args: argparse.Namespace,
+    *,
+    config: CampaignConfig,
+    provider_result: CampaignCandidateProviderResult,
+    choice_validation: CampaignCandidateChoiceValidation,
+    proposal_validation: CampaignProposalValidation,
+) -> bool:
+    if config.provider == "deterministic":
+        return False
+    if not choice_validation.valid or not proposal_validation.valid:
+        return False
+    if provider_result.choice.action != "choose_candidate":
+        return False
+    if not getattr(args, "execute_model_proposal", False):
+        return True
+    return provider_result.raw_response is None
 
 
 def _should_skip_model_execution(

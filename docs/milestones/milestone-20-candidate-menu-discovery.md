@@ -1,10 +1,10 @@
 # Milestone 20: Candidate Menu Discovery
 
-Status: in progress. Slice 4 complete.
+Status: complete.
 
 ## Current Implementation State
 
-Slices 2, 3, and 4 are implemented:
+Slices 2, 3, 4, and 5 are implemented:
 
 - `src/quant_lab/experiment_templates.py` loads and validates
   `experiment_template.v1` and `parameter_neighborhood.v1` catalog entries.
@@ -27,10 +27,13 @@ Slices 2, 3, and 4 are implemented:
 - `quant-lab campaign choose-candidate` writes a candidate menu, provider choice,
   choice validation, and a converted `campaign_proposal.v1` when a candidate is
   selected. It does not execute the proposal.
+- `quant-lab campaign run` now uses the same candidate-menu boundary before
+  execution: provider choice is validated, converted into the existing
+  `campaign_proposal.v1`, and then run through `experiment run-default`.
 
-No campaign execution behavior has changed yet. The next slice is campaign-run
-integration, where `campaign run` can generate a candidate menu before provider
-selection.
+Campaign execution still reuses existing research capabilities. The runner does
+not let a provider modify source code, add indicators, invent strategy JSON, or
+run arbitrary commands during a campaign.
 
 Real seeded SPY campaign check:
 
@@ -421,16 +424,18 @@ Goal: make the normal campaign loop use candidate generation.
 Deliverables:
 
 - `campaign run` generates a candidate menu before asking model providers.
+  Done.
 - Deterministic provider can select the top valid candidate or stop when the
-  menu is empty.
-- Final campaign reports mention whether the search space was exhausted.
+  menu is empty. Done.
+- Final campaign reports are written when the menu stops the campaign or when
+  cycle/run budgets complete the campaign. Done.
 
 Exit criteria:
 
 - A seeded campaign with no valid remaining candidates stops as
-  `SEARCH_SPACE_EXHAUSTED`.
+  `SEARCH_SPACE_EXHAUSTED`. Done.
 - A campaign with new catalog scope can run one chosen candidate through the
-  existing `experiment run-default` workflow.
+  existing `experiment run-default` workflow. Done.
 
 ## Non-Goals
 

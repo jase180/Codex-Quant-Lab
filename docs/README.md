@@ -82,18 +82,16 @@ experiment, but they do not take over execution without a human/Codex step.
 Campaign boundary: `campaign run --loop` can execute bounded deterministic
 campaigns through the existing `experiment run-default` workflow, read canonical
 conclusion JSON, update campaign memory, and write `final_report.md/json`.
-`campaign candidates` writes a deterministic candidate menu first, including
-explicit `SEARCH_SPACE_EXHAUSTED` status when the bounded search space is empty.
-`campaign choose-candidate` lets deterministic/Ollama/Codex-style providers
-choose from candidate IDs and converts valid choices into normal proposals
-without execution.
-Ollama can produce strict proposal JSON with saved attempt artifacts, one retry,
-deterministic fallback, and explicit `--execute-model-proposal` gating.
-Provider context includes `forbidden_proposals` so completed branches are shown
-as anti-examples, and validation rejects non-run handoffs that smuggle in partial
-experiment fields. Codex is currently a handoff provider that writes the same
-context/prompt artifacts and stops for human review. The controller continues to
-own validation, budgets, execution, and stopping.
+`campaign run` now generates a deterministic candidate menu before provider
+selection, so deterministic/Ollama/Codex-style providers choose from candidate
+IDs instead of inventing experiments. `campaign candidates` writes that menu for
+inspection, including explicit `SEARCH_SPACE_EXHAUSTED` status when the bounded
+search space is empty. `campaign choose-candidate` exposes the same provider
+choice gate without execution. Ollama can produce strict candidate-choice JSON
+with saved attempt artifacts, one retry, deterministic fallback, and explicit
+`--execute-model-proposal` gating. Codex is currently a handoff provider that
+writes the same context/prompt artifacts and stops for human review. The
+controller continues to own validation, budgets, execution, and stopping.
 
 ## Workflow And Evidence Design
 

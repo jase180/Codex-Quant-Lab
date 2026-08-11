@@ -1311,6 +1311,21 @@ def register_campaign_commands(subparsers) -> None:
         help="Execute a valid non-deterministic provider proposal. Defaults to dry-run.",
     )
     run_parser.add_argument(
+        "--opportunity-catalog",
+        default="data/opportunity_catalog",
+        help="Directory containing opportunity_thesis.v1 JSON files. Defaults to data/opportunity_catalog.",
+    )
+    run_parser.add_argument(
+        "--experiment-template-catalog",
+        default="data/experiment_template_catalog",
+        help="Directory containing experiment_template.v1 JSON files. Defaults to data/experiment_template_catalog.",
+    )
+    run_parser.add_argument(
+        "--parameter-neighborhoods",
+        default="data/parameter_neighborhoods",
+        help="Directory containing parameter_neighborhood.v1 JSON files. Defaults to data/parameter_neighborhoods.",
+    )
+    run_parser.add_argument(
         "--loop",
         action="store_true",
         help="Keep running campaign cycles until stop, invalid proposal, dry-run, completed state, or safety cap.",
