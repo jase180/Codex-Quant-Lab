@@ -241,8 +241,8 @@ def validate_campaign_proposal(
             projected_runs=projected_runs,
             opportunity_catalog_dir=opportunity_catalog_dir,
         )
-    if proposal.action in {"request_human_review", "stop_campaign"} and projected_runs != 0:
-        reasons.append("non-run actions must not consume runs")
+    if proposal.action in {"request_human_review", "stop_campaign"}:
+        _validate_non_run_proposal(proposal, reasons=reasons, projected_runs=projected_runs)
     _validate_non_placeholder_text(proposal, reasons)
 
     return CampaignProposalValidation(
@@ -353,6 +353,30 @@ def _validate_run_experiment_proposal(
         reasons=reasons,
         opportunity_catalog_dir=opportunity_catalog_dir,
     )
+
+
+def _validate_non_run_proposal(
+    proposal: CampaignProposal,
+    *,
+    reasons: list[str],
+    projected_runs: int,
+) -> None:
+    """Keep handoff/stop proposals from smuggling in partial experiments."""
+
+    if projected_runs != 0:
+        reasons.append("non-run actions must not consume runs")
+    if proposal.strategy_template is not None:
+        reasons.append("non-run actions must set strategy_template to null")
+    if proposal.symbol is not None:
+        reasons.append("non-run actions must set symbol to null")
+    if proposal.action == "stop_campaign" and proposal.opportunity_thesis_id is not None:
+        reasons.append("stop_campaign actions must set opportunity_thesis_id to null")
+    if proposal.parameters:
+        reasons.append("non-run actions must leave parameters empty")
+    if proposal.success_criteria:
+        reasons.append("non-run actions must leave success_criteria empty")
+    if proposal.validation_plan:
+        reasons.append("non-run actions must leave validation_plan empty")
 
 
 def _has_completed_title(state: CampaignState, title: str) -> bool:

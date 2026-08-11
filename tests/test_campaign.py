@@ -32,7 +32,7 @@ from quant_lab.campaign_proposal import (  # noqa: E402
     validate_campaign_proposal,
 )
 from quant_lab.campaign_provider import campaign_provider_proposal, campaign_provider_result  # noqa: E402
-from quant_lab.campaign_provider_prompt import build_campaign_provider_context  # noqa: E402
+from quant_lab.campaign_provider_prompt import build_campaign_provider_context, build_campaign_provider_prompt  # noqa: E402
 from quant_lab.campaign_report import build_final_campaign_report  # noqa: E402
 from quant_lab.cli import main  # noqa: E402
 
@@ -195,6 +195,50 @@ class CampaignTests(unittest.TestCase):
         self.assertNotIn("forced_event_liquidity", thesis_ids)
         self.assertIn("Prefer proposals with an opportunity_thesis_id", " ".join(context["provider_rules"]))
 
+    def test_campaign_provider_context_spotlights_forbidden_prior_proposals(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            state = replace(
+                state,
+                completed_experiments=[
+                    {
+                        "title": "SPY SMA 200 long/cash campaign baseline",
+                        "opportunity_thesis_id": "liquid_etf_trend_defense",
+                        "strategy_hypothesis_status": "rejected",
+                        "thesis_status": "weakened",
+                    }
+                ],
+            )
+            context = build_campaign_provider_context(config, state)
+            prompt = build_campaign_provider_prompt(context)
+
+        forbidden = context["forbidden_proposals"]
+        self.assertEqual(forbidden[0]["title"], "SPY SMA 200 long/cash campaign baseline")
+        self.assertIn("Do not repeat any title", " ".join(context["provider_rules"]))
+        self.assertIn("Forbidden proposal titles", prompt)
+        self.assertIn("SPY SMA 200 long/cash campaign baseline", prompt)
+        self.assertNotIn("Use this exact JSON shape", prompt)
+        self.assertNotIn('"parameters": {"sma_length": 200}', prompt)
+
+    def test_campaign_provider_prompt_spotlights_retry_feedback(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            context = build_campaign_provider_context(
+                config,
+                state,
+                prior_attempt_feedback=["proposal appears to violate do_not_repeat campaign memory"],
+            )
+            prompt = build_campaign_provider_prompt(context)
+
+        self.assertIn("Previous provider attempt was rejected", prompt)
+        self.assertIn("proposal appears to violate do_not_repeat campaign memory", prompt)
+
     def test_campaign_validation_rejects_unknown_opportunity_thesis(self) -> None:
         config = parse_campaign_config(campaign_payload())
 
@@ -309,6 +353,91 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(any("hypothesis appears to be copied placeholder text" in reason for reason in validation.reasons))
         self.assertTrue(any("rationale appears to be copied placeholder text" in reason for reason in validation.reasons))
         self.assertTrue(any("difference_from_prior_work appears" in reason for reason in validation.reasons))
+
+    def test_campaign_validation_rejects_non_run_with_partial_experiment_fields(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "request_human_review",
+                    "title": "Review vague SPY idea",
+                    "hypothesis": "A human should review a vague SPY experiment.",
+                    "rationale": "Validator coverage for non-run handoffs.",
+                    "difference_from_prior_work": "Does not define a runnable experiment.",
+                    "strategy_template": None,
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": None,
+                    "parameters": {},
+                    "success_criteria": {"minimum_cagr_retention": 0.8},
+                    "validation_plan": {"cost_sensitivity": True},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertFalse(validation.valid)
+        self.assertTrue(any("symbol to null" in reason for reason in validation.reasons))
+        self.assertTrue(any("success_criteria empty" in reason for reason in validation.reasons))
+        self.assertTrue(any("validation_plan empty" in reason for reason in validation.reasons))
+
+    def test_campaign_validation_allows_human_review_to_reference_opportunity_thesis(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "request_human_review",
+                    "title": "Human review of liquid ETF thesis",
+                    "hypothesis": "Human review should decide whether the thesis is still worth testing.",
+                    "rationale": "Completed experiments weakened the current thesis.",
+                    "difference_from_prior_work": "No new experiment; asks for thesis-level review.",
+                    "strategy_template": None,
+                    "symbol": None,
+                    "opportunity_thesis_id": "liquid_etf_trend_defense",
+                    "parameters": {},
+                    "success_criteria": {},
+                    "validation_plan": {},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertTrue(validation.valid, validation.reasons)
+
+    def test_campaign_validation_rejects_stop_with_opportunity_thesis(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, temp_dir)
+            state = load_campaign_state(paths.state_path)
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "stop_campaign",
+                    "title": "Stop with dangling thesis",
+                    "hypothesis": "No more experiments should run.",
+                    "rationale": "Validator coverage.",
+                    "difference_from_prior_work": "No new experiment.",
+                    "strategy_template": None,
+                    "symbol": None,
+                    "opportunity_thesis_id": "liquid_etf_trend_defense",
+                    "parameters": {},
+                    "success_criteria": {},
+                    "validation_plan": {},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertFalse(validation.valid)
+        self.assertTrue(any("stop_campaign actions" in reason for reason in validation.reasons))
 
     def test_campaign_provider_boundary_returns_codex_handoff_proposal(self) -> None:
         payload = campaign_payload()

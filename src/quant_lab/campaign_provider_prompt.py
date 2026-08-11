@@ -64,6 +64,7 @@ def build_campaign_provider_context(
     """Build the exact context a model can see before proposing one cycle."""
 
     opportunity_theses = _campaign_opportunity_summaries(config, opportunity_catalog_dir)
+    forbidden_proposals = _forbidden_proposal_summaries(state)
     context = {
         "schema_version": "campaign_provider_context.v1",
         "campaign": {
@@ -88,6 +89,7 @@ def build_campaign_provider_context(
         "completed_experiments": state.completed_experiments,
         "current_findings": state.current_findings,
         "do_not_repeat": state.do_not_repeat,
+        "forbidden_proposals": forbidden_proposals,
         "unresolved_questions": state.unresolved_questions,
         "opportunity_theses": opportunity_theses,
         "provider_rules": [
@@ -95,6 +97,7 @@ def build_campaign_provider_context(
             "Do not include Markdown, prose, shell commands, or extra keys.",
             "Do not propose source-code changes or unsupported strategy features.",
             "Do not repeat branches listed in do_not_repeat.",
+            "Do not repeat any title, template, thesis, or parameter set listed in forbidden_proposals.",
             "Use only allowed_symbols and allowed_templates.",
             "Prefer proposals with an opportunity_thesis_id from opportunity_theses when one fits.",
             "Prespecify success_criteria before seeing results.",
@@ -108,12 +111,21 @@ def build_campaign_provider_context(
 
 def build_campaign_provider_prompt(context: dict) -> str:
     allowed_actions = ", ".join(sorted(ALLOWED_CAMPAIGN_ACTIONS))
+    forbidden = _forbidden_prompt_lines(context.get("forbidden_proposals"))
+    prior_feedback = _prior_feedback_prompt_lines(context.get("prior_attempt_feedback"))
     return "\n".join(
         [
             "You are a bounded quant research campaign proposer.",
             "Read the campaign context and return exactly one JSON object.",
             "You are not allowed to edit files, run commands, modify strategy engines, or expand research scope.",
             "The controller will validate your proposal before anything executes.",
+            "",
+            "Most important constraints:",
+            "- First check forbidden_proposals and do_not_repeat.",
+            "- If your idea matches a forbidden title, template/parameter set, or unchanged rejected branch, do not propose it.",
+            "- If no materially different supported experiment remains, return action stop_campaign.",
+            *prior_feedback,
+            *forbidden,
             "",
             "Required proposal schema:",
             "- schema_version: campaign_proposal.v1",
@@ -129,21 +141,7 @@ def build_campaign_provider_prompt(context: dict) -> str:
             "- success_criteria: measurable thresholds set before execution",
             "- validation_plan: object of booleans such as cost_sensitivity, date_sensitivity, train_test",
             "",
-            "Use this exact JSON shape:",
-            "{",
-            '  "schema_version": "campaign_proposal.v1",',
-            '  "action": "run_experiment",',
-            '  "title": "SPY SMA 200 long/cash campaign baseline",',
-            '  "hypothesis": "A daily SPY 200-day SMA long/cash rule may reduce maximum drawdown while retaining most long-term growth after realistic costs.",',
-            '  "rationale": "Start with the simplest allowed trend-defense rule tied to the liquid ETF trend-defense opportunity thesis.",',
-            '  "difference_from_prior_work": "This is the first campaign baseline, so it establishes the initial reference result before any variants.",',
-            '  "strategy_template": "sma-long-cash",',
-            '  "symbol": "SPY",',
-            '  "opportunity_thesis_id": "liquid_etf_trend_defense",',
-            '  "parameters": {"sma_length": 200},',
-            '  "success_criteria": {"minimum_cagr_retention": 0.8},',
-            '  "validation_plan": {"cost_sensitivity": true, "date_sensitivity": true, "train_test": true}',
-            "}",
+            "Return a JSON object with exactly those keys. Do not copy a previous proposal from the context.",
             "",
             "Campaign context JSON:",
             json.dumps(context, indent=2, sort_keys=True),
@@ -191,3 +189,44 @@ def _opportunity_summary(thesis: OpportunityThesis) -> dict:
         "compatible_strategy_families": thesis.compatible_strategy_families,
         "rubric": rubric,
     }
+
+
+def _forbidden_proposal_summaries(state: CampaignState) -> list[dict]:
+    """Return compact anti-examples so local models see prior work as off-limits."""
+
+    forbidden = []
+    for item in state.completed_experiments:
+        title = str(item.get("title") or "").strip()
+        if not title:
+            continue
+        forbidden.append(
+            {
+                "title": title,
+                "opportunity_thesis_id": item.get("opportunity_thesis_id"),
+                "strategy_hypothesis_status": item.get("strategy_hypothesis_status"),
+                "thesis_status": item.get("thesis_status"),
+                "reason": "completed experiment; do not repeat unchanged",
+            }
+        )
+    return forbidden
+
+
+def _prior_feedback_prompt_lines(feedback: object) -> list[str]:
+    if not isinstance(feedback, list) or not feedback:
+        return []
+    lines = ["", "Previous provider attempt was rejected. Fix these issues exactly:"]
+    lines.extend(f"- {item}" for item in feedback if str(item).strip())
+    return lines
+
+
+def _forbidden_prompt_lines(forbidden: object) -> list[str]:
+    if not isinstance(forbidden, list) or not forbidden:
+        return []
+    lines = ["", "Forbidden proposal titles from prior completed work:"]
+    for item in forbidden:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        if title:
+            lines.append(f"- {title}")
+    return lines
