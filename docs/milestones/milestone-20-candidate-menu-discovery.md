@@ -1,22 +1,47 @@
 # Milestone 20: Candidate Menu Discovery
 
-Status: in progress. Slice 2 complete.
+Status: in progress. Slice 3 complete.
 
 ## Current Implementation State
 
-Slice 2 is implemented:
+Slices 2 and 3 are implemented:
 
 - `src/quant_lab/experiment_templates.py` loads and validates
   `experiment_template.v1` and `parameter_neighborhood.v1` catalog entries.
+- `src/quant_lab/campaign_candidates.py` builds deterministic
+  `campaign_candidate_menu.v1` artifacts from campaign state, opportunity
+  theses, experiment templates, and parameter neighborhoods.
 - `data/experiment_template_catalog/` contains starter templates for the
   currently campaign-safe SPY trend branches.
 - `data/parameter_neighborhoods/` contains small prespecified neighborhoods for
   those templates.
 - `tests/test_experiment_templates.py` validates tracked catalogs, strict field
   checks, unsupported campaign-parameter mappings, and neighborhood lookup.
+- `tests/test_campaign_candidates.py` validates fresh menus, seeded
+  `SEARCH_SPACE_EXHAUSTED` behavior, artifact writing, and the CLI command.
 
-No campaign execution behavior has changed yet. The next slice is the
-deterministic candidate generator.
+No campaign execution behavior has changed yet. The next slice is provider
+selection from a generated menu.
+
+Real seeded SPY campaign check:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign candidates `
+  --campaign artifacts\campaigns\spy_incremental_1m
+```
+
+Result:
+
+```text
+status: SEARCH_SPACE_EXHAUSTED
+candidates: 0
+rejected_candidates: 4
+```
+
+The rejected candidates include the completed SMA 200 branch, the completed EMA
+50 RSI branch, and SMA 100/150 variants rejected because campaign memory says
+not to keep widening the same branch until the contradicting evidence is
+explained.
 
 ## Why This Milestone Exists
 
@@ -325,17 +350,18 @@ Goal: create candidate menus from current state and catalogs.
 
 Deliverables:
 
-- `campaign candidates` command.
-- Candidate JSON/Markdown artifacts.
-- Deduplication against completed experiment titles and `do_not_repeat`.
+- `campaign candidates` command. Done.
+- Candidate JSON/Markdown artifacts. Done.
+- Deduplication against completed experiment titles and `do_not_repeat`. Done.
 - Filtering by allowed symbols, allowed templates, engine fit, and budgets.
-- Candidate fields for information value and mining risk.
+  Done.
+- Candidate fields for information value and mining risk. Done.
 
 Exit criteria:
 
 - Seeded SPY campaign produces either a small candidate menu or an explicit
-  `SEARCH_SPACE_EXHAUSTED` result.
-- No model provider is required.
+  `SEARCH_SPACE_EXHAUSTED` result. Done.
+- No model provider is required. Done.
 
 ### Slice 4: Provider Chooses From Menu
 

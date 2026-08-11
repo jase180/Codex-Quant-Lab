@@ -19,6 +19,7 @@ from .campaign import (
 from .campaign_conversion import prepare_campaign_experiment_inputs
 from .campaign_execution import execute_campaign_experiment_inputs
 from .campaign_knowledge import complete_campaign_state, update_campaign_state_after_execution
+from .campaign_candidates import build_campaign_candidate_menu, save_campaign_candidate_menu
 from .campaign_proposal import (
     CampaignProposalValidation,
     save_campaign_proposal_artifacts,
@@ -59,6 +60,27 @@ def campaign_status_command(args: argparse.Namespace) -> int:
     config = load_campaign_config(paths.config_path)
     state = load_campaign_state(paths.state_path)
     print(format_campaign_status(config, state, paths))
+    return 0
+
+
+def campaign_candidates_command(args: argparse.Namespace) -> int:
+    paths = campaign_paths(args.campaign)
+    config = load_campaign_config(paths.config_path)
+    state = load_campaign_state(paths.state_path)
+    cycle_dir = _cycle_dir(paths.cycles_dir, state.cycle_number + 1)
+    menu = build_campaign_candidate_menu(
+        config,
+        state,
+        opportunity_catalog_dir=args.opportunity_catalog,
+        experiment_template_catalog_dir=args.experiment_template_catalog,
+        parameter_neighborhoods_dir=args.parameter_neighborhoods,
+    )
+    json_path, markdown_path = save_campaign_candidate_menu(menu, cycle_dir)
+    print(f"candidate_menu: {json_path}")
+    print(f"read_first: {markdown_path}")
+    print(f"status: {menu.status}")
+    print(f"candidates: {len(menu.candidates)}")
+    print(f"rejected_candidates: {len(menu.rejected_candidates)}")
     return 0
 
 

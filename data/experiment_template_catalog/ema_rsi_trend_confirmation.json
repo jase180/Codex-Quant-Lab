@@ -25,6 +25,10 @@
     "date_sensitivity": true,
     "train_test": true
   },
+  "default_success_criteria": {
+    "minimum_cagr_retention": 0.75,
+    "minimum_relative_drawdown_reduction": 0.2
+  },
   "parameter_neighborhood_id": "trend_confirmation_basic",
   "expected_information_gain": "medium",
   "parameter_mining_risk": "low",

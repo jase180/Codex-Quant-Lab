@@ -33,6 +33,10 @@ def _experiment_template(**overrides) -> dict:
             "date_sensitivity": True,
             "train_test": True,
         },
+        "default_success_criteria": {
+            "minimum_cagr_retention": 0.8,
+            "minimum_relative_drawdown_reduction": 0.25,
+        },
         "parameter_neighborhood_id": "test_neighborhood",
         "expected_information_gain": "medium",
         "parameter_mining_risk": "low",

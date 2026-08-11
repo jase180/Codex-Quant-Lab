@@ -32,6 +32,7 @@ REQUIRED_TEMPLATE_FIELDS = {
     "required_project_capabilities",
     "executable_mapping",
     "default_validation_plan",
+    "default_success_criteria",
     "parameter_neighborhood_id",
     "expected_information_gain",
     "parameter_mining_risk",
@@ -151,6 +152,7 @@ def validate_experiment_template(payload: dict[str, Any], path: Path | None = No
     for field in ("supported_universe", "required_project_capabilities", "known_limitations"):
         _require_non_empty_text_list(payload[field], f"{label} {field}")
     _require_bool_map(payload["default_validation_plan"], f"{label} default_validation_plan")
+    _require_number_map(payload["default_success_criteria"], f"{label} default_success_criteria")
 
     if payload["expected_information_gain"] not in ALLOWED_INFORMATION_GAIN:
         raise ValueError(f"{label} has unsupported expected_information_gain: {payload['expected_information_gain']}")
@@ -238,6 +240,17 @@ def _require_bool_map(value: object, label: str) -> dict[str, bool]:
         if not isinstance(item, bool):
             raise ValueError(f"{label}.{key} must be a boolean")
     return {str(key): bool(item) for key, item in mapping.items()}
+
+
+def _require_number_map(value: object, label: str) -> dict[str, float]:
+    mapping = _mapping(value, label)
+    if not mapping:
+        raise ValueError(f"{label} must not be empty")
+    for key, item in mapping.items():
+        _require_non_empty_text(str(key), f"{label} key")
+        if not isinstance(item, (int, float)) or isinstance(item, bool):
+            raise ValueError(f"{label}.{key} must be a number")
+    return {str(key): float(item) for key, item in mapping.items()}
 
 
 def _mapping(value: object, label: str) -> dict[str, Any]:

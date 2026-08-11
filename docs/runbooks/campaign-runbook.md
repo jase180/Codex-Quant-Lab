@@ -163,6 +163,44 @@ Supported duration forms:
 Bare numbers mean minutes. Seconds are rounded up to the nearest minute because
 campaign config stores duration in minutes.
 
+## Generate Candidate Menu
+
+Use this when you want to inspect the deterministic search space before asking a
+model provider to choose anything:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign candidates `
+  --campaign artifacts\campaigns\spy_research_001
+```
+
+The command reads:
+
+- `campaign_config.json`
+- `campaign_state.json`
+- `data/opportunity_catalog/*.json`
+- `data/experiment_template_catalog/*.json`
+- `data/parameter_neighborhoods/*.json`
+
+It writes:
+
+```text
+artifacts/campaigns/<campaign>/cycles/cycle_NNN/candidate_menu.json
+artifacts/campaigns/<campaign>/cycles/cycle_NNN/candidate_menu.md
+```
+
+`candidate_menu.json` is the future provider input. `candidate_menu.md` is the
+human front door.
+
+If the output status is:
+
+```text
+SEARCH_SPACE_EXHAUSTED
+```
+
+that is a valid research result. It means the current campaign scope has no
+remaining valid, non-duplicate, prespecified candidates after completed titles
+and `do_not_repeat` constraints are applied. Do not treat it as a CLI failure.
+
 ## Ollama Proposal Dry Run
 
 Use this only to inspect whether a local model can produce a valid bounded

@@ -82,6 +82,8 @@ experiment, but they do not take over execution without a human/Codex step.
 Campaign boundary: `campaign run --loop` can execute bounded deterministic
 campaigns through the existing `experiment run-default` workflow, read canonical
 conclusion JSON, update campaign memory, and write `final_report.md/json`.
+`campaign candidates` writes a deterministic candidate menu first, including
+explicit `SEARCH_SPACE_EXHAUSTED` status when the bounded search space is empty.
 Ollama can produce strict proposal JSON with saved attempt artifacts, one retry,
 deterministic fallback, and explicit `--execute-model-proposal` gating.
 Provider context includes `forbidden_proposals` so completed branches are shown

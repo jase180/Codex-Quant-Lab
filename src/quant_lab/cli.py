@@ -20,7 +20,12 @@ from .cli_agent import (
     agent_suggest_command,
     agent_validate_recommendation_command,
 )
-from .cli_campaign import campaign_init_command, campaign_run_command, campaign_status_command
+from .cli_campaign import (
+    campaign_candidates_command,
+    campaign_init_command,
+    campaign_run_command,
+    campaign_status_command,
+)
 from .cli_health import doctor_command, smoke_test_command
 from .cli_ideas import ideas_suggest_command
 from .cli_runs import list_runs_command, run_command
@@ -1208,6 +1213,28 @@ def register_campaign_commands(subparsers) -> None:
     )
     status_parser.add_argument("--campaign", required=True, help="Campaign output directory.")
     status_parser.set_defaults(func=campaign_status_command)
+
+    candidates_parser = campaign_subparsers.add_parser(
+        "candidates",
+        help="Write a deterministic next-experiment candidate menu without executing anything.",
+    )
+    candidates_parser.add_argument("--campaign", required=True, help="Campaign output directory.")
+    candidates_parser.add_argument(
+        "--opportunity-catalog",
+        default="data/opportunity_catalog",
+        help="Directory containing opportunity_thesis.v1 JSON files. Defaults to data/opportunity_catalog.",
+    )
+    candidates_parser.add_argument(
+        "--experiment-template-catalog",
+        default="data/experiment_template_catalog",
+        help="Directory containing experiment_template.v1 JSON files. Defaults to data/experiment_template_catalog.",
+    )
+    candidates_parser.add_argument(
+        "--parameter-neighborhoods",
+        default="data/parameter_neighborhoods",
+        help="Directory containing parameter_neighborhood.v1 JSON files. Defaults to data/parameter_neighborhoods.",
+    )
+    candidates_parser.set_defaults(func=campaign_candidates_command)
 
     run_parser = campaign_subparsers.add_parser(
         "run",
