@@ -1,0 +1,11 @@
+{
+  "schema_version": "parameter_neighborhood.v1",
+  "neighborhood_id": "trend_daily_basic",
+  "title": "Daily Trend Basic Lookbacks",
+  "rationale": "Tests a few common daily trend speeds without turning the campaign into a broad parameter search.",
+  "parameters": {
+    "lookback": [100, 150, 200]
+  },
+  "max_variants": 3,
+  "selection_rule": "Use at most three prespecified lookbacks and do not add new values after seeing results."
+}

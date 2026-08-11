@@ -1,0 +1,37 @@
+{
+  "schema_version": "experiment_template.v1",
+  "template_id": "price_vs_sma_trend",
+  "title": "Price Versus SMA Trend State",
+  "strategy_family": "trend_following",
+  "rationale": "Tests whether a single daily moving-average state can reduce drawdown while retaining enough long-term growth.",
+  "tests_claim": "A slow price-versus-average trend state improves drawdown-adjusted behavior versus buy-and-hold.",
+  "supported_universe": ["single_liquid_etf"],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "SMA indicator",
+    "next-open market fills",
+    "long/cash exposure",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "executable_mapping": {
+    "campaign_strategy_template": "sma-long-cash",
+    "parameter_map": {
+      "lookback": "sma_length"
+    }
+  },
+  "default_validation_plan": {
+    "cost_sensitivity": true,
+    "date_sensitivity": true,
+    "train_test": true
+  },
+  "parameter_neighborhood_id": "trend_daily_basic",
+  "expected_information_gain": "medium",
+  "parameter_mining_risk": "medium",
+  "known_limitations": [
+    "Changing lookback values after failures can become parameter mining.",
+    "The template cannot distinguish trend-state failure from slow-response failure by itself."
+  ],
+  "engine_support_status": "ready"
+}

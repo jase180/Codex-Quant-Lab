@@ -20,6 +20,9 @@ current workflow docs and the latest experiment handoffs.
 - Conceptual opportunity catalog: `data/opportunity_catalog/*.json` and
   `data/opportunity_catalog/README.md` describe market niches, forced actors,
   capacity/friction claims, and falsification tests before strategy selection.
+- Experiment template catalog: `data/experiment_template_catalog/*.json` and
+  `data/parameter_neighborhoods/*.json` describe bounded experiment families and
+  small prespecified parameter sets before candidate generation.
 - [Core Backtest Assumption Audit](architecture/core-backtest-assumption-audit.md): current
   execution, data, benchmark, and realism assumptions.
 - [Research Guardrails](architecture/research-guardrails.md): constraints that

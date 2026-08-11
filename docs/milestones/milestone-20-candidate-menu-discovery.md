@@ -1,6 +1,22 @@
 # Milestone 20: Candidate Menu Discovery
 
-Status: planned.
+Status: in progress. Slice 2 complete.
+
+## Current Implementation State
+
+Slice 2 is implemented:
+
+- `src/quant_lab/experiment_templates.py` loads and validates
+  `experiment_template.v1` and `parameter_neighborhood.v1` catalog entries.
+- `data/experiment_template_catalog/` contains starter templates for the
+  currently campaign-safe SPY trend branches.
+- `data/parameter_neighborhoods/` contains small prespecified neighborhoods for
+  those templates.
+- `tests/test_experiment_templates.py` validates tracked catalogs, strict field
+  checks, unsupported campaign-parameter mappings, and neighborhood lookup.
+
+No campaign execution behavior has changed yet. The next slice is the
+deterministic candidate generator.
 
 ## Why This Milestone Exists
 
@@ -293,15 +309,15 @@ Goal: add static conceptual catalog files without changing campaign execution.
 
 Deliverables:
 
-- Strict JSON schema parser for experiment templates.
-- Strict JSON schema parser for parameter neighborhoods.
-- Starter entries for current supported families only.
-- Tests for valid and invalid catalog entries.
+- Strict JSON schema parser for experiment templates. Done.
+- Strict JSON schema parser for parameter neighborhoods. Done.
+- Starter entries for current supported families only. Done.
+- Tests for valid and invalid catalog entries. Done.
 
 Exit criteria:
 
-- The repo can load catalogs and identify executable-ready templates.
-- No campaign behavior changes yet.
+- The repo can load catalogs and identify executable-ready templates. Done.
+- No campaign behavior changes yet. Done.
 
 ### Slice 3: Deterministic Candidate Generator
 

@@ -1,0 +1,36 @@
+{
+  "schema_version": "experiment_template.v1",
+  "template_id": "ema_rsi_trend_confirmation",
+  "title": "EMA Trend With RSI Confirmation",
+  "strategy_family": "trend_following",
+  "rationale": "Tests whether adding a momentum confirmation condition changes the drawdown and return-retention tradeoff.",
+  "tests_claim": "Trend confirmation can reduce weak trend entries without losing too much participation.",
+  "supported_universe": ["single_liquid_etf"],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "EMA trend template",
+    "RSI confirmation",
+    "next-open market fills",
+    "long/cash exposure",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "executable_mapping": {
+    "campaign_strategy_template": "ema-trend-follow",
+    "parameter_map": {}
+  },
+  "default_validation_plan": {
+    "cost_sensitivity": true,
+    "date_sensitivity": true,
+    "train_test": true
+  },
+  "parameter_neighborhood_id": "trend_confirmation_basic",
+  "expected_information_gain": "medium",
+  "parameter_mining_risk": "low",
+  "known_limitations": [
+    "Current campaign-safe mapping does not expose EMA or RSI lengths as candidate parameters.",
+    "A partially supported result may still need a cleaner template before drawing thesis-level conclusions."
+  ],
+  "engine_support_status": "ready"
+}

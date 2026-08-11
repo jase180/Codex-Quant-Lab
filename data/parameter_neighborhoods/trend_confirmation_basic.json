@@ -1,0 +1,11 @@
+{
+  "schema_version": "parameter_neighborhood.v1",
+  "neighborhood_id": "trend_confirmation_basic",
+  "title": "Daily Trend Confirmation Basic",
+  "rationale": "Represents the currently executable EMA plus RSI confirmation template as a single bounded branch.",
+  "parameters": {
+    "variant": ["ema_50_rsi_confirmation"]
+  },
+  "max_variants": 1,
+  "selection_rule": "Use the existing executable template unchanged until strategy-language support expands."
+}
