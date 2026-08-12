@@ -41,6 +41,9 @@ current workflow docs and the latest experiment handoffs.
 - [SPY Trend-Defense Campaign Closeout](experiments/spy-trend-defense-campaign-closeout.md):
   bounded campaign result; valid research workflow, exhausted current SPY
   trend-defense candidate space.
+- [SPY Opportunity Expansion Campaign Closeout](experiments/spy-opportunity-expansion-campaign-closeout.md):
+  bounded RSI pullback and breakout campaign result; valid workflow, but SPY
+  single-asset timing still failed return-retention objectives.
 - `data/campaigns/spy_opportunity_expansion_campaign.json`: small campaign
   config for testing bounded RSI pullback and breakout candidates after the SPY
   trend-defense closeout.
