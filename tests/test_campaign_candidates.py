@@ -135,6 +135,29 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertTrue(any("forbidden completed title" in reason for reason in rejected_reasons))
         self.assertTrue(any("violates do_not_repeat" in reason for reason in rejected_reasons))
 
+    def test_seeded_campaign_filters_weakened_thesis_template_branch(self) -> None:
+        config = parse_campaign_config(expanded_campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            state = replace(
+                state,
+                do_not_repeat=[
+                    "Do not repeat weakened branch: opportunity=retail_pullback_liquidity; template=rsi-reversion."
+                ],
+            )
+            menu = build_campaign_candidate_menu(config, state)
+
+        templates_by_thesis = {
+            (candidate.opportunity_thesis_id, candidate.strategy_template)
+            for candidate in menu.candidates
+        }
+        rejected_reasons = [item.reason for item in menu.rejected_candidates]
+        self.assertNotIn(("retail_pullback_liquidity", "rsi-reversion"), templates_by_thesis)
+        self.assertIn(("liquid_etf_trend_defense", "breakout-trend"), templates_by_thesis)
+        self.assertTrue(any("violates do_not_repeat" in reason for reason in rejected_reasons))
+
     def test_save_campaign_candidate_menu_writes_json_and_markdown(self) -> None:
         config = parse_campaign_config(campaign_payload())
 

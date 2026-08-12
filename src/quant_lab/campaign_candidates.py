@@ -410,16 +410,26 @@ def _violates_do_not_repeat(candidate: CampaignCandidate, state: CampaignState) 
     corpus = " ".join(state.do_not_repeat).lower()
     if not corpus:
         return False
+    if _violates_weakened_branch_rule(candidate, corpus):
+        return True
     if "do not keep widening this branch" in corpus and _same_completed_branch(candidate, state):
         return True
     terms = [
         candidate.title,
         candidate.strategy_template,
-        candidate.opportunity_thesis_id,
         *[str(key) for key in candidate.parameters],
         *[str(value) for value in candidate.parameters.values()],
     ]
     return any(term.strip().lower() and term.strip().lower() in corpus for term in terms)
+
+
+def _violates_weakened_branch_rule(candidate: CampaignCandidate, corpus: str) -> bool:
+    rule = (
+        "do not repeat weakened branch: "
+        f"opportunity={candidate.opportunity_thesis_id.lower()}; "
+        f"template={candidate.strategy_template.lower()}."
+    )
+    return rule in corpus
 
 
 def _same_completed_branch(candidate: CampaignCandidate, state: CampaignState) -> bool:

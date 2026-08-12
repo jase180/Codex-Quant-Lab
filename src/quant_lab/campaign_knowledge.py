@@ -137,12 +137,34 @@ def _findings(conclusion: dict[str, Any]) -> list[str]:
 def _branch_repetition_rules(conclusion: dict[str, Any]) -> list[str]:
     experiment = _mapping(conclusion.get("experiment"))
     strategy_hypothesis = _mapping(conclusion.get("strategy_hypothesis_status"))
-    if strategy_hypothesis.get("status") != "rejected":
+    thesis_status = _mapping(conclusion.get("thesis_status"))
+    strategy_status = str(strategy_hypothesis.get("status") or "")
+    if strategy_status not in {"rejected", "partially_supported"}:
         return []
     title = str(experiment.get("title") or "").strip()
     if not title:
         return []
-    return [f"Do not repeat unchanged rejected experiment: {title}."]
+    rules = []
+    if strategy_status == "rejected":
+        rules.append(f"Do not repeat unchanged rejected experiment: {title}.")
+    thesis_id = str(thesis_status.get("opportunity_thesis_id") or _opportunity_thesis_id(experiment) or "").strip()
+    template = _campaign_template_from_title(title)
+    if thesis_id and template and thesis_status.get("status") == "weakened":
+        rules.append(f"Do not repeat weakened branch: opportunity={thesis_id}; template={template}.")
+    return rules
+
+
+def _campaign_template_from_title(title: str) -> str | None:
+    normalized = title.lower()
+    if "rsi pullback" in normalized:
+        return "rsi-reversion"
+    if "sma" in normalized:
+        return "sma-long-cash"
+    if "ema" in normalized:
+        return "ema-trend-follow"
+    if "breakout" in normalized:
+        return "breakout-trend"
+    return None
 
 
 def _opportunity_thesis_id(experiment: dict[str, Any]) -> str | None:

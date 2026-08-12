@@ -73,6 +73,10 @@ current workflow docs and the latest experiment handoffs.
 - [EEM RSI Pullback ETF Shortlist Probe](experiments/eem-rsi-pullback-etf-shortlist-probe.md):
   first actual ETF campaign cycle after shortlist ranking; valid system,
   partially supported selected validation, failed robustness.
+- [ETF Campaign Branch-Filter Probe](experiments/etf-campaign-branch-filter-probe.md):
+  replay proving weakened campaign branches are carried forward as
+  opportunity/template exclusions instead of merely blocking exact experiment
+  titles.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

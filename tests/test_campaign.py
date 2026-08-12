@@ -98,6 +98,22 @@ def partial_conclusion_payload() -> dict:
     return payload
 
 
+def weakened_rsi_conclusion_payload() -> dict:
+    payload = partial_conclusion_payload()
+    payload["experiment"] = {
+        "title": "EEM RSI Pullback Reversion",
+        "hypothesis": "A daily RSI pullback rule may improve risk-adjusted behavior.",
+        "tags": ["campaign", "opportunity:retail_pullback_liquidity"],
+    }
+    payload["thesis_status"] = {
+        "opportunity_thesis_id": "retail_pullback_liquidity",
+        "status": "weakened",
+        "reason": "The implementation was not robust.",
+        "confidence": "medium",
+    }
+    return payload
+
+
 class CampaignTests(unittest.TestCase):
     def test_parse_campaign_config_normalizes_symbols_and_budgets(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -767,6 +783,41 @@ class CampaignTests(unittest.TestCase):
         self.assertFalse(repeated_validation.valid)
         self.assertTrue(any("do_not_repeat" in reason for reason in repeated_validation.reasons))
 
+    def test_update_campaign_state_carries_forward_weakened_branch_rule(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            conclusion_path = Path(temp_dir) / "experiment_conclusion.json"
+            conclusion_path.write_text(json.dumps(weakened_rsi_conclusion_payload()), encoding="utf-8")
+            execution = CampaignExecutionResult(
+                schema_version="campaign_execution.v1",
+                status="completed",
+                experiment_id="EXP-RSI",
+                output_dir=str(Path(temp_dir) / "experiment"),
+                conclusion_path=str(conclusion_path.with_suffix(".md")),
+                conclusion_json_path=str(conclusion_path),
+                read_first_path=str(conclusion_path.with_suffix(".md")),
+                execution_json_path=str(Path(temp_dir) / "campaign_execution.json"),
+                execution_markdown_path=str(Path(temp_dir) / "campaign_execution.md"),
+                error=None,
+                elapsed_seconds=7,
+                created_at_utc="2026-08-05T00:00:00Z",
+            )
+
+            updated = update_campaign_state_after_execution(
+                state,
+                config=config,
+                execution=execution,
+                projected_run_count=11,
+            )
+
+        self.assertIn(
+            "Do not repeat weakened branch: opportunity=retail_pullback_liquidity; template=rsi-reversion.",
+            updated.do_not_repeat,
+        )
+
     def test_deterministic_campaign_proposal_stops_after_known_sequence_is_exhausted(self) -> None:
         config = parse_campaign_config(campaign_payload())
 
@@ -1024,14 +1075,14 @@ class CampaignTests(unittest.TestCase):
             output = stdout.getvalue()
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(calls), 2)
         self.assertEqual(state.status, "complete")
-        self.assertEqual(state.cycle_number, 3)
-        self.assertEqual(state.runs_used, 33)
+        self.assertEqual(state.cycle_number, 2)
+        self.assertEqual(state.runs_used, 22)
         self.assertTrue(final_report_exists)
         self.assertTrue(cycle_one_exists)
         self.assertTrue(cycle_two_exists)
-        self.assertTrue(cycle_three_exists)
+        self.assertFalse(cycle_three_exists)
         self.assertIn("Campaign loop starting", output)
         self.assertIn("final_report:", output)
 

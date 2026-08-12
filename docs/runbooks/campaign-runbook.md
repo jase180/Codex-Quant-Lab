@@ -44,8 +44,16 @@ candidate menu plus campaign memory. The provider can only choose a candidate ID
 request human review, or stop. It cannot invent strategy JSON, parameters,
 indicators, success criteria, or shell commands during `campaign run`.
 
-The candidate menu already applies completed-title and `do_not_repeat` filters.
-Treat rejected candidates as useful evidence: they explain why a branch is not
+The candidate menu applies completed-title and `do_not_repeat` filters. Campaign
+memory can now carry branch-level rules such as:
+
+```text
+Do not repeat weakened branch: opportunity=retail_pullback_liquidity; template=rsi-reversion.
+```
+
+That prevents the campaign from responding to a weakened branch by simply
+running the same opportunity/template pair on a neighboring symbol. Treat
+rejected candidates as useful evidence: they explain why a branch is not
 available instead of forcing the model to improvise.
 
 Candidate generation checks that each thesis exists in
