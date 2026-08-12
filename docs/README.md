@@ -80,6 +80,9 @@ current workflow docs and the latest experiment handoffs.
 - [Liquid ETF Three-Cycle Campaign Probe](experiments/liquid-etf-three-cycle-campaign-probe.md):
   bounded loop proof after explicit strategy-template metadata; campaign
   execution works, but candidate ranking remains too symbol-sticky.
+- [Liquid ETF Diversity-Ranking Probe](experiments/liquid-etf-diversity-ranking-probe.md):
+  repeated-symbol ranking penalty proof; the loop moved from `EEM -> EEM -> EEM`
+  to `EEM -> EFA -> GLD` while preserving branch guardrails.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

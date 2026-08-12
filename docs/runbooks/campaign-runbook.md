@@ -134,6 +134,12 @@ menu builder ranks candidates by expected information gain, low parameter-mining
 risk, low prior overlap, and diversity across symbols, templates, and
 opportunity theses.
 
+When resuming a campaign, the shortlist also considers completed campaign
+history. A symbol, strategy template, or opportunity thesis that has already
+been tested receives a ranking penalty, while explicit `do_not_repeat` rules can
+still hard-block weakened opportunity/template branches. This is meant to spend
+small campaign budgets on broader information, not variety for its own sake.
+
 Before running it, fetch the universe data described in
 `data/universes/README.md` and confirm the cache inventory shows provenance for
 the requested date range. The first use should usually inspect candidates before

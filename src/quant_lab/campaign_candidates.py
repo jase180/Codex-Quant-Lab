@@ -176,7 +176,7 @@ def build_campaign_candidate_menu(
                     candidates.append(candidate)
 
     total_candidates_before_shortlist = len(candidates)
-    candidates = _shortlisted_candidates(candidates, config=config)
+    candidates = _shortlisted_candidates(candidates, config=config, state=state)
     status = "ready" if candidates else "SEARCH_SPACE_EXHAUSTED"
     return CampaignCandidateMenu(
         schema_version=CAMPAIGN_CANDIDATE_MENU_SCHEMA_VERSION,
@@ -445,31 +445,52 @@ def _candidate_id(template_id: str, symbol: str, variant_index: int) -> str:
     return f"{symbol.lower()}_{template_id}_{variant_index:03d}"
 
 
-def _shortlisted_candidates(candidates: list[CampaignCandidate], *, config: CampaignConfig) -> list[CampaignCandidate]:
+def _shortlisted_candidates(
+    candidates: list[CampaignCandidate],
+    *,
+    config: CampaignConfig,
+    state: CampaignState,
+) -> list[CampaignCandidate]:
     limit = config.max_candidate_menu_size
+    historical_symbol_counts = _completed_count_by(state, "symbol")
+    historical_template_counts = _completed_count_by(state, "strategy_template")
+    historical_thesis_counts = _completed_count_by(state, "opportunity_thesis_id")
     if limit is None or len(candidates) <= limit:
-        return sorted(candidates, key=_candidate_quality_key)
+        return sorted(
+            candidates,
+            key=lambda candidate: _campaign_aware_quality_key(
+                candidate,
+                symbol_counts=historical_symbol_counts,
+                template_counts=historical_template_counts,
+                thesis_counts=historical_thesis_counts,
+            ),
+        )
 
     selected: list[CampaignCandidate] = []
     remaining = list(candidates)
-    symbol_counts: dict[str, int] = {}
-    template_counts: dict[str, int] = {}
-    thesis_counts: dict[str, int] = {}
+    symbol_counts = dict(historical_symbol_counts)
+    template_counts = dict(historical_template_counts)
+    thesis_counts = dict(historical_thesis_counts)
     while remaining and len(selected) < limit:
         candidate = min(
             remaining,
             key=lambda item: (
                 _candidate_quality_score(item)
-                + (symbol_counts.get(item.symbol, 0) * 4)
-                + (template_counts.get(item.template_id, 0) * 2)
+                + (symbol_counts.get(item.symbol, 0) * 6)
+                + (template_counts.get(item.strategy_template, 0) * 2)
                 + (thesis_counts.get(item.opportunity_thesis_id, 0) * 2),
-                _candidate_quality_key(item),
+                _campaign_aware_quality_key(
+                    item,
+                    symbol_counts=symbol_counts,
+                    template_counts=template_counts,
+                    thesis_counts=thesis_counts,
+                ),
             ),
         )
         selected.append(candidate)
         remaining.remove(candidate)
         symbol_counts[candidate.symbol] = symbol_counts.get(candidate.symbol, 0) + 1
-        template_counts[candidate.template_id] = template_counts.get(candidate.template_id, 0) + 1
+        template_counts[candidate.strategy_template] = template_counts.get(candidate.strategy_template, 0) + 1
         thesis_counts[candidate.opportunity_thesis_id] = thesis_counts.get(candidate.opportunity_thesis_id, 0) + 1
     return selected
 
@@ -490,6 +511,21 @@ def _candidate_quality_score(candidate: CampaignCandidate) -> int:
         + _rank_mining_risk(candidate.parameter_mining_risk) * 2
         + _rank_prior_overlap(candidate.prior_overlap) * 2
         + _baseline_penalty(candidate.title)
+    )
+
+
+def _campaign_aware_quality_key(
+    candidate: CampaignCandidate,
+    *,
+    symbol_counts: dict[str, int],
+    template_counts: dict[str, int],
+    thesis_counts: dict[str, int],
+) -> tuple[int, int, int, int, int, int, int, str]:
+    return (
+        symbol_counts.get(candidate.symbol, 0),
+        template_counts.get(candidate.strategy_template, 0),
+        thesis_counts.get(candidate.opportunity_thesis_id, 0),
+        *_candidate_quality_key(candidate),
     )
 
 
@@ -517,6 +553,25 @@ def _rank_prior_overlap(value: str) -> int:
 
 def _baseline_penalty(title: str) -> int:
     return 0 if "baseline" in title.lower() else 1
+
+
+def _completed_count_by(state: CampaignState, field: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for experiment in state.completed_experiments:
+        value = str(experiment.get(field) or "").strip()
+        if not value and field == "symbol":
+            value = _symbol_from_completed_title(experiment)
+        if not value:
+            continue
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _symbol_from_completed_title(experiment: dict[str, Any]) -> str:
+    title = str(experiment.get("title") or "").strip()
+    if not title:
+        return ""
+    return title.split(maxsplit=1)[0].upper()
 
 
 def _candidate_lines(candidates: list[CampaignCandidate]) -> list[str]:

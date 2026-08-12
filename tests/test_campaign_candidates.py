@@ -58,6 +58,17 @@ def capped_multi_symbol_campaign_payload() -> dict:
     return payload
 
 
+def temp_multi_symbol_campaign_payload(temp_dir: str) -> dict:
+    payload = capped_multi_symbol_campaign_payload()
+    payload["allowed_symbols"] = ["EEM", "EFA", "GLD", "IWM"]
+    payload["data_paths"] = {}
+    for symbol in payload["allowed_symbols"]:
+        path = Path(temp_dir) / f"{symbol}.csv"
+        path.write_text("date,open,high,low,close,volume\n", encoding="utf-8")
+        payload["data_paths"][symbol] = str(path)
+    return payload
+
+
 class CampaignCandidatesTest(unittest.TestCase):
     def test_fresh_campaign_builds_candidate_menu_from_catalogs(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -157,6 +168,31 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertNotIn(("retail_pullback_liquidity", "rsi-reversion"), templates_by_thesis)
         self.assertIn(("liquid_etf_trend_defense", "breakout-trend"), templates_by_thesis)
         self.assertTrue(any("violates do_not_repeat" in reason for reason in rejected_reasons))
+
+    def test_seeded_campaign_ranking_penalizes_repeated_symbol(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config = parse_campaign_config(temp_multi_symbol_campaign_payload(temp_dir))
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            state = replace(
+                state,
+                completed_experiments=[
+                    {
+                        "title": "EEM RSI Pullback Reversion",
+                        "symbol": "EEM",
+                        "strategy_template": "rsi-reversion",
+                        "opportunity_thesis_id": "retail_pullback_liquidity",
+                    }
+                ],
+                do_not_repeat=[
+                    "Do not repeat weakened branch: opportunity=retail_pullback_liquidity; template=rsi-reversion."
+                ],
+            )
+            menu = build_campaign_candidate_menu(config, state)
+
+        self.assertEqual("ready", menu.status)
+        self.assertNotEqual("EEM", menu.candidates[0].symbol)
+        self.assertGreaterEqual(len({candidate.symbol for candidate in menu.candidates[:4]}), 3)
 
     def test_save_campaign_candidate_menu_writes_json_and_markdown(self) -> None:
         config = parse_campaign_config(campaign_payload())
