@@ -60,8 +60,8 @@ current workflow docs and the latest experiment handoffs.
   portfolio diversification test; valid research system, rejected exact
   allocation hypothesis.
 - [QQQ/SPY/TLT Top-1 Momentum Experiment](experiments/qqq-spy-tlt-top1-momentum-experiment.md):
-  multi-asset relative-strength rotation test; valid with QQQ provenance caveat,
-  rejected strategy hypothesis.
+  multi-asset relative-strength rotation test; QQQ provenance caveat was cleared
+  by cache refresh and rerun, but the strategy hypothesis remains rejected.
 - [SPY Rolling-Low Reversion Experiment](experiments/spy-rolling-low-reversion-experiment.md):
   statistical-reversion result; valid research system, rejected executable
   new-low variant.

@@ -64,7 +64,7 @@ Create the experiment:
   --tag opportunity:fragmented_etf_relative_strength `
   --strategy data\portfolios\qqq_spy_tlt_top1_momentum.json `
   --data data\cache\SPY_2015-01-01_2025-12-31.csv `
-  --notes "Prespecified criteria: retain at least 70% of SPY CAGR, reduce max drawdown by at least 20% relative, and improve Sharpe after realistic costs. Caveat: QQQ cache provenance sidecar is missing in the current local cache listing."
+  --notes "Prespecified criteria: retain at least 70% of SPY CAGR, reduce max drawdown by at least 20% relative, and improve Sharpe after realistic costs."
 ```
 
 Run the portfolio:
@@ -121,12 +121,13 @@ Record the decision:
 
 ## Result
 
-Research-system status: `valid_with_caveats`.
+Research-system status: `valid`.
 
 The repo aligned the portfolio inputs, saved metadata, linked three cost-preset
 runs to the experiment, wrote a data-trust report, and wrote a portfolio evidence
-summary. The caveat is that the local `QQQ` cache is missing a provenance
-sidecar, while `SPY` and `TLT` have yfinance provenance sidecars.
+summary. `QQQ`, `SPY`, and `TLT` now have yfinance provenance sidecars in the
+local cache, and the refreshed portfolio data-trust report has worst warning
+`none`.
 
 Strategy-hypothesis status: `rejected`.
 
@@ -168,9 +169,37 @@ lookback, rebalance month, or ETF order.
 Do not call it a defensive asset-switching result. It is closer to broad
 relative-strength rotation, and it failed to behave defensively.
 
-Do not ignore the missing `QQQ` provenance sidecar if this family is revisited.
-Fixing data provenance should happen before putting more confidence in
-multi-asset QQQ/SPY/TLT results.
+Do not treat the old missing-QQQ-provenance caveat as a reason to rerun this
+same branch again. The caveat was cleared by refreshing the local `QQQ` cache and
+rerunning the portfolio artifacts; the strategy result remained materially
+unchanged.
+
+## Provenance Refresh
+
+On 2026-08-12, `QQQ` was refetched through the normal market-data command:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli fetch `
+  --symbol QQQ `
+  --start 2015-01-01 `
+  --end 2025-12-31 `
+  --out data\cache
+```
+
+The fetch wrote:
+
+```text
+data\cache\QQQ_2015-01-01_2025-12-31.csv
+data\cache\QQQ_2015-01-01_2025-12-31.provenance.json
+```
+
+The original baseline metadata no longer matched the refreshed `QQQ` CSV hash,
+which correctly produced a critical data-trust warning. The baseline and two
+cost-stress runs were rerun against the refreshed cache, then
+`summarize-portfolio-data-trust` was rerun and reported `worst_warning: none`.
+The refreshed headline metrics matched the documented conclusion: retail-liquid
+portfolio total return remained `60.38%`, SPY benchmark total return remained
+`302.73%`, and the hypothesis remained rejected.
 
 ## Next
 
@@ -184,4 +213,3 @@ If continuing portfolio research, choose one of these before running:
   fragmented mandates rather than broad mega-cap asset timing.
 
 Do not continue by parameter-sweeping this exact rotation rule.
-
