@@ -77,6 +77,9 @@ current workflow docs and the latest experiment handoffs.
   replay proving weakened campaign branches are carried forward as
   opportunity/template exclusions instead of merely blocking exact experiment
   titles.
+- [Liquid ETF Three-Cycle Campaign Probe](experiments/liquid-etf-three-cycle-campaign-probe.md):
+  bounded loop proof after explicit strategy-template metadata; campaign
+  execution works, but candidate ranking remains too symbol-sticky.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on
