@@ -101,8 +101,10 @@ spend budget on superficial variants after a weakened conclusion.
 
 ## Remaining Caveat
 
-The branch rule currently infers the strategy template from the experiment
-title when updating campaign memory. That is acceptable for the current built-in
-templates, but it is still a heuristic. A future cleanup should store
-`strategy_template` directly in campaign completed-experiment records or
-canonical conclusions, so branch memory does not depend on title parsing.
+Resolved for new campaign runs: campaign conversion now tags generated
+experiments with `template:<strategy_template>`, canonical
+`experiment_conclusion.json` exposes `experiment.strategy_template`, and
+campaign memory stores that field in `completed_experiments[]`.
+
+Older conclusions without the field can still fall back to title inference, but
+new branch-memory decisions no longer depend on experiment naming conventions.

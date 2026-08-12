@@ -108,6 +108,7 @@ def _completed_experiment_record(
         "experiment_id": conclusion.get("experiment_id"),
         "title": experiment.get("title"),
         "opportunity_thesis_id": thesis_status.get("opportunity_thesis_id") or _opportunity_thesis_id(experiment),
+        "strategy_template": _strategy_template_id(experiment),
         "thesis_status": thesis_status.get("status"),
         "research_system_status": research_system.get("status"),
         "strategy_hypothesis_status": strategy_hypothesis.get("status"),
@@ -148,7 +149,7 @@ def _branch_repetition_rules(conclusion: dict[str, Any]) -> list[str]:
     if strategy_status == "rejected":
         rules.append(f"Do not repeat unchanged rejected experiment: {title}.")
     thesis_id = str(thesis_status.get("opportunity_thesis_id") or _opportunity_thesis_id(experiment) or "").strip()
-    template = _campaign_template_from_title(title)
+    template = _strategy_template_id(experiment) or _campaign_template_from_title(title)
     if thesis_id and template and thesis_status.get("status") == "weakened":
         rules.append(f"Do not repeat weakened branch: opportunity={thesis_id}; template={template}.")
     return rules
@@ -172,6 +173,17 @@ def _opportunity_thesis_id(experiment: dict[str, Any]) -> str | None:
         if tag.startswith("opportunity:"):
             thesis_id = tag.removeprefix("opportunity:").strip()
             return thesis_id or None
+    return None
+
+
+def _strategy_template_id(experiment: dict[str, Any]) -> str | None:
+    explicit = experiment.get("strategy_template")
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()
+    for tag in _text_list(experiment.get("tags")):
+        if tag.startswith("template:"):
+            template_id = tag.removeprefix("template:").strip()
+            return template_id or None
     return None
 
 

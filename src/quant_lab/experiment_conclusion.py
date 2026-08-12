@@ -67,6 +67,7 @@ class ConclusionExperimentSnapshot:
     hypothesis: str
     status: str
     tags: list[str]
+    strategy_template: str | None
     strategy_path: str | None
     data_path: str | None
 
@@ -296,6 +297,7 @@ def build_experiment_conclusion(
             hypothesis=experiment.hypothesis,
             status=experiment.status,
             tags=list(experiment.tags),
+            strategy_template=_strategy_template_id(experiment.tags),
             strategy_path=experiment.strategy_path,
             data_path=experiment.data_path,
         ),
@@ -373,6 +375,7 @@ def format_experiment_conclusion_markdown(conclusion: ExperimentConclusion) -> s
         f"- Title: {conclusion.experiment.title}",
         f"- Hypothesis: {conclusion.experiment.hypothesis}",
         f"- Status: `{conclusion.experiment.status}`",
+        f"- Strategy template: `{conclusion.experiment.strategy_template or '-'}`",
         f"- Strategy path: `{conclusion.experiment.strategy_path or '-'}`",
         f"- Data path: `{conclusion.experiment.data_path or '-'}`",
         "",
@@ -773,6 +776,14 @@ def _opportunity_thesis_id(tags: list[str]) -> str | None:
         if tag.startswith("opportunity:"):
             thesis_id = tag.removeprefix("opportunity:").strip()
             return thesis_id or None
+    return None
+
+
+def _strategy_template_id(tags: list[str]) -> str | None:
+    for tag in tags:
+        if tag.startswith("template:"):
+            template_id = tag.removeprefix("template:").strip()
+            return template_id or None
     return None
 
 

@@ -62,7 +62,8 @@ def conclusion_payload() -> dict:
         "experiment": {
             "title": "SPY SMA 200 long/cash campaign baseline",
             "hypothesis": "A trend rule may reduce drawdown.",
-            "tags": ["campaign", "opportunity:liquid_etf_trend_defense"],
+            "tags": ["campaign", "opportunity:liquid_etf_trend_defense", "template:sma-long-cash"],
+            "strategy_template": "sma-long-cash",
         },
         "research_system_status": {"status": "valid"},
         "strategy_hypothesis_status": {"status": "rejected"},
@@ -103,7 +104,8 @@ def weakened_rsi_conclusion_payload() -> dict:
     payload["experiment"] = {
         "title": "EEM RSI Pullback Reversion",
         "hypothesis": "A daily RSI pullback rule may improve risk-adjusted behavior.",
-        "tags": ["campaign", "opportunity:retail_pullback_liquidity"],
+        "tags": ["campaign", "opportunity:retail_pullback_liquidity", "template:rsi-reversion"],
+        "strategy_template": "rsi-reversion",
     }
     payload["thesis_status"] = {
         "opportunity_thesis_id": "retail_pullback_liquidity",
@@ -612,7 +614,9 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(args_payload["schema_version"], "campaign_experiment_inputs.v1")
         self.assertEqual(args_payload["opportunity_thesis_id"], "liquid_etf_trend_defense")
         self.assertIn("opportunity:liquid_etf_trend_defense", args_payload["run_default_args"]["tag"])
+        self.assertIn("template:sma-long-cash", args_payload["run_default_args"]["tag"])
         self.assertIn("opportunity:liquid_etf_trend_defense", inputs.command_tokens)
+        self.assertIn("template:sma-long-cash", inputs.command_tokens)
         self.assertIn("quant-lab", command_markdown)
         self.assertIn("experiment", command_markdown)
         self.assertIn("run-default", command_markdown)
@@ -751,6 +755,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(updated.completed_experiments[0]["research_system_status"], "valid")
         self.assertEqual(updated.completed_experiments[0]["strategy_hypothesis_status"], "rejected")
         self.assertEqual(updated.completed_experiments[0]["opportunity_thesis_id"], "liquid_etf_trend_defense")
+        self.assertEqual(updated.completed_experiments[0]["strategy_template"], "sma-long-cash")
         self.assertEqual(updated.completed_experiments[0]["thesis_status"], "weakened")
         self.assertIn("strategy failed", " ".join(updated.current_findings))
         self.assertIn("thesis `weakened`", " ".join(updated.current_findings))
@@ -817,6 +822,7 @@ class CampaignTests(unittest.TestCase):
             "Do not repeat weakened branch: opportunity=retail_pullback_liquidity; template=rsi-reversion.",
             updated.do_not_repeat,
         )
+        self.assertEqual(updated.completed_experiments[0]["strategy_template"], "rsi-reversion")
 
     def test_deterministic_campaign_proposal_stops_after_known_sequence_is_exhausted(self) -> None:
         config = parse_campaign_config(campaign_payload())

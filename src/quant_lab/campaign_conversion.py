@@ -119,7 +119,7 @@ def _run_default_args(
         "symbol": proposal.symbol,
         "out": output_dir,
         "experiment_id": None,
-        "tag": ["campaign", _tag_slug(config.title)],
+        "tag": ["campaign", _tag_slug(config.title), f"template:{proposal.strategy_template}"],
         "param": _param_arguments(proposal),
         "train_end": DEFAULT_TRAIN_END,
         "test_start": DEFAULT_TEST_START,

@@ -247,6 +247,18 @@ class ExperimentConclusionTest(unittest.TestCase):
             any("liquid_etf_trend_defense" in item for item in conclusion.next_research_prompt.constraints)
         )
 
+    def test_experiment_snapshot_extracts_campaign_strategy_template_tag(self):
+        conclusion = build_experiment_conclusion(
+            _experiment(tags=["campaign", "opportunity:liquid_etf_trend_defense", "template:sma-long-cash"]),
+            [],
+            generated_at_utc="2026-07-25T12:00:00Z",
+        )
+        markdown = format_experiment_conclusion_markdown(conclusion)
+
+        self.assertEqual("sma-long-cash", conclusion.experiment.strategy_template)
+        self.assertEqual("sma-long-cash", conclusion.to_dict()["experiment"]["strategy_template"])
+        self.assertIn("Strategy template: `sma-long-cash`", markdown)
+
     def test_strategy_status_downgrades_when_criteria_pass_but_robustness_fails(self):
         records = [
             _index_record(

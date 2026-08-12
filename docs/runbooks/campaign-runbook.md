@@ -68,6 +68,12 @@ tag. That tag appears in the canonical `experiment_conclusion.json`, and
 campaign memory copies it into `completed_experiments[].opportunity_thesis_id`
 for the next cycle.
 
+The campaign strategy template is carried the same way with a
+`template:<strategy_template>` tag. New canonical conclusions expose it as
+`experiment.strategy_template`, and campaign memory copies it into
+`completed_experiments[].strategy_template`. This keeps branch-memory rules from
+depending on title parsing.
+
 Campaign-safe template metadata lives in `src/quant_lab/campaign_templates.py`.
 When adding a template to campaign execution, update that one mapping so provider
 context and proposal validation keep using the same strategy-family relationship.
