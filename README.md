@@ -447,7 +447,9 @@ staying inside the current daily-data engine and avoiding survivorship-bias-free
 stock-universe problems. Campaign configs can point at this file with
 `universe_path`; the loader expands it into normal allowed symbols and cache
 paths. The first checked-in config using it is
-`data/campaigns/liquid_etf_core_discovery_campaign.json`.
+`data/campaigns/liquid_etf_core_discovery_campaign.json`. Campaign configs can
+also set `max_candidate_menu_size` so broad universes produce a short,
+diversified provider menu instead of a flat wall of candidates.
 
 Audit adjusted-price behavior for a known corporate-action window:
 

@@ -134,6 +134,21 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(config.universe_path, str(universe_path))
         self.assertEqual(config.data_dir, "cache")
 
+    def test_parse_campaign_config_accepts_candidate_menu_cap(self) -> None:
+        payload = campaign_payload()
+        payload["max_candidate_menu_size"] = 12
+
+        config = parse_campaign_config(payload)
+
+        self.assertEqual(config.max_candidate_menu_size, 12)
+
+    def test_parse_campaign_config_rejects_invalid_candidate_menu_cap(self) -> None:
+        payload = campaign_payload()
+        payload["max_candidate_menu_size"] = 0
+
+        with self.assertRaisesRegex(ValueError, "max_candidate_menu_size"):
+            parse_campaign_config(payload)
+
     def test_parse_campaign_config_rejects_symbol_outside_universe(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             universe_path = Path(temp_dir) / "universe.json"

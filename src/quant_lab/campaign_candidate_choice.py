@@ -139,20 +139,12 @@ def format_campaign_candidate_choice_validation_markdown(
 
 def deterministic_candidate_choice(menu: CampaignCandidateMenu) -> CampaignCandidateChoice:
     if menu.candidates:
-        candidate = sorted(
-            menu.candidates,
-            key=lambda item: (
-                _rank_baseline_preference(item.title),
-                _rank_information_gain(item.expected_information_gain),
-                _rank_mining_risk(item.parameter_mining_risk),
-                item.candidate_id,
-            ),
-        )[0]
+        candidate = menu.candidates[0]
         return CampaignCandidateChoice(
             schema_version=CAMPAIGN_CANDIDATE_CHOICE_SCHEMA_VERSION,
             action="choose_candidate",
             candidate_id=candidate.candidate_id,
-            rationale="Selected the highest-ranked deterministic candidate from the bounded menu.",
+            rationale="Selected the first candidate from the ranked bounded menu.",
         )
     return CampaignCandidateChoice(
         schema_version=CAMPAIGN_CANDIDATE_CHOICE_SCHEMA_VERSION,
@@ -160,20 +152,6 @@ def deterministic_candidate_choice(menu: CampaignCandidateMenu) -> CampaignCandi
         candidate_id=None,
         rationale="SEARCH_SPACE_EXHAUSTED: no valid candidate remains in the bounded menu.",
     )
-
-
-def _rank_baseline_preference(title: str) -> int:
-    # Prefer the canonical baseline when a fresh campaign has several valid variants.
-    # Later cycles still rely on completed-title and do_not_repeat filtering to move on.
-    return 0 if "baseline" in title.lower() else 1
-
-
-def _rank_information_gain(value: str) -> int:
-    return {"high": 0, "medium": 1, "low": 2}.get(value, 3)
-
-
-def _rank_mining_risk(value: str) -> int:
-    return {"low": 0, "medium": 1, "high": 2}.get(value, 3)
 
 
 def _required_text(payload: dict[str, Any], key: str, context: str) -> str:

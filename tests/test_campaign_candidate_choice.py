@@ -50,6 +50,7 @@ class CampaignCandidateChoiceTest(unittest.TestCase):
 
         self.assertEqual("choose_candidate", result.choice.action)
         self.assertTrue(result.choice.candidate_id)
+        self.assertEqual(menu.candidates[0].candidate_id, result.choice.candidate_id)
         self.assertTrue(validation.valid, validation.reasons)
 
     def test_candidate_choice_rejects_missing_candidate_id(self) -> None:

@@ -27,6 +27,7 @@
   "max_cycles": 3,
   "max_total_runs": 33,
   "max_variants_per_experiment": 1,
+  "max_candidate_menu_size": 12,
   "duration_minutes": 30,
   "provider": "deterministic"
 }

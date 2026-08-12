@@ -44,6 +44,20 @@ def expanded_campaign_payload() -> dict:
     return payload
 
 
+def capped_multi_symbol_campaign_payload() -> dict:
+    payload = expanded_campaign_payload()
+    payload["allowed_symbols"] = ["SPY", "QQQ", "IWM", "TLT"]
+    payload["data_paths"] = {
+        "SPY": "data/cache/SPY_2015-01-01_2025-12-31.csv",
+        "QQQ": "data/cache/QQQ_2015-01-01_2025-12-31.csv",
+        "IWM": "data/cache/IWM_2015-01-01_2025-12-31.csv",
+        "TLT": "data/cache/TLT_2015-01-01_2025-12-31.csv",
+    }
+    payload["allowed_templates"] = ["sma-long-cash", "ema-trend-follow", "rsi-reversion", "breakout-trend"]
+    payload["max_candidate_menu_size"] = 6
+    return payload
+
+
 class CampaignCandidatesTest(unittest.TestCase):
     def test_fresh_campaign_builds_candidate_menu_from_catalogs(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -75,6 +89,23 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertIn("breakout-trend", templates)
         self.assertIn("retail_pullback_liquidity", thesis_ids)
         self.assertIn("liquid_etf_trend_defense", thesis_ids)
+
+    def test_capped_campaign_shortlists_diverse_candidate_menu(self) -> None:
+        config = parse_campaign_config(capped_multi_symbol_campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            menu = build_campaign_candidate_menu(config, state)
+
+        symbols = {candidate.symbol for candidate in menu.candidates}
+        templates = {candidate.template_id for candidate in menu.candidates}
+        self.assertEqual("ready", menu.status)
+        self.assertEqual(6, len(menu.candidates))
+        self.assertGreater(menu.total_candidates_before_shortlist, len(menu.candidates))
+        self.assertGreaterEqual(len(symbols), 3)
+        self.assertGreaterEqual(len(templates), 3)
+        self.assertIn("capped at 6", menu.shortlist_policy)
 
     def test_seeded_campaign_filters_forbidden_completed_titles(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -116,6 +147,8 @@ class CampaignCandidatesTest(unittest.TestCase):
             markdown = Path(markdown_path).read_text(encoding="utf-8")
 
         self.assertEqual("campaign_candidate_menu.v1", payload["schema_version"])
+        self.assertIn("total_candidates_before_shortlist", payload)
+        self.assertIn("shortlist_policy", payload)
         self.assertIn("Campaign Candidate Menu", markdown)
         self.assertIn("Candidate Menu", markdown)
 

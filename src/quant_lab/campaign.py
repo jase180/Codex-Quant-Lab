@@ -40,6 +40,7 @@ class CampaignConfig:
     provider: str
     universe_path: str | None = None
     data_dir: str = "data/cache"
+    max_candidate_menu_size: int | None = None
     created_at_utc: str = field(default_factory=utc_now_iso)
 
     def to_dict(self) -> dict[str, Any]:
@@ -103,6 +104,7 @@ def parse_campaign_config(payload: dict[str, Any]) -> CampaignConfig:
             "provider",
             "universe_path",
             "data_dir",
+            "max_candidate_menu_size",
             "created_at_utc",
         },
         "campaign config",
@@ -131,6 +133,11 @@ def parse_campaign_config(payload: dict[str, Any]) -> CampaignConfig:
         provider=_provider(payload),
         universe_path=_optional_str(payload.get("universe_path")),
         data_dir=_optional_str(payload.get("data_dir")) or "data/cache",
+        max_candidate_menu_size=_optional_positive_int(
+            payload,
+            "max_candidate_menu_size",
+            "campaign config",
+        ),
         created_at_utc=str(payload.get("created_at_utc") or utc_now_iso()),
     )
     validate_campaign_config(config)
@@ -291,6 +298,7 @@ def format_campaign_state_markdown(config: CampaignConfig, state: CampaignState)
             f"- Universe: `{config.universe_path or '-'}`",
             f"- Benchmark: `{config.benchmark}`",
             f"- Cost preset: `{config.cost_preset}`",
+            f"- Candidate menu cap: `{config.max_candidate_menu_size or '-'}`",
             "",
             "## What Has Been Tested?",
             "",
@@ -356,6 +364,12 @@ def _required_positive_int(payload: dict[str, Any], key: str, context: str) -> i
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
         raise ValueError(f"{context} {key} must be a positive integer")
     return value
+
+
+def _optional_positive_int(payload: dict[str, Any], key: str, context: str) -> int | None:
+    if key not in payload or payload.get(key) is None:
+        return None
+    return _required_positive_int(payload, key, context)
 
 
 def _required_data_paths(payload: dict[str, Any]) -> dict[str, str]:

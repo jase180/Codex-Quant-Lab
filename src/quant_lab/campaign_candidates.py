@@ -70,6 +70,8 @@ class CampaignCandidateMenu:
     cycle_number: int
     status: str
     candidates: list[CampaignCandidate]
+    total_candidates_before_shortlist: int
+    shortlist_policy: str
     rejected_candidates: list[CandidateRejection]
     forbidden_titles: list[str]
     do_not_repeat: list[str]
@@ -82,6 +84,8 @@ class CampaignCandidateMenu:
             "cycle_number": self.cycle_number,
             "status": self.status,
             "candidates": [candidate.to_dict() for candidate in self.candidates],
+            "total_candidates_before_shortlist": self.total_candidates_before_shortlist,
+            "shortlist_policy": self.shortlist_policy,
             "rejected_candidates": [rejection.to_dict() for rejection in self.rejected_candidates],
             "forbidden_titles": list(self.forbidden_titles),
             "do_not_repeat": list(self.do_not_repeat),
@@ -171,6 +175,8 @@ def build_campaign_candidate_menu(
                         continue
                     candidates.append(candidate)
 
+    total_candidates_before_shortlist = len(candidates)
+    candidates = _shortlisted_candidates(candidates, config=config)
     status = "ready" if candidates else "SEARCH_SPACE_EXHAUSTED"
     return CampaignCandidateMenu(
         schema_version=CAMPAIGN_CANDIDATE_MENU_SCHEMA_VERSION,
@@ -178,6 +184,8 @@ def build_campaign_candidate_menu(
         cycle_number=state.cycle_number + 1,
         status=status,
         candidates=candidates,
+        total_candidates_before_shortlist=total_candidates_before_shortlist,
+        shortlist_policy=_shortlist_policy(config),
         rejected_candidates=rejected,
         forbidden_titles=forbidden_titles,
         do_not_repeat=list(state.do_not_repeat),
@@ -207,6 +215,8 @@ def format_campaign_candidate_menu_markdown(menu: CampaignCandidateMenu) -> str:
             f"- Status: `{menu.status}`",
             f"- Cycle: `{menu.cycle_number}`",
             f"- Candidates: `{len(menu.candidates)}`",
+            f"- Total valid before shortlist: `{menu.total_candidates_before_shortlist}`",
+            f"- Shortlist policy: {menu.shortlist_policy}",
             f"- Rejected candidates: `{len(menu.rejected_candidates)}`",
             "",
             "## Candidate Menu",
@@ -423,6 +433,80 @@ def _same_completed_branch(candidate: CampaignCandidate, state: CampaignState) -
 
 def _candidate_id(template_id: str, symbol: str, variant_index: int) -> str:
     return f"{symbol.lower()}_{template_id}_{variant_index:03d}"
+
+
+def _shortlisted_candidates(candidates: list[CampaignCandidate], *, config: CampaignConfig) -> list[CampaignCandidate]:
+    limit = config.max_candidate_menu_size
+    if limit is None or len(candidates) <= limit:
+        return sorted(candidates, key=_candidate_quality_key)
+
+    selected: list[CampaignCandidate] = []
+    remaining = list(candidates)
+    symbol_counts: dict[str, int] = {}
+    template_counts: dict[str, int] = {}
+    thesis_counts: dict[str, int] = {}
+    while remaining and len(selected) < limit:
+        candidate = min(
+            remaining,
+            key=lambda item: (
+                _candidate_quality_score(item)
+                + (symbol_counts.get(item.symbol, 0) * 4)
+                + (template_counts.get(item.template_id, 0) * 2)
+                + (thesis_counts.get(item.opportunity_thesis_id, 0) * 2),
+                _candidate_quality_key(item),
+            ),
+        )
+        selected.append(candidate)
+        remaining.remove(candidate)
+        symbol_counts[candidate.symbol] = symbol_counts.get(candidate.symbol, 0) + 1
+        template_counts[candidate.template_id] = template_counts.get(candidate.template_id, 0) + 1
+        thesis_counts[candidate.opportunity_thesis_id] = thesis_counts.get(candidate.opportunity_thesis_id, 0) + 1
+    return selected
+
+
+def _shortlist_policy(config: CampaignConfig) -> str:
+    limit = config.max_candidate_menu_size
+    if limit is None:
+        return "uncapped: all valid candidates are shown"
+    return (
+        f"capped at {limit}: greedy ranking by information gain, low mining risk, low prior overlap, "
+        "and diversity across symbols, templates, and opportunity theses"
+    )
+
+
+def _candidate_quality_score(candidate: CampaignCandidate) -> int:
+    return (
+        _rank_information_gain(candidate.expected_information_gain) * 4
+        + _rank_mining_risk(candidate.parameter_mining_risk) * 2
+        + _rank_prior_overlap(candidate.prior_overlap) * 2
+        + _baseline_penalty(candidate.title)
+    )
+
+
+def _candidate_quality_key(candidate: CampaignCandidate) -> tuple[int, int, int, int, str]:
+    return (
+        _rank_information_gain(candidate.expected_information_gain),
+        _rank_mining_risk(candidate.parameter_mining_risk),
+        _rank_prior_overlap(candidate.prior_overlap),
+        _baseline_penalty(candidate.title),
+        candidate.candidate_id,
+    )
+
+
+def _rank_information_gain(value: str) -> int:
+    return {"high": 0, "medium": 1, "low": 2}.get(value, 3)
+
+
+def _rank_mining_risk(value: str) -> int:
+    return {"low": 0, "medium": 1, "high": 2}.get(value, 3)
+
+
+def _rank_prior_overlap(value: str) -> int:
+    return {"none": 0, "low": 1, "medium": 2, "high": 3}.get(value, 4)
+
+
+def _baseline_penalty(title: str) -> int:
+    return 0 if "baseline" in title.lower() else 1
 
 
 def _candidate_lines(candidates: list[CampaignCandidate]) -> list[str]:

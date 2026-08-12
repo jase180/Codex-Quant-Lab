@@ -115,6 +115,11 @@ universe: small-cap equity, sectors, bonds, gold, and international equity. The
 full 29-symbol universe remains available, but the first candidate menu should
 stay small enough for inspection.
 
+It also sets `max_candidate_menu_size` to keep provider context bounded. The
+menu builder ranks candidates by expected information gain, low parameter-mining
+risk, low prior overlap, and diversity across symbols, templates, and
+opportunity theses.
+
 Before running it, fetch the universe data described in
 `data/universes/README.md` and confirm the cache inventory shows provenance for
 the requested date range. The first use should usually inspect candidates before
