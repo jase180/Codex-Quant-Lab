@@ -169,6 +169,11 @@ Do not define strategy success as beating total return by default. Valid
 objectives include lower drawdown, risk-adjusted return, return retention,
 diversification, lower exposure, or better behavior during equity declines.
 
+If the measurable criteria pass but planned robustness checks are `mixed` or
+`failed`, the status should be `partially_supported`, not `supported`. This
+keeps a good baseline or train/test result from being promoted when cost, date,
+or benchmark sensitivity contradicts it.
+
 Example interpretation:
 
 ```text

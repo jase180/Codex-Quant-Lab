@@ -247,6 +247,77 @@ class ExperimentConclusionTest(unittest.TestCase):
             any("liquid_etf_trend_defense" in item for item in conclusion.next_research_prompt.constraints)
         )
 
+    def test_strategy_status_downgrades_when_criteria_pass_but_robustness_fails(self):
+        records = [
+            _index_record(
+                run_id="test_selected",
+                run_type="test_selected_run",
+                excess_total_return=0.01,
+                metadata_path="artifacts/research/eem/test_selected/run_metadata.json",
+            )
+            | {
+                "data_start": "2021-01-04",
+                "data_end": "2025-12-30",
+                "benchmark_name": "buy-and-hold",
+                "cost_preset": "retail-liquid",
+                "sizing": "percent-equity",
+                "cagr": 0.106,
+                "benchmark_cagr": 0.10,
+                "max_drawdown": -0.15,
+                "benchmark_max_drawdown": -0.30,
+            },
+            _index_record(
+                run_id="cost_check",
+                run_type="cost_sensitivity_run",
+                excess_total_return=-0.48,
+                metadata_path="artifacts/research/eem/cost/run_metadata.json",
+            ),
+            _index_record(
+                run_id="date_check",
+                run_type="date_sensitivity_run",
+                excess_total_return=-0.35,
+                metadata_path="artifacts/research/eem/date/run_metadata.json",
+            ),
+            _index_record(
+                run_id="benchmark_check",
+                run_type="benchmark_sensitivity_run",
+                excess_total_return=-0.10,
+                metadata_path="artifacts/research/eem/benchmark/run_metadata.json",
+            ),
+        ]
+        objective = InvestmentObjective(
+            intended_benefit="lower drawdown with acceptable return retention",
+            benchmark="buy-and-hold",
+            primary_metric="max_drawdown",
+            minimum_acceptable_performance="Retain 80% of benchmark CAGR and reduce max drawdown by 25%.",
+            success_criteria=[
+                SuccessCriterion(
+                    name="return_retention",
+                    metric="cagr",
+                    comparison="strategy_vs_benchmark_ratio",
+                    operator=">=",
+                    threshold=0.8,
+                ),
+                SuccessCriterion(
+                    name="drawdown_reduction",
+                    metric="max_drawdown",
+                    comparison="relative_reduction_vs_benchmark",
+                    operator=">=",
+                    threshold=0.25,
+                ),
+            ],
+        )
+
+        conclusion = build_experiment_conclusion(
+            _experiment(tags=["campaign", "opportunity:liquid_etf_trend_defense"]),
+            records,
+            investment_objective=objective,
+        )
+
+        self.assertEqual("partially_supported", conclusion.strategy_hypothesis_status.status)
+        self.assertIn("robustness", conclusion.strategy_hypothesis_status.summary)
+        self.assertEqual("weakened", conclusion.thesis_status.status)
+
     def test_strategy_status_can_derive_benchmark_cagr_from_metadata(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             metadata_path = Path(temp_dir) / "run_metadata.json"

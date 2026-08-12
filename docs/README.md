@@ -67,6 +67,9 @@ current workflow docs and the latest experiment handoffs.
 - [SPY Rolling-Low Reversion Experiment](experiments/spy-rolling-low-reversion-experiment.md):
   statistical-reversion result; valid research system, rejected executable
   new-low variant.
+- [EEM SMA 200 ETF Campaign Probe](experiments/eem-sma-200-etf-campaign-probe.md):
+  first liquid ETF universe campaign probe; valid system, partially supported
+  strategy due failed robustness, weakened thesis.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

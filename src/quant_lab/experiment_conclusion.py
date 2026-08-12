@@ -270,6 +270,7 @@ def build_experiment_conclusion(
         linked_records,
         investment_objective=investment_objective,
         legacy_evidence_label=evidence_label.label,
+        robustness_notes=robustness_notes,
     )
     thesis_status = _thesis_status(
         experiment,
@@ -644,6 +645,7 @@ def _strategy_hypothesis_status(
     *,
     investment_objective: InvestmentObjective | None,
     legacy_evidence_label: str,
+    robustness_notes: list[RobustnessConclusionNote],
 ) -> StrategyHypothesisStatus:
     if not records:
         return StrategyHypothesisStatus(
@@ -668,8 +670,15 @@ def _strategy_hypothesis_status(
         status = "inconclusive"
         summary = "The prespecified criteria could not be evaluated from current linked run fields."
     elif all(result.passed for result in known_results) and len(known_results) == len(criteria_results):
-        status = "supported"
-        summary = "The strategy met all prespecified measurable criteria."
+        if _has_failed_or_mixed_robustness(robustness_notes):
+            status = "partially_supported"
+            summary = (
+                "The strategy met the prespecified measurable criteria, but at least one planned robustness "
+                "check was mixed or failed."
+            )
+        else:
+            status = "supported"
+            summary = "The strategy met all prespecified measurable criteria and planned robustness checks did not fail."
     elif any(result.passed for result in known_results):
         status = "partially_supported"
         summary = "The strategy met some prespecified criteria but failed or could not evaluate others."
@@ -677,6 +686,10 @@ def _strategy_hypothesis_status(
         status = "rejected"
         summary = "The strategy failed the prespecified measurable criteria."
     return StrategyHypothesisStatus(status=status, summary=summary, criteria_results=criteria_results)
+
+
+def _has_failed_or_mixed_robustness(robustness_notes: list[RobustnessConclusionNote]) -> bool:
+    return any(note.status in {"failed", "mixed"} for note in robustness_notes)
 
 
 def _thesis_status(
