@@ -13,10 +13,14 @@ from __future__ import annotations
 SUPPORTED_CAMPAIGN_TEMPLATE_PARAMETERS = {
     "sma-long-cash": {"sma_length"},
     "ema-trend-follow": set(),
+    "rsi-reversion": set(),
+    "breakout-trend": set(),
 }
 CAMPAIGN_TEMPLATE_STRATEGY_FAMILIES = {
     "sma-long-cash": "trend_following",
     "ema-trend-follow": "trend_following",
+    "rsi-reversion": "mean_reversion",
+    "breakout-trend": "trend_following",
 }
 
 

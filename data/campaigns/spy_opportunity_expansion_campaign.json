@@ -1,0 +1,22 @@
+{
+  "schema_version": "campaign_config.v1",
+  "title": "SPY bounded opportunity expansion",
+  "objective": "Test a small set of non-nearby SPY opportunity candidates after the initial trend-defense campaign exhausted its current templates.",
+  "allowed_symbols": [
+    "SPY"
+  ],
+  "allowed_templates": [
+    "rsi-reversion",
+    "breakout-trend"
+  ],
+  "benchmark": "buy-and-hold",
+  "data_paths": {
+    "SPY": "data/cache/SPY_2015-01-01_2025-12-31.csv"
+  },
+  "cost_preset": "retail-liquid",
+  "max_cycles": 2,
+  "max_total_runs": 22,
+  "max_variants_per_experiment": 1,
+  "duration_minutes": 10,
+  "provider": "deterministic"
+}

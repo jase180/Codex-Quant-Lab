@@ -33,6 +33,17 @@ def campaign_payload() -> dict:
     }
 
 
+def expanded_campaign_payload() -> dict:
+    payload = campaign_payload()
+    payload["title"] = "SPY bounded opportunity expansion"
+    payload["objective"] = "Test bounded non-nearby opportunity candidates."
+    payload["allowed_templates"] = ["rsi-reversion", "breakout-trend"]
+    payload["max_cycles"] = 2
+    payload["max_total_runs"] = 22
+    payload["max_variants_per_experiment"] = 1
+    return payload
+
+
 class CampaignCandidatesTest(unittest.TestCase):
     def test_fresh_campaign_builds_candidate_menu_from_catalogs(self) -> None:
         config = parse_campaign_config(campaign_payload())
@@ -48,6 +59,22 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertIn("spy_price_vs_sma_trend_001", candidate_ids)
         self.assertTrue(any(candidate.strategy_template == "ema-trend-follow" for candidate in menu.candidates))
         self.assertTrue(all(candidate.projected_run_count == 11 for candidate in menu.candidates))
+
+    def test_expanded_campaign_builds_non_nearby_candidate_menu(self) -> None:
+        config = parse_campaign_config(expanded_campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            menu = build_campaign_candidate_menu(config, state)
+
+        templates = {candidate.strategy_template for candidate in menu.candidates}
+        thesis_ids = {candidate.opportunity_thesis_id for candidate in menu.candidates}
+        self.assertEqual("ready", menu.status)
+        self.assertIn("rsi-reversion", templates)
+        self.assertIn("breakout-trend", templates)
+        self.assertIn("retail_pullback_liquidity", thesis_ids)
+        self.assertIn("liquid_etf_trend_defense", thesis_ids)
 
     def test_seeded_campaign_filters_forbidden_completed_titles(self) -> None:
         config = parse_campaign_config(campaign_payload())

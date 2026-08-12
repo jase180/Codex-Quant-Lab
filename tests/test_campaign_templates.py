@@ -13,12 +13,16 @@ class CampaignTemplatesTest(unittest.TestCase):
     def test_campaign_template_metadata_is_shared_by_context_and_validation(self) -> None:
         self.assertEqual("trend_following", campaign_template_strategy_family("sma-long-cash"))
         self.assertEqual("trend_following", campaign_template_strategy_family("ema-trend-follow"))
+        self.assertEqual("mean_reversion", campaign_template_strategy_family("rsi-reversion"))
+        self.assertEqual("trend_following", campaign_template_strategy_family("breakout-trend"))
         self.assertIsNone(campaign_template_strategy_family("not-campaign-safe"))
         self.assertEqual({"sma_length"}, supported_campaign_template_parameters("sma-long-cash"))
+        self.assertEqual(set(), supported_campaign_template_parameters("rsi-reversion"))
+        self.assertEqual(set(), supported_campaign_template_parameters("breakout-trend"))
         self.assertEqual(set(), supported_campaign_template_parameters("not-campaign-safe"))
         self.assertEqual(
-            {"trend_following"},
-            campaign_strategy_families_for_templates(["sma-long-cash", "ema-trend-follow"]),
+            {"trend_following", "mean_reversion"},
+            campaign_strategy_families_for_templates(["sma-long-cash", "ema-trend-follow", "rsi-reversion"]),
         )
 
 

@@ -1,0 +1,40 @@
+{
+  "schema_version": "experiment_template.v1",
+  "template_id": "rsi_pullback_reversion",
+  "title": "RSI Pullback Reversion",
+  "strategy_family": "mean_reversion",
+  "rationale": "Tests whether a simple oversold RSI state captures temporary liquidity-driven pullbacks without inventing new thresholds.",
+  "tests_claim": "A daily RSI pullback rule improves risk-adjusted behavior by entering after short-term downside pressure.",
+  "supported_universe": ["single_liquid_etf"],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "RSI indicator",
+    "threshold entry and exit rules",
+    "next-open market fills",
+    "long/cash exposure",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "executable_mapping": {
+    "campaign_strategy_template": "rsi-reversion",
+    "parameter_map": {}
+  },
+  "default_validation_plan": {
+    "cost_sensitivity": true,
+    "date_sensitivity": true,
+    "train_test": true
+  },
+  "default_success_criteria": {
+    "minimum_cagr_retention": 0.7,
+    "minimum_relative_drawdown_reduction": 0.15
+  },
+  "parameter_neighborhood_id": "single_variant_basic",
+  "expected_information_gain": "high",
+  "parameter_mining_risk": "low",
+  "known_limitations": [
+    "The current campaign-safe mapping does not expose RSI thresholds as candidate parameters.",
+    "Short-term reversal can be turnover-sensitive, so cost sensitivity is critical."
+  ],
+  "engine_support_status": "ready"
+}

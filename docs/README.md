@@ -41,6 +41,9 @@ current workflow docs and the latest experiment handoffs.
 - [SPY Trend-Defense Campaign Closeout](experiments/spy-trend-defense-campaign-closeout.md):
   bounded campaign result; valid research workflow, exhausted current SPY
   trend-defense candidate space.
+- `data/campaigns/spy_opportunity_expansion_campaign.json`: small campaign
+  config for testing bounded RSI pullback and breakout candidates after the SPY
+  trend-defense closeout.
 - [SPY 2024 Adjusted-Price Audit](experiments/spy-2024-adjusted-price-audit.md):
   adjusted-price and manually supplied dividend-amount audit for the cached SPY
   data policy.

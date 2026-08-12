@@ -1,0 +1,11 @@
+{
+  "schema_version": "parameter_neighborhood.v1",
+  "neighborhood_id": "single_variant_basic",
+  "title": "Single Prespecified Variant",
+  "rationale": "Represents an executable template as one bounded branch when campaign-safe parameter exposure is not yet available.",
+  "parameters": {
+    "variant": ["default"]
+  },
+  "max_variants": 1,
+  "selection_rule": "Run the existing executable template unchanged; do not add thresholds after seeing results."
+}

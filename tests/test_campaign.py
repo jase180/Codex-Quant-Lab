@@ -538,6 +538,70 @@ class CampaignTests(unittest.TestCase):
         self.assertIn("experiment", command_markdown)
         self.assertIn("run-default", command_markdown)
 
+    def test_prepare_campaign_experiment_inputs_supports_expanded_campaign_templates(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            rsi_proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY RSI pullback reversion candidate",
+                    "hypothesis": "A prespecified RSI pullback rule may test retail pullback liquidity.",
+                    "rationale": "Uses an existing campaign-safe template.",
+                    "difference_from_prior_work": "Moves from trend defense to pullback reversion.",
+                    "strategy_template": "rsi-reversion",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "retail_pullback_liquidity",
+                    "parameters": {},
+                    "success_criteria": {
+                        "minimum_cagr_retention": 0.7,
+                        "minimum_relative_drawdown_reduction": 0.15,
+                    },
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
+            breakout_proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY breakout trend persistence candidate",
+                    "hypothesis": "A prespecified breakout rule may test trend persistence.",
+                    "rationale": "Uses an existing campaign-safe template.",
+                    "difference_from_prior_work": "Uses rolling highs and lows instead of moving-average state.",
+                    "strategy_template": "breakout-trend",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "liquid_etf_trend_defense",
+                    "parameters": {},
+                    "success_criteria": {
+                        "minimum_cagr_retention": 0.8,
+                        "minimum_relative_drawdown_reduction": 0.2,
+                    },
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
+
+            rsi_inputs = prepare_campaign_experiment_inputs(
+                rsi_proposal,
+                config=config,
+                cycle_dir=Path(paths.cycles_dir) / "cycle_001",
+            )
+            breakout_inputs = prepare_campaign_experiment_inputs(
+                breakout_proposal,
+                config=config,
+                cycle_dir=Path(paths.cycles_dir) / "cycle_002",
+            )
+
+            rsi_strategy = json.loads(Path(rsi_inputs.strategy_path).read_text(encoding="utf-8"))
+            breakout_strategy = json.loads(Path(breakout_inputs.strategy_path).read_text(encoding="utf-8"))
+
+        self.assertEqual("rsi", rsi_strategy["indicators"][0]["kind"])
+        self.assertEqual(["rolling_high", "rolling_low"], [item["kind"] for item in breakout_strategy["indicators"]])
+        self.assertIn("rsi_14.inputs.length=14", rsi_inputs.command_tokens)
+        self.assertIn("high_20.inputs.length=20", breakout_inputs.command_tokens)
+        self.assertIn("low_10.inputs.length=10", breakout_inputs.command_tokens)
+
     def test_execute_campaign_experiment_inputs_calls_default_workflow_and_saves_receipt(self) -> None:
         config = parse_campaign_config(campaign_payload())
 

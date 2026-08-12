@@ -1,0 +1,40 @@
+{
+  "schema_version": "experiment_template.v1",
+  "template_id": "breakout_trend_persistence",
+  "title": "Breakout Trend Persistence",
+  "strategy_family": "trend_following",
+  "rationale": "Tests whether upside persistence after a rolling-high breakout behaves differently from price-versus-average trend state.",
+  "tests_claim": "A daily breakout trend rule can participate in persistent upside moves while exiting after a rolling-low failure.",
+  "supported_universe": ["single_liquid_etf"],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "rolling high indicator",
+    "rolling low indicator",
+    "next-open market fills",
+    "long/cash exposure",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "executable_mapping": {
+    "campaign_strategy_template": "breakout-trend",
+    "parameter_map": {}
+  },
+  "default_validation_plan": {
+    "cost_sensitivity": true,
+    "date_sensitivity": true,
+    "train_test": true
+  },
+  "default_success_criteria": {
+    "minimum_cagr_retention": 0.8,
+    "minimum_relative_drawdown_reduction": 0.2
+  },
+  "parameter_neighborhood_id": "single_variant_basic",
+  "expected_information_gain": "medium",
+  "parameter_mining_risk": "low",
+  "known_limitations": [
+    "Breakout behavior is still a trend-following mechanism, so it should not be treated as a fresh thesis by itself.",
+    "The current campaign-safe mapping does not expose channel lengths as candidate parameters."
+  ],
+  "engine_support_status": "ready"
+}

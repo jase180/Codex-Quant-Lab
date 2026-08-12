@@ -202,6 +202,10 @@ def _param_arguments(proposal: CampaignProposal) -> list[str]:
         return [f"sma_{length}.inputs.length={length}"]
     if proposal.strategy_template == "ema-trend-follow":
         return ["ema_50.inputs.length=50"]
+    if proposal.strategy_template == "rsi-reversion":
+        return ["rsi_14.inputs.length=14"]
+    if proposal.strategy_template == "breakout-trend":
+        return ["high_20.inputs.length=20", "low_10.inputs.length=10"]
     raise ValueError(f"campaign conversion does not support template: {proposal.strategy_template}")
 
 
