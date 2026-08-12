@@ -107,6 +107,54 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(config.max_cycles, 3)
         self.assertEqual(config.provider, "deterministic")
 
+    def test_parse_campaign_config_expands_universe_symbols_and_data_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            universe_path = Path(temp_dir) / "universe.json"
+            universe_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "research_universe.v1",
+                        "symbols": ["spy", "qqq"],
+                        "date_range": {"start": "2015-01-01", "end": "2025-12-31"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = campaign_payload()
+            payload.pop("allowed_symbols")
+            payload.pop("data_paths")
+            payload["universe_path"] = str(universe_path)
+            payload["data_dir"] = "cache"
+
+            config = parse_campaign_config(payload)
+
+        self.assertEqual(config.allowed_symbols, ["SPY", "QQQ"])
+        self.assertEqual(config.data_paths["SPY"], "cache/SPY_2015-01-01_2025-12-31.csv")
+        self.assertEqual(config.data_paths["QQQ"], "cache/QQQ_2015-01-01_2025-12-31.csv")
+        self.assertEqual(config.universe_path, str(universe_path))
+        self.assertEqual(config.data_dir, "cache")
+
+    def test_parse_campaign_config_rejects_symbol_outside_universe(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            universe_path = Path(temp_dir) / "universe.json"
+            universe_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "research_universe.v1",
+                        "symbols": ["SPY"],
+                        "date_range": {"start": "2015-01-01", "end": "2025-12-31"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            payload = campaign_payload()
+            payload["allowed_symbols"] = ["QQQ"]
+            payload.pop("data_paths")
+            payload["universe_path"] = str(universe_path)
+
+            with self.assertRaisesRegex(ValueError, "not found in universe"):
+                parse_campaign_config(payload)
+
     def test_parse_campaign_config_rejects_missing_symbol_data_path(self) -> None:
         payload = campaign_payload()
         payload["data_paths"] = {}

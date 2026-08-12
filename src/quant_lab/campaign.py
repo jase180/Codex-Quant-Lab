@@ -38,6 +38,8 @@ class CampaignConfig:
     max_variants_per_experiment: int
     duration_minutes: int
     provider: str
+    universe_path: str | None = None
+    data_dir: str = "data/cache"
     created_at_utc: str = field(default_factory=utc_now_iso)
 
     def to_dict(self) -> dict[str, Any]:
@@ -99,10 +101,13 @@ def parse_campaign_config(payload: dict[str, Any]) -> CampaignConfig:
             "max_variants_per_experiment",
             "duration_minutes",
             "provider",
+            "universe_path",
+            "data_dir",
             "created_at_utc",
         },
         "campaign config",
     )
+    payload = _expand_universe_fields(payload)
     schema_version = str(payload.get("schema_version", CAMPAIGN_CONFIG_SCHEMA_VERSION))
     if schema_version != CAMPAIGN_CONFIG_SCHEMA_VERSION:
         raise ValueError(f"unsupported campaign config schema_version: {schema_version}")
@@ -124,6 +129,8 @@ def parse_campaign_config(payload: dict[str, Any]) -> CampaignConfig:
         ),
         duration_minutes=_required_positive_int(payload, "duration_minutes", "campaign config"),
         provider=_provider(payload),
+        universe_path=_optional_str(payload.get("universe_path")),
+        data_dir=_optional_str(payload.get("data_dir")) or "data/cache",
         created_at_utc=str(payload.get("created_at_utc") or utc_now_iso()),
     )
     validate_campaign_config(config)
@@ -281,6 +288,7 @@ def format_campaign_state_markdown(config: CampaignConfig, state: CampaignState)
             "",
             f"- Allowed symbols: `{', '.join(config.allowed_symbols)}`",
             f"- Allowed templates: `{', '.join(config.allowed_templates)}`",
+            f"- Universe: `{config.universe_path or '-'}`",
             f"- Benchmark: `{config.benchmark}`",
             f"- Cost preset: `{config.cost_preset}`",
             "",
@@ -355,6 +363,81 @@ def _required_data_paths(payload: dict[str, Any]) -> dict[str, str]:
     if not isinstance(value, dict):
         raise ValueError("campaign config data_paths must be an object")
     return {str(symbol).strip().upper(): str(path).strip() for symbol, path in value.items() if str(path).strip()}
+
+
+def _expand_universe_fields(payload: dict[str, Any]) -> dict[str, Any]:
+    """Fill campaign symbols and cache paths from a tracked research universe.
+
+    Campaign configs are still explicit after parsing: downstream code receives
+    normal `allowed_symbols` and `data_paths`. The universe shortcut only keeps
+    checked-in configs from duplicating a long symbol list plus predictable cache
+    filenames.
+    """
+
+    working = dict(payload)
+    universe_path = _optional_str(working.get("universe_path"))
+    if universe_path is None:
+        return working
+
+    universe = _load_universe_payload(universe_path)
+    universe_symbols = _universe_symbols(universe, universe_path=universe_path)
+    allowed_symbols = _campaign_universe_symbols(working, universe_symbols=universe_symbols)
+    working["allowed_symbols"] = allowed_symbols
+
+    date_range = universe.get("date_range")
+    if not isinstance(date_range, dict):
+        raise ValueError(f"campaign universe {universe_path} date_range must be an object")
+    start = _required_text(date_range, "start", f"campaign universe {universe_path} date_range")
+    end = _required_text(date_range, "end", f"campaign universe {universe_path} date_range")
+    data_dir = _optional_str(working.get("data_dir")) or "data/cache"
+    existing_paths = working.get("data_paths", {})
+    if existing_paths is None:
+        existing_paths = {}
+    if not isinstance(existing_paths, dict):
+        raise ValueError("campaign config data_paths must be an object")
+
+    data_paths = {str(symbol).strip().upper(): str(path).strip() for symbol, path in existing_paths.items() if str(path).strip()}
+    for symbol in allowed_symbols:
+        data_paths.setdefault(symbol, _universe_cache_path(data_dir, symbol=symbol, start=start, end=end))
+    working["data_paths"] = data_paths
+    return working
+
+
+def _load_universe_payload(universe_path: str) -> dict[str, Any]:
+    path = Path(universe_path)
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise ValueError(f"campaign universe_path does not exist: {universe_path}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"campaign universe {universe_path} must be a JSON object")
+    return payload
+
+
+def _universe_symbols(universe: dict[str, Any], *, universe_path: str) -> list[str]:
+    raw_symbols = universe.get("symbols")
+    if not isinstance(raw_symbols, list):
+        raise ValueError(f"campaign universe {universe_path} symbols must be a list")
+    symbols = [str(symbol).strip().upper() for symbol in raw_symbols if str(symbol).strip()]
+    if not symbols:
+        raise ValueError(f"campaign universe {universe_path} symbols must not be empty")
+    return symbols
+
+
+def _campaign_universe_symbols(payload: dict[str, Any], *, universe_symbols: list[str]) -> list[str]:
+    raw_allowed = payload.get("allowed_symbols")
+    if raw_allowed is None:
+        return universe_symbols
+    allowed_symbols = _required_text_list(payload, "allowed_symbols", "campaign config")
+    unknown = sorted(set(allowed_symbols) - set(universe_symbols))
+    if unknown:
+        raise ValueError(f"campaign config allowed_symbols not found in universe: {unknown}")
+    return allowed_symbols
+
+
+def _universe_cache_path(data_dir: str, *, symbol: str, start: str, end: str) -> str:
+    cleaned_dir = data_dir.strip().replace("\\", "/").rstrip("/")
+    return f"{cleaned_dir}/{symbol}_{start}_{end}.csv"
 
 
 def _provider(payload: dict[str, Any]) -> str:

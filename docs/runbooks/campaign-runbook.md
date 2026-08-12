@@ -92,6 +92,48 @@ It intentionally allows only:
 The `33` run budget matters because each current default workflow cycle projects
 `11` backtests. A smaller budget can make later valid proposals impossible.
 
+## First ETF Universe Campaign
+
+The checked-in expanded-universe config is:
+
+```text
+data/campaigns/liquid_etf_core_discovery_campaign.json
+```
+
+It reads the tracked universe:
+
+```text
+data/universes/liquid_etf_core.json
+```
+
+The campaign loader expands that universe into normal `allowed_symbols` and
+`data_paths` using the universe date range and `data_dir`. This avoids manually
+maintaining one path per ETF in the campaign config.
+
+The checked-in config intentionally uses a representative subset of the full
+universe: small-cap equity, sectors, bonds, gold, and international equity. The
+full 29-symbol universe remains available, but the first candidate menu should
+stay small enough for inspection.
+
+Before running it, fetch the universe data described in
+`data/universes/README.md` and confirm the cache inventory shows provenance for
+the requested date range. The first use should usually inspect candidates before
+execution:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign init `
+  --config data\campaigns\liquid_etf_core_discovery_campaign.json `
+  --out artifacts\campaigns\liquid_etf_core_discovery_001 `
+  --force
+
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign candidates `
+  --campaign artifacts\campaigns\liquid_etf_core_discovery_001
+```
+
+This is broader than the SPY campaign, but it is still not a license for
+unbounded search. Treat it as a candidate-inspection campaign until the selected
+experiments look structurally useful.
+
 ## Run The Campaign
 
 Start a fresh campaign:

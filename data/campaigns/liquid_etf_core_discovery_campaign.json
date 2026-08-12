@@ -1,0 +1,32 @@
+{
+  "schema_version": "campaign_config.v1",
+  "title": "Liquid ETF core discovery",
+  "objective": "Probe a broader liquid ETF universe for simple, prespecified daily effects before moving into harder individual-stock or event-data research.",
+  "universe_path": "data/universes/liquid_etf_core.json",
+  "data_dir": "data/cache",
+  "allowed_symbols": [
+    "IWM",
+    "XLK",
+    "XLF",
+    "XLE",
+    "XLV",
+    "XLP",
+    "TLT",
+    "GLD",
+    "EFA",
+    "EEM"
+  ],
+  "allowed_templates": [
+    "sma-long-cash",
+    "ema-trend-follow",
+    "rsi-reversion",
+    "breakout-trend"
+  ],
+  "benchmark": "buy-and-hold",
+  "cost_preset": "retail-liquid",
+  "max_cycles": 3,
+  "max_total_runs": 33,
+  "max_variants_per_experiment": 1,
+  "duration_minutes": 30,
+  "provider": "deterministic"
+}

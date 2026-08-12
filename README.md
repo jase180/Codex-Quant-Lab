@@ -444,7 +444,10 @@ The first expanded research universe is tracked at
 `data/universes/liquid_etf_core.json`. It intentionally starts with liquid ETFs
 instead of individual stocks so the lab can expand beyond SPY/QQQ/TLT while
 staying inside the current daily-data engine and avoiding survivorship-bias-free
-stock-universe problems.
+stock-universe problems. Campaign configs can point at this file with
+`universe_path`; the loader expands it into normal allowed symbols and cache
+paths. The first checked-in config using it is
+`data/campaigns/liquid_etf_core_discovery_campaign.json`.
 
 Audit adjusted-price behavior for a known corporate-action window:
 
