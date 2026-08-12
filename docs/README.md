@@ -70,6 +70,9 @@ current workflow docs and the latest experiment handoffs.
 - [EEM SMA 200 ETF Campaign Probe](experiments/eem-sma-200-etf-campaign-probe.md):
   first liquid ETF universe campaign probe; valid system, partially supported
   strategy due failed robustness, weakened thesis.
+- [EEM RSI Pullback ETF Shortlist Probe](experiments/eem-rsi-pullback-etf-shortlist-probe.md):
+  first actual ETF campaign cycle after shortlist ranking; valid system,
+  partially supported selected validation, failed robustness.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on
