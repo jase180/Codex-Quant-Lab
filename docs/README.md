@@ -38,6 +38,9 @@ current workflow docs and the latest experiment handoffs.
   revised drawdown-control hypothesis and result.
 - [SPY Volatility-Target Drawdown-Control Experiment](experiments/spy-vol-target-drawdown-control-experiment.md):
   latest risk-control result handoff.
+- [SPY Trend-Defense Campaign Closeout](experiments/spy-trend-defense-campaign-closeout.md):
+  bounded campaign result; valid research workflow, exhausted current SPY
+  trend-defense candidate space.
 - [SPY 2024 Adjusted-Price Audit](experiments/spy-2024-adjusted-price-audit.md):
   adjusted-price and manually supplied dividend-amount audit for the cached SPY
   data policy.
