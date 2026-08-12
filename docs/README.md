@@ -20,6 +20,8 @@ current workflow docs and the latest experiment handoffs.
 - Conceptual opportunity catalog: `data/opportunity_catalog/*.json` and
   `data/opportunity_catalog/README.md` describe market niches, forced actors,
   capacity/friction claims, and falsification tests before strategy selection.
+- Research universes: `data/universes/*.json` and `data/universes/README.md`
+  define the allowed symbol sets for campaigns and multi-asset experiments.
 - Experiment template catalog: `data/experiment_template_catalog/*.json` and
   `data/parameter_neighborhoods/*.json` describe bounded experiment families and
   small prespecified parameter sets before candidate generation.

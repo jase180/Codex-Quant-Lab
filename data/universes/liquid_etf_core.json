@@ -1,0 +1,95 @@
+{
+  "schema_version": "research_universe.v1",
+  "universe_id": "liquid_etf_core",
+  "name": "Liquid ETF Core",
+  "description": "First expanded daily ETF universe for multi-asset research, defensive rotation, sector leadership, risk-on/risk-off tests, and campaign discovery.",
+  "intended_use": [
+    "daily OHLCV research",
+    "multi-asset ETF backtests",
+    "bounded campaign candidate generation",
+    "opportunity-thesis screening before individual-stock research"
+  ],
+  "research_boundary": {
+    "why_etfs_first": "Liquid ETFs are easier to fetch, align, and reason about with the current daily backtester than individual stocks. They reduce survivorship-bias and delisting issues while still expanding beyond SPY-only timing.",
+    "not_designed_for": [
+      "single-stock alpha discovery",
+      "survivorship-bias-free equity research",
+      "intraday execution",
+      "options strategies",
+      "event studies requiring membership history"
+    ],
+    "data_policy": "Fetch each symbol with quant-lab fetch using adjusted daily yfinance data and keep the generated provenance sidecar beside the ignored cache CSV."
+  },
+  "date_range": {
+    "start": "2015-01-01",
+    "end": "2025-12-31"
+  },
+  "benchmark": {
+    "symbol": "SPY",
+    "role": "default buy-and-hold benchmark for US risk-asset comparisons"
+  },
+  "groups": [
+    {
+      "group_id": "us_equity_index",
+      "rationale": "Broad US equity exposures for baseline risk-on comparisons and index leadership tests.",
+      "symbols": ["SPY", "QQQ", "IWM", "DIA", "VTI"]
+    },
+    {
+      "group_id": "us_equity_sectors",
+      "rationale": "Sector ETFs allow leadership, defensive-sector, and regime-rotation hypotheses without individual-stock universe maintenance.",
+      "symbols": ["XLK", "XLF", "XLE", "XLV", "XLY", "XLP", "XLI", "XLU", "XLB", "XLRE", "XLC"]
+    },
+    {
+      "group_id": "defensive_bonds_cashlike",
+      "rationale": "Treasury, aggregate bond, and cashlike ETFs give defensive alternatives for drawdown-control and risk-off switching tests.",
+      "symbols": ["TLT", "IEF", "SHY", "AGG", "BIL"]
+    },
+    {
+      "group_id": "real_assets_commodities",
+      "rationale": "Gold, silver, oil, and broad commodities broaden inflation, crisis, and non-equity diversification hypotheses.",
+      "symbols": ["GLD", "SLV", "USO", "DBC"]
+    },
+    {
+      "group_id": "international_equity",
+      "rationale": "Developed, emerging, Japan, and Europe ETFs support global leadership and diversification tests with simple daily data.",
+      "symbols": ["EFA", "EEM", "EWJ", "VGK"]
+    }
+  ],
+  "symbols": [
+    "SPY",
+    "QQQ",
+    "IWM",
+    "DIA",
+    "VTI",
+    "XLK",
+    "XLF",
+    "XLE",
+    "XLV",
+    "XLY",
+    "XLP",
+    "XLI",
+    "XLU",
+    "XLB",
+    "XLRE",
+    "XLC",
+    "TLT",
+    "IEF",
+    "SHY",
+    "AGG",
+    "BIL",
+    "GLD",
+    "SLV",
+    "USO",
+    "DBC",
+    "EFA",
+    "EEM",
+    "EWJ",
+    "VGK"
+  ],
+  "known_caveats": [
+    "ETF inception dates differ; use data-trust reports to inspect actual overlapping rows before portfolio runs.",
+    "Adjusted yfinance OHLCV is convenient but still depends on provider semantics; keep adjusted-price audits separate from strategy conclusions.",
+    "Commodity ETFs such as USO may have structural roll costs and product changes; conclusions are about the ETF product, not spot commodities.",
+    "This universe is liquid and institutionally visible, so it is useful for engine expansion but not yet the small-capacity niche layer."
+  ]
+}

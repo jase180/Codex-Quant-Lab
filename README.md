@@ -440,6 +440,12 @@ quant-lab list-data-cache --data-dir data/cache
 The inventory shows each cached CSV's symbol, row count, date range, fingerprint
 prefix, provenance status, and duplicate-looking symbol/date ranges.
 
+The first expanded research universe is tracked at
+`data/universes/liquid_etf_core.json`. It intentionally starts with liquid ETFs
+instead of individual stocks so the lab can expand beyond SPY/QQQ/TLT while
+staying inside the current daily-data engine and avoiding survivorship-bias-free
+stock-universe problems.
+
 Audit adjusted-price behavior for a known corporate-action window:
 
 ```bash
