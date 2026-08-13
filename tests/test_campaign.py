@@ -824,6 +824,38 @@ class CampaignTests(unittest.TestCase):
         )
         self.assertEqual(updated.completed_experiments[0]["strategy_template"], "rsi-reversion")
 
+    def test_campaign_validation_allows_same_template_under_different_thesis(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = replace(
+                load_campaign_state(paths.state_path),
+                do_not_repeat=[
+                    "Do not repeat weakened branch: opportunity=liquid_etf_trend_defense; template=sma-long-cash."
+                ],
+            )
+            proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY SMA 100 long/cash candidate",
+                    "hypothesis": "A different thesis can reuse the same executable template.",
+                    "rationale": "Validator should block exact weakened branches, not all uses of a template.",
+                    "difference_from_prior_work": "Tests a different opportunity thesis.",
+                    "strategy_template": "sma-long-cash",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "etf_flow_persistence",
+                    "parameters": {"sma_length": 100},
+                    "success_criteria": {"minimum_cagr_retention": 0.75},
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
+
+        validation = validate_campaign_proposal(proposal, config=config, state=state)
+
+        self.assertTrue(validation.valid, validation.reasons)
+
     def test_deterministic_campaign_proposal_stops_after_known_sequence_is_exhausted(self) -> None:
         config = parse_campaign_config(campaign_payload())
 
@@ -1125,14 +1157,14 @@ class CampaignTests(unittest.TestCase):
             output = stdout.getvalue()
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(calls), 3)
         self.assertEqual(state.status, "complete")
-        self.assertEqual(state.cycle_number, 2)
-        self.assertEqual(state.runs_used, 22)
+        self.assertEqual(state.cycle_number, 3)
+        self.assertEqual(state.runs_used, 33)
         self.assertTrue(final_report_exists)
         self.assertTrue(cycle_one_exists)
         self.assertTrue(cycle_two_exists)
-        self.assertFalse(cycle_three_exists)
+        self.assertTrue(cycle_three_exists)
         self.assertIn("Campaign loop starting", output)
         self.assertIn("final_report:", output)
 
@@ -1386,7 +1418,7 @@ class CampaignTests(unittest.TestCase):
         model_payload = {
             "schema_version": "campaign_candidate_choice.v1",
             "action": "choose_candidate",
-            "candidate_id": "spy_price_vs_sma_trend_003",
+            "candidate_id": "spy_liquid_etf_trend_defense_price_vs_sma_trend_003",
             "rationale": "Choose the canonical SMA 200 baseline candidate from the bounded menu.",
         }
 
@@ -1450,7 +1482,7 @@ class CampaignTests(unittest.TestCase):
         model_payload = {
             "schema_version": "campaign_candidate_choice.v1",
             "action": "choose_candidate",
-            "candidate_id": "spy_price_vs_sma_trend_003",
+            "candidate_id": "spy_liquid_etf_trend_defense_price_vs_sma_trend_003",
             "rationale": "Choose the canonical SMA 200 baseline candidate from the bounded menu.",
         }
 
@@ -1521,7 +1553,7 @@ class CampaignTests(unittest.TestCase):
         valid_payload = {
             "schema_version": "campaign_candidate_choice.v1",
             "action": "choose_candidate",
-            "candidate_id": "spy_price_vs_sma_trend_003",
+            "candidate_id": "spy_liquid_etf_trend_defense_price_vs_sma_trend_003",
             "rationale": "Retry with a candidate ID present in the bounded menu.",
         }
         responses = [invalid_payload, valid_payload]

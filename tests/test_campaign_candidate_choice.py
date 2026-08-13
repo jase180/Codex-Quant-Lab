@@ -123,7 +123,7 @@ class CampaignCandidateChoiceTest(unittest.TestCase):
             {
                 "schema_version": "campaign_candidate_choice.v1",
                 "action": "choose_candidate",
-                "candidate_id": "spy_price_vs_sma_trend_001",
+                "candidate_id": "spy_liquid_etf_trend_defense_price_vs_sma_trend_001",
                 "rationale": "Choose the first valid bounded candidate.",
             },
         ]
@@ -161,7 +161,7 @@ class CampaignCandidateChoiceTest(unittest.TestCase):
         self.assertEqual(0, init_exit)
         self.assertEqual(0, choose_exit)
         self.assertFalse(first_validation["valid"])
-        self.assertEqual("spy_price_vs_sma_trend_001", final_choice["candidate_id"])
+        self.assertEqual("spy_liquid_etf_trend_defense_price_vs_sma_trend_001", final_choice["candidate_id"])
         self.assertIn("provider_attempt_1: valid=False", output)
         self.assertIn("provider_attempt_2: valid=True", output)
 

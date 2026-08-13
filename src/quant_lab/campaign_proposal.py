@@ -395,14 +395,24 @@ def _violates_do_not_repeat(proposal: CampaignProposal, state: CampaignState) ->
     corpus = " ".join(state.do_not_repeat).lower()
     if not corpus:
         return False
-    terms = [
-        proposal.title,
-        proposal.hypothesis,
-        proposal.strategy_template or "",
-        *[str(key) for key in proposal.parameters],
-        *[str(value) for value in proposal.parameters.values()],
-    ]
+    if _violates_weakened_branch_rule(proposal, corpus):
+        return True
+    # Keep this conservative text check scoped to explicit titles. Strategy
+    # template names and parameter values are intentionally reusable when a
+    # campaign is testing a different opportunity thesis.
+    terms = [proposal.title]
     return any(str(term).strip().lower() and str(term).strip().lower() in corpus for term in terms)
+
+
+def _violates_weakened_branch_rule(proposal: CampaignProposal, corpus: str) -> bool:
+    if not proposal.opportunity_thesis_id or not proposal.strategy_template:
+        return False
+    rule = (
+        "do not repeat weakened branch: "
+        f"opportunity={proposal.opportunity_thesis_id.lower()}; "
+        f"template={proposal.strategy_template.lower()}."
+    )
+    return rule in corpus
 
 
 def _validate_opportunity_thesis_reference(

@@ -311,7 +311,7 @@ def _candidate(
     )
     return CampaignCandidate(
         schema_version=CAMPAIGN_CANDIDATE_SCHEMA_VERSION,
-        candidate_id=_candidate_id(template.template_id, symbol, variant_index),
+        candidate_id=_candidate_id(opportunity.thesis_id, template.template_id, symbol, variant_index),
         title=title,
         opportunity_thesis_id=opportunity.thesis_id,
         template_id=template.template_id,
@@ -415,12 +415,11 @@ def _violates_do_not_repeat(candidate: CampaignCandidate, state: CampaignState) 
         return True
     if "do not keep widening this branch" in corpus and _same_completed_branch(candidate, state):
         return True
-    terms = [
-        candidate.title,
-        candidate.strategy_template,
-        *[str(key) for key in candidate.parameters],
-        *[str(value) for value in candidate.parameters.values()],
-    ]
+    # Keep the catch-all text check narrow. Branch-level repeat bans are parsed
+    # above with opportunity+template precision; matching raw template names or
+    # parameter values here would incorrectly block the same executable rule
+    # when it is being used to test a different opportunity thesis.
+    terms = [candidate.title]
     return any(term.strip().lower() and term.strip().lower() in corpus for term in terms)
 
 
@@ -442,8 +441,12 @@ def _same_completed_branch(candidate: CampaignCandidate, state: CampaignState) -
     return False
 
 
-def _candidate_id(template_id: str, symbol: str, variant_index: int) -> str:
-    return f"{symbol.lower()}_{template_id}_{variant_index:03d}"
+def _candidate_id(opportunity_thesis_id: str, template_id: str, symbol: str, variant_index: int) -> str:
+    # Candidate IDs include the opportunity thesis because the same executable
+    # strategy template can be used to test different market-mechanism claims.
+    # The human-facing title stays execution-focused so completed identical
+    # runs are still easy to spot and filter.
+    return f"{symbol.lower()}_{opportunity_thesis_id}_{template_id}_{variant_index:03d}"
 
 
 def _shortlisted_candidates(

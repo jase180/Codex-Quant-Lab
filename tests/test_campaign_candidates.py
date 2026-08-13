@@ -81,7 +81,8 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertEqual("ready", menu.status)
         self.assertGreaterEqual(len(menu.candidates), 2)
         candidate_ids = {candidate.candidate_id for candidate in menu.candidates}
-        self.assertIn("spy_price_vs_sma_trend_001", candidate_ids)
+        self.assertEqual(len(candidate_ids), len(menu.candidates))
+        self.assertIn("spy_liquid_etf_trend_defense_price_vs_sma_trend_001", candidate_ids)
         self.assertTrue(any(candidate.strategy_template == "ema-trend-follow" for candidate in menu.candidates))
         self.assertTrue(all(candidate.projected_run_count == 11 for candidate in menu.candidates))
 
@@ -100,6 +101,8 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertIn("breakout-trend", templates)
         self.assertIn("retail_pullback_liquidity", thesis_ids)
         self.assertIn("liquid_etf_trend_defense", thesis_ids)
+        self.assertIn("etf_flow_persistence", thesis_ids)
+        self.assertTrue(any(candidate.template_id == "etf_flow_breakout_continuation" for candidate in menu.candidates))
 
     def test_capped_campaign_shortlists_diverse_candidate_menu(self) -> None:
         config = parse_campaign_config(capped_multi_symbol_campaign_payload())
@@ -168,6 +171,27 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertNotIn(("retail_pullback_liquidity", "rsi-reversion"), templates_by_thesis)
         self.assertIn(("liquid_etf_trend_defense", "breakout-trend"), templates_by_thesis)
         self.assertTrue(any("violates do_not_repeat" in reason for reason in rejected_reasons))
+
+    def test_weakened_branch_filter_does_not_block_same_template_under_new_thesis(self) -> None:
+        config = parse_campaign_config(expanded_campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            state = replace(
+                state,
+                do_not_repeat=[
+                    "Do not repeat weakened branch: opportunity=liquid_etf_trend_defense; template=breakout-trend."
+                ],
+            )
+            menu = build_campaign_candidate_menu(config, state)
+
+        templates_by_thesis = {
+            (candidate.opportunity_thesis_id, candidate.strategy_template)
+            for candidate in menu.candidates
+        }
+        self.assertNotIn(("liquid_etf_trend_defense", "breakout-trend"), templates_by_thesis)
+        self.assertIn(("etf_flow_persistence", "breakout-trend"), templates_by_thesis)
 
     def test_seeded_campaign_ranking_penalizes_repeated_symbol(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

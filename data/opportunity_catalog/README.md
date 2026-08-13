@@ -27,3 +27,7 @@ The allowed disposition is one of:
 
 Use this catalog to inspire agent-generated research ideas. Do not require every
 manual sanity-check experiment to have an opportunity thesis.
+
+Treat this folder as a research vocabulary, not as a list of proven strategies.
+A `test_now` thesis means the current engine can run a bounded falsification
+attempt; it does not mean the opportunity is supported.

@@ -156,3 +156,33 @@ different market mechanism than trend defense or RSI pullback.
 
 Keep the template simple, prespecified, and compatible with existing engine
 capabilities.
+
+## Follow-Up Catalog Expansion
+
+The next slice added:
+
+```text
+data/opportunity_catalog/etf_flow_persistence.json
+data/experiment_template_catalog/etf_flow_breakout_continuation.json
+```
+
+It also made campaign candidate IDs include the opportunity thesis, because the
+same executable strategy can now test more than one market-mechanism claim.
+
+After that change, regenerating the next menu for this same exhausted campaign:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign candidates `
+  --campaign artifacts\campaigns\liquid_etf_extended_discovery_001
+```
+
+produced:
+
+```text
+status=ready
+candidates=16
+total_valid_before_shortlist=47
+```
+
+That confirms the immediate blocker was bounded thesis/template breadth plus an
+over-broad do-not-repeat matcher, not lack of ETF data.

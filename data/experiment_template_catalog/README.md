@@ -15,3 +15,7 @@ A template should answer:
 This catalog is intentionally small at first. The next milestone slices will use
 it to generate candidate menus, then ask a provider to choose from candidate IDs
 instead of inventing experiments.
+
+Multiple templates may map to the same executable strategy JSON when they are
+testing different opportunity theses. In that case, the candidate ID carries the
+opportunity thesis, while the run title stays focused on the actual execution.

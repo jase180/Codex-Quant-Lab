@@ -1,0 +1,64 @@
+{
+  "schema_version": "opportunity_thesis.v1",
+  "thesis_id": "etf_flow_persistence",
+  "title": "ETF Flow Persistence",
+  "market_niche": "Liquid ETFs where allocation, model-portfolio, and risk-budget flows can move gradually across days or weeks.",
+  "universe": ["broad equity ETFs", "sector ETFs", "factor ETFs", "international ETFs", "fixed-income ETFs", "commodity ETFs"],
+  "phenomenon": "ETF breakouts may persist when investor flows, allocation models, or risk controls keep buying the same asset after an initial move.",
+  "counterparty_or_forced_actor": "Model-portfolio allocators, volatility-budgeted portfolios, benchmark-aware managers, ETF fund-flow followers, and slower retail-advisory reallocations.",
+  "why_edge_might_exist": "Allocation flows often occur incrementally rather than instantly, so price pressure may continue after a clean breakout signal.",
+  "why_large_funds_might_ignore_it": "The broad version is crowded and low edge; the smaller ETF version may have limited capacity, variable liquidity, operational monitoring overhead, and modest absolute P&L.",
+  "institutional_constraint_evidence": {
+    "expected_daily_dollar_volume": "high for broad ETFs and variable for narrower ETFs",
+    "estimated_position_size": "unknown until ETF liquidity buckets are measured",
+    "estimated_strategy_capacity": "likely moderate for personal capital, lower in niche ETFs after spread and impact assumptions",
+    "number_of_opportunities_per_year": "depends on ETF universe breadth and breakout frequency",
+    "estimated_absolute_pnl_at_capacity": "unknown",
+    "evidence_quality": "speculative"
+  },
+  "expected_capacity": "Potentially useful for small personal capital, but capacity and edge quality must be measured by ETF liquidity bucket before treating it as deployable.",
+  "expected_holding_period": "Days to weeks.",
+  "execution_constraints": [
+    "daily adjusted OHLCV data",
+    "next-open entry after breakout signal",
+    "turnover-sensitive cost assumptions",
+    "liquidity bucket review before deployment"
+  ],
+  "persistence_mechanism": "Slow fund flows, staged reallocations, and risk-budget changes may continue after an ETF makes a new short-term high.",
+  "crowding_risk": "Medium to high, because breakout continuation is well known and should be assumed fragile unless it survives costs, dates, and neighboring ETF universes.",
+  "edge_decay_trigger": "The thesis weakens if breakout continuation only works in one date window, disappears after retail-liquid costs, or fails across multiple ETF groups.",
+  "observable_prediction": "A prespecified ETF breakout rule should retain most buy-and-hold growth while reducing drawdown or improving risk-adjusted behavior in more than one ETF group.",
+  "falsification_tests": [
+    "Reject the tested strategy hypothesis if return retention and drawdown improvement thresholds fail after realistic costs.",
+    "Weaken the thesis if the effect appears only in one symbol or one date window.",
+    "Treat the result as untested for deployment until liquidity and spread assumptions are reviewed by ETF group."
+  ],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "rolling breakout indicators",
+    "next-open execution",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation",
+    "multi-symbol campaign state"
+  ],
+  "compatible_strategy_families": ["trend_following"],
+  "suggested_validation": [
+    "Use a single prespecified breakout template before inspecting results.",
+    "Compare results across several ETF groups rather than repeatedly testing one symbol.",
+    "Require costs, date sensitivity, and train/test validation before strengthening the thesis."
+  ],
+  "references": [
+    "Practitioner literature on ETF fund flows and allocation momentum",
+    "Academic literature on time-series momentum and flow-driven price pressure"
+  ],
+  "engine_fit": "ready",
+  "rubric": {
+    "structural_plausibility": "weak",
+    "small_capital_advantage": "weak",
+    "falsifiability": "pass",
+    "deployability": "pass",
+    "engine_fit": "ready"
+  },
+  "decision": "test_now"
+}

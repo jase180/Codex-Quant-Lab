@@ -1,0 +1,41 @@
+{
+  "schema_version": "experiment_template.v1",
+  "template_id": "etf_flow_breakout_continuation",
+  "title": "ETF Flow Breakout Continuation",
+  "strategy_family": "trend_following",
+  "rationale": "Tests whether a simple rolling-high breakout can measure short-term ETF flow persistence without adding new indicators or freeform parameters.",
+  "tests_claim": "A prespecified ETF breakout rule can capture continuing flow pressure after a new short-term high while exiting on a rolling-low failure.",
+  "supported_universe": ["single_liquid_etf"],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "rolling high indicator",
+    "rolling low indicator",
+    "next-open market fills",
+    "long/cash exposure",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "executable_mapping": {
+    "campaign_strategy_template": "breakout-trend",
+    "parameter_map": {}
+  },
+  "default_validation_plan": {
+    "cost_sensitivity": true,
+    "date_sensitivity": true,
+    "train_test": true
+  },
+  "default_success_criteria": {
+    "minimum_cagr_retention": 0.75,
+    "minimum_relative_drawdown_reduction": 0.15
+  },
+  "parameter_neighborhood_id": "single_variant_basic",
+  "expected_information_gain": "high",
+  "parameter_mining_risk": "low",
+  "known_limitations": [
+    "This currently reuses the fixed 20-day breakout and 10-day exit channel from the executable breakout-trend template.",
+    "A successful result would support only this measurable breakout proxy, not the full ETF-flow thesis.",
+    "The current campaign engine does not yet filter candidate symbols by opportunity-thesis universe."
+  ],
+  "engine_support_status": "ready"
+}
