@@ -112,16 +112,8 @@ research loop. The loop now:
 
 ## Remaining Issue
 
-The final campaign report still says `Best Remaining Candidate: none` when the
-campaign stops because the run/cycle budget is exhausted. That is technically
-true for the campaign as configured, but it can be misread as true search-space
-exhaustion.
-
-Next cleanup should distinguish:
-
-- no remaining candidate because budget ended;
-- no remaining candidate because the bounded search space is actually
-  exhausted.
-
-That matters before a 30-minute run because the user needs to know whether the
-campaign ran out of time or genuinely ran out of justified ideas.
+Resolved by the next cleanup: final campaign reports now include a `Candidate
+Availability` section that distinguishes budget exhaustion from true
+`SEARCH_SPACE_EXHAUSTED`. If a campaign stops because cycles, runs, or time
+ended while valid candidates remain, the report says
+`available_but_budget_exhausted` and records the top not-run candidate.

@@ -126,6 +126,7 @@ def build_campaign_candidate_menu(
     opportunity_catalog_dir: str | Path = "data/opportunity_catalog",
     experiment_template_catalog_dir: str | Path = "data/experiment_template_catalog",
     parameter_neighborhoods_dir: str | Path = "data/parameter_neighborhoods",
+    enforce_run_budget: bool = True,
 ) -> CampaignCandidateMenu:
     """Build a deterministic menu of valid next experiment candidates."""
 
@@ -170,7 +171,7 @@ def build_campaign_candidate_menu(
                     if _violates_do_not_repeat(candidate, state):
                         rejected.append(CandidateRejection(template.template_id, f"violates do_not_repeat: {candidate.title}"))
                         continue
-                    if candidate.projected_run_count > state.remaining_budget.get("runs", 0):
+                    if enforce_run_budget and candidate.projected_run_count > state.remaining_budget.get("runs", 0):
                         rejected.append(CandidateRejection(template.template_id, f"run budget too small: {candidate.title}"))
                         continue
                     candidates.append(candidate)

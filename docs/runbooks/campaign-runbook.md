@@ -475,6 +475,16 @@ future automation:
 artifacts/campaigns/<campaign>/final_report.json
 ```
 
+The final report includes a `Candidate Availability` section. Read it before
+assuming the campaign ran out of ideas:
+
+- `available_but_budget_exhausted` means the campaign stopped because cycles,
+  runs, or time were exhausted, but valid candidates still existed.
+- `search_space_exhausted` means no valid candidate remained after the bounded
+  catalog, completed work, and `do_not_repeat` filters.
+- `available` means the campaign stopped for another reason while candidates
+  were still available under the current budget.
+
 ## How To Interpret Results
 
 The campaign keeps two separate outcomes:
@@ -496,8 +506,9 @@ failure.
 
 The final report may name a best completed result. That is not a trading
 recommendation. It means the completed branch was the least-bad result from this
-bounded campaign and still needs review against unresolved risks. If the bounded
-candidate menu is exhausted, `Best Remaining Candidate` should be `none`.
+bounded campaign and still needs review against unresolved risks. `Best
+Remaining Candidate` can be a not-run candidate when the campaign budget ended
+before the bounded search space was exhausted.
 
 ## Stop Conditions
 

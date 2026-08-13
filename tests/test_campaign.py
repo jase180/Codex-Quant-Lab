@@ -898,7 +898,9 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(report.experiments_attempted[0]["opportunity_thesis_id"], "liquid_etf_trend_defense")
         self.assertEqual(report.best_completed_result["title"], "SPY EMA 50 RSI trend-follow campaign follow-up")
         self.assertIn("review the conclusion", report.best_completed_result["note"])
-        self.assertIsNone(report.best_remaining_candidate)
+        self.assertEqual(report.candidate_availability["status"], "available")
+        self.assertGreater(report.candidate_availability["candidate_count"], 0)
+        self.assertEqual(report.best_remaining_candidate["strategy_hypothesis_status"], "not_run")
 
     def test_campaign_run_stop_writes_final_report_and_marks_state_complete(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -934,8 +936,50 @@ class CampaignTests(unittest.TestCase):
         self.assertTrue(final_markdown_exists)
         self.assertEqual(final_report["schema_version"], "campaign_final_report.v1")
         self.assertIn("best_completed_result", final_report)
-        self.assertIsNone(final_report["best_remaining_candidate"])
+        self.assertIn("candidate_availability", final_report)
+        self.assertIn(final_report["candidate_availability"]["status"], {"available", "search_space_exhausted"})
         self.assertIn("final_report:", stdout.getvalue())
+
+    def test_final_campaign_report_distinguishes_budget_stop_from_exhausted_search(self) -> None:
+        config = parse_campaign_config(campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            completed_state = replace(
+                state,
+                status="complete",
+                cycle_number=3,
+                runs_used=33,
+                completed_experiments=[
+                    {
+                        "experiment_id": "EXP-123",
+                        "title": "SPY SMA 200 long/cash campaign baseline",
+                        "symbol": "SPY",
+                        "strategy_template": "sma-long-cash",
+                        "research_system_status": "valid",
+                        "strategy_hypothesis_status": "rejected",
+                        "opportunity_thesis_id": "liquid_etf_trend_defense",
+                        "thesis_status": "weakened",
+                        "confidence_label": "rejected",
+                        "projected_run_count": 11,
+                        "elapsed_seconds": 5,
+                    }
+                ],
+                remaining_budget={
+                    **state.remaining_budget,
+                    "cycles": 0,
+                    "runs": 0,
+                },
+                stop_reason="maximum campaign cycles completed",
+            )
+
+            report = build_final_campaign_report(config, completed_state)
+
+        self.assertEqual(report.candidate_availability["status"], "available_but_budget_exhausted")
+        self.assertEqual(report.candidate_availability["budget_blockers"], ["cycles", "runs"])
+        self.assertFalse(report.candidate_availability["assessed_with_run_budget"])
+        self.assertIsNotNone(report.best_remaining_candidate)
 
     def test_campaign_proposal_rejects_unsupported_template_parameter(self) -> None:
         config = parse_campaign_config(campaign_payload())
