@@ -12,6 +12,9 @@ Fetch data through `quant-lab fetch` so each CSV gets a provenance sidecar.
 - `liquid_etf_core.json`: first expanded ETF universe for daily multi-asset
   research. It gives campaigns more room than SPY/QQQ/TLT while staying inside
   the current engine's strengths.
+- `liquid_etf_extended.json`: second-stage ETF universe for broader campaign
+  discovery after the core loop proved execution, memory, diversity ranking,
+  and final-report stop semantics.
 
 ## Fetch The Universe
 
@@ -20,6 +23,25 @@ From PowerShell in the repo root:
 ```powershell
 $universe = Get-Content data\universes\liquid_etf_core.json | ConvertFrom-Json
 foreach ($symbol in $universe.symbols) {
+  .\.venv-win\Scripts\python.exe -m quant_lab.cli fetch `
+    --symbol $symbol `
+    --start $universe.date_range.start `
+    --end $universe.date_range.end `
+    --out data\cache
+}
+```
+
+To fetch only missing files for a larger universe:
+
+```powershell
+$universe = Get-Content data\universes\liquid_etf_extended.json | ConvertFrom-Json
+foreach ($symbol in $universe.symbols) {
+  $csv = "data\cache\$($symbol)_$($universe.date_range.start)_$($universe.date_range.end).csv"
+  $prov = $csv -replace '\.csv$', '.provenance.json'
+  if ((Test-Path $csv) -and (Test-Path $prov)) {
+    Write-Host "skip $symbol"
+    continue
+  }
   .\.venv-win\Scripts\python.exe -m quant_lab.cli fetch `
     --symbol $symbol `
     --start $universe.date_range.start `
@@ -38,9 +60,10 @@ After fetching, inspect the cache:
 .\.venv-win\Scripts\python.exe -m quant_lab.cli list-data-cache --data-dir data\cache
 ```
 
-`XLRE` and `XLC` have later inceptions than the requested 2015 start date, so
-portfolio experiments that include them should expect a shorter intersection
-unless the experiment explicitly starts later.
+`XLRE`, `XLC`, `QUAL`, and some other newer or narrower ETFs can have later
+inceptions than the requested 2015 start date, so portfolio experiments that
+include them should expect a shorter intersection unless the experiment
+explicitly starts later.
 
 ## Boundary
 

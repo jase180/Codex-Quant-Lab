@@ -1,0 +1,154 @@
+{
+  "schema_version": "research_universe.v1",
+  "universe_id": "liquid_etf_extended",
+  "name": "Liquid ETF Extended",
+  "description": "Second-stage daily ETF universe for broader campaign discovery after the core ETF campaign loop proved it can run, diversify, and report stop semantics cleanly.",
+  "intended_use": [
+    "daily OHLCV research",
+    "bounded campaign discovery",
+    "cross-ETF behavior checks",
+    "factor, sector, bond, commodity, and international ETF comparisons"
+  ],
+  "research_boundary": {
+    "why_this_next": "This expands breadth without jumping to individual stocks, survivorship-sensitive membership history, delisting handling, or event-data infrastructure.",
+    "not_designed_for": [
+      "single-stock alpha discovery",
+      "survivorship-bias-free equity research",
+      "intraday execution",
+      "options strategies",
+      "event studies requiring membership history",
+      "illiquid niche ETF execution"
+    ],
+    "data_policy": "Fetch each symbol with quant-lab fetch using adjusted daily yfinance data and keep the generated provenance sidecar beside the ignored cache CSV."
+  },
+  "date_range": {
+    "start": "2015-01-01",
+    "end": "2025-12-31"
+  },
+  "benchmark": {
+    "symbol": "SPY",
+    "role": "default buy-and-hold benchmark for broad risk-asset comparisons"
+  },
+  "groups": [
+    {
+      "group_id": "us_equity_index",
+      "rationale": "Broad US equity exposures for baseline risk-on comparisons, index leadership, and capitalization/regime differences.",
+      "symbols": ["SPY", "QQQ", "IWM", "DIA", "VTI", "MDY", "IJR", "RSP"]
+    },
+    {
+      "group_id": "us_style_factor",
+      "rationale": "Style and factor ETFs help test whether simple effects are broad-market timing artifacts or behave differently across growth, value, momentum, quality, volatility, and equal-weight exposures.",
+      "symbols": ["VUG", "VTV", "IWF", "IWD", "MTUM", "USMV", "QUAL", "SPLV"]
+    },
+    {
+      "group_id": "us_equity_sectors_and_industries",
+      "rationale": "Sector and industry ETFs support leadership, defensive-sector, crowding, and regime-rotation hypotheses without individual-stock universe maintenance.",
+      "symbols": [
+        "XLK",
+        "XLF",
+        "XLE",
+        "XLV",
+        "XLY",
+        "XLP",
+        "XLI",
+        "XLU",
+        "XLB",
+        "XLRE",
+        "XLC",
+        "SMH",
+        "XBI",
+        "IBB",
+        "KRE",
+        "XRT",
+        "ITB"
+      ]
+    },
+    {
+      "group_id": "fixed_income_cashlike",
+      "rationale": "Treasury, credit, mortgage, inflation-linked, emerging-market bond, and cashlike ETFs give defensive alternatives and stress different risk-off mechanisms.",
+      "symbols": ["TLT", "IEF", "SHY", "AGG", "BIL", "LQD", "HYG", "TIP", "MBB", "EMB"]
+    },
+    {
+      "group_id": "real_assets_currency",
+      "rationale": "Gold, silver, oil, broad commodities, agriculture, real estate, and dollar exposure broaden inflation, crisis, and non-equity diversification hypotheses.",
+      "symbols": ["GLD", "SLV", "USO", "DBC", "DBA", "VNQ", "IYR", "UUP"]
+    },
+    {
+      "group_id": "international_equity",
+      "rationale": "Developed, emerging, regional, and country ETFs support global leadership and diversification tests with simple daily data.",
+      "symbols": ["EFA", "EEM", "EWJ", "VGK", "EWT", "INDA", "FXI", "EWZ", "EWC", "EWA", "EWW", "EZA"]
+    }
+  ],
+  "symbols": [
+    "SPY",
+    "QQQ",
+    "IWM",
+    "DIA",
+    "VTI",
+    "MDY",
+    "IJR",
+    "RSP",
+    "VUG",
+    "VTV",
+    "IWF",
+    "IWD",
+    "MTUM",
+    "USMV",
+    "QUAL",
+    "SPLV",
+    "XLK",
+    "XLF",
+    "XLE",
+    "XLV",
+    "XLY",
+    "XLP",
+    "XLI",
+    "XLU",
+    "XLB",
+    "XLRE",
+    "XLC",
+    "SMH",
+    "XBI",
+    "IBB",
+    "KRE",
+    "XRT",
+    "ITB",
+    "TLT",
+    "IEF",
+    "SHY",
+    "AGG",
+    "BIL",
+    "LQD",
+    "HYG",
+    "TIP",
+    "MBB",
+    "EMB",
+    "GLD",
+    "SLV",
+    "USO",
+    "DBC",
+    "DBA",
+    "VNQ",
+    "IYR",
+    "UUP",
+    "EFA",
+    "EEM",
+    "EWJ",
+    "VGK",
+    "EWT",
+    "INDA",
+    "FXI",
+    "EWZ",
+    "EWC",
+    "EWA",
+    "EWW",
+    "EZA"
+  ],
+  "known_caveats": [
+    "ETF inception dates differ; use data-trust reports to inspect actual overlapping rows before portfolio or cross-symbol conclusions.",
+    "Adjusted yfinance OHLCV is convenient but still depends on provider semantics; keep adjusted-price audits separate from strategy conclusions.",
+    "Commodity, volatility-sensitive, and futures-holding ETFs can embed roll costs and product-specific mechanics; conclusions are about ETF products, not spot markets.",
+    "Some industry and country ETFs are less liquid than SPY or sector SPDRs; use this universe for research breadth, not automatic deployability claims.",
+    "This is still mostly institutionally visible ETF territory. It helps campaign discovery, but it is not yet the small-capacity niche layer."
+  ]
+}

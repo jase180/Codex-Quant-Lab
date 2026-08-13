@@ -159,6 +159,40 @@ This is broader than the SPY campaign, but it is still not a license for
 unbounded search. Treat it as a candidate-inspection campaign until the selected
 experiments look structurally useful.
 
+## Extended ETF Campaign
+
+The checked-in broader ETF config is:
+
+```text
+data/campaigns/liquid_etf_extended_discovery_campaign.json
+```
+
+It reads:
+
+```text
+data/universes/liquid_etf_extended.json
+```
+
+Use this after the core ETF campaign loop is behaving sensibly. The extended
+universe adds style/factor ETFs, industry ETFs, more bonds, real assets,
+currency, and more international ETFs, but it is still ETF-only. Do not treat it
+as a small-capacity niche universe.
+
+Fetch missing data first using `data/universes/README.md`, then inspect
+candidates before running:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign init `
+  --config data\campaigns\liquid_etf_extended_discovery_campaign.json `
+  --out artifacts\campaigns\liquid_etf_extended_discovery_001 `
+  --force
+
+.\.venv-win\Scripts\python.exe -m quant_lab.cli campaign candidates `
+  --campaign artifacts\campaigns\liquid_etf_extended_discovery_001
+```
+
+Only move to a loop after the candidate menu looks coherent.
+
 ## Run The Campaign
 
 Start a fresh campaign:

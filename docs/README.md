@@ -22,6 +22,10 @@ current workflow docs and the latest experiment handoffs.
   capacity/friction claims, and falsification tests before strategy selection.
 - Research universes: `data/universes/*.json` and `data/universes/README.md`
   define the allowed symbol sets for campaigns and multi-asset experiments.
+- Extended ETF campaign config:
+  `data/campaigns/liquid_etf_extended_discovery_campaign.json` uses
+  `data/universes/liquid_etf_extended.json` for broader bounded discovery after
+  the core ETF loop is behaving sensibly.
 - Experiment template catalog: `data/experiment_template_catalog/*.json` and
   `data/parameter_neighborhoods/*.json` describe bounded experiment families and
   small prespecified parameter sets before candidate generation.
@@ -83,6 +87,9 @@ current workflow docs and the latest experiment handoffs.
 - [Liquid ETF Diversity-Ranking Probe](experiments/liquid-etf-diversity-ranking-probe.md):
   repeated-symbol ranking penalty proof; the loop moved from `EEM -> EEM -> EEM`
   to `EEM -> EFA -> GLD` while preserving branch guardrails.
+- [Liquid ETF Extended Universe Expansion](experiments/liquid-etf-extended-universe-expansion.md):
+  added the 63-symbol extended ETF universe, fetched missing cache/provenance
+  files, and verified the extended campaign candidate menu.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on
