@@ -90,6 +90,10 @@ current workflow docs and the latest experiment handoffs.
 - [Liquid ETF Extended Universe Expansion](experiments/liquid-etf-extended-universe-expansion.md):
   added the 63-symbol extended ETF universe, fetched missing cache/provenance
   files, and verified the extended campaign candidate menu.
+- [Liquid ETF Extended Campaign Closeout](experiments/liquid-etf-extended-campaign-closeout.md):
+  first 5-cycle extended campaign stopped after four experiments with true
+  `SEARCH_SPACE_EXHAUSTED`; the bottleneck is now thesis/template breadth, not
+  ETF symbol count.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on
