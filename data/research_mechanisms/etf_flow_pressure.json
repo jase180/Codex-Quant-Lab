@@ -1,0 +1,34 @@
+{
+  "schema_version": "research_mechanism.v1",
+  "mechanism_id": "etf_flow_pressure",
+  "title": "ETF Flow Pressure",
+  "source_type": "mixed",
+  "market_behavior": "Fund flows and model-portfolio reallocations can create gradual pressure in liquid ETFs and their underlying exposures.",
+  "forced_actor": "Model-portfolio allocators, ETF flow followers, retirement platforms, volatility-budgeted portfolios, and benchmark-aware allocators.",
+  "why_edge_might_exist": "Allocation decisions often happen over multiple sessions, so strong flow pressure may persist briefly after a signal becomes visible.",
+  "why_large_capital_may_ignore_it": "Broad ETF flow effects are well known and crowded; smaller ETF variants may have limited capacity, lower absolute P&L, and annoying liquidity monitoring.",
+  "capacity_hypothesis": "Capacity may be adequate for small personal accounts but should be bucketed by ETF dollar volume and spread before deployment.",
+  "data_required": [
+    "daily adjusted ETF OHLCV data",
+    "fund flow data if available",
+    "ETF liquidity and spread proxies",
+    "group labels for ETF category comparisons"
+  ],
+  "observable_predictions": [
+    "Flow-sensitive ETF breakouts or trend states should retain enough return while reducing downside or improving risk-adjusted behavior.",
+    "The pattern should not rely on one symbol, one date window, or one cost assumption."
+  ],
+  "falsification_tests": [
+    "Reject the exact implementation if cost sensitivity and date sensitivity fail.",
+    "Weaken the mechanism if multiple ETF groups fail under simple prespecified proxies.",
+    "Treat any result as proxy-only unless flow data or liquidity buckets support the mechanism."
+  ],
+  "engine_fit": "proxy_only",
+  "suggested_opportunity_theses": [
+    "etf_flow_persistence"
+  ],
+  "references": [
+    "Practitioner literature on ETF flows and allocation momentum",
+    "Academic literature on flow-induced price pressure"
+  ]
+}

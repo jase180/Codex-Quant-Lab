@@ -1,0 +1,34 @@
+{
+  "schema_version": "research_mechanism.v1",
+  "mechanism_id": "calendar_rebalance_effects",
+  "title": "Calendar And Rebalance Mechanics",
+  "source_type": "mixed",
+  "market_behavior": "Scheduled rebalances, month-end flows, option expirations, and fund reporting windows can create predictable trading pressure.",
+  "forced_actor": "Index products, asset allocators, target-date funds, option hedgers, and funds managing benchmark or reporting constraints.",
+  "why_edge_might_exist": "Some trading is caused by calendar mechanics rather than updated expected returns, so pressure may be predictable around known windows.",
+  "why_large_capital_may_ignore_it": "Many calendar effects are small, crowded, timing-sensitive, and fragile after execution costs; niche versions may be capacity-limited.",
+  "capacity_hypothesis": "Capacity may be moderate in broad ETFs and lower in niche instruments; edge should be assumed small until measured with realistic execution.",
+  "data_required": [
+    "daily or intraday price data depending on event timing",
+    "rebalance calendars",
+    "expiration calendars",
+    "flow or positioning proxies where available"
+  ],
+  "observable_predictions": [
+    "Returns or volatility differ around prespecified calendar windows after controlling for broad market movement.",
+    "Effects should survive being defined entirely before the test period."
+  ],
+  "falsification_tests": [
+    "Reject if date windows are tuned after seeing returns.",
+    "Reject if realistic costs remove the edge.",
+    "Treat intraday-specific mechanics as blocked until intraday data exists."
+  ],
+  "engine_fit": "needs_data",
+  "suggested_opportunity_theses": [
+    "calendar_flow_pressure"
+  ],
+  "references": [
+    "Exchange calendars and expiration schedules",
+    "Index and fund rebalance methodology documents"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "research_mechanism.v1",
+  "mechanism_id": "post_event_drift",
+  "title": "Post-Event Drift And Reversal",
+  "source_type": "literature",
+  "market_behavior": "Prices may continue drifting or reverse after discrete events when attention, mandates, or information processing are slow.",
+  "forced_actor": "Event-reactive funds, benchmark-aware holders, retail attention traders, and managers constrained by mandates or review cycles.",
+  "why_edge_might_exist": "Markets may underreact or overreact to specific event categories when participants process information at different speeds.",
+  "why_large_capital_may_ignore_it": "Clean event data is expensive and messy, effects can be crowded, and many events cannot absorb large capital after costs.",
+  "capacity_hypothesis": "Capacity depends on event frequency and security liquidity; the attractive version is probably fragmented rather than one large universal event rule.",
+  "data_required": [
+    "event calendar with announcement timestamps",
+    "survivorship-aware prices",
+    "event category labels",
+    "spread and liquidity proxies"
+  ],
+  "observable_predictions": [
+    "Specific event cohorts show abnormal post-event drift or reversal after realistic costs.",
+    "The direction and holding period should be defined before looking at returns."
+  ],
+  "falsification_tests": [
+    "Reject if event timestamps are not known before simulated entry.",
+    "Reject if the result disappears after conservative costs.",
+    "Weaken if only one event category or one date window works."
+  ],
+  "engine_fit": "needs_data",
+  "suggested_opportunity_theses": [
+    "post_event_attention_drift"
+  ],
+  "references": [
+    "Academic literature on post-earnings announcement drift",
+    "Practitioner event-study research"
+  ]
+}

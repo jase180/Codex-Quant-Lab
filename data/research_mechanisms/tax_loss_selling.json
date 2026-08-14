@@ -1,0 +1,34 @@
+{
+  "schema_version": "research_mechanism.v1",
+  "mechanism_id": "tax_loss_selling",
+  "title": "Tax-Loss Selling Pressure",
+  "source_type": "literature",
+  "market_behavior": "Losing securities may experience seasonal selling pressure from investors realizing tax losses, followed by rebound or normalization.",
+  "forced_actor": "Taxable investors, advisors harvesting losses, and funds managing year-end tax exposure.",
+  "why_edge_might_exist": "Tax-motivated selling is not purely return-seeking and may create temporary pressure in securities with large prior losses.",
+  "why_large_capital_may_ignore_it": "Effects may be small, crowded, calendar-dependent, sensitive to tax regimes, and more available in less-liquid securities with limited capacity.",
+  "capacity_hypothesis": "Likely lower in small-cap or less-liquid names; personal-capital capacity may exist where spreads do not consume the rebound.",
+  "data_required": [
+    "survivorship-aware equity universe",
+    "year-to-date return screens",
+    "tax calendar definitions",
+    "spread and liquidity estimates"
+  ],
+  "observable_predictions": [
+    "Large year-to-date losers show abnormal late-year pressure and early-year rebound after controls.",
+    "The effect is stronger where taxable ownership and liquidity pressure are plausible."
+  ],
+  "falsification_tests": [
+    "Reject if the rebound disappears after spread and liquidity assumptions.",
+    "Reject if results depend on survivorship-biased universes.",
+    "Weaken if the effect is absent across multiple tax years or only works after threshold tuning."
+  ],
+  "engine_fit": "needs_data",
+  "suggested_opportunity_theses": [
+    "tax_loss_rebound"
+  ],
+  "references": [
+    "Academic literature on tax-loss selling and January effects",
+    "Practitioner research on tax-loss harvesting calendars"
+  ]
+}

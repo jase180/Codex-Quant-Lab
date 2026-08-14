@@ -29,6 +29,7 @@ from .cli_campaign import (
 )
 from .cli_health import doctor_command, smoke_test_command
 from .cli_ideas import ideas_suggest_command
+from .cli_mechanisms import mechanisms_list_command, mechanisms_show_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .default_experiment import run_default_experiment, validate_default_experiment_args
@@ -112,6 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_agent_commands(subparsers)
     register_campaign_commands(subparsers)
     register_ideas_commands(subparsers)
+    register_mechanism_commands(subparsers)
     register_robustness_commands(subparsers)
     register_sweep_commands(subparsers)
     register_sweep_guardrail_commands(subparsers)
@@ -1416,6 +1418,37 @@ def register_ideas_commands(subparsers) -> None:
         help="Directory of tracked experiment handoff Markdown files. Defaults to docs/experiments.",
     )
     suggest_parser.set_defaults(func=ideas_suggest_command)
+
+
+def register_mechanism_commands(subparsers) -> None:
+    mechanisms_parser = subparsers.add_parser(
+        "mechanisms",
+        help="Inspect structured market-mechanism research raw material.",
+    )
+    mechanisms_subparsers = mechanisms_parser.add_subparsers(dest="mechanisms_command", required=True)
+
+    list_parser = mechanisms_subparsers.add_parser(
+        "list",
+        help="List research mechanisms and their current engine fit.",
+    )
+    list_parser.add_argument(
+        "--catalog-dir",
+        default="data/research_mechanisms",
+        help="Directory containing research_mechanism.v1 JSON files. Defaults to data/research_mechanisms.",
+    )
+    list_parser.set_defaults(func=mechanisms_list_command)
+
+    show_parser = mechanisms_subparsers.add_parser(
+        "show",
+        help="Show one research mechanism in detail.",
+    )
+    show_parser.add_argument("--id", required=True, help="Mechanism id, such as etf_flow_pressure.")
+    show_parser.add_argument(
+        "--catalog-dir",
+        default="data/research_mechanisms",
+        help="Directory containing research_mechanism.v1 JSON files. Defaults to data/research_mechanisms.",
+    )
+    show_parser.set_defaults(func=mechanisms_show_command)
 
 
 def register_sweep_commands(subparsers) -> None:

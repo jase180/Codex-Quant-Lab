@@ -1,0 +1,35 @@
+{
+  "schema_version": "research_mechanism.v1",
+  "mechanism_id": "small_cap_liquidity_shocks",
+  "title": "Small-Cap Liquidity Shocks",
+  "source_type": "literature",
+  "market_behavior": "Temporary liquidity demand can move small or less-liquid equities more than fundamentals justify.",
+  "forced_actor": "Funds facing redemptions, stop-loss sellers, concentrated holders, small-cap index funds, and liquidity-sensitive systematic strategies.",
+  "why_edge_might_exist": "When liquidity is thin, urgent selling can push prices away from fair value and create a later reversal if the original pressure fades.",
+  "why_large_capital_may_ignore_it": "The most interesting cases may be too small, too illiquid, too operationally noisy, and too capacity-limited for large funds.",
+  "capacity_hypothesis": "Capacity is expected to be low by design; this mechanism is interesting only if expected personal position size remains small relative to dollar volume.",
+  "data_required": [
+    "survivorship-aware small-cap universe",
+    "daily OHLCV",
+    "spread or liquidity proxies",
+    "corporate-action adjusted prices",
+    "delisting handling"
+  ],
+  "observable_predictions": [
+    "Large downside moves with abnormal volume in liquid-enough small names should show measurable short-horizon reversal.",
+    "The effect should deteriorate quickly as spread, impact, and position-size assumptions become harsher."
+  ],
+  "falsification_tests": [
+    "Reject if the effect fails after conservative spread and liquidity assumptions.",
+    "Reject if delisted names or survivorship issues cannot be handled.",
+    "Require minimum trade count and liquidity buckets before interpreting results."
+  ],
+  "engine_fit": "needs_data",
+  "suggested_opportunity_theses": [
+    "small_cap_liquidity_rebound"
+  ],
+  "references": [
+    "Academic literature on liquidity risk and short-term reversal",
+    "Market microstructure literature on price pressure"
+  ]
+}

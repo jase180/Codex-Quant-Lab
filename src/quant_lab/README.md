@@ -42,6 +42,8 @@ It owns:
 - `opportunity_theses.py`: validates conceptual `opportunity_thesis.v1` catalog
   entries for market niches, forced actors, capacity/friction claims, and
   falsification tests.
+- `research_mechanisms.py`: validates `research_mechanism.v1` records that
+  capture market-structure raw material before it becomes an opportunity thesis.
 - `strategy_ideas.py`: loads `data/strategy_catalog/*.json`, reads prior
   `experiment_conclusion.json` files, optionally attaches a matching
   opportunity thesis, and drafts one non-executable next idea.
@@ -70,6 +72,7 @@ It owns:
 - `robustness.py`: reruns strategy setups under controlled sensitivity checks
   and writes robustness summaries.
 - `cli_ideas.py`: CLI handler for conceptual next-strategy suggestions.
+- `cli_mechanisms.py`: CLI handler for inspecting the mechanism library.
 - `cli.py`: registers the `quant-lab` command tree and delegates workflow
   behavior to smaller CLI handler modules.
 
@@ -145,6 +148,19 @@ provided.
 
 Built-in templates are `sma-crossover`, `sma-long-cash`, `ema-trend-follow`,
 `rsi-reversion`, and `breakout-trend`.
+
+Inspect research mechanisms before turning outside ideas into strategy JSON:
+
+```bash
+quant-lab mechanisms list
+quant-lab mechanisms show --id forced_index_flows
+```
+
+Mechanisms are deliberately one layer above opportunity theses. They describe
+market behavior, forced actors, data needs, capacity/friction claims, and
+falsification tests. Most seed mechanisms are `needs_data` or `proxy_only`; that
+is expected and prevents the lab from pretending daily ETF indicators can test
+every market-structure idea honestly.
 
 Fetch data:
 

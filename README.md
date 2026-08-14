@@ -15,8 +15,21 @@ Start with one research question and one strategy. The default path is:
 strategy -> baseline -> trust check -> sweep -> train/test -> robustness -> conclusion -> decision
 ```
 
-If you want help choosing the next research idea before creating executable
-strategy JSON, use the conceptual strategy catalog:
+If you want better raw material before creating executable strategy JSON, start
+with the research-mechanism library:
+
+```bash
+quant-lab mechanisms list
+quant-lab mechanisms show --id etf_flow_pressure
+```
+
+Mechanisms describe market structure, forced actors, data requirements,
+capacity/friction claims, observable predictions, and falsification tests. They
+are not executable strategies and they are not proven alpha. Use them to decide
+which market imperfection is worth turning into an opportunity thesis.
+
+If you want help choosing the next research idea from the older conceptual
+strategy catalog, use:
 
 ```bash
 quant-lab ideas suggest
@@ -29,10 +42,10 @@ decision guidance, and prints one proposed hypothesis, success criteria, and a
 draft experiment config. It does not create executable strategy JSON; convert the
 chosen idea only after human approval.
 
-The catalog is intentionally broader than the executable strategy folder. It now
-contains at least 30 canonical variants, but only variants marked executable
-should be promoted into runnable strategy or portfolio files without adding
-engine support first.
+The strategy catalog is intentionally broader than the executable strategy
+folder. It contains at least 30 canonical variants, but only variants marked
+executable should be promoted into runnable strategy or portfolio files without
+adding engine support first.
 
 Use `experiment run-default` when you want the lab to run the normal
 single-strategy workflow for you while still writing every underlying artifact:

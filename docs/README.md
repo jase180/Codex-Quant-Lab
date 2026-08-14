@@ -17,6 +17,10 @@ current workflow docs and the latest experiment handoffs.
 - Conceptual strategy catalog: `data/strategy_catalog/*.json` and
   `data/strategy_catalog/README.md` describe broad strategy families before
   they become executable strategy files.
+- Research mechanism library: `data/research_mechanisms/*.json` and
+  `data/research_mechanisms/README.md` describe market-structure raw material,
+  forced actors, data requirements, capacity/friction claims, and falsification
+  tests before an idea becomes an opportunity thesis.
 - Conceptual opportunity catalog: `data/opportunity_catalog/*.json` and
   `data/opportunity_catalog/README.md` describe market niches, forced actors,
   capacity/friction claims, and falsification tests before strategy selection.
@@ -94,6 +98,9 @@ current workflow docs and the latest experiment handoffs.
   first 5-cycle extended campaign stopped after four experiments with true
   `SEARCH_SPACE_EXHAUSTED`; the bottleneck is now thesis/template breadth, not
   ETF symbol count.
+- [ETF Flow Breakout Probe](experiments/etf-flow-breakout-probe.md):
+  first probe after adding the ETF-flow thesis/template branch; valid research
+  system, partially supported strategy, weakened ETF-flow breakout branch.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

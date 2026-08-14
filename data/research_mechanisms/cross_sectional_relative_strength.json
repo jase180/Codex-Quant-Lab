@@ -1,0 +1,34 @@
+{
+  "schema_version": "research_mechanism.v1",
+  "mechanism_id": "cross_sectional_relative_strength",
+  "title": "Cross-Sectional Relative Strength",
+  "source_type": "literature",
+  "market_behavior": "Assets that recently led peers may continue leading when capital rotates gradually across sectors, styles, countries, or asset classes.",
+  "forced_actor": "Model portfolios, performance-chasing allocators, mandate-bound managers, and funds gradually changing exposure.",
+  "why_edge_might_exist": "Relative leadership may persist when allocators adjust slowly and when investor attention follows recent winners.",
+  "why_large_capital_may_ignore_it": "Broad momentum is well studied and crowded; smaller or fragmented universes may have lower capacity and higher turnover costs.",
+  "capacity_hypothesis": "Capacity is likely high for broad ETFs but the edge may be low; more interesting variants may require narrower, less-liquid universes.",
+  "data_required": [
+    "aligned multi-symbol daily data",
+    "portfolio rotation logic",
+    "turnover and cost tracking",
+    "benchmark portfolio definitions"
+  ],
+  "observable_predictions": [
+    "A prespecified relative-strength rotation should improve risk-adjusted performance versus a static benchmark.",
+    "The result should survive walk-forward validation and neighboring-universe checks."
+  ],
+  "falsification_tests": [
+    "Reject if walk-forward out-of-sample windows fail.",
+    "Reject if performance depends on one tuned lookback or top-N choice.",
+    "Weaken if turnover costs erase the advantage."
+  ],
+  "engine_fit": "proxy_only",
+  "suggested_opportunity_theses": [
+    "fragmented_etf_relative_strength"
+  ],
+  "references": [
+    "Academic literature on cross-sectional momentum",
+    "Practitioner literature on ETF relative-strength rotation"
+  ]
+}

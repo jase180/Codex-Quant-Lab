@@ -1,0 +1,34 @@
+{
+  "schema_version": "research_mechanism.v1",
+  "mechanism_id": "forced_index_flows",
+  "title": "Forced Index Flows",
+  "source_type": "mixed",
+  "market_behavior": "Index additions, deletions, and reconstitutions can force benchmark-tracking vehicles to trade near predictable windows.",
+  "forced_actor": "Index funds, ETFs, benchmark-constrained managers, and managers minimizing tracking error.",
+  "why_edge_might_exist": "Some participants must transact because of index membership changes rather than because the new price is attractive.",
+  "why_large_capital_may_ignore_it": "Obvious index events are crowded, but smaller events may be operationally messy, capacity-limited, and expensive after spreads and borrow or liquidity costs.",
+  "capacity_hypothesis": "Capacity is likely event-specific and lower in smaller names; expected personal-capital capacity may be meaningful only where daily dollar volume and spread allow conservative sizing.",
+  "data_required": [
+    "historical index membership changes",
+    "announcement dates and effective dates",
+    "survivorship-aware constituent prices",
+    "volume and spread proxies"
+  ],
+  "observable_predictions": [
+    "Deletion or addition cohorts show abnormal drift or reversal after announcement/effective windows.",
+    "Effects weaken materially after spread, liquidity, and event-date accuracy checks."
+  ],
+  "falsification_tests": [
+    "Reject if event returns disappear after realistic spread and liquidity assumptions.",
+    "Reject if results depend on using effective dates when announcement dates were required.",
+    "Treat as untested until event data provenance is auditable."
+  ],
+  "engine_fit": "needs_data",
+  "suggested_opportunity_theses": [
+    "forced_event_liquidity"
+  ],
+  "references": [
+    "Academic literature on index reconstitution and price pressure",
+    "Index methodology documents and rebalance calendars"
+  ]
+}
