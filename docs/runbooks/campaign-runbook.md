@@ -25,7 +25,8 @@ features.
 Deterministic run commands execute one campaign cycle:
 
 1. Read `campaign_config.json` and `campaign_state.json`.
-2. Read relevant `data/opportunity_catalog/*.json` theses for the campaign's
+2. Read `data/research_mechanisms/*.json` and relevant
+   `data/opportunity_catalog/*.json` theses for the campaign's
    allowed templates.
 3. Read `data/experiment_template_catalog/*.json` and
    `data/parameter_neighborhoods/*.json`.
@@ -40,9 +41,10 @@ Deterministic run commands execute one campaign cycle:
 11. Update `campaign_state.json` and `campaign_state.md`.
 
 For model-backed providers, `provider_context.json` includes the complete
-candidate menu plus campaign memory. The provider can only choose a candidate ID,
-request human review, or stop. It cannot invent strategy JSON, parameters,
-indicators, success criteria, or shell commands during `campaign run`.
+candidate menu, mechanism summaries, opportunity-thesis context, and campaign
+memory. The provider can only choose a candidate ID, request human review, or
+stop. It cannot invent strategy JSON, parameters, indicators, success criteria,
+or shell commands during `campaign run`.
 
 The candidate menu applies completed-title and `do_not_repeat` filters. Campaign
 memory can now carry branch-level rules such as:
@@ -57,10 +59,22 @@ rejected candidates as useful evidence: they explain why a branch is not
 available instead of forcing the model to improvise.
 
 Candidate generation checks that each thesis exists in
-`data/opportunity_catalog/`, is marked `decision: test_now`, has
-`engine_fit: ready`, and is compatible with the selected experiment-template
-family. A blocked event-data thesis cannot leak into a currently supported SPY
+`data/opportunity_catalog/`, references a valid `mechanism_id` in
+`data/research_mechanisms/`, is marked `decision: test_now`, has `engine_fit:
+ready`, and is compatible with the selected experiment-template family. A
+blocked event-data thesis cannot leak into a currently supported SPY
 trend-template run.
+
+Candidate menus now show both:
+
+```text
+Thesis: etf_flow_persistence
+Mechanism: etf_flow_pressure
+```
+
+This is the project boundary we want: the mechanism explains the market
+imperfection being investigated, while the thesis narrows it to a falsifiable
+claim for the current engine.
 
 For executed campaign experiments, the thesis ID is also carried into the
 generated `experiment run-default` command as an `opportunity:<id>` experiment

@@ -1,6 +1,7 @@
 {
   "schema_version": "opportunity_thesis.v1",
   "thesis_id": "liquid_etf_trend_defense",
+  "mechanism_id": "etf_flow_pressure",
   "title": "Liquid ETF Trend Defense",
   "market_niche": "Highly liquid broad-market ETFs with slow-moving institutional allocation flows.",
   "universe": ["SPY", "QQQ", "IWM", "TLT"],

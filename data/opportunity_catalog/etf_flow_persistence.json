@@ -1,6 +1,7 @@
 {
   "schema_version": "opportunity_thesis.v1",
   "thesis_id": "etf_flow_persistence",
+  "mechanism_id": "etf_flow_pressure",
   "title": "ETF Flow Persistence",
   "market_niche": "Liquid ETFs where allocation, model-portfolio, and risk-budget flows can move gradually across days or weeks.",
   "universe": ["broad equity ETFs", "sector ETFs", "factor ETFs", "international ETFs", "fixed-income ETFs", "commodity ETFs"],

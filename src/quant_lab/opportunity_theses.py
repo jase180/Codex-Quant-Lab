@@ -13,11 +13,14 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .research_mechanisms import find_research_mechanism, load_research_mechanisms
+
 
 OPPORTUNITY_SCHEMA_VERSION = "opportunity_thesis.v1"
 REQUIRED_OPPORTUNITY_FIELDS = {
     "schema_version",
     "thesis_id",
+    "mechanism_id",
     "title",
     "market_niche",
     "universe",
@@ -82,6 +85,10 @@ class OpportunityThesis:
         return str(self.payload["title"])
 
     @property
+    def mechanism_id(self) -> str:
+        return str(self.payload["mechanism_id"])
+
+    @property
     def compatible_strategy_families(self) -> list[str]:
         return [str(item) for item in self.payload.get("compatible_strategy_families", [])]
 
@@ -94,7 +101,11 @@ class OpportunityThesis:
         return str(self.payload["engine_fit"])
 
 
-def load_opportunity_catalog(catalog_dir: str | Path) -> list[OpportunityThesis]:
+def load_opportunity_catalog(
+    catalog_dir: str | Path,
+    *,
+    mechanism_catalog_dir: str | Path | None = "data/research_mechanisms",
+) -> list[OpportunityThesis]:
     """Load conceptual opportunity theses from JSON files."""
 
     root = Path(catalog_dir)
@@ -104,7 +115,7 @@ def load_opportunity_catalog(catalog_dir: str | Path) -> list[OpportunityThesis]
     theses: list[OpportunityThesis] = []
     for path in sorted(root.glob("*.json")):
         payload = json.loads(path.read_text(encoding="utf-8"))
-        validate_opportunity_thesis(payload, path)
+        validate_opportunity_thesis(payload, path, mechanism_catalog_dir=mechanism_catalog_dir)
         theses.append(OpportunityThesis(path=path, payload=payload))
 
     if not theses:
@@ -112,13 +123,20 @@ def load_opportunity_catalog(catalog_dir: str | Path) -> list[OpportunityThesis]
     return theses
 
 
-def validate_opportunity_thesis(payload: dict[str, Any], path: Path | None = None) -> None:
+def validate_opportunity_thesis(
+    payload: dict[str, Any],
+    path: Path | None = None,
+    *,
+    mechanism_catalog_dir: str | Path | None = "data/research_mechanisms",
+) -> None:
     label = str(path) if path is not None else "opportunity thesis"
     missing = sorted(REQUIRED_OPPORTUNITY_FIELDS.difference(payload))
     if missing:
         raise ValueError(f"{label} is missing required opportunity fields: {', '.join(missing)}")
     if payload["schema_version"] != OPPORTUNITY_SCHEMA_VERSION:
         raise ValueError(f"{label} has unsupported schema_version: {payload['schema_version']}")
+    _require_non_empty_text(payload["mechanism_id"], f"{label} mechanism_id")
+    _validate_mechanism_reference(payload["mechanism_id"], label, mechanism_catalog_dir)
 
     for list_field in (
         "execution_constraints",
@@ -170,3 +188,24 @@ def find_opportunity_for_strategy_family(
         and thesis.engine_fit == "ready"
     ]
     return candidates[0] if candidates else None
+
+
+def _validate_mechanism_reference(
+    mechanism_id: object,
+    label: str,
+    mechanism_catalog_dir: str | Path | None,
+) -> None:
+    if mechanism_catalog_dir is None:
+        return
+    root = Path(mechanism_catalog_dir)
+    if not root.exists():
+        raise FileNotFoundError(f"Research mechanism catalog directory not found: {root}")
+    mechanisms = load_research_mechanisms(root)
+    if find_research_mechanism(mechanisms, str(mechanism_id)) is None:
+        raise ValueError(f"{label} references unknown mechanism_id: {mechanism_id}")
+
+
+def _require_non_empty_text(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{label} must be a non-empty string")
+    return value.strip()

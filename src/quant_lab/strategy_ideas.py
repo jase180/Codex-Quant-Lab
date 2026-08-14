@@ -311,7 +311,10 @@ def _load_optional_opportunity_catalog(catalog_dir: str | Path | None) -> list[O
     root = Path(catalog_dir)
     if not root.exists():
         return []
-    return load_opportunity_catalog(root)
+    # `ideas suggest` is an ideation surface and supports standalone temporary
+    # opportunity catalogs in tests or scratch research. Campaign execution uses
+    # stricter mechanism-reference validation before anything can run.
+    return load_opportunity_catalog(root, mechanism_catalog_dir=None)
 
 
 def _validate_catalog_payload(payload: dict[str, Any], path: Path) -> None:

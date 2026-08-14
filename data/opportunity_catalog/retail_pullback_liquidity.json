@@ -1,6 +1,7 @@
 {
   "schema_version": "opportunity_thesis.v1",
   "thesis_id": "retail_pullback_liquidity",
+  "mechanism_id": "small_cap_liquidity_shocks",
   "title": "Retail Pullback Liquidity",
   "market_niche": "Liquid ETFs and large stocks after short-term downside pressure.",
   "universe": ["SPY", "QQQ", "IWM", "large liquid equities"],

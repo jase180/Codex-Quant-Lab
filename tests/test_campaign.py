@@ -272,8 +272,11 @@ class CampaignTests(unittest.TestCase):
             context = build_campaign_provider_context(config, state)
 
         thesis_ids = [item["thesis_id"] for item in context["opportunity_theses"]]
+        mechanisms_by_thesis = {item["thesis_id"]: item["mechanism"] for item in context["opportunity_theses"]}
         self.assertIn("liquid_etf_trend_defense", thesis_ids)
         self.assertNotIn("forced_event_liquidity", thesis_ids)
+        self.assertEqual("ETF Flow Pressure", mechanisms_by_thesis["liquid_etf_trend_defense"]["title"])
+        self.assertIn("observable_predictions", mechanisms_by_thesis["liquid_etf_trend_defense"])
         self.assertIn("Prefer proposals with an opportunity_thesis_id", " ".join(context["provider_rules"]))
 
     def test_campaign_provider_context_spotlights_forbidden_prior_proposals(self) -> None:

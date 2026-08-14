@@ -9,6 +9,7 @@ from .campaign import CampaignConfig, CampaignState
 from .campaign_proposal import ALLOWED_CAMPAIGN_ACTIONS, CAMPAIGN_PROPOSAL_SCHEMA_VERSION
 from .campaign_templates import campaign_strategy_families_for_templates
 from .opportunity_theses import OpportunityThesis, load_opportunity_catalog
+from .research_mechanisms import ResearchMechanism, load_research_mechanisms
 
 
 CAMPAIGN_PROPOSAL_RESPONSE_FORMAT = {
@@ -59,11 +60,16 @@ def build_campaign_provider_context(
     state: CampaignState,
     *,
     opportunity_catalog_dir: str | Path | None = "data/opportunity_catalog",
+    mechanism_catalog_dir: str | Path | None = "data/research_mechanisms",
     prior_attempt_feedback: list[str] | None = None,
 ) -> dict:
     """Build the exact context a model can see before proposing one cycle."""
 
-    opportunity_theses = _campaign_opportunity_summaries(config, opportunity_catalog_dir)
+    opportunity_theses = _campaign_opportunity_summaries(
+        config,
+        opportunity_catalog_dir,
+        mechanism_catalog_dir=mechanism_catalog_dir,
+    )
     forbidden_proposals = _forbidden_proposal_summaries(state)
     context = {
         "schema_version": "campaign_provider_context.v1",
@@ -154,6 +160,8 @@ def build_campaign_provider_prompt(context: dict) -> str:
 def _campaign_opportunity_summaries(
     config: CampaignConfig,
     catalog_dir: str | Path | None,
+    *,
+    mechanism_catalog_dir: str | Path | None = "data/research_mechanisms",
 ) -> list[dict]:
     if catalog_dir is None:
         return []
@@ -161,22 +169,26 @@ def _campaign_opportunity_summaries(
     if not root.exists():
         return []
 
-    theses = load_opportunity_catalog(root)
+    theses = load_opportunity_catalog(root, mechanism_catalog_dir=mechanism_catalog_dir)
+    mechanisms = _mechanism_lookup(mechanism_catalog_dir)
     allowed_families = campaign_strategy_families_for_templates(config.allowed_templates)
     return [
-        _opportunity_summary(thesis)
+        _opportunity_summary(thesis, mechanisms=mechanisms)
         for thesis in theses
         if thesis.decision == "test_now"
         and thesis.engine_fit == "ready"
         and allowed_families.intersection(thesis.compatible_strategy_families)
     ]
 
-def _opportunity_summary(thesis: OpportunityThesis) -> dict:
+def _opportunity_summary(thesis: OpportunityThesis, *, mechanisms: dict[str, ResearchMechanism]) -> dict:
     payload = thesis.payload
     evidence = payload["institutional_constraint_evidence"]
     rubric = payload["rubric"]
+    mechanism = mechanisms.get(thesis.mechanism_id)
     return {
         "thesis_id": thesis.thesis_id,
+        "mechanism_id": thesis.mechanism_id,
+        "mechanism": _mechanism_summary(mechanism),
         "title": thesis.title,
         "market_niche": payload["market_niche"],
         "counterparty_or_forced_actor": payload["counterparty_or_forced_actor"],
@@ -188,6 +200,29 @@ def _opportunity_summary(thesis: OpportunityThesis) -> dict:
         "falsification_tests": payload["falsification_tests"],
         "compatible_strategy_families": thesis.compatible_strategy_families,
         "rubric": rubric,
+    }
+
+
+def _mechanism_lookup(catalog_dir: str | Path | None) -> dict[str, ResearchMechanism]:
+    if catalog_dir is None:
+        return {}
+    root = Path(catalog_dir)
+    if not root.exists():
+        return {}
+    return {mechanism.mechanism_id: mechanism for mechanism in load_research_mechanisms(root)}
+
+
+def _mechanism_summary(mechanism: ResearchMechanism | None) -> dict | None:
+    if mechanism is None:
+        return None
+    payload = mechanism.payload
+    return {
+        "title": mechanism.title,
+        "source_type": mechanism.source_type,
+        "engine_fit": mechanism.engine_fit,
+        "market_behavior": payload["market_behavior"],
+        "data_required": payload["data_required"],
+        "observable_predictions": payload["observable_predictions"],
     }
 
 

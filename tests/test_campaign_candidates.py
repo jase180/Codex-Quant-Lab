@@ -83,6 +83,7 @@ class CampaignCandidatesTest(unittest.TestCase):
         candidate_ids = {candidate.candidate_id for candidate in menu.candidates}
         self.assertEqual(len(candidate_ids), len(menu.candidates))
         self.assertIn("spy_liquid_etf_trend_defense_price_vs_sma_trend_001", candidate_ids)
+        self.assertTrue(any(candidate.mechanism_id == "etf_flow_pressure" for candidate in menu.candidates))
         self.assertTrue(any(candidate.strategy_template == "ema-trend-follow" for candidate in menu.candidates))
         self.assertTrue(all(candidate.projected_run_count == 11 for candidate in menu.candidates))
 
@@ -234,6 +235,7 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertIn("shortlist_policy", payload)
         self.assertIn("Campaign Candidate Menu", markdown)
         self.assertIn("Candidate Menu", markdown)
+        self.assertIn("Mechanism:", markdown)
 
     def test_campaign_candidates_command_writes_next_cycle_menu(self) -> None:
         config = parse_campaign_config(campaign_payload())

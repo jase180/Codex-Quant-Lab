@@ -32,6 +32,7 @@ class CampaignCandidate:
     schema_version: str
     candidate_id: str
     title: str
+    mechanism_id: str
     opportunity_thesis_id: str
     template_id: str
     strategy_template: str
@@ -313,6 +314,7 @@ def _candidate(
         schema_version=CAMPAIGN_CANDIDATE_SCHEMA_VERSION,
         candidate_id=_candidate_id(opportunity.thesis_id, template.template_id, symbol, variant_index),
         title=title,
+        mechanism_id=opportunity.mechanism_id,
         opportunity_thesis_id=opportunity.thesis_id,
         template_id=template.template_id,
         strategy_template=template.campaign_strategy_template,
@@ -587,6 +589,7 @@ def _candidate_lines(candidates: list[CampaignCandidate]) -> list[str]:
             [
                 f"- `{candidate.candidate_id}`: {candidate.title}",
                 f"  - Thesis: `{candidate.opportunity_thesis_id}`",
+                f"  - Mechanism: `{candidate.mechanism_id}`",
                 f"  - Template: `{candidate.strategy_template}`",
                 f"  - Parameters: `{candidate.parameters}`",
                 f"  - Information gain: `{candidate.expected_information_gain}`",

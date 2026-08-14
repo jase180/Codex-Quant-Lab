@@ -1,6 +1,7 @@
 {
   "schema_version": "opportunity_thesis.v1",
   "thesis_id": "forced_event_liquidity",
+  "mechanism_id": "forced_index_flows",
   "title": "Forced Event Liquidity",
   "market_niche": "Corporate-action, index-change, and event-driven situations where some participants must transact.",
   "universe": ["index additions and deletions", "splits", "distributions", "post-event gaps"],

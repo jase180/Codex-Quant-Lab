@@ -16,6 +16,7 @@ def _opportunity_thesis(**overrides) -> dict:
     payload = {
         "schema_version": "opportunity_thesis.v1",
         "thesis_id": "testable_pullback_liquidity",
+        "mechanism_id": "test_mechanism",
         "title": "Testable Pullback Liquidity",
         "market_niche": "Liquid ETFs after short-term downside pressure.",
         "universe": ["SPY", "QQQ"],
@@ -76,17 +77,31 @@ class OpportunityThesesTest(unittest.TestCase):
             catalog_dir = Path(tmpdir)
             _write_json(catalog_dir / "pullback.json", _opportunity_thesis())
 
-            theses = load_opportunity_catalog(catalog_dir)
+            theses = load_opportunity_catalog(catalog_dir, mechanism_catalog_dir=None)
 
         self.assertEqual(1, len(theses))
         self.assertEqual("testable_pullback_liquidity", theses[0].thesis_id)
+        self.assertEqual("test_mechanism", theses[0].mechanism_id)
         self.assertEqual(["mean_reversion"], theses[0].compatible_strategy_families)
+
+    def test_validate_rejects_missing_mechanism_id(self) -> None:
+        payload = _opportunity_thesis()
+        payload.pop("mechanism_id")
+
+        with self.assertRaisesRegex(ValueError, "mechanism_id"):
+            validate_opportunity_thesis(payload, mechanism_catalog_dir=None)
+
+    def test_validate_rejects_unknown_mechanism_id(self) -> None:
+        payload = _opportunity_thesis(mechanism_id="missing")
+
+        with self.assertRaisesRegex(ValueError, "unknown mechanism_id"):
+            validate_opportunity_thesis(payload)
 
     def test_validate_rejects_fake_rubric_values(self) -> None:
         payload = _opportunity_thesis(rubric={**_opportunity_thesis()["rubric"], "engine_fit": "pretty_good"})
 
         with self.assertRaisesRegex(ValueError, "rubric.engine_fit"):
-            validate_opportunity_thesis(payload)
+            validate_opportunity_thesis(payload, mechanism_catalog_dir=None)
 
     def test_find_opportunity_for_strategy_family_only_returns_testable_ready_thesis(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -101,7 +116,7 @@ class OpportunityThesesTest(unittest.TestCase):
                     decision="investigate_data",
                 ),
             )
-            theses = load_opportunity_catalog(catalog_dir)
+            theses = load_opportunity_catalog(catalog_dir, mechanism_catalog_dir=None)
 
         selected = find_opportunity_for_strategy_family(theses, "mean_reversion")
 

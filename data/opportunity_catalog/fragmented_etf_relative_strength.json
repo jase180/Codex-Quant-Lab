@@ -1,6 +1,7 @@
 {
   "schema_version": "opportunity_thesis.v1",
   "thesis_id": "fragmented_etf_relative_strength",
+  "mechanism_id": "cross_sectional_relative_strength",
   "title": "Fragmented ETF Relative Strength",
   "market_niche": "Sector, factor, and asset-class ETFs where leadership rotates across fragmented investor mandates.",
   "universe": ["SPY", "QQQ", "TLT", "IWM", "sector ETFs", "factor ETFs"],

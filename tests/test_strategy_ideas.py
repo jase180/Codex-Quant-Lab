@@ -336,6 +336,7 @@ class StrategyIdeasTest(unittest.TestCase):
                 {
                     "schema_version": "opportunity_thesis.v1",
                     "thesis_id": "retail_pullback_liquidity",
+                    "mechanism_id": "small_cap_liquidity_shocks",
                     "title": "Retail Pullback Liquidity",
                     "market_niche": "Liquid ETFs after pullbacks.",
                     "universe": ["SPY"],
