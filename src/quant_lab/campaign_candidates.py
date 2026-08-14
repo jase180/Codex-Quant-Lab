@@ -178,7 +178,13 @@ def build_campaign_candidate_menu(
                     candidates.append(candidate)
 
     total_candidates_before_shortlist = len(candidates)
-    candidates = _shortlisted_candidates(candidates, config=config, state=state)
+    mechanism_by_thesis = {opportunity.thesis_id: opportunity.mechanism_id for opportunity in opportunities}
+    candidates = _shortlisted_candidates(
+        candidates,
+        config=config,
+        state=state,
+        mechanism_by_thesis=mechanism_by_thesis,
+    )
     status = "ready" if candidates else "SEARCH_SPACE_EXHAUSTED"
     return CampaignCandidateMenu(
         schema_version=CAMPAIGN_CANDIDATE_MENU_SCHEMA_VERSION,
@@ -456,9 +462,11 @@ def _shortlisted_candidates(
     *,
     config: CampaignConfig,
     state: CampaignState,
+    mechanism_by_thesis: dict[str, str],
 ) -> list[CampaignCandidate]:
     limit = config.max_candidate_menu_size
     historical_symbol_counts = _completed_count_by(state, "symbol")
+    historical_mechanism_counts = _completed_mechanism_counts(state, mechanism_by_thesis)
     historical_template_counts = _completed_count_by(state, "strategy_template")
     historical_thesis_counts = _completed_count_by(state, "opportunity_thesis_id")
     if limit is None or len(candidates) <= limit:
@@ -467,6 +475,7 @@ def _shortlisted_candidates(
             key=lambda candidate: _campaign_aware_quality_key(
                 candidate,
                 symbol_counts=historical_symbol_counts,
+                mechanism_counts=historical_mechanism_counts,
                 template_counts=historical_template_counts,
                 thesis_counts=historical_thesis_counts,
             ),
@@ -475,6 +484,7 @@ def _shortlisted_candidates(
     selected: list[CampaignCandidate] = []
     remaining = list(candidates)
     symbol_counts = dict(historical_symbol_counts)
+    mechanism_counts = dict(historical_mechanism_counts)
     template_counts = dict(historical_template_counts)
     thesis_counts = dict(historical_thesis_counts)
     while remaining and len(selected) < limit:
@@ -483,11 +493,13 @@ def _shortlisted_candidates(
             key=lambda item: (
                 _candidate_quality_score(item)
                 + (symbol_counts.get(item.symbol, 0) * 6)
+                + (mechanism_counts.get(item.mechanism_id, 0) * 4)
                 + (template_counts.get(item.strategy_template, 0) * 2)
                 + (thesis_counts.get(item.opportunity_thesis_id, 0) * 2),
                 _campaign_aware_quality_key(
                     item,
                     symbol_counts=symbol_counts,
+                    mechanism_counts=mechanism_counts,
                     template_counts=template_counts,
                     thesis_counts=thesis_counts,
                 ),
@@ -496,6 +508,7 @@ def _shortlisted_candidates(
         selected.append(candidate)
         remaining.remove(candidate)
         symbol_counts[candidate.symbol] = symbol_counts.get(candidate.symbol, 0) + 1
+        mechanism_counts[candidate.mechanism_id] = mechanism_counts.get(candidate.mechanism_id, 0) + 1
         template_counts[candidate.strategy_template] = template_counts.get(candidate.strategy_template, 0) + 1
         thesis_counts[candidate.opportunity_thesis_id] = thesis_counts.get(candidate.opportunity_thesis_id, 0) + 1
     return selected
@@ -507,7 +520,7 @@ def _shortlist_policy(config: CampaignConfig) -> str:
         return "uncapped: all valid candidates are shown"
     return (
         f"capped at {limit}: greedy ranking by information gain, low mining risk, low prior overlap, "
-        "and diversity across symbols, templates, and opportunity theses"
+        "and diversity across symbols, mechanisms, templates, and opportunity theses"
     )
 
 
@@ -524,11 +537,13 @@ def _campaign_aware_quality_key(
     candidate: CampaignCandidate,
     *,
     symbol_counts: dict[str, int],
+    mechanism_counts: dict[str, int],
     template_counts: dict[str, int],
     thesis_counts: dict[str, int],
-) -> tuple[int, int, int, int, int, int, int, str]:
+) -> tuple[int, int, int, int, int, int, int, int, str]:
     return (
         symbol_counts.get(candidate.symbol, 0),
+        mechanism_counts.get(candidate.mechanism_id, 0),
         template_counts.get(candidate.strategy_template, 0),
         thesis_counts.get(candidate.opportunity_thesis_id, 0),
         *_candidate_quality_key(candidate),
@@ -570,6 +585,21 @@ def _completed_count_by(state: CampaignState, field: str) -> dict[str, int]:
         if not value:
             continue
         counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _completed_mechanism_counts(
+    state: CampaignState,
+    mechanism_by_thesis: dict[str, str],
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for experiment in state.completed_experiments:
+        explicit = str(experiment.get("mechanism_id") or "").strip()
+        thesis_id = str(experiment.get("opportunity_thesis_id") or "").strip()
+        mechanism_id = explicit or mechanism_by_thesis.get(thesis_id, "")
+        if not mechanism_id:
+            continue
+        counts[mechanism_id] = counts.get(mechanism_id, 0) + 1
     return counts
 
 

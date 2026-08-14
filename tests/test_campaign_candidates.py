@@ -219,6 +219,31 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertNotEqual("EEM", menu.candidates[0].symbol)
         self.assertGreaterEqual(len({candidate.symbol for candidate in menu.candidates[:4]}), 3)
 
+    def test_seeded_campaign_ranking_penalizes_repeated_mechanism(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config = parse_campaign_config(temp_multi_symbol_campaign_payload(temp_dir))
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            state = replace(
+                state,
+                completed_experiments=[
+                    {
+                        "title": "EEM ETF Flow Breakout Continuation",
+                        "symbol": "EEM",
+                        "strategy_template": "breakout-trend",
+                        "opportunity_thesis_id": "etf_flow_persistence",
+                    }
+                ],
+                do_not_repeat=[
+                    "Do not repeat weakened branch: opportunity=etf_flow_persistence; template=breakout-trend."
+                ],
+            )
+            menu = build_campaign_candidate_menu(config, state)
+
+        self.assertEqual("ready", menu.status)
+        self.assertNotEqual("etf_flow_pressure", menu.candidates[0].mechanism_id)
+        self.assertEqual("small_cap_liquidity_shocks", menu.candidates[0].mechanism_id)
+
     def test_save_campaign_candidate_menu_writes_json_and_markdown(self) -> None:
         config = parse_campaign_config(campaign_payload())
 

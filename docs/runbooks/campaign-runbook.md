@@ -145,14 +145,15 @@ stay small enough for inspection.
 
 It also sets `max_candidate_menu_size` to keep provider context bounded. The
 menu builder ranks candidates by expected information gain, low parameter-mining
-risk, low prior overlap, and diversity across symbols, templates, and
-opportunity theses.
+risk, low prior overlap, and diversity across symbols, mechanisms, templates,
+and opportunity theses.
 
 When resuming a campaign, the shortlist also considers completed campaign
-history. A symbol, strategy template, or opportunity thesis that has already
-been tested receives a ranking penalty, while explicit `do_not_repeat` rules can
-still hard-block weakened opportunity/template branches. This is meant to spend
-small campaign budgets on broader information, not variety for its own sake.
+history. A symbol, mechanism, strategy template, or opportunity thesis that has
+already been tested receives a ranking penalty, while explicit `do_not_repeat`
+rules can still hard-block weakened opportunity/template branches. This is meant
+to spend small campaign budgets on broader information, not variety for its own
+sake.
 
 Before running it, fetch the universe data described in
 `data/universes/README.md` and confirm the cache inventory shows provenance for
