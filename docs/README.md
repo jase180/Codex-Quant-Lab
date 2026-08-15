@@ -108,6 +108,9 @@ current workflow docs and the latest experiment handoffs.
 - [ETF Flow Breakout Probe](experiments/etf-flow-breakout-probe.md):
   first probe after adding the ETF-flow thesis/template branch; valid research
   system, partially supported strategy, weakened ETF-flow breakout branch.
+- [Calendar/Rebalance Event Study](experiments/calendar-rebalance-event-study.md):
+  first no-trade mechanism diagnostic using generated month-end and quarter-end
+  windows across SPY, QQQ, IWM, and TLT.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

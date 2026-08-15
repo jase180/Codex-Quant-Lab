@@ -12,6 +12,7 @@ from quant_lab.event_calendar import (
     EVENT_CALENDAR_COLUMNS,
     generate_calendar_rebalance_event_calendar,
     inspect_event_calendar,
+    run_event_study,
 )
 
 
@@ -96,6 +97,67 @@ class EventCalendarTest(unittest.TestCase):
 
             self.assertEqual(0, inspect_exit_code)
             self.assertIn("Status: valid", stdout.getvalue())
+
+    def test_run_event_study_writes_report_json_and_event_returns(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            reference_data = temp_path / "reference.csv"
+            _write_reference_data(reference_data)
+            calendar_path = temp_path / "events.csv"
+            generate_calendar_rebalance_event_calendar(
+                reference_data_path=reference_data,
+                out_path=calendar_path,
+                start="2020-01-01",
+                end="2020-06-30",
+                window_trading_days=1,
+                created_at_utc="2026-08-14T00:00:00Z",
+            )
+
+            result = run_event_study(
+                calendar_path=calendar_path,
+                data_specs=[f"SPY={reference_data}"],
+                out_dir=temp_path / "study",
+            )
+
+            self.assertTrue(result.markdown_path.exists())
+            self.assertTrue(result.json_path.exists())
+            self.assertTrue(result.event_returns_path.exists())
+            self.assertEqual(1, result.symbol_count)
+            self.assertIn("No-trade mechanism diagnostic", result.markdown_path.read_text(encoding="utf-8"))
+            self.assertIn("month_end", result.event_returns_path.read_text(encoding="utf-8"))
+
+    def test_cli_event_calendar_study_writes_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            reference_data = temp_path / "reference.csv"
+            _write_reference_data(reference_data)
+            calendar_path = temp_path / "events.csv"
+            generate_calendar_rebalance_event_calendar(
+                reference_data_path=reference_data,
+                out_path=calendar_path,
+                start="2020-01-01",
+                end="2020-06-30",
+                window_trading_days=1,
+                created_at_utc="2026-08-14T00:00:00Z",
+            )
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                exit_code = main(
+                    [
+                        "event-calendar",
+                        "study",
+                        "--calendar",
+                        str(calendar_path),
+                        "--data",
+                        f"SPY={reference_data}",
+                        "--out",
+                        str(temp_path / "study"),
+                    ]
+                )
+
+            self.assertEqual(0, exit_code)
+            self.assertIn("Event Study Written", stdout.getvalue())
+            self.assertTrue((temp_path / "study" / "event_study_report.md").exists())
 
 
 def _write_reference_data(path: Path) -> None:

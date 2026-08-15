@@ -17,6 +17,7 @@ from .cli_data import (
 from .cli_event_calendar import (
     event_calendar_generate_command,
     event_calendar_inspect_command,
+    event_calendar_study_command,
 )
 from .cli_agent import (
     agent_context_command,
@@ -588,6 +589,26 @@ def register_event_calendar_commands(subparsers) -> None:
     )
     inspect_parser.add_argument("--calendar", required=True, help="Event-calendar CSV path.")
     inspect_parser.set_defaults(func=event_calendar_inspect_command)
+
+    study_parser = event_calendar_subparsers.add_parser(
+        "study",
+        help="Run a no-trade event-study summary against one or more daily CSVs.",
+    )
+    study_parser.add_argument("--calendar", required=True, help="Event-calendar CSV path.")
+    study_parser.add_argument(
+        "--data",
+        action="append",
+        required=True,
+        help="Repeatable SYMBOL=CSV_PATH input, for example SPY=data/cache/SPY_2015-01-01_2025-12-31.csv.",
+    )
+    study_parser.add_argument("--out", required=True, help="Output directory for event-study artifacts.")
+    study_parser.add_argument(
+        "--close-column",
+        default="close",
+        help="Close column to use for close-to-close returns. Defaults to close.",
+    )
+    study_parser.add_argument("--force", action="store_true", help="Write into a non-empty output directory.")
+    study_parser.set_defaults(func=event_calendar_study_command)
 
 
 def register_health_commands(subparsers) -> None:

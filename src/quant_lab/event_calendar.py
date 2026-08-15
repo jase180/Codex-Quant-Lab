@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import pandas as pd
 
@@ -57,6 +58,17 @@ class EventCalendarInspection:
     @property
     def is_valid(self) -> bool:
         return not self.invalid_rows
+
+
+@dataclass(frozen=True)
+class EventStudyResult:
+    output_dir: Path
+    json_path: Path
+    markdown_path: Path
+    event_returns_path: Path
+    symbol_count: int
+    event_count: int
+    event_type_count: int
 
 
 def generate_calendar_rebalance_event_calendar(
@@ -174,6 +186,76 @@ def inspect_event_calendar(path: str | Path) -> EventCalendarInspection:
     )
 
 
+def run_event_study(
+    *,
+    calendar_path: str | Path,
+    data_specs: list[str],
+    out_dir: str | Path,
+    close_column: str = "close",
+    force: bool = False,
+) -> EventStudyResult:
+    inspection = inspect_event_calendar(calendar_path)
+    if not inspection.is_valid:
+        raise ValueError("Event calendar is invalid; run event-calendar inspect first")
+
+    destination = Path(out_dir)
+    if destination.exists() and any(destination.iterdir()) and not force:
+        raise FileExistsError(f"Output directory is not empty: {destination}")
+    destination.mkdir(parents=True, exist_ok=True)
+
+    calendar_rows = _read_event_calendar_rows(Path(calendar_path))
+    symbol_frames = [_load_symbol_returns(spec, close_column=close_column) for spec in data_specs]
+    if not symbol_frames:
+        raise ValueError("At least one --data SYMBOL=CSV input is required")
+
+    event_return_rows: list[dict[str, str]] = []
+    summary_rows: list[dict[str, Any]] = []
+    for symbol, frame in symbol_frames:
+        symbol_event_rows = _event_returns_for_symbol(symbol, frame, calendar_rows)
+        event_return_rows.extend(symbol_event_rows)
+        summary_rows.extend(_summarize_symbol_event_rows(symbol, symbol_event_rows, frame))
+
+    event_returns_path = destination / "event_returns.csv"
+    _write_dict_csv(event_returns_path, event_return_rows, fieldnames=EVENT_STUDY_RETURN_COLUMNS)
+
+    payload = {
+        "schema_version": "event_study.v1",
+        "calendar_path": Path(calendar_path).as_posix(),
+        "close_column": close_column,
+        "symbols": [symbol for symbol, _frame in symbol_frames],
+        "event_count": len(calendar_rows),
+        "event_type_count": len({row["event_type"] for row in calendar_rows}),
+        "method": {
+            "return_definition": (
+                "Daily close-to-close returns are compounded from window_start through window_end. "
+                "No trades, fills, costs, or position sizing are simulated."
+            ),
+            "event_selection": "Events come from the supplied event calendar and are not selected from returns.",
+            "non_event_comparison": "Mean daily close-to-close returns outside any event window for the same symbol.",
+        },
+        "summary": summary_rows,
+        "artifacts": {
+            "markdown_report": "event_study_report.md",
+            "event_returns": "event_returns.csv",
+        },
+    }
+    json_path = destination / "event_study.json"
+    json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    markdown_path = destination / "event_study_report.md"
+    markdown_path.write_text(_render_event_study_markdown(payload), encoding="utf-8")
+
+    return EventStudyResult(
+        output_dir=destination,
+        json_path=json_path,
+        markdown_path=markdown_path,
+        event_returns_path=event_returns_path,
+        symbol_count=len(symbol_frames),
+        event_count=len(calendar_rows),
+        event_type_count=len({row["event_type"] for row in calendar_rows}),
+    )
+
+
 def format_event_calendar_generation(result: EventCalendarGenerationResult) -> str:
     lines = [
         "# Event Calendar Generated",
@@ -206,6 +288,22 @@ def format_event_calendar_inspection(inspection: EventCalendarInspection) -> str
     if inspection.warnings:
         lines.extend(["", "Warnings:", *_format_bullets(inspection.warnings)])
     return "\n".join(lines)
+
+
+def format_event_study_result(result: EventStudyResult) -> str:
+    return "\n".join(
+        [
+            "# Event Study Written",
+            "",
+            f"- Output directory: `{result.output_dir}`",
+            f"- Report: `{result.markdown_path}`",
+            f"- JSON: `{result.json_path}`",
+            f"- Event returns: `{result.event_returns_path}`",
+            f"- Symbols: {result.symbol_count}",
+            f"- Events: {result.event_count}",
+            f"- Event types: {result.event_type_count}",
+        ]
+    )
 
 
 def _read_trading_dates(path: Path) -> list[date]:
@@ -310,6 +408,249 @@ def _read_event_calendar_rows(path: Path) -> list[dict[str, str]]:
                 f"{', '.join(EVENT_CALENDAR_COLUMNS)}"
             )
         return [dict(row) for row in reader]
+
+
+EVENT_STUDY_RETURN_COLUMNS = [
+    "symbol",
+    "event_id",
+    "event_type",
+    "event_date",
+    "window_start",
+    "window_end",
+    "window_trading_days",
+    "window_return",
+    "pre_event_return",
+    "post_event_return",
+]
+
+
+def _load_symbol_returns(data_spec: str, *, close_column: str) -> tuple[str, pd.DataFrame]:
+    symbol, path = _parse_data_spec(data_spec)
+    data_path = Path(path)
+    if not data_path.exists():
+        raise FileNotFoundError(f"Data file not found for {symbol}: {data_path}")
+
+    frame = pd.read_csv(data_path)
+    date_column = _find_date_column(frame.columns)
+    if date_column is None:
+        raise ValueError(f"Data file for {symbol} must include a date column: {data_path}")
+    actual_close_column = _find_column(frame.columns, close_column)
+    if actual_close_column is None:
+        raise ValueError(f"Data file for {symbol} must include close column {close_column}: {data_path}")
+
+    loaded = pd.DataFrame(
+        {
+            "date": pd.to_datetime(frame[date_column], errors="raise").dt.date,
+            "close": pd.to_numeric(frame[actual_close_column], errors="raise"),
+        }
+    ).sort_values("date")
+    if loaded["date"].duplicated().any():
+        raise ValueError(f"Data file for {symbol} contains duplicate dates: {data_path}")
+
+    loaded["daily_return"] = loaded["close"].pct_change()
+    return symbol, loaded
+
+
+def _parse_data_spec(data_spec: str) -> tuple[str, str]:
+    if "=" not in data_spec:
+        raise ValueError("--data values must use SYMBOL=CSV_PATH")
+    symbol, path = data_spec.split("=", 1)
+    symbol = symbol.strip().upper()
+    path = path.strip()
+    if not symbol or not path:
+        raise ValueError("--data values must use SYMBOL=CSV_PATH")
+    return symbol, path
+
+
+def _find_column(columns: Iterable[object], requested_name: str) -> str | None:
+    requested = requested_name.lower()
+    for column in columns:
+        if str(column).lower() == requested:
+            return str(column)
+    return None
+
+
+def _event_returns_for_symbol(
+    symbol: str,
+    frame: pd.DataFrame,
+    calendar_rows: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    indexed = frame.set_index("date", drop=False)
+    available_dates = set(indexed.index)
+    for event in calendar_rows:
+        window_start = _parse_date(str(event["window_start"]), "window_start")
+        event_date = _parse_date(str(event["event_date"]), "event_date")
+        window_end = _parse_date(str(event["window_end"]), "window_end")
+        if window_start not in available_dates or event_date not in available_dates or window_end not in available_dates:
+            continue
+
+        window = frame[(frame["date"] >= window_start) & (frame["date"] <= window_end)]
+        pre_event = frame[(frame["date"] >= window_start) & (frame["date"] <= event_date)]
+        post_event = frame[(frame["date"] >= event_date) & (frame["date"] <= window_end)]
+        rows.append(
+            {
+                "symbol": symbol,
+                "event_id": str(event["event_id"]),
+                "event_type": str(event["event_type"]),
+                "event_date": event_date.isoformat(),
+                "window_start": window_start.isoformat(),
+                "window_end": window_end.isoformat(),
+                "window_trading_days": str(len(window)),
+                "window_return": _format_float(_compound_returns(window["daily_return"].dropna())),
+                "pre_event_return": _format_float(_compound_returns(pre_event["daily_return"].dropna())),
+                "post_event_return": _format_float(_compound_returns(post_event["daily_return"].dropna())),
+            }
+        )
+    return rows
+
+
+def _summarize_symbol_event_rows(
+    symbol: str,
+    event_rows: list[dict[str, str]],
+    frame: pd.DataFrame,
+) -> list[dict[str, Any]]:
+    event_dates: set[date] = set()
+    for row in event_rows:
+        start = _parse_date(row["window_start"], "window_start")
+        end = _parse_date(row["window_end"], "window_end")
+        event_dates.update(frame[(frame["date"] >= start) & (frame["date"] <= end)]["date"].tolist())
+
+    non_event = frame[~frame["date"].isin(event_dates)]["daily_return"].dropna()
+    non_event_mean = float(non_event.mean()) if len(non_event) else math.nan
+    summary_rows: list[dict[str, Any]] = []
+    for event_type in sorted({row["event_type"] for row in event_rows}):
+        typed = [row for row in event_rows if row["event_type"] == event_type]
+        window_returns = [float(row["window_return"]) for row in typed]
+        pre_returns = [float(row["pre_event_return"]) for row in typed]
+        post_returns = [float(row["post_event_return"]) for row in typed]
+        summary_rows.append(
+            {
+                "symbol": symbol,
+                "event_type": event_type,
+                "event_count": len(typed),
+                "mean_window_return": _mean(window_returns),
+                "median_window_return": _median(window_returns),
+                "positive_window_rate": _positive_rate(window_returns),
+                "mean_pre_event_return": _mean(pre_returns),
+                "mean_post_event_return": _mean(post_returns),
+                "non_event_mean_daily_return": non_event_mean,
+                "interpretation": _event_study_interpretation(typed, window_returns, non_event_mean),
+            }
+        )
+    return summary_rows
+
+
+def _compound_returns(returns: Iterable[float]) -> float:
+    cumulative = 1.0
+    for value in returns:
+        if pd.isna(value):
+            continue
+        cumulative *= 1.0 + float(value)
+    return cumulative - 1.0
+
+
+def _mean(values: list[float]) -> float:
+    return sum(values) / len(values) if values else math.nan
+
+
+def _median(values: list[float]) -> float:
+    if not values:
+        return math.nan
+    ordered = sorted(values)
+    midpoint = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[midpoint]
+    return (ordered[midpoint - 1] + ordered[midpoint]) / 2.0
+
+
+def _positive_rate(values: list[float]) -> float:
+    return sum(1 for value in values if value > 0) / len(values) if values else math.nan
+
+
+def _event_study_interpretation(
+    event_rows: list[dict[str, str]],
+    window_returns: list[float],
+    non_event_mean_daily_return: float,
+) -> str:
+    if not window_returns or math.isnan(non_event_mean_daily_return):
+        return "insufficient_data"
+    mean_window_days = _mean([float(row["window_trading_days"]) for row in event_rows])
+    event_mean_daily_proxy = _mean(window_returns) / mean_window_days
+    difference = event_mean_daily_proxy - non_event_mean_daily_return
+    if abs(difference) < 0.0001:
+        return "similar_to_non_event_days"
+    if difference > 0:
+        return "event_windows_higher_than_non_event_days"
+    return "event_windows_lower_than_non_event_days"
+
+
+def _write_dict_csv(path: Path, rows: list[dict[str, str]], *, fieldnames: list[str]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _render_event_study_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Event Study Report",
+        "",
+        "Role: No-trade mechanism diagnostic.",
+        "",
+        "This report joins a prebuilt event calendar to close-to-close returns. It does not simulate entries, exits, costs, sizing, or benchmark-relative strategy performance.",
+        "",
+        f"- Calendar: `{payload['calendar_path']}`",
+        f"- Symbols: {', '.join(payload['symbols'])}",
+        f"- Events in calendar: {payload['event_count']}",
+        "",
+        "## Method",
+        "",
+        f"- Return definition: {payload['method']['return_definition']}",
+        f"- Event selection: {payload['method']['event_selection']}",
+        f"- Non-event comparison: {payload['method']['non_event_comparison']}",
+        "",
+        "## Summary",
+        "",
+        "| Symbol | Event Type | Events | Mean Window Return | Median Window Return | Positive Rate | Mean Pre | Mean Post | Non-Event Mean Daily | Interpretation |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for row in payload["summary"]:
+        lines.append(
+            "| {symbol} | {event_type} | {event_count} | {mean_window_return} | {median_window_return} | {positive_window_rate} | {mean_pre_event_return} | {mean_post_event_return} | {non_event_mean_daily_return} | {interpretation} |".format(
+                symbol=row["symbol"],
+                event_type=row["event_type"],
+                event_count=row["event_count"],
+                mean_window_return=_format_percent(row["mean_window_return"]),
+                median_window_return=_format_percent(row["median_window_return"]),
+                positive_window_rate=_format_percent(row["positive_window_rate"]),
+                mean_pre_event_return=_format_percent(row["mean_pre_event_return"]),
+                mean_post_event_return=_format_percent(row["mean_post_event_return"]),
+                non_event_mean_daily_return=_format_percent(row["non_event_mean_daily_return"]),
+                interpretation=row["interpretation"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Read This Carefully",
+            "",
+            "- A higher event-window average is only a clue, not a trading edge.",
+            "- Quarter-end rows overlap month-end rows, so they are related views of the same calendar, not independent samples.",
+            "- Any strategy built from this must still define success criteria before execution.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _format_float(value: float) -> str:
+    return f"{value:.10f}"
+
+
+def _format_percent(value: float) -> str:
+    if value is None or math.isnan(float(value)):
+        return "n/a"
+    return f"{float(value) * 100:.2f}%"
 
 
 def _write_provenance(

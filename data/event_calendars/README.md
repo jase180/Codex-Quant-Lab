@@ -23,6 +23,20 @@ Inspect it with:
   --calendar data\event_calendars\calendar_rebalance_daily_proxy_2015_2025.csv
 ```
 
+Run the first no-trade event study with:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli event-calendar study `
+  --calendar data\event_calendars\calendar_rebalance_daily_proxy_2015_2025.csv `
+  --data SPY=data\cache\SPY_2015-01-01_2025-12-31.csv `
+  --data QQQ=data\cache\QQQ_2015-01-01_2025-12-31.csv `
+  --data IWM=data\cache\IWM_2015-01-01_2025-12-31.csv `
+  --data TLT=data\cache\TLT_2015-01-01_2025-12-31.csv `
+  --out artifacts\event-studies\calendar_rebalance_daily_proxy_2015_2025
+```
+
+This command joins returns for inspection only. It does not simulate a strategy.
+
 Regenerate it with:
 
 ```powershell
