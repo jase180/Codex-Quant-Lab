@@ -227,8 +227,8 @@ def run_event_study(
         "event_type_count": len({row["event_type"] for row in calendar_rows}),
         "method": {
             "return_definition": (
-                "Daily close-to-close returns are compounded from window_start through window_end. "
-                "No trades, fills, costs, or position sizing are simulated."
+                "Daily close-to-close returns are measured for pre-event, event-day, post-event, "
+                "and full event windows. No trades, fills, costs, or position sizing are simulated."
             ),
             "event_selection": "Events come from the supplied event calendar and are not selected from returns.",
             "non_event_comparison": "Mean daily close-to-close returns outside any event window for the same symbol.",
@@ -420,6 +420,7 @@ EVENT_STUDY_RETURN_COLUMNS = [
     "window_trading_days",
     "window_return",
     "pre_event_return",
+    "event_day_return",
     "post_event_return",
 ]
 
@@ -486,8 +487,9 @@ def _event_returns_for_symbol(
             continue
 
         window = frame[(frame["date"] >= window_start) & (frame["date"] <= window_end)]
-        pre_event = frame[(frame["date"] >= window_start) & (frame["date"] <= event_date)]
-        post_event = frame[(frame["date"] >= event_date) & (frame["date"] <= window_end)]
+        pre_event = frame[(frame["date"] >= window_start) & (frame["date"] < event_date)]
+        event_day = frame[frame["date"] == event_date]
+        post_event = frame[(frame["date"] > event_date) & (frame["date"] <= window_end)]
         rows.append(
             {
                 "symbol": symbol,
@@ -499,6 +501,7 @@ def _event_returns_for_symbol(
                 "window_trading_days": str(len(window)),
                 "window_return": _format_float(_compound_returns(window["daily_return"].dropna())),
                 "pre_event_return": _format_float(_compound_returns(pre_event["daily_return"].dropna())),
+                "event_day_return": _format_float(_compound_returns(event_day["daily_return"].dropna())),
                 "post_event_return": _format_float(_compound_returns(post_event["daily_return"].dropna())),
             }
         )
@@ -519,26 +522,48 @@ def _summarize_symbol_event_rows(
     non_event = frame[~frame["date"].isin(event_dates)]["daily_return"].dropna()
     non_event_mean = float(non_event.mean()) if len(non_event) else math.nan
     summary_rows: list[dict[str, Any]] = []
-    for event_type in sorted({row["event_type"] for row in event_rows}):
-        typed = [row for row in event_rows if row["event_type"] == event_type]
+    quarter_end_dates = {row["event_date"] for row in event_rows if row["event_type"] == "quarter_end"}
+    event_views = sorted(
+        {
+            view
+            for row in event_rows
+            for view in _summary_views_for_event_row(row, quarter_end_dates)
+        }
+    )
+    for event_view in event_views:
+        typed = [
+            row
+            for row in event_rows
+            if event_view in _summary_views_for_event_row(row, quarter_end_dates)
+        ]
         window_returns = [float(row["window_return"]) for row in typed]
         pre_returns = [float(row["pre_event_return"]) for row in typed]
+        event_day_returns = [float(row["event_day_return"]) for row in typed]
         post_returns = [float(row["post_event_return"]) for row in typed]
         summary_rows.append(
             {
                 "symbol": symbol,
-                "event_type": event_type,
+                "event_type": event_view,
                 "event_count": len(typed),
                 "mean_window_return": _mean(window_returns),
                 "median_window_return": _median(window_returns),
                 "positive_window_rate": _positive_rate(window_returns),
                 "mean_pre_event_return": _mean(pre_returns),
+                "mean_event_day_return": _mean(event_day_returns),
                 "mean_post_event_return": _mean(post_returns),
                 "non_event_mean_daily_return": non_event_mean,
                 "interpretation": _event_study_interpretation(typed, window_returns, non_event_mean),
             }
         )
     return summary_rows
+
+
+def _summary_views_for_event_row(row: dict[str, str], quarter_end_dates: set[str]) -> list[str]:
+    event_type = row["event_type"]
+    views = [event_type]
+    if event_type == "month_end" and row["event_date"] not in quarter_end_dates:
+        views.append("month_end_excluding_quarter_end")
+    return views
 
 
 def _compound_returns(returns: Iterable[float]) -> float:
@@ -612,12 +637,12 @@ def _render_event_study_markdown(payload: dict[str, Any]) -> str:
         "",
         "## Summary",
         "",
-        "| Symbol | Event Type | Events | Mean Window Return | Median Window Return | Positive Rate | Mean Pre | Mean Post | Non-Event Mean Daily | Interpretation |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Symbol | Event View | Events | Mean Window Return | Median Window Return | Positive Rate | Mean Pre | Mean Event Day | Mean Post | Non-Event Mean Daily | Interpretation |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in payload["summary"]:
         lines.append(
-            "| {symbol} | {event_type} | {event_count} | {mean_window_return} | {median_window_return} | {positive_window_rate} | {mean_pre_event_return} | {mean_post_event_return} | {non_event_mean_daily_return} | {interpretation} |".format(
+            "| {symbol} | {event_type} | {event_count} | {mean_window_return} | {median_window_return} | {positive_window_rate} | {mean_pre_event_return} | {mean_event_day_return} | {mean_post_event_return} | {non_event_mean_daily_return} | {interpretation} |".format(
                 symbol=row["symbol"],
                 event_type=row["event_type"],
                 event_count=row["event_count"],
@@ -625,6 +650,7 @@ def _render_event_study_markdown(payload: dict[str, Any]) -> str:
                 median_window_return=_format_percent(row["median_window_return"]),
                 positive_window_rate=_format_percent(row["positive_window_rate"]),
                 mean_pre_event_return=_format_percent(row["mean_pre_event_return"]),
+                mean_event_day_return=_format_percent(row["mean_event_day_return"]),
                 mean_post_event_return=_format_percent(row["mean_post_event_return"]),
                 non_event_mean_daily_return=_format_percent(row["non_event_mean_daily_return"]),
                 interpretation=row["interpretation"],
@@ -636,6 +662,7 @@ def _render_event_study_markdown(payload: dict[str, Any]) -> str:
             "## Read This Carefully",
             "",
             "- A higher event-window average is only a clue, not a trading edge.",
+            "- `month_end_excluding_quarter_end` is a derived summary view; raw event rows are unchanged.",
             "- Quarter-end rows overlap month-end rows, so they are related views of the same calendar, not independent samples.",
             "- Any strategy built from this must still define success criteria before execution.",
         ]

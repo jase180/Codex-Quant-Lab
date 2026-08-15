@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import csv
 import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -123,8 +124,17 @@ class EventCalendarTest(unittest.TestCase):
             self.assertTrue(result.json_path.exists())
             self.assertTrue(result.event_returns_path.exists())
             self.assertEqual(1, result.symbol_count)
-            self.assertIn("No-trade mechanism diagnostic", result.markdown_path.read_text(encoding="utf-8"))
-            self.assertIn("month_end", result.event_returns_path.read_text(encoding="utf-8"))
+            report = result.markdown_path.read_text(encoding="utf-8")
+            event_returns = result.event_returns_path.read_text(encoding="utf-8")
+            payload = json.loads(result.json_path.read_text(encoding="utf-8"))
+
+            self.assertIn("No-trade mechanism diagnostic", report)
+            self.assertIn("Mean Event Day", report)
+            self.assertIn("event_day_return", event_returns)
+            self.assertIn(
+                "month_end_excluding_quarter_end",
+                {row["event_type"] for row in payload["summary"]},
+            )
 
     def test_cli_event_calendar_study_writes_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
