@@ -44,6 +44,8 @@ It owns:
   falsification tests.
 - `research_mechanisms.py`: validates `research_mechanism.v1` records that
   capture market-structure raw material before it becomes an opportunity thesis.
+- `research_datasets.py`: validates `research_dataset_plan.v1` records that
+  define minimum dataset targets for mechanism-driven research.
 - `strategy_ideas.py`: loads `data/strategy_catalog/*.json`, reads prior
   `experiment_conclusion.json` files, optionally attaches a matching
   opportunity thesis, and drafts one non-executable next idea.

@@ -22,6 +22,7 @@ Useful commands:
 .\.venv-win\Scripts\python.exe -m quant_lab.cli mechanisms list
 .\.venv-win\Scripts\python.exe -m quant_lab.cli mechanisms show --id forced_index_flows
 .\.venv-win\Scripts\python.exe -m quant_lab.cli mechanisms data-needs --engine-fit needs_data
+.\.venv-win\Scripts\python.exe -m quant_lab.cli mechanisms data-plan --id calendar_rebalance_effects
 ```
 
 Engine fit meanings:

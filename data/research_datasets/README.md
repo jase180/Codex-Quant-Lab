@@ -1,0 +1,13 @@
+# Research Dataset Plans
+
+This folder stores `research_dataset_plan.v1` records.
+
+Dataset plans are not market data. They define the minimum raw material needed
+to test a research mechanism honestly. Use them to decide what to acquire,
+curate, or validate before adding strategy features.
+
+Status meanings:
+
+- `planned`: the dataset is specified but not yet built.
+- `available`: the dataset exists locally and has passed the listed checks.
+- `blocked`: the dataset cannot be built with current tools or accessible data.

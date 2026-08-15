@@ -1,0 +1,52 @@
+{
+  "schema_version": "research_dataset_plan.v1",
+  "dataset_id": "calendar_rebalance_daily_proxy",
+  "mechanism_id": "calendar_rebalance_effects",
+  "title": "Calendar/Rebalance Daily Proxy",
+  "status": "planned",
+  "purpose": "Create a small auditable daily event calendar for month-end, quarter-end, and options-expiration windows before testing calendar or rebalance pressure hypotheses.",
+  "data_grain": "daily event calendar joined to daily OHLCV returns",
+  "required_fields": [
+    "event_id",
+    "event_type",
+    "event_date",
+    "window_start",
+    "window_end",
+    "source_name",
+    "source_url_or_note",
+    "generated_without_return_data",
+    "created_at_utc"
+  ],
+  "candidate_sources": [
+    "exchange trading calendars for market holidays and trading days",
+    "OCC or exchange options-expiration calendars for standard monthly expiration dates",
+    "index or fund methodology documents for documented rebalance timing",
+    "manual deterministic calendar generation for month-end and quarter-end labels"
+  ],
+  "construction_rules": [
+    "Define event windows before joining any return data.",
+    "Generate month-end and quarter-end events from trading calendars, not from price behavior.",
+    "Use standard third-Friday monthly options expiration only if the date is verified against an exchange/OCC calendar.",
+    "Version the generated calendar and preserve source notes for every event type.",
+    "Do not add or remove event windows after inspecting strategy returns."
+  ],
+  "quality_checks": [
+    "Every event_date, window_start, and window_end must be a valid trading day for the tested symbol universe.",
+    "Every row must include source_name and source_url_or_note.",
+    "generated_without_return_data must be true for every row.",
+    "Duplicate event_id values are invalid.",
+    "The calendar must cover the full tested price-data date range or explicitly state coverage gaps."
+  ],
+  "minimum_viable_tests": [
+    "Event-study summary of SPY, QQQ, IWM, and TLT returns around month-end and quarter-end windows versus non-event windows.",
+    "A no-trade diagnostic report before any executable strategy is created.",
+    "A single prespecified long/cash or exposure-adjustment proxy only after the event-study summary identifies a plausible direction."
+  ],
+  "known_limitations": [
+    "Daily data may miss intraday effects around close, open, or expiration settlement.",
+    "Simple month-end and quarter-end labels are a crude proxy for actual institutional flow.",
+    "Options-expiration mechanics may require intraday data or options data before becoming economically meaningful.",
+    "This plan does not yet provide event rows or source verification."
+  ],
+  "next_action": "Build a small generated calendar file for 2015-2025 with month-end and quarter-end trading-day windows, then write an event-calendar inspection command before backtesting."
+}

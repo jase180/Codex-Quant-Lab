@@ -29,7 +29,12 @@ from .cli_campaign import (
 )
 from .cli_health import doctor_command, smoke_test_command
 from .cli_ideas import ideas_suggest_command
-from .cli_mechanisms import mechanisms_data_needs_command, mechanisms_list_command, mechanisms_show_command
+from .cli_mechanisms import (
+    mechanisms_data_needs_command,
+    mechanisms_data_plan_command,
+    mechanisms_list_command,
+    mechanisms_show_command,
+)
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .default_experiment import run_default_experiment, validate_default_experiment_args
@@ -1466,6 +1471,23 @@ def register_mechanism_commands(subparsers) -> None:
         help="Only show mechanisms with this engine-fit status.",
     )
     data_needs_parser.set_defaults(func=mechanisms_data_needs_command)
+
+    data_plan_parser = mechanisms_subparsers.add_parser(
+        "data-plan",
+        help="Show dataset plans for a mechanism, or list all dataset plans.",
+    )
+    data_plan_parser.add_argument("--id", default=None, help="Optional mechanism id, such as calendar_rebalance_effects.")
+    data_plan_parser.add_argument(
+        "--catalog-dir",
+        default="data/research_mechanisms",
+        help="Directory containing research_mechanism.v1 JSON files. Defaults to data/research_mechanisms.",
+    )
+    data_plan_parser.add_argument(
+        "--dataset-plan-dir",
+        default="data/research_datasets",
+        help="Directory containing research_dataset_plan.v1 JSON files. Defaults to data/research_datasets.",
+    )
+    data_plan_parser.set_defaults(func=mechanisms_data_plan_command)
 
 
 def register_sweep_commands(subparsers) -> None:

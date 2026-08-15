@@ -21,6 +21,9 @@ current workflow docs and the latest experiment handoffs.
   `data/research_mechanisms/README.md` describe market-structure raw material,
   forced actors, data requirements, capacity/friction claims, and falsification
   tests before an idea becomes an opportunity thesis.
+- Research dataset plans: `data/research_datasets/*.json` and
+  `data/research_datasets/README.md` describe minimum dataset targets for
+  turning mechanisms from `needs_data` into testable research.
 - Conceptual opportunity catalog: `data/opportunity_catalog/*.json` and
   `data/opportunity_catalog/README.md` describe market niches, forced actors,
   capacity/friction claims, and falsification tests before strategy selection.
