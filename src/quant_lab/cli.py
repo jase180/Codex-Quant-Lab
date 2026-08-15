@@ -29,7 +29,7 @@ from .cli_campaign import (
 )
 from .cli_health import doctor_command, smoke_test_command
 from .cli_ideas import ideas_suggest_command
-from .cli_mechanisms import mechanisms_list_command, mechanisms_show_command
+from .cli_mechanisms import mechanisms_data_needs_command, mechanisms_list_command, mechanisms_show_command
 from .cli_runs import list_runs_command, run_command
 from .costs import COST_PRESETS
 from .default_experiment import run_default_experiment, validate_default_experiment_args
@@ -1449,6 +1449,23 @@ def register_mechanism_commands(subparsers) -> None:
         help="Directory containing research_mechanism.v1 JSON files. Defaults to data/research_mechanisms.",
     )
     show_parser.set_defaults(func=mechanisms_show_command)
+
+    data_needs_parser = mechanisms_subparsers.add_parser(
+        "data-needs",
+        help="Show mechanism data requirements before deciding what to test next.",
+    )
+    data_needs_parser.add_argument(
+        "--catalog-dir",
+        default="data/research_mechanisms",
+        help="Directory containing research_mechanism.v1 JSON files. Defaults to data/research_mechanisms.",
+    )
+    data_needs_parser.add_argument(
+        "--engine-fit",
+        choices=["ready", "proxy_only", "needs_data", "blocked"],
+        default=None,
+        help="Only show mechanisms with this engine-fit status.",
+    )
+    data_needs_parser.set_defaults(func=mechanisms_data_needs_command)
 
 
 def register_sweep_commands(subparsers) -> None:

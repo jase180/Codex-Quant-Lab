@@ -21,12 +21,15 @@ with the research-mechanism library:
 ```bash
 quant-lab mechanisms list
 quant-lab mechanisms show --id etf_flow_pressure
+quant-lab mechanisms data-needs --engine-fit needs_data
 ```
 
 Mechanisms describe market structure, forced actors, data requirements,
 capacity/friction claims, observable predictions, and falsification tests. They
 are not executable strategies and they are not proven alpha. Use them to decide
 which market imperfection is worth turning into an opportunity thesis.
+The `data-needs` view is the practical next-step map: it shows which datasets
+would move a mechanism from interesting story to testable research.
 
 If you want help choosing the next research idea from the older conceptual
 strategy catalog, use:

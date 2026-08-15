@@ -10,6 +10,7 @@ from pathlib import Path
 from quant_lab.cli import main
 from quant_lab.research_mechanisms import (
     find_research_mechanism,
+    format_research_mechanism_data_needs,
     format_research_mechanism_detail,
     format_research_mechanism_list,
     load_research_mechanisms,
@@ -84,6 +85,17 @@ class ResearchMechanismsTest(unittest.TestCase):
         self.assertIn("Forced Actor", detail)
         self.assertIn("Falsification Tests", detail)
 
+    def test_format_research_mechanism_data_needs_can_filter_engine_fit(self) -> None:
+        mechanisms = load_research_mechanisms("data/research_mechanisms")
+
+        output = format_research_mechanism_data_needs(mechanisms, engine_fit="needs_data")
+
+        self.assertIn("Research Mechanism Data Needs", output)
+        self.assertIn("Filter: engine_fit = `needs_data`", output)
+        self.assertIn("Forced Index Flows", output)
+        self.assertIn("historical index membership changes", output)
+        self.assertNotIn("ETF Flow Pressure", output)
+
     def test_cli_mechanisms_list_prints_seed_catalog(self) -> None:
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
             exit_code = main(["mechanisms", "list"])
@@ -112,6 +124,18 @@ class ResearchMechanismsTest(unittest.TestCase):
 
         self.assertEqual(1, exit_code)
         self.assertIn("No research mechanism found", output)
+
+    def test_cli_mechanisms_data_needs_prints_filtered_requirements(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            exit_code = main(["mechanisms", "data-needs", "--engine-fit", "needs_data"])
+
+        output = stdout.getvalue()
+
+        self.assertEqual(0, exit_code)
+        self.assertIn("Research Mechanism Data Needs", output)
+        self.assertIn("Tax-Loss Selling Pressure", output)
+        self.assertIn("survivorship-aware equity universe", output)
+        self.assertNotIn("ETF Flow Pressure", output)
 
 
 if __name__ == "__main__":

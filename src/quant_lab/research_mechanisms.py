@@ -195,6 +195,52 @@ def format_research_mechanism_detail(mechanism: ResearchMechanism) -> str:
     )
 
 
+def format_research_mechanism_data_needs(
+    mechanisms: list[ResearchMechanism],
+    *,
+    engine_fit: str | None = None,
+) -> str:
+    """Format a data-readiness view for deciding what raw material to pursue."""
+
+    filtered = [
+        mechanism
+        for mechanism in mechanisms
+        if engine_fit is None or mechanism.engine_fit == engine_fit
+    ]
+    lines = [
+        "# Research Mechanism Data Needs",
+        "",
+        "Use this view to decide which datasets would unlock better opportunity theses.",
+        "",
+    ]
+    if engine_fit is not None:
+        lines.append(f"Filter: engine_fit = `{engine_fit}`")
+        lines.append("")
+    if not filtered:
+        lines.append("- none")
+        return "\n".join(lines)
+
+    for mechanism in filtered:
+        payload = mechanism.payload
+        lines.extend(
+            [
+                f"## {mechanism.title}",
+                "",
+                f"- ID: `{mechanism.mechanism_id}`",
+                f"- Engine fit: `{mechanism.engine_fit}`",
+                f"- Source type: `{mechanism.source_type}`",
+                "- Data required:",
+                *_indented_bullet_lines(payload["data_required"]),
+                "- Suggested opportunity theses:",
+                *_indented_bullet_lines(payload["suggested_opportunity_theses"]),
+                "- First falsification checks:",
+                *_indented_bullet_lines(payload["falsification_tests"][:2]),
+                "",
+            ]
+        )
+    return "\n".join(lines)
+
+
 def _require_non_empty_text(value: object, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{label} must be a non-empty string")
@@ -209,3 +255,7 @@ def _require_non_empty_text_list(value: object, label: str) -> list[str]:
 
 def _bullet_lines(items: list[Any]) -> list[str]:
     return [f"- {item}" for item in items] if items else ["- none"]
+
+
+def _indented_bullet_lines(items: list[Any]) -> list[str]:
+    return [f"  - {item}" for item in items] if items else ["  - none"]

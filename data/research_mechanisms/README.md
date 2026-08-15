@@ -16,6 +16,14 @@ future opportunity theses. A good mechanism answers:
 Use this folder to feed the lab better research material. Do not treat these
 records as proven alpha or as strategy JSON.
 
+Useful commands:
+
+```powershell
+.\.venv-win\Scripts\python.exe -m quant_lab.cli mechanisms list
+.\.venv-win\Scripts\python.exe -m quant_lab.cli mechanisms show --id forced_index_flows
+.\.venv-win\Scripts\python.exe -m quant_lab.cli mechanisms data-needs --engine-fit needs_data
+```
+
 Engine fit meanings:
 
 - `ready`: the current engine can test a decent version.

@@ -6,6 +6,7 @@ import argparse
 
 from .research_mechanisms import (
     find_research_mechanism,
+    format_research_mechanism_data_needs,
     format_research_mechanism_detail,
     format_research_mechanism_list,
     load_research_mechanisms,
@@ -25,4 +26,10 @@ def mechanisms_show_command(args: argparse.Namespace) -> int:
         print(f"No research mechanism found with id: {args.id}")
         return 1
     print(format_research_mechanism_detail(mechanism))
+    return 0
+
+
+def mechanisms_data_needs_command(args: argparse.Namespace) -> int:
+    mechanisms = load_research_mechanisms(args.catalog_dir)
+    print(format_research_mechanism_data_needs(mechanisms, engine_fit=args.engine_fit))
     return 0
