@@ -39,6 +39,7 @@ def event_calendar_study_command(args: argparse.Namespace) -> int:
         calendar_path=args.calendar,
         data_specs=args.data,
         out_dir=args.out,
+        eras=args.era,
         close_column=args.close_column,
         force=args.force,
     )

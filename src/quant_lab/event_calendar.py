@@ -191,6 +191,7 @@ def run_event_study(
     calendar_path: str | Path,
     data_specs: list[str],
     out_dir: str | Path,
+    eras: list[str] | None = None,
     close_column: str = "close",
     force: bool = False,
 ) -> EventStudyResult:
@@ -207,13 +208,17 @@ def run_event_study(
     symbol_frames = [_load_symbol_returns(spec, close_column=close_column) for spec in data_specs]
     if not symbol_frames:
         raise ValueError("At least one --data SYMBOL=CSV input is required")
+    parsed_eras = _parse_eras(eras)
 
     event_return_rows: list[dict[str, str]] = []
     summary_rows: list[dict[str, Any]] = []
-    for symbol, frame in symbol_frames:
-        symbol_event_rows = _event_returns_for_symbol(symbol, frame, calendar_rows)
-        event_return_rows.extend(symbol_event_rows)
-        summary_rows.extend(_summarize_symbol_event_rows(symbol, symbol_event_rows, frame))
+    for era in parsed_eras:
+        era_calendar_rows = _filter_calendar_rows_for_era(calendar_rows, era)
+        for symbol, frame in symbol_frames:
+            era_frame = _filter_frame_for_era(frame, era)
+            symbol_event_rows = _event_returns_for_symbol(symbol, era_frame, era_calendar_rows, era["name"])
+            event_return_rows.extend(symbol_event_rows)
+            summary_rows.extend(_summarize_symbol_event_rows(symbol, era["name"], symbol_event_rows, era_frame))
 
     event_returns_path = destination / "event_returns.csv"
     _write_dict_csv(event_returns_path, event_return_rows, fieldnames=EVENT_STUDY_RETURN_COLUMNS)
@@ -223,6 +228,7 @@ def run_event_study(
         "calendar_path": Path(calendar_path).as_posix(),
         "close_column": close_column,
         "symbols": [symbol for symbol, _frame in symbol_frames],
+        "eras": parsed_eras,
         "event_count": len(calendar_rows),
         "event_type_count": len({row["event_type"] for row in calendar_rows}),
         "method": {
@@ -412,6 +418,7 @@ def _read_event_calendar_rows(path: Path) -> list[dict[str, str]]:
 
 EVENT_STUDY_RETURN_COLUMNS = [
     "symbol",
+    "era",
     "event_id",
     "event_type",
     "event_date",
@@ -463,6 +470,56 @@ def _parse_data_spec(data_spec: str) -> tuple[str, str]:
     return symbol, path
 
 
+def _parse_eras(eras: list[str] | None) -> list[dict[str, str | None]]:
+    if not eras:
+        return [{"name": "full", "start": None, "end": None}]
+
+    parsed: list[dict[str, str | None]] = []
+    seen_names: set[str] = set()
+    for era in eras:
+        if "=" not in era or "," not in era:
+            raise ValueError("--era values must use NAME=START,END")
+        name, date_range = era.split("=", 1)
+        start, end = date_range.split(",", 1)
+        name = name.strip()
+        start = start.strip()
+        end = end.strip()
+        if not name or name in seen_names:
+            raise ValueError("--era names must be non-empty and unique")
+        start_date = _parse_date(start, "era start")
+        end_date = _parse_date(end, "era end")
+        if start_date > end_date:
+            raise ValueError(f"--era {name} start must be on or before end")
+        seen_names.add(name)
+        parsed.append({"name": name, "start": start, "end": end})
+    return parsed
+
+
+def _filter_calendar_rows_for_era(
+    calendar_rows: list[dict[str, str]],
+    era: dict[str, str | None],
+) -> list[dict[str, str]]:
+    if era["start"] is None and era["end"] is None:
+        return calendar_rows
+    start = _parse_date(str(era["start"]), "era start")
+    end = _parse_date(str(era["end"]), "era end")
+    filtered: list[dict[str, str]] = []
+    for row in calendar_rows:
+        window_start = _parse_date(row["window_start"], "window_start")
+        window_end = _parse_date(row["window_end"], "window_end")
+        if start <= window_start and window_end <= end:
+            filtered.append(row)
+    return filtered
+
+
+def _filter_frame_for_era(frame: pd.DataFrame, era: dict[str, str | None]) -> pd.DataFrame:
+    if era["start"] is None and era["end"] is None:
+        return frame
+    start = _parse_date(str(era["start"]), "era start")
+    end = _parse_date(str(era["end"]), "era end")
+    return frame[(frame["date"] >= start) & (frame["date"] <= end)].copy()
+
+
 def _find_column(columns: Iterable[object], requested_name: str) -> str | None:
     requested = requested_name.lower()
     for column in columns:
@@ -475,6 +532,7 @@ def _event_returns_for_symbol(
     symbol: str,
     frame: pd.DataFrame,
     calendar_rows: list[dict[str, str]],
+    era_name: str,
 ) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     indexed = frame.set_index("date", drop=False)
@@ -493,6 +551,7 @@ def _event_returns_for_symbol(
         rows.append(
             {
                 "symbol": symbol,
+                "era": era_name,
                 "event_id": str(event["event_id"]),
                 "event_type": str(event["event_type"]),
                 "event_date": event_date.isoformat(),
@@ -510,6 +569,7 @@ def _event_returns_for_symbol(
 
 def _summarize_symbol_event_rows(
     symbol: str,
+    era_name: str,
     event_rows: list[dict[str, str]],
     frame: pd.DataFrame,
 ) -> list[dict[str, Any]]:
@@ -543,6 +603,7 @@ def _summarize_symbol_event_rows(
         summary_rows.append(
             {
                 "symbol": symbol,
+                "era": era_name,
                 "event_type": event_view,
                 "event_count": len(typed),
                 "mean_window_return": _mean(window_returns),
@@ -627,6 +688,7 @@ def _render_event_study_markdown(payload: dict[str, Any]) -> str:
         "",
         f"- Calendar: `{payload['calendar_path']}`",
         f"- Symbols: {', '.join(payload['symbols'])}",
+        f"- Eras: {', '.join(era['name'] for era in payload['eras'])}",
         f"- Events in calendar: {payload['event_count']}",
         "",
         "## Method",
@@ -637,13 +699,14 @@ def _render_event_study_markdown(payload: dict[str, Any]) -> str:
         "",
         "## Summary",
         "",
-        "| Symbol | Event View | Events | Mean Window Return | Median Window Return | Positive Rate | Mean Pre | Mean Event Day | Mean Post | Non-Event Mean Daily | Interpretation |",
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Symbol | Era | Event View | Events | Mean Window Return | Median Window Return | Positive Rate | Mean Pre | Mean Event Day | Mean Post | Non-Event Mean Daily | Interpretation |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in payload["summary"]:
         lines.append(
-            "| {symbol} | {event_type} | {event_count} | {mean_window_return} | {median_window_return} | {positive_window_rate} | {mean_pre_event_return} | {mean_event_day_return} | {mean_post_event_return} | {non_event_mean_daily_return} | {interpretation} |".format(
+            "| {symbol} | {era} | {event_type} | {event_count} | {mean_window_return} | {median_window_return} | {positive_window_rate} | {mean_pre_event_return} | {mean_event_day_return} | {mean_post_event_return} | {non_event_mean_daily_return} | {interpretation} |".format(
                 symbol=row["symbol"],
+                era=row["era"],
                 event_type=row["event_type"],
                 event_count=row["event_count"],
                 mean_window_return=_format_percent(row["mean_window_return"]),

@@ -49,5 +49,5 @@
     "The first generated file only includes month-end and quarter-end proxy windows, not options-expiration, index-rebalance, or fund-flow events.",
     "The generated file uses SPY trading dates as a practical daily calendar proxy rather than a dedicated exchange-calendar package."
   ],
-  "next_action": "Run a cross-symbol and era robustness pass for the no-trade event-study summary before creating any executable calendar strategy."
+  "next_action": "Draft one prespecified regular-month-end timing hypothesis before creating any executable calendar strategy; do not sweep many timing variants."
 }

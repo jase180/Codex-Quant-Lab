@@ -603,6 +603,11 @@ def register_event_calendar_commands(subparsers) -> None:
     )
     study_parser.add_argument("--out", required=True, help="Output directory for event-study artifacts.")
     study_parser.add_argument(
+        "--era",
+        action="append",
+        help="Optional repeatable NAME=START,END era window. Events must fit fully inside the era.",
+    )
+    study_parser.add_argument(
         "--close-column",
         default="close",
         help="Close column to use for close-to-close returns. Defaults to close.",

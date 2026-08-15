@@ -118,6 +118,7 @@ class EventCalendarTest(unittest.TestCase):
                 calendar_path=calendar_path,
                 data_specs=[f"SPY={reference_data}"],
                 out_dir=temp_path / "study",
+                eras=["early=2020-01-01,2020-03-31", "late=2020-04-01,2020-06-30"],
             )
 
             self.assertTrue(result.markdown_path.exists())
@@ -135,6 +136,7 @@ class EventCalendarTest(unittest.TestCase):
                 "month_end_excluding_quarter_end",
                 {row["event_type"] for row in payload["summary"]},
             )
+            self.assertEqual({"early", "late"}, {row["era"] for row in payload["summary"]})
 
     def test_cli_event_calendar_study_writes_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -162,6 +164,8 @@ class EventCalendarTest(unittest.TestCase):
                         f"SPY={reference_data}",
                         "--out",
                         str(temp_path / "study"),
+                        "--era",
+                        "first_half=2020-01-01,2020-06-30",
                     ]
                 )
 

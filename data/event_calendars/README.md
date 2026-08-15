@@ -36,6 +36,8 @@ Run the first no-trade event study with:
 ```
 
 This command joins returns for inspection only. It does not simulate a strategy.
+Use repeatable `--era NAME=START,END` arguments when you want the same
+diagnostic split across time periods.
 
 Regenerate it with:
 
