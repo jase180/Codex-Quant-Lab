@@ -14,6 +14,10 @@ from .cli_data import (
     new_strategy_command,
     show_data_source_command,
 )
+from .cli_event_calendar import (
+    event_calendar_generate_command,
+    event_calendar_inspect_command,
+)
 from .cli_agent import (
     agent_context_command,
     agent_cycle_command,
@@ -108,6 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
     register_portfolio_commands(subparsers)
     register_portfolio_batch_commands(subparsers)
     register_data_commands(subparsers)
+    register_event_calendar_commands(subparsers)
     register_health_commands(subparsers)
     register_run_inspection_commands(subparsers)
     register_experiment_commands(subparsers)
@@ -536,6 +541,53 @@ def register_data_commands(subparsers) -> None:
     )
     new_strategy_parser.add_argument("--force", action="store_true", help="Overwrite --out if it already exists.")
     new_strategy_parser.set_defaults(func=new_strategy_command)
+
+
+def register_event_calendar_commands(subparsers) -> None:
+    event_calendar_parser = subparsers.add_parser(
+        "event-calendar",
+        help="Generate and inspect research event calendars.",
+    )
+    event_calendar_subparsers = event_calendar_parser.add_subparsers(
+        dest="event_calendar_command",
+        required=True,
+    )
+
+    generate_parser = event_calendar_subparsers.add_parser(
+        "generate",
+        help="Generate month-end and quarter-end events from trading dates.",
+    )
+    generate_parser.add_argument(
+        "--reference-data",
+        required=True,
+        help="Daily OHLCV CSV whose date column defines the trading calendar.",
+    )
+    generate_parser.add_argument("--out", required=True, help="Output event-calendar CSV path.")
+    generate_parser.add_argument("--start", required=True, help="Start date, YYYY-MM-DD.")
+    generate_parser.add_argument("--end", required=True, help="End date, YYYY-MM-DD.")
+    generate_parser.add_argument(
+        "--window-trading-days",
+        type=int,
+        default=5,
+        help="Trading days before and after each event_date included in the event window.",
+    )
+    generate_parser.add_argument(
+        "--created-at-utc",
+        help="Optional fixed UTC timestamp for reproducible generated files.",
+    )
+    generate_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing event-calendar CSV and provenance sidecar.",
+    )
+    generate_parser.set_defaults(func=event_calendar_generate_command)
+
+    inspect_parser = event_calendar_subparsers.add_parser(
+        "inspect",
+        help="Validate and summarize a generated event-calendar CSV.",
+    )
+    inspect_parser.add_argument("--calendar", required=True, help="Event-calendar CSV path.")
+    inspect_parser.set_defaults(func=event_calendar_inspect_command)
 
 
 def register_health_commands(subparsers) -> None:

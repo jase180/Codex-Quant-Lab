@@ -11,3 +11,6 @@ Status meanings:
 - `planned`: the dataset is specified but not yet built.
 - `available`: the dataset exists locally and has passed the listed checks.
 - `blocked`: the dataset cannot be built with current tools or accessible data.
+
+Generated event-calendar files live in `data/event_calendars/`. Inspect them
+before any backtest or return join with `quant-lab event-calendar inspect`.

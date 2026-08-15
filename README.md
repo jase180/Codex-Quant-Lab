@@ -34,6 +34,18 @@ would move a mechanism from interesting story to testable research.
 The `data-plan` view turns one mechanism into a concrete dataset target without
 claiming the data exists yet.
 
+The first concrete mechanism dataset is a generated calendar/rebalance event
+calendar. It labels month-end and quarter-end trading-day windows before any
+return data is joined:
+
+```bash
+quant-lab event-calendar inspect \
+  --calendar data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv
+```
+
+That command should be read before any calendar-effect backtest. The current
+file is raw research material, not an executable strategy.
+
 If you want help choosing the next research idea from the older conceptual
 strategy catalog, use:
 

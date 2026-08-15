@@ -1,0 +1,31 @@
+{
+  "counts_by_type": {
+    "month_end": 131,
+    "quarter_end": 43
+  },
+  "created_at_utc": "2026-08-14T00:00:00Z",
+  "csv_path": "data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv",
+  "dataset_id": "calendar_rebalance_daily_proxy",
+  "end": "2025-12-31",
+  "event_calendar_schema_version": "event_calendar.v1",
+  "event_count": 174,
+  "event_types": [
+    "month_end",
+    "quarter_end"
+  ],
+  "generated_without_return_data": true,
+  "mechanism_id": "calendar_rebalance_effects",
+  "reference_file_fingerprint": {
+    "file_sha256": "75779a7822cbc90b86504293abda79f00c8f656df40b86c58c69fbf9d8d3dc00",
+    "file_size_bytes": 261562,
+    "modified_at_utc": "2026-08-01T19:42:49.927136Z"
+  },
+  "reference_trading_calendar_path": "data/cache/SPY_2015-01-01_2025-12-31.csv",
+  "schema_version": "event_calendar_provenance.v1",
+  "start": "2015-01-01",
+  "warnings": [
+    "Skipped month_end_2025_12: full +/-5 trading-day window is outside the date range",
+    "Skipped quarter_end_2025_q4: full +/-5 trading-day window is outside the date range"
+  ],
+  "window_trading_days": 5
+}

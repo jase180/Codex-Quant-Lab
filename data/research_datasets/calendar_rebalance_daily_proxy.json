@@ -3,7 +3,7 @@
   "dataset_id": "calendar_rebalance_daily_proxy",
   "mechanism_id": "calendar_rebalance_effects",
   "title": "Calendar/Rebalance Daily Proxy",
-  "status": "planned",
+  "status": "available",
   "purpose": "Create a small auditable daily event calendar for month-end, quarter-end, and options-expiration windows before testing calendar or rebalance pressure hypotheses.",
   "data_grain": "daily event calendar joined to daily OHLCV returns",
   "required_fields": [
@@ -46,7 +46,8 @@
     "Daily data may miss intraday effects around close, open, or expiration settlement.",
     "Simple month-end and quarter-end labels are a crude proxy for actual institutional flow.",
     "Options-expiration mechanics may require intraday data or options data before becoming economically meaningful.",
-    "This plan does not yet provide event rows or source verification."
+    "The first generated file only includes month-end and quarter-end proxy windows, not options-expiration, index-rebalance, or fund-flow events.",
+    "The generated file uses SPY trading dates as a practical daily calendar proxy rather than a dedicated exchange-calendar package."
   ],
-  "next_action": "Build a small generated calendar file for 2015-2025 with month-end and quarter-end trading-day windows, then write an event-calendar inspection command before backtesting."
+  "next_action": "Inspect the generated event rows, then build a no-trade event-study summary before creating any executable calendar strategy."
 }

@@ -46,6 +46,9 @@ It owns:
   capture market-structure raw material before it becomes an opportunity thesis.
 - `research_datasets.py`: validates `research_dataset_plan.v1` records that
   define minimum dataset targets for mechanism-driven research.
+- `event_calendar.py`: generates and inspects return-free event-calendar CSVs,
+  starting with month-end and quarter-end trading-day windows for
+  calendar/rebalance research.
 - `strategy_ideas.py`: loads `data/strategy_catalog/*.json`, reads prior
   `experiment_conclusion.json` files, optionally attaches a matching
   opportunity thesis, and drafts one non-executable next idea.
@@ -163,6 +166,14 @@ market behavior, forced actors, data needs, capacity/friction claims, and
 falsification tests. Most seed mechanisms are `needs_data` or `proxy_only`; that
 is expected and prevents the lab from pretending daily ETF indicators can test
 every market-structure idea honestly.
+
+Inspect generated event calendars before turning calendar/rebalance mechanisms
+into event studies or backtests:
+
+```bash
+quant-lab event-calendar inspect \
+  --calendar data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv
+```
 
 Fetch data:
 

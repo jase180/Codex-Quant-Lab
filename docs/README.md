@@ -24,6 +24,10 @@ current workflow docs and the latest experiment handoffs.
 - Research dataset plans: `data/research_datasets/*.json` and
   `data/research_datasets/README.md` describe minimum dataset targets for
   turning mechanisms from `needs_data` into testable research.
+- Event calendars: `data/event_calendars/*.csv` and
+  `data/event_calendars/README.md` store generated event windows, currently
+  month-end and quarter-end daily windows for the calendar/rebalance mechanism.
+  Inspect them with `quant-lab event-calendar inspect` before joining returns.
 - Conceptual opportunity catalog: `data/opportunity_catalog/*.json` and
   `data/opportunity_catalog/README.md` describe market niches, forced actors,
   capacity/friction claims, and falsification tests before strategy selection.

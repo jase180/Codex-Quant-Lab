@@ -51,7 +51,23 @@ data/cache/SPY_2015-01-01_2025-12-31.csv
 Market data is research input, not ground truth. Provider adjustments, missing
 sessions, outages, and corporate actions can change conclusions.
 
-## 3. Create The Strategy
+## 3. Optional: Inspect Mechanism Raw Material
+
+If the research question starts from a market mechanism instead of a ready
+strategy, inspect the raw-material dataset before creating strategy JSON.
+
+For the calendar/rebalance mechanism, the current generated event calendar
+labels month-end and quarter-end trading-day windows without looking at returns:
+
+```bash
+quant-lab event-calendar inspect \
+  --calendar data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv
+```
+
+This is not a backtest. It answers a narrower question first: are the event rows
+well-formed, sourced, and generated without return data?
+
+## 4. Create The Strategy
 
 Generate the basic SPY SMA long/cash strategy directly:
 
@@ -69,7 +85,7 @@ Read the generated JSON before running it. The strategy should have one
 `sma_200` indicator, enter when close is above that SMA, and exit when close is
 below it.
 
-## 4. Run The Default Experiment Workflow
+## 5. Run The Default Experiment Workflow
 
 For normal one-strategy research, use `experiment run-default` first. It is the
 front door.
