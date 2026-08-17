@@ -15,6 +15,7 @@ TEMPLATE_NAMES = (
     "ema-trend-follow",
     "rsi-reversion",
     "breakout-trend",
+    "calendar-month-end",
 )
 
 
@@ -46,6 +47,9 @@ def build_strategy_template(
     elif template_name == "breakout-trend":
         _reject_unused_length(template_name, length)
         payload = _breakout_trend_template(symbol)
+    elif template_name == "calendar-month-end":
+        _reject_unused_length(template_name, length)
+        payload = _calendar_month_end_template(symbol)
     else:
         raise ValueError(f"Unknown strategy template: {template_name}")
 
@@ -241,6 +245,44 @@ def _breakout_trend_template(symbol: str) -> dict[str, Any]:
             "when": "all",
             "conditions": [
                 {"left": {"price": "close"}, "operator": "lt", "right": {"indicator": "low_10"}},
+            ],
+        },
+    }
+
+
+def _calendar_month_end_template(symbol: str) -> dict[str, Any]:
+    return {
+        "schema_version": "v1",
+        "strategy_id": "calendar_month_end",
+        "name": "Regular Month-End Event Window",
+        "description": (
+            "Enter when the bar date is inside a predeclared month-end event window "
+            "and exit after leaving that window. Quarter-end month-ends are excluded."
+        ),
+        "strategy_type": "rule_based",
+        "position_mode": "long_only",
+        "market": {"symbol": symbol.upper(), "timeframe": "1d"},
+        "indicators": [
+            {
+                "id": "regular_month_end_window",
+                "kind": "event_window",
+                "inputs": {
+                    "calendar_path": "data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv",
+                    "include_event_types": ["month_end"],
+                    "exclude_event_types": ["quarter_end"],
+                },
+            }
+        ],
+        "entry": {
+            "when": "all",
+            "conditions": [
+                {"left": {"indicator": "regular_month_end_window"}, "operator": "eq", "right": {"value": 1}},
+            ],
+        },
+        "exit": {
+            "when": "all",
+            "conditions": [
+                {"left": {"indicator": "regular_month_end_window"}, "operator": "eq", "right": {"value": 0}},
             ],
         },
     }

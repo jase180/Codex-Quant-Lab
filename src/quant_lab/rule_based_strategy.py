@@ -9,6 +9,7 @@ from typing import Iterable, Literal
 from backtester_core.data import MarketBar
 from backtester_core.strategy import Strategy
 
+from .event_calendar import load_event_windows
 from .strategy_schema import Condition, ConditionSet, RiskControlSpec, StrategySpec, ValueRef
 
 
@@ -39,7 +40,7 @@ class IndicatorState:
         self._rsi_avg_loss: float | None = None
         self._rsi_changes: list[float] = []
 
-    def update(self, close: float) -> float | None:
+    def update(self, close: float, timestamp=None) -> float | None:
         self.previous_value = self.current_value
         if self.kind == "rolling_high":
             self.current_value = self._update_prior_rolling_high()
@@ -162,6 +163,33 @@ class VolatilityTargetControl:
         return self.current_allocation
 
 
+class EventWindowIndicatorState:
+    """Return 1.0 when the bar date is inside a predeclared event window."""
+
+    def __init__(
+        self,
+        *,
+        calendar_path: str,
+        include_event_types: list[str],
+        exclude_event_types: list[str] | None = None,
+    ) -> None:
+        self.windows = load_event_windows(
+            calendar_path,
+            include_event_types=include_event_types,
+            exclude_event_types=exclude_event_types,
+        )
+        self.current_value: float | None = None
+        self.previous_value: float | None = None
+
+    def update(self, close: float, timestamp=None) -> float:
+        self.previous_value = self.current_value
+        if timestamp is None:
+            raise ValueError("event_window indicators require bar timestamps")
+        current_date = timestamp.date()
+        self.current_value = 1.0 if any(window.contains(current_date) for window in self.windows) else 0.0
+        return self.current_value
+
+
 class RuleBasedStrategy(Strategy):
     """Runs a validated v1 rule-based strategy spec against daily bars."""
 
@@ -189,10 +217,7 @@ class RuleBasedStrategy(Strategy):
         self.sizing = sizing
         self.allocation = float(allocation)
         self._indicator_states = {
-            indicator.id: IndicatorState(
-                kind=indicator.kind,
-                length=int(indicator.inputs["length"]),
-            )
+            indicator.id: _build_indicator_state(indicator.kind, indicator.inputs)
             for indicator in spec.indicators
         }
         self._risk_controls = [_build_risk_control(control) for control in spec.risk_controls]
@@ -200,7 +225,7 @@ class RuleBasedStrategy(Strategy):
 
     def on_bar(self, bar: MarketBar):
         indicators = {
-            indicator_id: state.update(bar.close)
+            indicator_id: state.update(bar.close, timestamp=bar.timestamp)
             for indicator_id, state in self._indicator_states.items()
         }
         previous_indicators = {
@@ -343,6 +368,16 @@ def _build_risk_control(control: RiskControlSpec) -> VolatilityTargetControl:
             max_allocation=float(control.params["max_allocation"]),
         )
     raise ValueError(f"unsupported risk control kind: {control.kind}")
+
+
+def _build_indicator_state(kind: str, inputs: dict) -> IndicatorState | EventWindowIndicatorState:
+    if kind == "event_window":
+        return EventWindowIndicatorState(
+            calendar_path=str(inputs["calendar_path"]),
+            include_event_types=list(inputs["include_event_types"]),
+            exclude_event_types=list(inputs.get("exclude_event_types", [])),
+        )
+    return IndicatorState(kind=kind, length=int(inputs["length"]))
 
 
 def _sample_standard_deviation(values: list[float]) -> float:

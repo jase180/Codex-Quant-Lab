@@ -71,6 +71,18 @@ class EventStudyResult:
     event_type_count: int
 
 
+@dataclass(frozen=True)
+class EventWindow:
+    event_id: str
+    event_type: str
+    event_date: date
+    window_start: date
+    window_end: date
+
+    def contains(self, value: date) -> bool:
+        return self.window_start <= value <= self.window_end
+
+
 def generate_calendar_rebalance_event_calendar(
     *,
     reference_data_path: str | Path,
@@ -184,6 +196,46 @@ def inspect_event_calendar(path: str | Path) -> EventCalendarInspection:
         invalid_rows=invalid_rows,
         warnings=warnings,
     )
+
+
+def load_event_windows(
+    path: str | Path,
+    *,
+    include_event_types: list[str],
+    exclude_event_types: list[str] | None = None,
+) -> list[EventWindow]:
+    if not include_event_types:
+        raise ValueError("include_event_types must contain at least one event type")
+
+    inspection = inspect_event_calendar(path)
+    if not inspection.is_valid:
+        raise ValueError("Event calendar is invalid; run event-calendar inspect first")
+
+    include = set(include_event_types)
+    exclude = set(exclude_event_types or [])
+    rows = _read_event_calendar_rows(Path(path))
+    excluded_event_dates = {
+        row["event_date"]
+        for row in rows
+        if row["event_type"] in exclude
+    }
+
+    windows: list[EventWindow] = []
+    for row in rows:
+        if row["event_type"] not in include:
+            continue
+        if row["event_date"] in excluded_event_dates:
+            continue
+        windows.append(
+            EventWindow(
+                event_id=row["event_id"],
+                event_type=row["event_type"],
+                event_date=_parse_date(row["event_date"], "event_date"),
+                window_start=_parse_date(row["window_start"], "window_start"),
+                window_end=_parse_date(row["window_end"], "window_end"),
+            )
+        )
+    return windows
 
 
 def run_event_study(

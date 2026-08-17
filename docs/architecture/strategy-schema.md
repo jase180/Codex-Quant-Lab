@@ -17,6 +17,9 @@ These rules are part of the v1 contract, not implementation details:
 - Signals are evaluated on the daily close.
 - Fills occur on the next trading day's open.
 - Indicator inputs are close-only in v1, so every indicator and direct price comparison is derived from the same end-of-day signal snapshot.
+- Event-window indicators use predeclared event calendars and are evaluated
+  from the bar date at the same signal point. They do not inspect returns when
+  deciding whether a date is inside a window.
 
 This keeps the schema deterministic for backtesting and simple enough for future LLM generation.
 
@@ -58,11 +61,32 @@ Supported v1 indicator kinds:
 - `rsi`
 - `rolling_high`
 - `rolling_low`
+- `event_window`
 
 `rolling_high` and `rolling_low` use the prior `length` closes, excluding the
 current close. That makes breakout rules like `close > high_20` possible
 without lookahead: the current close is compared with a level known before the
 current close is added to the rolling window.
+
+`event_window` is date-based rather than price-based:
+
+```json
+{
+  "id": "regular_month_end_window",
+  "kind": "event_window",
+  "inputs": {
+    "calendar_path": "data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv",
+    "include_event_types": ["month_end"],
+    "exclude_event_types": ["quarter_end"]
+  }
+}
+```
+
+It returns `1.0` when the bar date is inside an included predeclared event
+window and `0.0` otherwise. Excluded event types remove included rows with the
+same `event_date`, which is how regular month-end can exclude quarter-end
+overlap. Signals still fill at the next open, so the first possible entry is
+the next open after an in-window close.
 
 ### Conditions
 
@@ -135,6 +159,7 @@ Validation should fail fast and clearly for:
 - malformed value refs that include multiple keys or non-numeric constants
 - direct price refs other than `close`
 - indicator inputs with non-`close` sources
+- event-window indicators without a calendar path or included event types
 - unknown risk control kinds
 - volatility-target controls with non-positive lookbacks, non-positive target
   volatility, invalid allocation bounds, or `min_allocation > max_allocation`

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -275,6 +276,67 @@ class RuleBasedStrategyTests(unittest.TestCase):
         self.assertEqual(result.trades.iloc[0]["side"], "buy")
         self.assertAlmostEqual(result.trades.iloc[0]["quantity"], 2.5)
         self.assertAlmostEqual(result.trades.iloc[0]["cash_after"], 750.0)
+
+    def test_event_window_indicator_enters_and_exits_on_next_open(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            calendar_path = Path(temp_dir) / "events.csv"
+            _write_event_calendar(calendar_path)
+            spec = parse_strategy(
+                _strategy_payload(
+                    indicators=[
+                        {
+                            "id": "regular_month_end_window",
+                            "kind": "event_window",
+                            "inputs": {
+                                "calendar_path": str(calendar_path),
+                                "include_event_types": ["month_end"],
+                                "exclude_event_types": ["quarter_end"],
+                            },
+                        }
+                    ],
+                    entry_conditions=[
+                        {"left": {"indicator": "regular_month_end_window"}, "operator": "eq", "right": {"value": 1}},
+                    ],
+                    exit_conditions=[
+                        {"left": {"indicator": "regular_month_end_window"}, "operator": "eq", "right": {"value": 0}},
+                    ],
+                )
+            )
+            data = pd.DataFrame(
+                [
+                    {"date": "2026-01-27", "open": 10, "high": 10, "low": 10, "close": 10, "volume": 100},
+                    {"date": "2026-01-28", "open": 11, "high": 11, "low": 11, "close": 11, "volume": 100},
+                    {"date": "2026-01-29", "open": 12, "high": 12, "low": 12, "close": 12, "volume": 100},
+                    {"date": "2026-01-30", "open": 13, "high": 13, "low": 13, "close": 13, "volume": 100},
+                    {"date": "2026-02-02", "open": 14, "high": 14, "low": 14, "close": 14, "volume": 100},
+                    {"date": "2026-02-03", "open": 15, "high": 15, "low": 15, "close": 15, "volume": 100},
+                    {"date": "2026-02-04", "open": 16, "high": 16, "low": 16, "close": 16, "volume": 100},
+                    {"date": "2026-02-05", "open": 17, "high": 17, "low": 17, "close": 17, "volume": 100},
+                    {"date": "2026-02-06", "open": 18, "high": 18, "low": 18, "close": 18, "volume": 100},
+                ]
+            )
+
+            result = BacktestEngine(initial_cash=1_000).run(
+                data,
+                build_rule_based_strategy(spec, order_quantity=2),
+            )
+
+        self.assertEqual(list(result.trades["side"]), ["buy", "sell"])
+        self.assertEqual(result.trades.index[0], pd.Timestamp("2026-01-29"))
+        self.assertEqual(result.trades.index[1], pd.Timestamp("2026-02-06"))
+
+def _write_event_calendar(path: Path) -> None:
+    path.write_text(
+        "\n".join(
+            [
+                "event_id,event_type,event_date,window_start,window_end,source_name,source_url_or_note,generated_without_return_data,created_at_utc",
+                "month_end_2026_01,month_end,2026-01-30,2026-01-28,2026-02-04,test,test,true,2026-08-17T00:00:00Z",
+                "quarter_end_2026_q1,quarter_end,2026-03-31,2026-03-25,2026-04-07,test,test,true,2026-08-17T00:00:00Z",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":

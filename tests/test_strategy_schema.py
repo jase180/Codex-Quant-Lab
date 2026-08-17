@@ -44,6 +44,47 @@ class StrategySchemaTests(unittest.TestCase):
         self.assertEqual(strategy.indicators[0].kind, "rolling_high")
         self.assertEqual(strategy.indicators[1].kind, "rolling_low")
 
+    def test_parse_valid_event_window_indicator(self) -> None:
+        payload = _minimal_strategy_payload()
+        payload["indicators"] = [
+            {
+                "id": "regular_month_end_window",
+                "kind": "event_window",
+                "inputs": {
+                    "calendar_path": "data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv",
+                    "include_event_types": ["month_end"],
+                    "exclude_event_types": ["quarter_end"],
+                },
+            }
+        ]
+        payload["entry"]["conditions"] = [
+            {"left": {"indicator": "regular_month_end_window"}, "operator": "eq", "right": {"value": 1}},
+        ]
+        payload["exit"]["conditions"] = [
+            {"left": {"indicator": "regular_month_end_window"}, "operator": "eq", "right": {"value": 0}},
+        ]
+
+        strategy = parse_strategy(payload)
+
+        self.assertEqual("event_window", strategy.indicators[0].kind)
+        self.assertEqual(["month_end"], strategy.indicators[0].inputs["include_event_types"])
+
+    def test_event_window_indicator_requires_include_event_types(self) -> None:
+        payload = _minimal_strategy_payload()
+        payload["indicators"] = [
+            {
+                "id": "regular_month_end_window",
+                "kind": "event_window",
+                "inputs": {
+                    "calendar_path": "events.csv",
+                    "include_event_types": [],
+                },
+            }
+        ]
+
+        with self.assertRaisesRegex(StrategySchemaError, "include_event_types"):
+            parse_strategy(payload)
+
     def test_parse_valid_vol_target_strategy_fixture(self) -> None:
         strategy = load_strategy(FIXTURES_DIR / "sma_long_cash_vol_target.json")
 

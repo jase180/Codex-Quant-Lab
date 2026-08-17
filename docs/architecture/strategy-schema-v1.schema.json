@@ -60,21 +60,51 @@
             "pattern": "^[a-z][a-z0-9_]*$"
           },
           "kind": {
-            "enum": ["sma", "ema", "rsi", "rolling_high", "rolling_low"]
+            "enum": ["sma", "ema", "rsi", "rolling_high", "rolling_low", "event_window"]
           },
           "inputs": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["source", "length"],
-            "properties": {
-              "source": {
-                "const": "close"
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["source", "length"],
+                "properties": {
+                  "source": {
+                    "const": "close"
+                  },
+                  "length": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
               },
-              "length": {
-                "type": "integer",
-                "minimum": 1
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["calendar_path", "include_event_types"],
+                "properties": {
+                  "calendar_path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "include_event_types": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "exclude_event_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
               }
-            }
+            ]
           }
         }
       }

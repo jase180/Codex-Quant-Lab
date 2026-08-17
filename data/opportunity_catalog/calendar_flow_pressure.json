@@ -1,0 +1,68 @@
+{
+  "schema_version": "opportunity_thesis.v1",
+  "thesis_id": "calendar_flow_pressure",
+  "mechanism_id": "calendar_rebalance_effects",
+  "title": "Calendar Flow Pressure",
+  "market_niche": "Regular month-end windows in liquid ETFs where scheduled rebalancing, contribution flows, and reporting behavior may create short-lived return pressure.",
+  "universe": ["liquid ETFs", "broad equity ETFs", "sector ETFs", "defensive ETFs"],
+  "phenomenon": "Returns may differ around predeclared calendar windows because some participants trade for calendar, rebalance, allocation, or reporting reasons rather than fresh expected-return information.",
+  "counterparty_or_forced_actor": "Asset allocators, retirement flows, target-date funds, model portfolios, fund managers, and benchmark-aware allocators with month-end or quarter-end process constraints.",
+  "why_edge_might_exist": "Calendar-driven flow can create predictable temporary pressure when capital is allocated or repositioned on a schedule.",
+  "why_large_funds_might_ignore_it": "The effect may be small, crowded, timing-sensitive, and hard to scale after spreads, market impact, and operational constraints.",
+  "institutional_constraint_evidence": {
+    "expected_daily_dollar_volume": "high for broad ETFs but lower for sector and niche ETFs",
+    "estimated_position_size": "unknown",
+    "estimated_strategy_capacity": "unknown until turnover, spread, and market-impact assumptions are measured",
+    "number_of_opportunities_per_year": "roughly eight regular month-end windows per year after excluding quarter-end month-ends",
+    "estimated_absolute_pnl_at_capacity": "unknown",
+    "evidence_quality": "estimated"
+  },
+  "expected_capacity": "Likely moderate in SPY and lower in less-liquid ETFs; edge should be assumed small and fragile until tested with costs.",
+  "expected_holding_period": "Days around month-end.",
+  "execution_constraints": [
+    "predeclared event calendar",
+    "no date-window tuning after seeing returns",
+    "next-open execution",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "persistence_mechanism": "Month-end allocation, reporting, and rebalance processes may recur because they are tied to investor and institutional operating calendars.",
+  "crowding_risk": "High in broad ETFs because calendar effects are widely known and easy to monitor.",
+  "edge_decay_trigger": "The thesis should weaken if the effect concentrates in one era, fails after realistic costs, or depends on shifting the entry/exit window after seeing results.",
+  "observable_prediction": "Regular month-end windows excluding quarter-end overlap should show stronger drawdown-adjusted behavior than non-event exposure for at least some liquid ETFs.",
+  "falsification_tests": [
+    "Reject if the prespecified strategy fails costs, train/test, or date sensitivity.",
+    "Reject if performance depends on broad timing sweeps after seeing results.",
+    "Weaken if event-day, pre-event, and post-event behavior disagree across eras without a clear mechanism.",
+    "Weaken if results are attractive only versus cash but poor versus buy-and-hold for the stated objective."
+  ],
+  "required_project_capabilities": [
+    "event calendar ingestion",
+    "event-window indicator",
+    "next-open market fills",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "compatible_strategy_families": ["calendar_seasonality"],
+  "suggested_validation": [
+    "Run one prespecified regular-month-end timing strategy before any timing sweep.",
+    "Compare against buy-and-hold and cash separately.",
+    "Use date sensitivity across 2015-2018, 2019-2021, and 2022-2025.",
+    "Treat a valid negative result as evidence against the exact trade timing, not a repo failure."
+  ],
+  "references": [
+    "Prior tracked no-trade event study in docs/experiments/calendar-rebalance-event-study.md",
+    "Research mechanism calendar_rebalance_effects"
+  ],
+  "engine_fit": "ready",
+  "rubric": {
+    "structural_plausibility": "weak",
+    "small_capital_advantage": "weak",
+    "falsifiability": "pass",
+    "deployability": "pass",
+    "engine_fit": "ready"
+  },
+  "decision": "test_now"
+}

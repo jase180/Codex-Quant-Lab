@@ -101,10 +101,13 @@ runtime behavior: indicator updates, condition checks, and order generation.
 - RSI
 - rolling_high
 - rolling_low
+- event_window
 
-All indicators are close-based in v1. `rolling_high` and `rolling_low` use the
+Most indicators are close-based in v1. `rolling_high` and `rolling_low` use the
 prior `length` closes, excluding the current close, so breakout rules can compare
-the current close against a level that was already known.
+the current close against a level that was already known. `event_window` is
+date-based and returns `1.0` when the bar date is inside a predeclared event
+calendar window, otherwise `0.0`.
 
 ## Supported Conditions
 
@@ -152,7 +155,7 @@ used by backtests. It refuses to overwrite an existing file unless `--force` is
 provided.
 
 Built-in templates are `sma-crossover`, `sma-long-cash`, `ema-trend-follow`,
-`rsi-reversion`, and `breakout-trend`.
+`rsi-reversion`, `breakout-trend`, and `calendar-month-end`.
 
 Inspect research mechanisms before turning outside ideas into strategy JSON:
 

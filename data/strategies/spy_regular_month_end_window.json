@@ -1,0 +1,55 @@
+{
+  "description": "Enter when the bar date is inside a predeclared month-end event window and exit after leaving that window. Quarter-end month-ends are excluded.",
+  "entry": {
+    "conditions": [
+      {
+        "left": {
+          "indicator": "regular_month_end_window"
+        },
+        "operator": "eq",
+        "right": {
+          "value": 1
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "exit": {
+    "conditions": [
+      {
+        "left": {
+          "indicator": "regular_month_end_window"
+        },
+        "operator": "eq",
+        "right": {
+          "value": 0
+        }
+      }
+    ],
+    "when": "all"
+  },
+  "indicators": [
+    {
+      "id": "regular_month_end_window",
+      "inputs": {
+        "calendar_path": "data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv",
+        "exclude_event_types": [
+          "quarter_end"
+        ],
+        "include_event_types": [
+          "month_end"
+        ]
+      },
+      "kind": "event_window"
+    }
+  ],
+  "market": {
+    "symbol": "SPY",
+    "timeframe": "1d"
+  },
+  "name": "SPY Regular Month-End Window",
+  "position_mode": "long_only",
+  "schema_version": "v1",
+  "strategy_id": "spy_regular_month_end_window",
+  "strategy_type": "rule_based"
+}

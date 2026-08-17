@@ -65,6 +65,10 @@ folder. It contains at least 30 canonical variants, but only variants marked
 executable should be promoted into runnable strategy or portfolio files without
 adding engine support first.
 
+Current executable starter templates include `calendar-month-end`, which uses a
+predeclared event calendar instead of a price indicator. It is intentionally
+narrow: regular month-end windows only, with quarter-end month-ends excluded.
+
 Use `experiment run-default` when you want the lab to run the normal
 single-strategy workflow for you while still writing every underlying artifact:
 

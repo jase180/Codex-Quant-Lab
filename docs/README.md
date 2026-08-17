@@ -111,6 +111,9 @@ current workflow docs and the latest experiment handoffs.
 - [Calendar/Rebalance Event Study](experiments/calendar-rebalance-event-study.md):
   first no-trade mechanism diagnostic using generated month-end and quarter-end
   windows across SPY, QQQ, IWM, and TLT.
+- [SPY Regular Month-End Window Experiment](experiments/spy-regular-month-end-window-experiment.md):
+  first executable calendar-flow strategy test; valid research system,
+  partially supported strategy hypothesis, weakened opportunity thesis.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

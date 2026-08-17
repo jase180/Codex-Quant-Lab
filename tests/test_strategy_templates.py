@@ -20,7 +20,14 @@ class StrategyTemplateTests(unittest.TestCase):
     def test_available_templates_are_stable(self) -> None:
         self.assertEqual(
             available_strategy_templates(),
-            ("sma-crossover", "sma-long-cash", "ema-trend-follow", "rsi-reversion", "breakout-trend"),
+            (
+                "sma-crossover",
+                "sma-long-cash",
+                "ema-trend-follow",
+                "rsi-reversion",
+                "breakout-trend",
+                "calendar-month-end",
+            ),
         )
 
     def test_build_strategy_template_returns_valid_payload(self) -> None:
@@ -64,6 +71,17 @@ class StrategyTemplateTests(unittest.TestCase):
         self.assertEqual(spec.name, "SMA 150 Long/Cash Trend")
         self.assertEqual(spec.indicators[0].id, "sma_150")
         self.assertEqual(spec.indicators[0].inputs["length"], 150)
+
+    def test_build_calendar_month_end_template_returns_valid_payload(self) -> None:
+        payload = build_strategy_template("calendar-month-end", symbol="spy")
+
+        spec = parse_strategy(payload)
+
+        self.assertEqual("calendar_month_end", spec.strategy_id)
+        self.assertEqual("SPY", spec.market.symbol)
+        self.assertEqual("event_window", spec.indicators[0].kind)
+        self.assertEqual(["month_end"], spec.indicators[0].inputs["include_event_types"])
+        self.assertEqual(["quarter_end"], spec.indicators[0].inputs["exclude_event_types"])
 
     def test_length_is_rejected_for_templates_without_single_lookback(self) -> None:
         with self.assertRaisesRegex(ValueError, "only supported for sma-long-cash"):

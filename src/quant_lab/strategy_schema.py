@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 _ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
-_ALLOWED_INDICATORS = {"sma", "ema", "rsi", "rolling_high", "rolling_low"}
+_ALLOWED_INDICATORS = {"sma", "ema", "rsi", "rolling_high", "rolling_low", "event_window"}
 _ALLOWED_SIGNAL_PRICE_FIELDS = {"close"}
 _ALLOWED_RISK_CONTROLS = {"volatility_target"}
 _ALLOWED_OPERATORS = {
@@ -37,7 +37,7 @@ class MarketSpec:
 @dataclass(frozen=True)
 class IndicatorSpec:
     id: str
-    kind: Literal["sma", "ema", "rsi", "rolling_high", "rolling_low"]
+    kind: Literal["sma", "ema", "rsi", "rolling_high", "rolling_low", "event_window"]
     inputs: dict[str, Any]
 
 
@@ -188,6 +188,10 @@ def _parse_indicators(payload: list[Any]) -> list[IndicatorSpec]:
 
 
 def _validate_indicator_inputs(kind: str, inputs: dict[str, Any], index: int) -> None:
+    if kind == "event_window":
+        _validate_event_window_inputs(inputs, index)
+        return
+
     required_keys = {"source", "length"}
     if set(inputs.keys()) != required_keys:
         raise StrategySchemaError(
@@ -206,6 +210,29 @@ def _validate_indicator_inputs(kind: str, inputs: dict[str, Any], index: int) ->
 
     if kind == "rsi" and length < 2:
         raise StrategySchemaError("RSI length must be at least 2.")
+
+
+def _validate_event_window_inputs(inputs: dict[str, Any], index: int) -> None:
+    allowed_keys = {"calendar_path", "include_event_types", "exclude_event_types"}
+    _reject_unknown_keys(inputs, allowed_keys, f"indicators[{index}].inputs")
+
+    calendar_path = inputs.get("calendar_path")
+    if not isinstance(calendar_path, str) or not calendar_path.strip():
+        raise StrategySchemaError(f"indicators[{index}].inputs.calendar_path must be a non-empty string.")
+
+    include_event_types = inputs.get("include_event_types")
+    if not isinstance(include_event_types, list) or not include_event_types:
+        raise StrategySchemaError(f"indicators[{index}].inputs.include_event_types must be a non-empty list.")
+    for event_type in include_event_types:
+        if not isinstance(event_type, str) or not event_type.strip():
+            raise StrategySchemaError(f"indicators[{index}].inputs.include_event_types must contain strings.")
+
+    exclude_event_types = inputs.get("exclude_event_types", [])
+    if not isinstance(exclude_event_types, list):
+        raise StrategySchemaError(f"indicators[{index}].inputs.exclude_event_types must be a list when present.")
+    for event_type in exclude_event_types:
+        if not isinstance(event_type, str) or not event_type.strip():
+            raise StrategySchemaError(f"indicators[{index}].inputs.exclude_event_types must contain strings.")
 
 
 def _parse_condition_set(
