@@ -1,12 +1,12 @@
 # Project State For Review
 
-Inspected repository state before this document refresh: `4769606 Add Codex campaign handoff provider`.
+Inspected repository state before this document refresh: `993a6c6 Test regular month-end calendar strategy`.
 
 This file is meant to orient a reviewer quickly. It describes current behavior, not aspirations.
 
 ## 1. Executive Summary
 
-Codex-Quant-Lab is a local Python research lab for daily-data, rule-based quant experiments. It is for a hands-on researcher or engineer who wants honest, reproducible backtests before adding more strategy complexity. The normal single-experiment workflow is: prepare data, create or choose a strategy JSON, run `experiment run-default`, then read `experiment_conclusion.md/json`. The normal campaign workflow is: run `campaign run --loop` with a bounded config, let the controller run existing experiment workflows, then read `final_report.md/json`. The repo now separates research-system validity from strategy-hypothesis success, so a strategy can fail while the repo succeeds. The most useful current path is SPY-style long/cash trend research with realistic costs, benchmark comparison, validation, and saved conclusions. The campaign layer can carry conclusions forward, avoid repeated rejected branches, and stop with a final report. Ollama integration exists behind strict proposal validation, retry, fallback, and explicit execution gates; Codex currently exists as a handoff provider, not an automatic API adapter. The biggest weakness is still information design: there are many reports, and users need docs to know which file is the front door. The biggest correctness risk is still adjusted-price and benchmark economics, especially dividends/splits and provider dependence.
+Codex-Quant-Lab is a local Python research lab for daily-data, rule-based quant experiments. It is for a hands-on researcher or engineer who wants honest, reproducible backtests before adding more strategy complexity. The normal single-experiment workflow is: prepare data, create or choose a strategy JSON, run `experiment run-default`, then read `experiment_conclusion.md/json`. The normal campaign workflow is: run `campaign run --loop` with a bounded config, let the controller run existing experiment workflows, then read `final_report.md/json`. The repo now separates research-system validity from strategy-hypothesis success, so a strategy can fail while the repo succeeds. The most useful current path is still simple daily ETF research with realistic costs, benchmark comparison, validation, and saved conclusions, now including one fixed event-window calendar branch. The campaign layer can carry conclusions forward, avoid repeated rejected branches, and stop with a final report. Ollama integration exists behind strict proposal validation, retry, fallback, and explicit execution gates; Codex currently exists as a handoff provider, not an automatic API adapter. The biggest weakness is still information design: there are many reports, and users need docs to know which file is the front door. The biggest correctness risk is still adjusted-price and benchmark economics, especially dividends/splits and provider dependence.
 
 ## 2. Current End-to-End Workflow
 
@@ -135,9 +135,9 @@ Campaign front door after completion: `artifacts/campaigns/<campaign>/final_repo
 
 ### Strategy Definition
 
-- Important files: `src/quant_lab/strategy_schema.py`, `src/quant_lab/strategy_templates.py`, `src/quant_lab/rule_based_strategy.py`, `data/strategies/*.json`.
-- Owns: strict strategy schema, starter templates, indicator/rule parsing, signal generation.
-- Flow: JSON strategy -> `StrategySpec` -> rule-based strategy -> bar-by-bar signals.
+- Important files: `src/quant_lab/strategy_schema.py`, `src/quant_lab/strategy_templates.py`, `src/quant_lab/rule_based_strategy.py`, `src/quant_lab/event_calendar.py`, `data/strategies/*.json`, `data/event_calendars/*.csv`.
+- Owns: strict strategy schema, starter templates, indicator/rule parsing, signal generation, and fixed event-window inputs.
+- Flow: JSON strategy -> `StrategySpec` -> rule-based strategy -> bar-by-bar signals. Event-window strategies additionally read a predeclared event calendar and output `1.0` only for bars inside allowed windows.
 - Dependents: `run`, `experiment run-default`, campaign conversion, sweeps, robustness.
 
 ### Backtest Execution And Portfolio Logic
@@ -283,25 +283,23 @@ Most commands still require explicit paths. `experiment run-default` and `campai
 
 ## 7. What Changed Recently
 
-- Campaign provider boundary was added in `src/quant_lab/campaign_provider.py`. It made providers return proposals only while Python owns execution, validation, state, and stopping. This reduced risk.
-- Deterministic campaign follow-up was added. The campaign can run SMA 200 baseline, then EMA/RSI follow-up, then stop instead of inventing endless branches. This made the loop demonstrable but still narrow.
-- Final campaign reports were added in `src/quant_lab/campaign_report.py`. This gave campaigns a real front door and reduced ambiguity after multi-cycle runs.
-- Ollama campaign proposal dry-run was added. It saves context, prompt, raw model output, parsed proposal, and validation. This adds infrastructure, but the dry-run default keeps it contained.
-- Retry/fallback behavior was added. Invalid or failed model attempts are saved under `provider_attempt_001/002`, attempt 2 receives feedback, then fallback/stop occurs. This reduced model-risk more than it added complexity.
-- Explicit model execution gating was added through `--execute-model-proposal`. Valid model-originated proposals can execute only with opt-in; deterministic fallbacks remain inspection-only.
-- `campaign run --loop` was added. One command can now run repeated bounded cycles through existing experiment workflows.
-- Campaign budget overrides were added: `--duration`, `--max-cycles`, and `--max-total-runs`. They apply only when initializing, preventing state/config drift.
-- Provider override persistence was added. `--provider ollama|codex|deterministic` can initialize a campaign and is rejected on resume changes.
+- Candidate-menu discovery was added. Campaigns now generate bounded `campaign_candidate_menu.v1` choices from opportunity theses, experiment templates, parameter neighborhoods, and prior conclusions before asking a provider to choose.
+- Campaign provider behavior was narrowed. Model providers choose candidate IDs, request human review, or stop; Python owns execution, validation, state, budgets, and stopping.
+- Deterministic campaign loops now execute existing `experiment run-default` workflows, read `experiment_conclusion.json`, update campaign memory, and stop with `final_report.md/json`.
+- Liquid ETF universe runs proved the loop can diversify across symbols and stop with `SEARCH_SPACE_EXHAUSTED`; the bottleneck is now thesis/template breadth more than orchestration.
+- Event-calendar research was added for the calendar/rebalance mechanism, including generated month-end/quarter-end windows, no-trade event studies, and one fixed SPY regular month-end strategy test.
+- `calendar-month-end` is now an executable strategy template and campaign-visible experiment template, but it remains a single fixed event-window branch rather than a timing-optimization feature.
+- Retry/fallback behavior and explicit model execution gating were added. Invalid or failed model attempts are saved, retried once, then stop or fall back for inspection.
 - Codex handoff provider was added. It writes Codex-readable context/prompt artifacts and stops with `request_human_review`; it does not pretend to call this chat session.
 
-Net effect: campaign orchestration is now coherent and useful, but model-provider execution still needs real local-model success before being trusted.
+Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. Model-provider execution still needs more evidence before being trusted for unattended research.
 
 ## 8. Current Strengths
 
 1. Execution timing is explicit and tested. Core backtests use next-open fills and tests cover no same-bar fill, final-bar signals, commissions/slippage, and sizing behavior.
 2. Reproducibility is strong. Runs save exact `strategy.json`, metadata, data fingerprints, costs, sizing, benchmark assumptions, and output paths.
 3. The project now distinguishes system validity from investment success. `experiment_conclusion.json` has research-system and strategy-hypothesis statuses, so failed strategies are not confused with repo failures.
-4. Campaign state carries knowledge forward inside a campaign. It records completed experiments, findings, do-not-repeat items, unresolved questions, and remaining budgets.
+4. Campaign state carries knowledge forward inside a campaign. It records completed experiments, findings, do-not-repeat items, unresolved questions, remaining budgets, and branch-level opportunity/template exclusions.
 5. Model/agent boundaries are conservative. Ollama proposals are strict JSON, retried once, validated, and dry-run by default. Codex is a handoff, not an uncontrolled executor.
 
 ## 9. Current Weaknesses
@@ -310,7 +308,7 @@ Net effect: campaign orchestration is now coherent and useful, but model-provide
 2. Correctness problem: adjusted-price economics are still provider-dependent. The audit checks yfinance internal consistency, but not an independent provider or full corporate-action accounting.
 3. Missing research capability: no global cross-experiment semantic memory. Conclusions are reusable artifacts, but a new unrelated experiment does not automatically query them.
 4. Architecture/usability problem: there are many CLI commands. The core path is simpler now, but advanced use still requires manual paths and ids.
-5. Missing model capability: Ollama has been structurally integrated but local smoke attempts timed out. Codex is a handoff provider only.
+5. Missing model capability: Ollama can choose from strict candidate menus, but small models still need bounded raw material and should not be trusted to invent experiments freely. Codex is a handoff provider only.
 
 ## 10. One Concrete Experiment Walkthrough
 
@@ -388,7 +386,7 @@ $env:MPLCONFIGDIR='artifacts/matplotlib-cache'
 .\.venv-win\Scripts\python.exe -m unittest discover -s tests
 ```
 
-Observed result during this docs refresh: `425` tests passed, `0` failed, `0` skipped, `18.422s`.
+Observed result during this docs refresh: `503` tests passed, `0` failed, `0` skipped, `21.317s`.
 
 Coverage assessment:
 
@@ -406,7 +404,7 @@ Coverage assessment:
 - Train/test separation and walk-forward windows: directly tested for overlap/selection mechanics.
 - Data fingerprint verification: directly tested.
 - Experiment linking: directly tested.
-- Campaign linking/knowledge: directly tested for conclusion carry-forward, do-not-repeat, final reports, provider attempts, retries, fallback, and loop mode.
+- Campaign linking/knowledge: directly tested for conclusion carry-forward, do-not-repeat, final reports, provider attempts, retries, fallback, loop mode, candidate menus, and bounded branch filters.
 
 Passing tests do not prove economic truth. They prove deterministic plumbing and many accounting assumptions.
 
@@ -429,6 +427,6 @@ Passing tests do not prove economic truth. They prove deterministic plumbing and
 8. What is the single highest-priority correctness audit?
    - Independent adjusted-price/corporate-action validation against another provider or known-event dataset.
 9. What is the single best next real experiment?
-   - Run the deterministic SPY campaign and inspect whether its `final_report.md` gives enough direction, before adding more strategy features.
+   - Inspect a campaign candidate menu that includes the calendar-flow branch, then run only if campaign memory is not already blocking the exact weakened branch.
 10. Is the project ready for feature development, or should development pause for consolidation?
    - Pause major feature expansion. Run a few real campaigns/experiments, inspect friction, and only then add strategy breadth.

@@ -40,6 +40,8 @@ current workflow docs and the latest experiment handoffs.
 - Experiment template catalog: `data/experiment_template_catalog/*.json` and
   `data/parameter_neighborhoods/*.json` describe bounded experiment families and
   small prespecified parameter sets before candidate generation.
+  `calendar_month_end_window` is campaign-visible as one fixed event-window
+  branch, not a timing sweep.
 - [Core Backtest Assumption Audit](architecture/core-backtest-assumption-audit.md): current
   execution, data, benchmark, and realism assumptions.
 - [Research Guardrails](architecture/research-guardrails.md): constraints that
@@ -114,6 +116,8 @@ current workflow docs and the latest experiment handoffs.
 - [SPY Regular Month-End Window Experiment](experiments/spy-regular-month-end-window-experiment.md):
   first executable calendar-flow strategy test; valid research system,
   partially supported strategy hypothesis, weakened opportunity thesis.
+  Do not repeat the exact `calendar_flow_pressure` / `calendar-month-end`
+  branch unless the campaign state has a materially different hypothesis.
 - [Risk-Control Strategy Layer](architecture/risk-control-strategy-layer.md): design boundary
   for strategy/backtester risk controls versus local-agent advice.
 - [Research Guardrails](architecture/research-guardrails.md): current freeze on

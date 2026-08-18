@@ -91,6 +91,18 @@ depending on title parsing.
 Campaign-safe template metadata lives in `src/quant_lab/campaign_templates.py`.
 When adding a template to campaign execution, update that one mapping so provider
 context and proposal validation keep using the same strategy-family relationship.
+The current campaign-safe templates are:
+
+- `sma-long-cash`: trend following with an exposed `sma_length` parameter.
+- `ema-trend-follow`: fixed EMA/RSI trend confirmation.
+- `rsi-reversion`: fixed RSI pullback/reversion proxy.
+- `breakout-trend`: fixed rolling-high/rolling-low breakout proxy.
+- `calendar-month-end`: fixed regular month-end event-window branch.
+
+`calendar-month-end` is intentionally single-variant. The generated default
+workflow handoff includes a no-op event-calendar path parameter only because the
+default workflow currently expects sweep/train-test input. Do not treat that as
+permission to search entry/exit windows after seeing results.
 
 When the candidate menu is exhausted, or when the campaign hits its run or cycle
 budget, the loop writes `final_report.md` and `final_report.json`. Ollama dry

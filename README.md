@@ -68,6 +68,9 @@ adding engine support first.
 Current executable starter templates include `calendar-month-end`, which uses a
 predeclared event calendar instead of a price indicator. It is intentionally
 narrow: regular month-end windows only, with quarter-end month-ends excluded.
+The campaign layer can see this template as a single-variant
+`calendar_seasonality` candidate; it should not be turned into a broad timing
+sweep unless a new hypothesis and thresholds are written first.
 
 Use `experiment run-default` when you want the lab to run the normal
 single-strategy workflow for you while still writing every underlying artifact:

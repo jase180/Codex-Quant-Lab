@@ -44,6 +44,17 @@ def expanded_campaign_payload() -> dict:
     return payload
 
 
+def calendar_campaign_payload() -> dict:
+    payload = campaign_payload()
+    payload["title"] = "SPY calendar-flow probe"
+    payload["objective"] = "Test one prespecified regular month-end calendar-flow branch."
+    payload["allowed_templates"] = ["calendar-month-end"]
+    payload["max_cycles"] = 1
+    payload["max_total_runs"] = 11
+    payload["max_variants_per_experiment"] = 1
+    return payload
+
+
 def capped_multi_symbol_campaign_payload() -> dict:
     payload = expanded_campaign_payload()
     payload["allowed_symbols"] = ["SPY", "QQQ", "IWM", "TLT"]
@@ -104,6 +115,26 @@ class CampaignCandidatesTest(unittest.TestCase):
         self.assertIn("liquid_etf_trend_defense", thesis_ids)
         self.assertIn("etf_flow_persistence", thesis_ids)
         self.assertTrue(any(candidate.template_id == "etf_flow_breakout_continuation" for candidate in menu.candidates))
+
+    def test_calendar_campaign_builds_single_event_window_candidate(self) -> None:
+        config = parse_campaign_config(calendar_campaign_payload())
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = initialize_campaign(config, Path(temp_dir) / "campaign")
+            state = load_campaign_state(paths.state_path)
+            menu = build_campaign_candidate_menu(config, state)
+
+        self.assertEqual("ready", menu.status)
+        self.assertEqual(1, len(menu.candidates))
+        candidate = menu.candidates[0]
+        self.assertEqual("calendar_month_end_window", candidate.template_id)
+        self.assertEqual("calendar-month-end", candidate.strategy_template)
+        self.assertEqual("calendar_flow_pressure", candidate.opportunity_thesis_id)
+        self.assertEqual({}, candidate.parameters)
+        self.assertEqual(0.0, candidate.success_criteria["minimum_total_return"])
+        self.assertEqual(0.5, candidate.success_criteria["minimum_relative_drawdown_reduction"])
+        self.assertEqual(0.0, candidate.success_criteria["minimum_sharpe_delta_vs_benchmark"])
+        self.assertEqual(11, candidate.projected_run_count)
 
     def test_capped_campaign_shortlists_diverse_candidate_menu(self) -> None:
         config = parse_campaign_config(capped_multi_symbol_campaign_payload())

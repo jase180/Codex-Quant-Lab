@@ -206,6 +206,15 @@ def _param_arguments(proposal: CampaignProposal) -> list[str]:
         return ["rsi_14.inputs.length=14"]
     if proposal.strategy_template == "breakout-trend":
         return ["high_20.inputs.length=20", "low_10.inputs.length=10"]
+    if proposal.strategy_template == "calendar-month-end":
+        # The current default workflow always runs sweep/train-test machinery,
+        # which expects at least one parameter expression. Calendar-month-end is
+        # deliberately single-variant, so this repeats the template's fixed
+        # event-calendar path instead of creating a timing-search knob.
+        return [
+            "regular_month_end_window.inputs.calendar_path="
+            "data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv"
+        ]
     raise ValueError(f"campaign conversion does not support template: {proposal.strategy_template}")
 
 
@@ -238,6 +247,33 @@ def _success_criterion_arguments(criteria: dict[str, Any]) -> list[str]:
                 }
             )
         )
+    if "minimum_total_return" in criteria:
+        result.append(
+            _criterion_json(
+                {
+                    "name": "positive_total_return",
+                    "metric": "total_return",
+                    "comparison": "absolute",
+                    "operator": ">=",
+                    "threshold": _number(criteria["minimum_total_return"], "minimum_total_return"),
+                }
+            )
+        )
+    if "minimum_sharpe_delta_vs_benchmark" in criteria:
+        result.append(
+            _criterion_json(
+                {
+                    "name": "sharpe_not_worse_than_benchmark",
+                    "metric": "sharpe",
+                    "comparison": "strategy_vs_benchmark_delta",
+                    "operator": ">=",
+                    "threshold": _number(
+                        criteria["minimum_sharpe_delta_vs_benchmark"],
+                        "minimum_sharpe_delta_vs_benchmark",
+                    ),
+                }
+            )
+        )
     if not result:
         raise ValueError("campaign proposal must include at least one supported success criterion")
     return result
@@ -261,6 +297,12 @@ def _minimum_acceptable_performance(proposal: CampaignProposal) -> str:
     if "minimum_relative_drawdown_reduction" in criteria:
         parts.append(
             f"reduce maximum drawdown by at least {float(criteria['minimum_relative_drawdown_reduction']):.0%} relative"
+        )
+    if "minimum_total_return" in criteria:
+        parts.append(f"earn at least {float(criteria['minimum_total_return']):.0%} total return")
+    if "minimum_sharpe_delta_vs_benchmark" in criteria:
+        parts.append(
+            f"beat benchmark Sharpe by at least {float(criteria['minimum_sharpe_delta_vs_benchmark']):.2f}"
         )
     return "; ".join(parts) if parts else "Meet the proposal's prespecified success criteria."
 

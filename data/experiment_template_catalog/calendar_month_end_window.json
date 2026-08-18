@@ -1,0 +1,43 @@
+{
+  "schema_version": "experiment_template.v1",
+  "template_id": "calendar_month_end_window",
+  "title": "Regular Month-End Event Window",
+  "strategy_family": "calendar_seasonality",
+  "rationale": "Tests whether a predeclared regular month-end exposure window can capture calendar-flow pressure without tuning entry or exit dates after seeing returns.",
+  "tests_claim": "A fixed regular month-end event window may improve drawdown-adjusted behavior by holding only during scheduled flow windows and avoiding quarter-end overlap.",
+  "supported_universe": ["single_liquid_etf"],
+  "required_project_capabilities": [
+    "daily adjusted OHLCV data",
+    "predeclared event calendar",
+    "event_window indicator",
+    "next-open market fills",
+    "long/cash exposure",
+    "cost sensitivity",
+    "date sensitivity",
+    "train/test validation"
+  ],
+  "executable_mapping": {
+    "campaign_strategy_template": "calendar-month-end",
+    "parameter_map": {}
+  },
+  "default_validation_plan": {
+    "cost_sensitivity": true,
+    "date_sensitivity": true,
+    "train_test": true
+  },
+  "default_success_criteria": {
+    "minimum_total_return": 0.0,
+    "minimum_relative_drawdown_reduction": 0.5,
+    "minimum_sharpe_delta_vs_benchmark": 0.0
+  },
+  "parameter_neighborhood_id": "single_variant_basic",
+  "expected_information_gain": "high",
+  "parameter_mining_risk": "low",
+  "known_limitations": [
+    "This is a single fixed event-window branch, not a month-end timing sweep.",
+    "The current workflow still needs a no-op calendar-path parameter so sweep/train-test validation can run through the default path.",
+    "The first SPY test weakened this exact full-window branch; campaign memory should block repeating opportunity=calendar_flow_pressure with template=calendar-month-end when that conclusion is present.",
+    "A successful result would support only the predeclared regular-month-end window, not arbitrary calendar seasonality."
+  ],
+  "engine_support_status": "ready"
+}

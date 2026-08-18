@@ -15,12 +15,14 @@ SUPPORTED_CAMPAIGN_TEMPLATE_PARAMETERS = {
     "ema-trend-follow": set(),
     "rsi-reversion": set(),
     "breakout-trend": set(),
+    "calendar-month-end": set(),
 }
 CAMPAIGN_TEMPLATE_STRATEGY_FAMILIES = {
     "sma-long-cash": "trend_following",
     "ema-trend-follow": "trend_following",
     "rsi-reversion": "mean_reversion",
     "breakout-trend": "trend_following",
+    "calendar-month-end": "calendar_seasonality",
 }
 
 

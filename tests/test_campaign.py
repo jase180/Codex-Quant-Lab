@@ -667,6 +667,26 @@ class CampaignTests(unittest.TestCase):
                     "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
                 }
             )
+            calendar_proposal = parse_campaign_proposal(
+                {
+                    "schema_version": "campaign_proposal.v1",
+                    "action": "run_experiment",
+                    "title": "SPY regular month-end window candidate",
+                    "hypothesis": "A prespecified month-end window may test calendar flow pressure.",
+                    "rationale": "Uses a fixed event calendar instead of optimized indicators.",
+                    "difference_from_prior_work": "Tests calendar seasonality rather than price-derived state.",
+                    "strategy_template": "calendar-month-end",
+                    "symbol": "SPY",
+                    "opportunity_thesis_id": "calendar_flow_pressure",
+                    "parameters": {},
+                    "success_criteria": {
+                        "minimum_total_return": 0.0,
+                        "minimum_relative_drawdown_reduction": 0.5,
+                        "minimum_sharpe_delta_vs_benchmark": 0.0,
+                    },
+                    "validation_plan": {"cost_sensitivity": True, "date_sensitivity": True, "train_test": True},
+                }
+            )
 
             rsi_inputs = prepare_campaign_experiment_inputs(
                 rsi_proposal,
@@ -678,15 +698,36 @@ class CampaignTests(unittest.TestCase):
                 config=config,
                 cycle_dir=Path(paths.cycles_dir) / "cycle_002",
             )
+            calendar_inputs = prepare_campaign_experiment_inputs(
+                calendar_proposal,
+                config=config,
+                cycle_dir=Path(paths.cycles_dir) / "cycle_003",
+            )
 
             rsi_strategy = json.loads(Path(rsi_inputs.strategy_path).read_text(encoding="utf-8"))
             breakout_strategy = json.loads(Path(breakout_inputs.strategy_path).read_text(encoding="utf-8"))
+            calendar_strategy = json.loads(Path(calendar_inputs.strategy_path).read_text(encoding="utf-8"))
+            calendar_args_payload = json.loads(Path(calendar_inputs.run_default_args_path).read_text(encoding="utf-8"))
 
         self.assertEqual("rsi", rsi_strategy["indicators"][0]["kind"])
         self.assertEqual(["rolling_high", "rolling_low"], [item["kind"] for item in breakout_strategy["indicators"]])
+        self.assertEqual("event_window", calendar_strategy["indicators"][0]["kind"])
         self.assertIn("rsi_14.inputs.length=14", rsi_inputs.command_tokens)
         self.assertIn("high_20.inputs.length=20", breakout_inputs.command_tokens)
         self.assertIn("low_10.inputs.length=10", breakout_inputs.command_tokens)
+        self.assertIn(
+            "regular_month_end_window.inputs.calendar_path=data/event_calendars/calendar_rebalance_daily_proxy_2015_2025.csv",
+            calendar_inputs.command_tokens,
+        )
+        criteria = [json.loads(item) for item in calendar_args_payload["run_default_args"]["success_criterion"]]
+        self.assertEqual(
+            {
+                ("positive_total_return", "total_return", "absolute"),
+                ("drawdown_reduction", "max_drawdown", "relative_reduction_vs_benchmark"),
+                ("sharpe_not_worse_than_benchmark", "sharpe", "strategy_vs_benchmark_delta"),
+            },
+            {(item["name"], item["metric"], item["comparison"]) for item in criteria},
+        )
 
     def test_execute_campaign_experiment_inputs_calls_default_workflow_and_saves_receipt(self) -> None:
         config = parse_campaign_config(campaign_payload())
