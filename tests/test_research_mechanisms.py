@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from quant_lab.cli import main
+from quant_lab.discovery_map import build_discovery_map, format_discovery_map
 from quant_lab.research_mechanisms import (
     find_research_mechanism,
     format_research_mechanism_data_needs,
@@ -136,6 +137,39 @@ class ResearchMechanismsTest(unittest.TestCase):
         self.assertIn("Tax-Loss Selling Pressure", output)
         self.assertIn("survivorship-aware equity universe", output)
         self.assertNotIn("ETF Flow Pressure", output)
+
+    def test_discovery_map_joins_mechanisms_theses_datasets_and_templates(self) -> None:
+        entries = build_discovery_map()
+        by_id = {entry.mechanism_id: entry for entry in entries}
+
+        self.assertIn("calendar_rebalance_effects", by_id)
+        self.assertIn("forced_index_flows", by_id)
+        self.assertEqual("testable_now", by_id["calendar_rebalance_effects"].disposition)
+        self.assertIn("calendar_month_end_window", by_id["calendar_rebalance_effects"].ready_template_ids)
+        self.assertEqual("proxy_testable", by_id["small_cap_liquidity_shocks"].disposition)
+        self.assertEqual("needs_data", by_id["forced_index_flows"].disposition)
+        self.assertIn("forced_event_liquidity", by_id["forced_index_flows"].opportunity_theses)
+
+    def test_format_discovery_map_names_ready_and_blocked_work(self) -> None:
+        output = format_discovery_map(build_discovery_map())
+
+        self.assertIn("# Discovery Map", output)
+        self.assertIn("calendar_rebalance_effects", output)
+        self.assertIn("calendar_month_end_window", output)
+        self.assertIn("forced_index_flows", output)
+        self.assertIn("proxy_testable", output)
+        self.assertIn("needs_data", output)
+
+    def test_cli_mechanisms_map_prints_discovery_readiness(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            exit_code = main(["mechanisms", "map"])
+
+        output = stdout.getvalue()
+
+        self.assertEqual(0, exit_code)
+        self.assertIn("Discovery Map", output)
+        self.assertIn("testable_now", output)
+        self.assertIn("needs_data", output)
 
 
 if __name__ == "__main__":

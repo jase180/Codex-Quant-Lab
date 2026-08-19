@@ -1,6 +1,6 @@
 # Project State For Review
 
-Inspected repository state before this document refresh: `9c2b28d Register calendar campaign template`.
+Inspected repository state before this document refresh: `823b492 Refresh project state direction`.
 
 This file is meant to orient a reviewer quickly. It describes current behavior, not aspirations.
 
@@ -292,7 +292,7 @@ Most commands still require explicit paths. `experiment run-default` and `campai
 - Retry/fallback behavior and explicit model execution gating were added. Invalid or failed model attempts are saved, retried once, then stop or fall back for inspection.
 - Codex handoff provider was added. It writes Codex-readable context/prompt artifacts and stops with `request_human_review`; it does not pretend to call this chat session.
 
-Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. The current bottleneck is not running another generic ETF indicator campaign; it is feeding the campaign controller better market-mechanism raw material and testable opportunity theses.
+Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. `quant-lab mechanisms map` now shows which mechanisms are `testable_now`, `proxy_testable`, `needs_data`, or blocked by joining mechanism records, opportunity theses, dataset plans, and experiment-template coverage. The current bottleneck is not running another generic ETF indicator campaign; it is feeding the campaign controller better market-mechanism raw material and testable opportunity theses.
 
 ## 8. Current Strengths
 
@@ -308,7 +308,7 @@ Net effect: campaign orchestration is now coherent and useful, while the discove
 2. Correctness problem: adjusted-price economics are still provider-dependent. The audit checks yfinance internal consistency, but not an independent provider or full corporate-action accounting.
 3. Missing research capability: no global cross-experiment semantic memory. Conclusions are reusable artifacts, but a new unrelated experiment does not automatically query them.
 4. Architecture/usability problem: there are many CLI commands. The core path is simpler now, but advanced use still requires manual paths and ids.
-5. Missing discovery capability: Ollama can choose from strict candidate menus, but the candidate menu is only as good as the opportunity theses and experiment templates behind it. Codex is a handoff provider only, and the project still needs better research-ingestion/mechanism material before unattended discovery becomes genuinely useful.
+5. Missing discovery capability: the new discovery map improves orientation, but the candidate menu is only as good as the opportunity theses, dataset plans, and experiment templates behind it. Codex is a handoff provider only, and the project still needs better research-ingestion/mechanism material before unattended discovery becomes genuinely useful.
 
 ## 10. One Concrete Experiment Walkthrough
 
@@ -386,7 +386,7 @@ $env:MPLCONFIGDIR='artifacts/matplotlib-cache'
 .\.venv-win\Scripts\python.exe -m unittest discover -s tests
 ```
 
-Observed result during this docs refresh: `503` tests passed, `0` failed, `0` skipped, `21.317s`.
+Observed result during this discovery-map refresh: `506` tests passed, `0` failed, `0` skipped, `21.400s`.
 
 Coverage assessment:
 
@@ -421,7 +421,7 @@ Passing tests do not prove economic truth. They prove deterministic plumbing and
 5. Where does the workflow create unnecessary human-facing noise?
    - Run/trust/sweep/robustness/evidence/session/agent/campaign Markdown files overlap. The docs must keep naming the front doors.
 6. What should be simplified next?
-   - Keep the front doors clear: `experiment_conclusion.md` for one experiment, `final_report.md` for one campaign, and candidate menus for what can be tested next. Avoid adding more report types.
+   - Keep the front doors clear: `experiment_conclusion.md` for one experiment, `final_report.md` for one campaign, `candidate_menu.md` for campaign choices, and `mechanisms map` for discovery readiness. Avoid adding more report types.
 7. What should not be removed?
    - Raw artifacts, `run_metadata.json`, strategy snapshots, `experiment_conclusion.md/json`, campaign state/final reports, data fingerprints, and correctness tests.
 8. What is the single highest-priority correctness audit?

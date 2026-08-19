@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 
+from .discovery_map import build_discovery_map, format_discovery_map
 from .research_mechanisms import (
     find_research_mechanism,
     format_research_mechanism_data_needs,
@@ -54,4 +55,15 @@ def mechanisms_data_plan_command(args: argparse.Namespace) -> int:
         return 1
     matching = dataset_plans_for_mechanism(plans, args.id)
     print(format_dataset_plans_for_mechanism(args.id, matching))
+    return 0
+
+
+def mechanisms_map_command(args: argparse.Namespace) -> int:
+    entries = build_discovery_map(
+        mechanism_catalog_dir=args.catalog_dir,
+        opportunity_catalog_dir=args.opportunity_catalog_dir,
+        dataset_plan_dir=args.dataset_plan_dir,
+        experiment_template_catalog_dir=args.experiment_template_catalog_dir,
+    )
+    print(format_discovery_map(entries))
     return 0

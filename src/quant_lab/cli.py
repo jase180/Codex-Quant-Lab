@@ -38,6 +38,7 @@ from .cli_mechanisms import (
     mechanisms_data_needs_command,
     mechanisms_data_plan_command,
     mechanisms_list_command,
+    mechanisms_map_command,
     mechanisms_show_command,
 )
 from .cli_runs import list_runs_command, run_command
@@ -1566,6 +1567,32 @@ def register_mechanism_commands(subparsers) -> None:
         help="Directory containing research_dataset_plan.v1 JSON files. Defaults to data/research_datasets.",
     )
     data_plan_parser.set_defaults(func=mechanisms_data_plan_command)
+
+    map_parser = mechanisms_subparsers.add_parser(
+        "map",
+        help="Show which mechanisms are testable now, need data, or are blocked.",
+    )
+    map_parser.add_argument(
+        "--catalog-dir",
+        default="data/research_mechanisms",
+        help="Directory containing research_mechanism.v1 JSON files. Defaults to data/research_mechanisms.",
+    )
+    map_parser.add_argument(
+        "--opportunity-catalog-dir",
+        default="data/opportunity_catalog",
+        help="Directory containing opportunity_thesis.v1 JSON files. Defaults to data/opportunity_catalog.",
+    )
+    map_parser.add_argument(
+        "--dataset-plan-dir",
+        default="data/research_datasets",
+        help="Directory containing research_dataset_plan.v1 JSON files. Defaults to data/research_datasets.",
+    )
+    map_parser.add_argument(
+        "--experiment-template-catalog-dir",
+        default="data/experiment_template_catalog",
+        help="Directory containing experiment_template.v1 JSON files. Defaults to data/experiment_template_catalog.",
+    )
+    map_parser.set_defaults(func=mechanisms_map_command)
 
 
 def register_sweep_commands(subparsers) -> None:

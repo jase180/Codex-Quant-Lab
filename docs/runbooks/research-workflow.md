@@ -55,6 +55,15 @@ sessions, outages, and corporate actions can change conclusions.
 
 If the research question starts from a market mechanism instead of a ready
 strategy, inspect the raw-material dataset before creating strategy JSON.
+Start with the discovery map when you are not sure what is honestly testable:
+
+```bash
+quant-lab mechanisms map
+```
+
+The map joins mechanism records, opportunity theses, dataset plans, and
+campaign-safe experiment templates. Treat `needs_data` and `blocked` rows as
+research backlog, not permission to force a backtest.
 
 For the calendar/rebalance mechanism, the current generated event calendar
 labels month-end and quarter-end trading-day windows without looking at returns:

@@ -46,6 +46,9 @@ It owns:
   capture market-structure raw material before it becomes an opportunity thesis.
 - `research_datasets.py`: validates `research_dataset_plan.v1` records that
   define minimum dataset targets for mechanism-driven research.
+- `discovery_map.py`: joins mechanisms, opportunity theses, dataset plans, and
+  experiment templates into a read-only map of what is testable now versus
+  blocked or data-limited.
 - `event_calendar.py`: generates and inspects return-free event-calendar CSVs,
   starting with month-end and quarter-end trading-day windows for
   calendar/rebalance research.

@@ -21,6 +21,7 @@ with the research-mechanism library:
 ```bash
 quant-lab mechanisms list
 quant-lab mechanisms show --id etf_flow_pressure
+quant-lab mechanisms map
 quant-lab mechanisms data-needs --engine-fit needs_data
 quant-lab mechanisms data-plan --id calendar_rebalance_effects
 ```
@@ -33,6 +34,9 @@ The `data-needs` view is the practical next-step map: it shows which datasets
 would move a mechanism from interesting story to testable research.
 The `data-plan` view turns one mechanism into a concrete dataset target without
 claiming the data exists yet.
+The `map` view joins mechanisms, opportunity theses, dataset plans, and
+campaign-safe experiment templates so the next cycle can distinguish
+`testable_now` ideas from `needs_data` or blocked stories.
 
 The first concrete mechanism dataset is a generated calendar/rebalance event
 calendar. It labels month-end and quarter-end trading-day windows before any
