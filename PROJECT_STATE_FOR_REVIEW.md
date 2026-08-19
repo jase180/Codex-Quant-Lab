@@ -1,6 +1,6 @@
 # Project State For Review
 
-Inspected repository state before this document refresh: `993a6c6 Test regular month-end calendar strategy`.
+Inspected repository state before this document refresh: `9c2b28d Register calendar campaign template`.
 
 This file is meant to orient a reviewer quickly. It describes current behavior, not aspirations.
 
@@ -292,7 +292,7 @@ Most commands still require explicit paths. `experiment run-default` and `campai
 - Retry/fallback behavior and explicit model execution gating were added. Invalid or failed model attempts are saved, retried once, then stop or fall back for inspection.
 - Codex handoff provider was added. It writes Codex-readable context/prompt artifacts and stops with `request_human_review`; it does not pretend to call this chat session.
 
-Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. Model-provider execution still needs more evidence before being trusted for unattended research.
+Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. The current bottleneck is not running another generic ETF indicator campaign; it is feeding the campaign controller better market-mechanism raw material and testable opportunity theses.
 
 ## 8. Current Strengths
 
@@ -308,7 +308,7 @@ Net effect: campaign orchestration is now coherent and useful, while the discove
 2. Correctness problem: adjusted-price economics are still provider-dependent. The audit checks yfinance internal consistency, but not an independent provider or full corporate-action accounting.
 3. Missing research capability: no global cross-experiment semantic memory. Conclusions are reusable artifacts, but a new unrelated experiment does not automatically query them.
 4. Architecture/usability problem: there are many CLI commands. The core path is simpler now, but advanced use still requires manual paths and ids.
-5. Missing model capability: Ollama can choose from strict candidate menus, but small models still need bounded raw material and should not be trusted to invent experiments freely. Codex is a handoff provider only.
+5. Missing discovery capability: Ollama can choose from strict candidate menus, but the candidate menu is only as good as the opportunity theses and experiment templates behind it. Codex is a handoff provider only, and the project still needs better research-ingestion/mechanism material before unattended discovery becomes genuinely useful.
 
 ## 10. One Concrete Experiment Walkthrough
 
@@ -421,12 +421,12 @@ Passing tests do not prove economic truth. They prove deterministic plumbing and
 5. Where does the workflow create unnecessary human-facing noise?
    - Run/trust/sweep/robustness/evidence/session/agent/campaign Markdown files overlap. The docs must keep naming the front doors.
 6. What should be simplified next?
-   - Make docs even more front-door oriented and consider demoting older manual workflow docs behind `experiment run-default` and `campaign run --loop`.
+   - Keep the front doors clear: `experiment_conclusion.md` for one experiment, `final_report.md` for one campaign, and candidate menus for what can be tested next. Avoid adding more report types.
 7. What should not be removed?
    - Raw artifacts, `run_metadata.json`, strategy snapshots, `experiment_conclusion.md/json`, campaign state/final reports, data fingerprints, and correctness tests.
 8. What is the single highest-priority correctness audit?
    - Independent adjusted-price/corporate-action validation against another provider or known-event dataset.
 9. What is the single best next real experiment?
-   - Inspect a campaign candidate menu that includes the calendar-flow branch, then run only if campaign memory is not already blocking the exact weakened branch.
+   - Do not rush another generic ETF-indicator run. The better next move is to add or ingest one stronger market-mechanism thesis, generate a bounded candidate menu from it, then run the smallest falsification experiment the current engine can support.
 10. Is the project ready for feature development, or should development pause for consolidation?
-   - Pause major feature expansion. Run a few real campaigns/experiments, inspect friction, and only then add strategy breadth.
+   - Pause broad engine expansion. A narrow discovery/raw-material layer is justified; more indicators, timing knobs, or autonomous execution should wait.
