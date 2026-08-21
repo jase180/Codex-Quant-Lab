@@ -44,6 +44,7 @@ class ResearchDatasetsTest(unittest.TestCase):
 
         self.assertIn("calendar_rebalance_daily_proxy", plan_ids)
         self.assertIn("forced_index_membership_events", plan_ids)
+        self.assertIn("tax_loss_selling_candidates", plan_ids)
         self.assertTrue(all(plan.status in {"planned", "available", "blocked"} for plan in plans))
 
     def test_validate_research_dataset_plan_rejects_missing_required_fields(self) -> None:
@@ -64,6 +65,10 @@ class ResearchDatasetsTest(unittest.TestCase):
         forced = dataset_plans_for_mechanism(plans, "forced_index_flows")
         self.assertEqual(1, len(forced))
         self.assertEqual("planned", forced[0].status)
+
+        tax_loss = dataset_plans_for_mechanism(plans, "tax_loss_selling")
+        self.assertEqual(1, len(tax_loss))
+        self.assertEqual("planned", tax_loss[0].status)
 
     def test_format_dataset_plan_list_and_detail(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -89,6 +94,7 @@ class ResearchDatasetsTest(unittest.TestCase):
         self.assertIn("Research Dataset Plans", output)
         self.assertIn("calendar_rebalance_daily_proxy", output)
         self.assertIn("forced_index_membership_events", output)
+        self.assertIn("tax_loss_selling_candidates", output)
 
     def test_cli_mechanisms_data_plan_shows_matching_plan(self) -> None:
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
@@ -111,6 +117,17 @@ class ResearchDatasetsTest(unittest.TestCase):
         self.assertIn("Forced Index Membership Events", output)
         self.assertIn("announcement_date", output)
         self.assertIn("effective_date", output)
+
+    def test_cli_mechanisms_data_plan_shows_tax_loss_plan(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            exit_code = main(["mechanisms", "data-plan", "--id", "tax_loss_selling"])
+
+        output = stdout.getvalue()
+
+        self.assertEqual(0, exit_code)
+        self.assertIn("Tax-Loss Selling Candidate Universe", output)
+        self.assertIn("year_to_date_return", output)
+        self.assertIn("survivorship", output)
 
 
 if __name__ == "__main__":

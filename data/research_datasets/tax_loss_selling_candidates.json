@@ -1,0 +1,71 @@
+{
+  "schema_version": "research_dataset_plan.v1",
+  "dataset_id": "tax_loss_selling_candidates",
+  "mechanism_id": "tax_loss_selling",
+  "title": "Tax-Loss Selling Candidate Universe",
+  "status": "planned",
+  "purpose": "Define the minimum survivorship-aware equity candidate dataset needed before testing whether large tax-year losers experience late-year pressure and early-year rebound.",
+  "data_grain": "daily equity universe with year-to-date return, liquidity, spread, and tax-calendar labels",
+  "required_fields": [
+    "symbol",
+    "security_id",
+    "date",
+    "tax_year",
+    "trading_day_of_year",
+    "adjusted_open",
+    "adjusted_high",
+    "adjusted_low",
+    "adjusted_close",
+    "volume",
+    "daily_dollar_volume",
+    "spread_proxy",
+    "market_cap_or_size_bucket",
+    "year_to_date_return",
+    "drawdown_from_year_high",
+    "listed_at_start_of_year",
+    "delisted_during_year",
+    "delisting_date",
+    "corporate_action_flag",
+    "source_name",
+    "source_url_or_note",
+    "created_at_utc"
+  ],
+  "candidate_sources": [
+    "survivorship-aware historical equity universe export",
+    "daily adjusted OHLCV vendor data with delisted symbols when available",
+    "exchange listing and delisting files or vendor security master",
+    "high-low spread proxy from daily bars when quoted spread is unavailable",
+    "tax-calendar definitions for late-year candidate selection and early-year rebound windows"
+  ],
+  "construction_rules": [
+    "Select candidates using only information available before the rebound window.",
+    "Define late-year selection dates and early-year holding windows before inspecting returns.",
+    "Keep delisted symbols and failed securities in the universe when they were tradable at selection time.",
+    "Separate size and liquidity buckets before any performance summary.",
+    "Do not tune loser thresholds after seeing January or rebound returns.",
+    "Record whether each symbol had corporate actions, mergers, or delistings that could distort adjusted-price behavior."
+  ],
+  "quality_checks": [
+    "Every candidate must have a valid year_to_date_return computed from adjusted prices available at the selection date.",
+    "Every tested symbol must have pre-selection liquidity and spread estimates.",
+    "Missing post-selection prices must be classified as delisting, acquisition, halt, or data gap before exclusion.",
+    "The universe must include non-survivors or clearly mark survivorship bias as a blocking limitation.",
+    "No candidate threshold may be derived from later rebound returns.",
+    "Tax-year labels and trading windows must be deterministic and independent of returns."
+  ],
+  "minimum_viable_tests": [
+    "No-trade cohort study comparing severe losers, moderate losers, and non-losers across late-year and early-year windows.",
+    "Separate summaries by size and liquidity bucket before any aggregate conclusion.",
+    "Cost sensitivity using spread or conservative bps assumptions before any executable strategy.",
+    "Year-by-year stability check across multiple tax years.",
+    "A single fixed candidate-threshold and holding-window strategy only after the cohort diagnostic identifies a plausible direction."
+  ],
+  "known_limitations": [
+    "Free public data is usually survivorship-biased and may be unsuitable for this mechanism.",
+    "Daily bars cannot identify taxable ownership, actual tax-loss harvesting, or intraday execution quality.",
+    "Small-cap and delisted-security data can be expensive, messy, and legally constrained by vendor licenses.",
+    "Corporate actions, mergers, and bankruptcies may dominate returns for the worst losers.",
+    "The current backtester does not model market impact or position-size limits from thin liquidity."
+  ],
+  "next_action": "Find a survivorship-aware equity universe source, or explicitly downgrade tax-loss selling to blocked if only current-survivor price data is available."
+}

@@ -150,6 +150,8 @@ class ResearchMechanismsTest(unittest.TestCase):
         self.assertEqual("needs_data", by_id["forced_index_flows"].disposition)
         self.assertIn("forced_index_membership_events:planned", by_id["forced_index_flows"].dataset_statuses)
         self.assertIn("forced_event_liquidity", by_id["forced_index_flows"].opportunity_theses)
+        self.assertEqual("needs_data", by_id["tax_loss_selling"].disposition)
+        self.assertIn("tax_loss_selling_candidates:planned", by_id["tax_loss_selling"].dataset_statuses)
 
     def test_format_discovery_map_names_ready_and_blocked_work(self) -> None:
         output = format_discovery_map(build_discovery_map())

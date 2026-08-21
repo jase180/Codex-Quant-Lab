@@ -23,3 +23,7 @@ Current plans:
   additions, deletions, and reconstitutions. It requires announcement dates,
   effective dates, source provenance, survivorship-safe prices, and liquidity
   proxies before any forced-flow strategy should be created.
+- `tax_loss_selling_candidates`: planned survivorship-aware equity candidate
+  dataset for late-year losers and early-year rebound windows. It requires
+  delisting handling, size/liquidity buckets, spread proxies, deterministic tax
+  windows, and pre-rebound year-to-date return screens.
