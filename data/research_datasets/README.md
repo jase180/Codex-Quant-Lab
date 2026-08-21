@@ -6,6 +6,11 @@ Dataset plans are not market data. They define the minimum raw material needed
 to test a research mechanism honestly. Use them to decide what to acquire,
 curate, or validate before adding strategy features.
 
+Read `docs/architecture/niche-data-path-decision.md` before choosing between
+the planned forced-index-flow and tax-loss-selling paths. The current decision
+is to audit source availability first, not to create a strategy or backtest from
+incomplete data.
+
 Status meanings:
 
 - `planned`: the dataset is specified but not yet built.

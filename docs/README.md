@@ -24,6 +24,9 @@ current workflow docs and the latest experiment handoffs.
 - Research dataset plans: `data/research_datasets/*.json` and
   `data/research_datasets/README.md` describe minimum dataset targets for
   turning mechanisms from `needs_data` into testable research.
+- [Niche Data Path Decision](architecture/niche-data-path-decision.md): ranks
+  the planned forced-index-flow and tax-loss-selling dataset paths before any
+  source acquisition or strategy work.
 - Event calendars: `data/event_calendars/*.csv` and
   `data/event_calendars/README.md` store generated event windows, currently
   month-end and quarter-end daily windows for the calendar/rebalance mechanism.

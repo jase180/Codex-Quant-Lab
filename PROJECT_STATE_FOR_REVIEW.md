@@ -1,6 +1,6 @@
 # Project State For Review
 
-Inspected repository state before this document refresh: `5bdbe15 Plan forced index flow dataset`.
+Inspected repository state before this document refresh: `fe447c5 Plan tax loss selling dataset`.
 
 This file is meant to orient a reviewer quickly. It describes current behavior, not aspirations.
 
@@ -294,6 +294,8 @@ Most commands still require explicit paths. `experiment run-default` and `campai
 
 Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. `quant-lab mechanisms map` now shows which mechanisms are `testable_now`, `proxy_testable`, `needs_data`, or blocked by joining mechanism records, opportunity theses, dataset plans, and experiment-template coverage. `forced_index_flows` now has a planned dataset target, `forced_index_membership_events`, that requires announcement dates, effective dates, provenance, survivorship-safe prices, and liquidity proxies before backtesting. `tax_loss_selling` now has a planned dataset target, `tax_loss_selling_candidates`, that requires survivorship-aware equity membership, delisting handling, deterministic tax windows, liquidity buckets, and pre-rebound loser screens. The current bottleneck is not running another generic ETF indicator campaign; it is feeding the campaign controller better market-mechanism raw material and testable opportunity theses.
 
+The latest documentation-only decision memo, `docs/architecture/niche-data-path-decision.md`, compares the two planned niche data paths. It recommends a source-availability audit before building either dataset, with `forced_index_membership_events` first if an auditable announcement/effective-date source exists, and `tax_loss_selling_candidates` only if survivorship-aware equity data with delisted symbols is available. This reduces the chance that the next slice accidentally turns missing niche data into another generic or biased backtest.
+
 ## 8. Current Strengths
 
 1. Execution timing is explicit and tested. Core backtests use next-open fills and tests cover no same-bar fill, final-bar signals, commissions/slippage, and sizing behavior.
@@ -386,7 +388,7 @@ $env:MPLCONFIGDIR='artifacts/matplotlib-cache'
 .\.venv-win\Scripts\python.exe -m unittest discover -s tests
 ```
 
-Observed result during this tax-loss dataset-plan refresh: `508` tests passed, `0` failed, `0` skipped, `21.374s`.
+Observed result during this niche-data-path decision refresh: `508` tests passed, `0` failed, `0` skipped, `21.591s`.
 
 Coverage assessment:
 
