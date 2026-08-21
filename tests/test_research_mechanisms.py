@@ -148,6 +148,7 @@ class ResearchMechanismsTest(unittest.TestCase):
         self.assertIn("calendar_month_end_window", by_id["calendar_rebalance_effects"].ready_template_ids)
         self.assertEqual("proxy_testable", by_id["small_cap_liquidity_shocks"].disposition)
         self.assertEqual("needs_data", by_id["forced_index_flows"].disposition)
+        self.assertIn("forced_index_membership_events:planned", by_id["forced_index_flows"].dataset_statuses)
         self.assertIn("forced_event_liquidity", by_id["forced_index_flows"].opportunity_theses)
 
     def test_format_discovery_map_names_ready_and_blocked_work(self) -> None:

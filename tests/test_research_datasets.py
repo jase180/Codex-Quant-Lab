@@ -43,6 +43,7 @@ class ResearchDatasetsTest(unittest.TestCase):
         plan_ids = {plan.dataset_id for plan in plans}
 
         self.assertIn("calendar_rebalance_daily_proxy", plan_ids)
+        self.assertIn("forced_index_membership_events", plan_ids)
         self.assertTrue(all(plan.status in {"planned", "available", "blocked"} for plan in plans))
 
     def test_validate_research_dataset_plan_rejects_missing_required_fields(self) -> None:
@@ -59,6 +60,10 @@ class ResearchDatasetsTest(unittest.TestCase):
 
         self.assertEqual(1, len(matching))
         self.assertEqual("calendar_rebalance_daily_proxy", matching[0].dataset_id)
+
+        forced = dataset_plans_for_mechanism(plans, "forced_index_flows")
+        self.assertEqual(1, len(forced))
+        self.assertEqual("planned", forced[0].status)
 
     def test_format_dataset_plan_list_and_detail(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -83,6 +88,7 @@ class ResearchDatasetsTest(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertIn("Research Dataset Plans", output)
         self.assertIn("calendar_rebalance_daily_proxy", output)
+        self.assertIn("forced_index_membership_events", output)
 
     def test_cli_mechanisms_data_plan_shows_matching_plan(self) -> None:
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
@@ -94,6 +100,17 @@ class ResearchDatasetsTest(unittest.TestCase):
         self.assertIn("Dataset Plans For Mechanism: calendar_rebalance_effects", output)
         self.assertIn("Calendar/Rebalance Daily Proxy", output)
         self.assertIn("generated_without_return_data", output)
+
+    def test_cli_mechanisms_data_plan_shows_forced_index_plan(self) -> None:
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            exit_code = main(["mechanisms", "data-plan", "--id", "forced_index_flows"])
+
+        output = stdout.getvalue()
+
+        self.assertEqual(0, exit_code)
+        self.assertIn("Forced Index Membership Events", output)
+        self.assertIn("announcement_date", output)
+        self.assertIn("effective_date", output)
 
 
 if __name__ == "__main__":

@@ -14,3 +14,12 @@ Status meanings:
 
 Generated event-calendar files live in `data/event_calendars/`. Inspect them
 before any backtest or return join with `quant-lab event-calendar inspect`.
+
+Current plans:
+
+- `calendar_rebalance_daily_proxy`: available generated event calendar for
+  month-end and quarter-end proxy windows.
+- `forced_index_membership_events`: planned event-membership dataset for index
+  additions, deletions, and reconstitutions. It requires announcement dates,
+  effective dates, source provenance, survivorship-safe prices, and liquidity
+  proxies before any forced-flow strategy should be created.

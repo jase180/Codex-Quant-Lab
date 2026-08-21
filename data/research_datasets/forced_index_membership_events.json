@@ -1,0 +1,65 @@
+{
+  "schema_version": "research_dataset_plan.v1",
+  "dataset_id": "forced_index_membership_events",
+  "mechanism_id": "forced_index_flows",
+  "title": "Forced Index Membership Events",
+  "status": "planned",
+  "purpose": "Define the minimum auditable event dataset needed before testing index-addition, deletion, or reconstitution pressure without leaking future information.",
+  "data_grain": "event calendar plus daily OHLCV, volume, and liquidity proxies",
+  "required_fields": [
+    "event_id",
+    "index_name",
+    "symbol",
+    "event_type",
+    "announcement_date",
+    "effective_date",
+    "source_name",
+    "source_url_or_note",
+    "source_published_at",
+    "membership_before",
+    "membership_after",
+    "event_reason",
+    "liquidity_bucket",
+    "daily_dollar_volume_before_event",
+    "spread_proxy_before_event",
+    "created_at_utc"
+  ],
+  "candidate_sources": [
+    "index provider methodology and rebalance announcement archives",
+    "ETF or index fund holdings snapshots when official historical constituent files are unavailable",
+    "exchange or issuer press releases for additions, deletions, and corporate-action-driven index changes",
+    "survivorship-aware historical price and volume data for every affected symbol",
+    "quoted spread, high-low spread proxy, or conservative bps cost proxy"
+  ],
+  "construction_rules": [
+    "Use announcement_date for tradability and information timing; effective_date alone is not enough.",
+    "Keep additions and deletions as separate event_type values before any return analysis.",
+    "Preserve source notes per event row; do not merge events from undocumented secondary lists without provenance.",
+    "Require price, volume, and liquidity coverage before and after each event window.",
+    "Do not add or remove event types after inspecting event returns.",
+    "Keep delisted or acquired symbols in the event universe when they were tradable at announcement time."
+  ],
+  "quality_checks": [
+    "announcement_date must be on or before effective_date for every event.",
+    "announcement_date and effective_date must map to valid trading sessions or include an explicit non-trading-day adjustment rule.",
+    "Duplicate event_id values are invalid.",
+    "Every row must include source_name and source_url_or_note.",
+    "At least one pre-event liquidity estimate must exist for every tested symbol.",
+    "Events missing survivorship-safe post-event prices must be labeled and excluded only by a prespecified rule."
+  ],
+  "minimum_viable_tests": [
+    "No-trade event study by event_type around announcement and effective windows.",
+    "Separate addition and deletion cohorts before any combined strategy result.",
+    "Liquidity-bucket summary showing whether the effect is concentrated where personal-capital capacity is plausible.",
+    "Cost sensitivity using conservative spread or bps assumptions before any executable strategy.",
+    "A single fixed holding-period test only after the no-trade diagnostics identify a plausible direction."
+  ],
+  "known_limitations": [
+    "Official historical constituent and announcement archives may be paid, incomplete, or hard to normalize.",
+    "ETF holdings snapshots are an imperfect proxy for index membership and can introduce timing ambiguity.",
+    "Daily data may miss close auction, rebalance-on-close, and intraday liquidity effects.",
+    "Index methodology changes can make older and newer events less comparable.",
+    "The current backtester does not yet model market impact, borrow, or close-auction execution."
+  ],
+  "next_action": "Find one auditable free or exported source for historical index additions/deletions with announcement and effective dates before creating any executable forced-flow strategy."
+}

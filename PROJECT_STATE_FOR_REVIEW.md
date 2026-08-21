@@ -1,6 +1,6 @@
 # Project State For Review
 
-Inspected repository state before this document refresh: `823b492 Refresh project state direction`.
+Inspected repository state before this document refresh: `4daf342 Add mechanism discovery map`.
 
 This file is meant to orient a reviewer quickly. It describes current behavior, not aspirations.
 
@@ -292,7 +292,7 @@ Most commands still require explicit paths. `experiment run-default` and `campai
 - Retry/fallback behavior and explicit model execution gating were added. Invalid or failed model attempts are saved, retried once, then stop or fall back for inspection.
 - Codex handoff provider was added. It writes Codex-readable context/prompt artifacts and stops with `request_human_review`; it does not pretend to call this chat session.
 
-Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. `quant-lab mechanisms map` now shows which mechanisms are `testable_now`, `proxy_testable`, `needs_data`, or blocked by joining mechanism records, opportunity theses, dataset plans, and experiment-template coverage. The current bottleneck is not running another generic ETF indicator campaign; it is feeding the campaign controller better market-mechanism raw material and testable opportunity theses.
+Net effect: campaign orchestration is now coherent and useful, while the discovery layer remains deliberately bounded. `quant-lab mechanisms map` now shows which mechanisms are `testable_now`, `proxy_testable`, `needs_data`, or blocked by joining mechanism records, opportunity theses, dataset plans, and experiment-template coverage. `forced_index_flows` now has a planned dataset target, `forced_index_membership_events`, that requires announcement dates, effective dates, provenance, survivorship-safe prices, and liquidity proxies before backtesting. The current bottleneck is not running another generic ETF indicator campaign; it is feeding the campaign controller better market-mechanism raw material and testable opportunity theses.
 
 ## 8. Current Strengths
 
@@ -386,7 +386,7 @@ $env:MPLCONFIGDIR='artifacts/matplotlib-cache'
 .\.venv-win\Scripts\python.exe -m unittest discover -s tests
 ```
 
-Observed result during this discovery-map refresh: `506` tests passed, `0` failed, `0` skipped, `21.400s`.
+Observed result during this forced-index dataset-plan refresh: `507` tests passed, `0` failed, `0` skipped, `21.487s`.
 
 Coverage assessment:
 
