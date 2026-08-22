@@ -296,6 +296,8 @@ Net effect: campaign orchestration is now coherent and useful, while the discove
 
 The latest documentation-only decision memo, `docs/architecture/niche-data-path-decision.md`, compares the two planned niche data paths. It recommends a source-availability audit before building either dataset, with `forced_index_membership_events` first if an auditable announcement/effective-date source exists, and `tax_loss_selling_candidates` only if survivorship-aware equity data with delisted symbols is available. This reduces the chance that the next slice accidentally turns missing niche data into another generic or biased backtest.
 
+The first source audit is now tracked at `data/source_audits/niche_data_source_availability_2026-08-21.md`. Current status: `forced_index_membership_events` is viable only as a limited source-provenance pilot from official S&P Global press releases plus cross-checks; `tax_loss_selling_candidates` is `vendor_required` because an honest test needs survivorship-aware historical equity membership and delisted securities.
+
 ## 8. Current Strengths
 
 1. Execution timing is explicit and tested. Core backtests use next-open fills and tests cover no same-bar fill, final-bar signals, commissions/slippage, and sizing behavior.
@@ -388,7 +390,7 @@ $env:MPLCONFIGDIR='artifacts/matplotlib-cache'
 .\.venv-win\Scripts\python.exe -m unittest discover -s tests
 ```
 
-Observed result during this niche-data-path decision refresh: `508` tests passed, `0` failed, `0` skipped, `21.591s`.
+Observed result during this source-availability audit refresh: `508` tests passed, `0` failed, `0` skipped, `21.488s`.
 
 Coverage assessment:
 

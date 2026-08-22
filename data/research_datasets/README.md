@@ -11,6 +11,12 @@ the planned forced-index-flow and tax-loss-selling paths. The current decision
 is to audit source availability first, not to create a strategy or backtest from
 incomplete data.
 
+The first source audit is in
+`data/source_audits/niche_data_source_availability_2026-08-21.md`. It marks
+`forced_index_membership_events` as suitable for a limited provenance-preserving
+pilot and `tax_loss_selling_candidates` as vendor-required until
+survivorship-aware delisted-equity data is available.
+
 Status meanings:
 
 - `planned`: the dataset is specified but not yet built.

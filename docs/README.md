@@ -27,6 +27,8 @@ current workflow docs and the latest experiment handoffs.
 - [Niche Data Path Decision](architecture/niche-data-path-decision.md): ranks
   the planned forced-index-flow and tax-loss-selling dataset paths before any
   source acquisition or strategy work.
+- Source audits: `data/source_audits/*.md` record whether planned niche
+  datasets are viable, blocked, or vendor-dependent before data construction.
 - Event calendars: `data/event_calendars/*.csv` and
   `data/event_calendars/README.md` store generated event windows, currently
   month-end and quarter-end daily windows for the calendar/rebalance mechanism.
